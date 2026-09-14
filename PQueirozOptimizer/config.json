@@ -1,0 +1,114 @@
+{
+  "version": "1.0.0",
+  "theme": "Dark",
+  "activeProfile": "Padrão",
+  "profiles": [
+    {
+      "name": "Padrão",
+      "description": "Modo padrão completo: exibe todas as otimizações e ferramentas disponíveis no aplicativo.",
+      "isBuiltIn": true,
+      "enabledOptimizations": [
+        "padrao",
+        "gamer",
+        "debloat",
+        "quickclean",
+        "analisar",
+        "benchmark",
+        "sfc",
+        "dism",
+        "chkdsk",
+        "update",
+        "reverter"
+      ]
+    },
+    {
+      "name": "Modo Gamer",
+      "description": "Foco em jogos: latência reduzida, Game Mode, energia de alto desempenho e limpeza rápida.",
+      "isBuiltIn": true,
+      "enabledOptimizations": [
+        "gamer",
+        "padrao",
+        "quickclean",
+        "benchmark",
+        "reverter"
+      ]
+    },
+    {
+      "name": "Modo Minimalista",
+      "description": "Apenas o essencial: visual limpo com otimização padrão, limpeza de temporários e reversão.",
+      "isBuiltIn": true,
+      "enabledOptimizations": [
+        "padrao",
+        "quickclean",
+        "reverter"
+      ]
+    },
+    {
+      "name": "Modo Completo",
+      "description": "Exibe todas as otimizações, testes de benchmark e ferramentas de manutenção do Windows.",
+      "isBuiltIn": true,
+      "enabledOptimizations": [
+        "padrao",
+        "gamer",
+        "debloat",
+        "quickclean",
+        "analisar",
+        "benchmark",
+        "sfc",
+        "dism",
+        "chkdsk",
+        "update",
+        "reverter"
+      ]
+    },
+    {
+      "name": "Modo Manutenção",
+      "description": "Ferramentas de integridade e diagnósticos: SFC, DISM, CHKDSK, Updates e análise de saúde.",
+      "isBuiltIn": true,
+      "enabledOptimizations": [
+        "analisar",
+        "sfc",
+        "dism",
+        "chkdsk",
+        "update",
+        "quickclean",
+        "reverter"
+      ]
+    },
+    {
+      "name": "Modo Debloat & Privacidade",
+      "description": "Remoção de bloatwares, serviços em segundo plano desnecessários e preservação de privacidade.",
+      "isBuiltIn": true,
+      "enabledOptimizations": [
+        "debloat",
+        "padrao",
+        "quickclean",
+        "reverter"
+      ]
+    }
+  ],
+  "isoCatalog": [
+    {
+      "name": "Windows 11 Custom (Pedro Queiroz)",
+      "version": "24H2 Custom",
+      "architecture": "x64",
+      "description": "ISO personalizada do Windows 11 com ajustes de latência, telemetria desativada e máxima performance para jogos.",
+      "localPath": "",
+      "downloadUrl": "https://drive.google.com/drive/folders/17FdoBwGHv8tfk_zThO3GXdvLJxVL2Mpf?usp=drive_link",
+      "sha256": "",
+      "changelog": "Otimizações de registro, debloat de UWP, plano de alto desempenho e Game Mode pré-configurados.",
+      "requirements": "64-bit CPU, 4GB+ RAM, 64GB SSD"
+    },
+    {
+      "name": "Windows 11 Oficial (Microsoft)",
+      "version": "24H2",
+      "architecture": "x64",
+      "description": "Imagem oficial original da Microsoft para criação de mídia ou instalação limpa.",
+      "localPath": "",
+      "downloadUrl": "https://www.microsoft.com/software-download/windows11",
+      "sha256": "",
+      "changelog": "",
+      "requirements": "Processador x64, 4GB RAM"
+    }
+  ]
+}

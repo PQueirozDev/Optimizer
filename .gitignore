@@ -1,0 +1,37 @@
+# .NET
+**/bin/
+**/obj/
+TestResults/
+
+# Artefatos de build e instaladores gerados
+artifacts/
+Aplicativo/
+Abrir-Otimizador.bat
+installer/Output/
+*.nupkg
+*.snupkg
+
+# IDE/editor
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Logs e temporarios
+*.log
+*.tmp
+*.temp
+
+# Configuracoes locais e segredos
+.env
+.env.*
+*.key
+*.pem
+*.pfx
+*.p12
+*.cer
+secrets.*
+appsettings.Local.json
