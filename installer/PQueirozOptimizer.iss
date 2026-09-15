@@ -53,4 +53,6 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "Executar o aplicativo"; Flags: nowait postinstall skipifsilent runascurrentuser
+; O aplicativo possui manifesto requireAdministrator. Ele deve herdar a elevação
+; do instalador; executá-lo como usuário atual causa ERROR_ELEVATION_REQUIRED (740).
+Filename: "{app}\{#MyAppExeName}"; Description: "Executar o aplicativo"; Flags: nowait postinstall skipifsilent
