@@ -24,7 +24,9 @@ public partial class App : Application
             MainWindow = window; window.Show();
             var result = await service.RunAsync(new Progress<string>(value => status.Text = value));
             status.Text = $"Limpeza concluída. {result.BytesFreed / 1024d / 1024d:N1} MB liberados";
-            await Task.Delay(3500); Shutdown(); return;
+            window.Hide();
+            await Services.QuickCleanNotification.ShowAsync(result);
+            Shutdown(); return;
         }
         MainWindow = new MainWindow(); MainWindow.Show();
     }

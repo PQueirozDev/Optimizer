@@ -1992,7 +1992,7 @@ public partial class MainWindow : Window
             test.IsEnabled = false;
             test.Content = "Limpando...";
             var result = await _cleaner.RunAsync();
-            MessageBox.Show($"Limpeza concluída com sucesso!\n{result.BytesFreed / 1024d / 1024d:N1} MB liberados.", "Limpeza Rápida", MessageBoxButton.OK, MessageBoxImage.Information);
+            _ = QuickCleanNotification.ShowAsync(result);
             test.IsEnabled = true;
             test.Content = "Executar Limpeza Agora";
         };
@@ -2307,7 +2307,7 @@ Stop-Process -Name explorer -Force
             try
             {
                 var result = await _cleaner.RunAsync();
-                MessageBox.Show($"Limpeza Rápida concluída com sucesso!\n{result.BytesFreed / 1024d / 1024d:N1} MB liberados.", "Limpeza Rápida", MessageBoxButton.OK, MessageBoxImage.Information);
+                _ = QuickCleanNotification.ShowAsync(result);
             }
             catch (Exception ex)
             {
