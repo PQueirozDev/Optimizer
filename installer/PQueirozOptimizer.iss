@@ -53,6 +53,6 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-; O aplicativo possui manifesto requireAdministrator. Ele deve herdar a elevação
-; do instalador; executá-lo como usuário atual causa ERROR_ELEVATION_REQUIRED (740).
-Filename: "{app}\{#MyAppExeName}"; Description: "Executar o aplicativo"; Flags: nowait postinstall skipifsilent
+; O aplicativo exige elevação. ShellExecute com o verbo "runas" solicita o UAC;
+; CreateProcess direto falha com ERROR_ELEVATION_REQUIRED (740).
+Filename: "{app}\{#MyAppExeName}"; Description: "Executar o aplicativo"; Verb: "runas"; Flags: nowait postinstall skipifsilent shellexec
