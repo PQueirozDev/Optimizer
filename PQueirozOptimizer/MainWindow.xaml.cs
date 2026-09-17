@@ -29,6 +29,7 @@ public partial class MainWindow : Window
     private string _currentOptCategory = "todas";
     private string _driverCategory = "Todos";
     private string _driverSearch = "";
+    private bool IsAdminLicense => (Application.Current as App)?.ActiveLicense?.IsAdmin == true;
 
     public MainWindow()
     {
@@ -51,6 +52,7 @@ public partial class MainWindow : Window
         ApplyTheme(_darkTheme, saveConfig: false);
         _loc.SetLanguage(_configService.Config.Language ?? "pt");
         UpdateLanguageUi();
+        NavIsos.Visibility = IsAdminLicense ? Visibility.Visible : Visibility.Collapsed;
         UpdateNavBadges();
         UpdateActiveNavButton(_currentPage);
     }
@@ -152,6 +154,11 @@ public partial class MainWindow : Window
 
     private void NavigateTo(string page)
     {
+        if (page == "isos" && !IsAdminLicense)
+        {
+            MessageBox.Show("As imagens personalizadas do Windows estão disponíveis somente para licenças de administrador.", "Acesso restrito", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
         _currentPage = page;
         UpdateActiveNavButton(page);
 
@@ -1335,6 +1342,10 @@ public partial class MainWindow : Window
         PageBadge.Visibility = Visibility.Collapsed;
 
         var allDrivers = _driverService.GetAllDrivers(_snapshot, _loc.IsEnglish);
+        if (!IsAdminLicense)
+        {
+            allDrivers = allDrivers.Where(driver => !driver.Name.StartsWith("Driver Clean", StringComparison.OrdinalIgnoreCase)).ToList();
+        }
         var root = new StackPanel();
 
         // Subtitle & GPU Detection Header

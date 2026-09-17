@@ -5,16 +5,35 @@ namespace PQueirozOptimizer;
 
 public partial class App : Application
 {
+    public Services.LicenseInfo? ActiveLicense { get; private set; }
     [DllImport("shell32.dll", SetLastError = true)]
     private static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string appId);
 
     private async void Application_Startup(object sender, StartupEventArgs e)
     {
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
         try
         {
             SetCurrentProcessExplicitAppUserModelID("PedroQueiroz.Optimizer.App.v1");
         }
         catch { }
+
+        var licenseService = new Services.LicenseService();
+        if (!licenseService.TryGetActiveLicense(out var activeLicense, out _))
+        {
+            var activation = new ActivationWindow(licenseService);
+            if (activation.ShowDialog() != true)
+            {
+                Shutdown();
+                return;
+            }
+        }
+        if (!licenseService.TryGetActiveLicense(out activeLicense, out _) || activeLicense is null)
+        {
+            Shutdown();
+            return;
+        }
+        ActiveLicense = activeLicense;
 
         if (e.Args.Contains("--quick-clean", StringComparer.OrdinalIgnoreCase))
         {
@@ -28,6 +47,8 @@ public partial class App : Application
             await Services.QuickCleanNotification.ShowAsync(result);
             Shutdown(); return;
         }
-        MainWindow = new MainWindow(); MainWindow.Show();
+        MainWindow = new MainWindow();
+        ShutdownMode = ShutdownMode.OnMainWindowClose;
+        MainWindow.Show();
     }
 }
