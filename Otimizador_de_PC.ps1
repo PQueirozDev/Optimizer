@@ -481,7 +481,9 @@ function Otimizar-Gamer {
                 Capturar-PlanoEnergia
                 $ultimatePlan = powercfg /duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61
                 if ($ultimatePlan -match "([0-9a-fA-F-]{36})") {
-                    powercfg /setactive $matches[1]
+                    $planGuid = $matches[1]
+                    powercfg /changename $planGuid "PQueiroz Optimizer - Desempenho Avancado" | Out-Null
+                    powercfg /setactive $planGuid
                 } else {
                     powercfg /setactive SCHEME_MIN
                 }
@@ -528,6 +530,18 @@ function Otimizar-Gamer {
         @{ Nome = "Ajustando efeitos visuais p/ desempenho"; Acao = {
                 Capturar-Registro "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" "VisualFXSetting"
                 Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" "VisualFXSetting" 2 -Type DWord
+            } }
+        @{ Nome = "Reduzindo latencia de mouse, teclado e USB"; Acao = {
+                $mousePath = "HKCU:\Control Panel\Mouse"
+                Capturar-Registro $mousePath "MouseSpeed"
+                Set-ItemProperty $mousePath "MouseSpeed" "0" -Type String
+                Capturar-Registro $mousePath "MouseThreshold1"
+                Set-ItemProperty $mousePath "MouseThreshold1" "0" -Type String
+                Capturar-Registro $mousePath "MouseThreshold2"
+                Set-ItemProperty $mousePath "MouseThreshold2" "0" -Type String
+                powercfg /setacvalueindex SCHEME_CURRENT SUB_USB USBSELECTIVE 0 | Out-Null
+                powercfg /setdcvalueindex SCHEME_CURRENT SUB_USB USBSELECTIVE 0 | Out-Null
+                powercfg /setactive SCHEME_CURRENT | Out-Null
             } }
         @{ Nome = "Ajustando SysMain e Windows Search";   Acao = {
                 Capturar-Servico "SysMain"
