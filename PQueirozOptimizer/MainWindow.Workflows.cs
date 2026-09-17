@@ -326,8 +326,10 @@ public partial class MainWindow
                         if (!string.IsNullOrWhiteSpace(info.AssetUrl))
                         {
                             var path = await _updates.DownloadAsync(info, new Progress<(long read, long total)>(p => OperationStatus.Text = p.total > 0 ? $"Baixando instalador... {p.read * 100d / p.total:N0}%" : $"Baixando instalador... {p.read / 1048576d:N1} MB"));
-                            OperationStatus.Text = $"Download concluído: {path}";
-                            Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") { UseShellExecute = true });
+                            OperationStatus.Text = "Download concluído. Iniciando atualização...";
+                            Process.Start(new ProcessStartInfo(path) { UseShellExecute = true, Verb = "runas" });
+                            await Task.Delay(500);
+                            Application.Current.Shutdown();
                         }
                         else Process.Start(new ProcessStartInfo(info.DownloadUrl!) { UseShellExecute = true });
                     }
