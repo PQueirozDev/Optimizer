@@ -6,6 +6,7 @@ namespace PQueirozOptimizer;
 public partial class App : Application
 {
     public Services.LicenseInfo? ActiveLicense { get; private set; }
+    public void SetActiveLicense(Services.LicenseInfo license) => ActiveLicense = license;
     [DllImport("shell32.dll", SetLastError = true)]
     private static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string appId);
 

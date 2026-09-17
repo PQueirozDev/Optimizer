@@ -58,6 +58,9 @@
        <TextBlock x:Name="NavSecSystem" Text="APLICATIVO" Style="{StaticResource SectionHeaderStyle}"/>
        <Button x:Name="NavSettings" Content="Configurações" Tag="settings" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click"/>
        <Button x:Name="NavAbout" Content="Sobre" Tag="about" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click"/>
+       <Button x:Name="NavPatchNotes" Content="Patch notes" Tag="patchnotes" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click"/>
+       <Button x:Name="NavBios" Content="BIOS / UEFI" Tag="bios" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click"/>
+       <Button x:Name="NavAdmin" Content="Ativar chave de administrador" Tag="admin" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click"/>
       </StackPanel>
      </DockPanel>
     </Border>

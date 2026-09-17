@@ -171,12 +171,15 @@ public partial class MainWindow : Window
             case "tools": ShowTools(); break;
             case "settings": ShowSettings(); break;
             case "about": ShowAbout(); break; case "history": ShowHistory(); break;
+            case "patchnotes": ShowPatchNotes(); break;
+            case "bios": ShowBios(); break;
+            case "admin": ActivateAdminLicense(); break;
         }
     }
 
     private void UpdateActiveNavButton(string page)
     {
-        var buttons = new[] { NavDashboard, NavOpt, NavDrivers, NavIsos, NavTools, NavSettings, NavAbout, NavHistory };
+        var buttons = new[] { NavDashboard, NavOpt, NavDrivers, NavIsos, NavTools, NavSettings, NavAbout, NavHistory, NavPatchNotes, NavBios, NavAdmin };
         foreach (var b in buttons)
         {
             if (b == null) continue;
@@ -2090,6 +2093,42 @@ Stop-Process -Name explorer -Force
         }
     }
     #endregion
+
+    private void ActivateAdminLicense()
+    {
+        var service = new LicenseService();
+        var activation = new ActivationWindow(service) { Owner = this };
+        if (activation.ShowDialog() == true && service.TryGetActiveLicense(out var license, out _) && license is not null)
+        {
+            (Application.Current as App)?.SetActiveLicense(license);
+            NavIsos.Visibility = license.IsAdmin ? Visibility.Visible : Visibility.Collapsed;
+            MessageBox.Show("Chave ativada. Os recursos de administrador já estão disponíveis.", "Ativação concluída", MessageBoxButton.OK, MessageBoxImage.Information);
+            NavigateTo("dashboard");
+        }
+    }
+
+    private void ShowPatchNotes()
+    {
+        PageTitle.Text = "Patch notes"; PageBadge.Visibility = Visibility.Collapsed;
+        var root = new StackPanel { MaxWidth = 820 };
+        root.Children.Add(Label("v1.1.1", 22));
+        root.Children.Add(Label("• Ativação por chave assinada vinculada ao computador.\n• Plano de energia com nome PQueiroz Optimizer.\n• Redução de latência para mouse, teclado e USB.\n• Melhorias nas políticas avançadas de privacidade e desempenho.", 13, true));
+        root.Children.Add(Label("v1.0.5", 22));
+        root.Children.Add(Label("• Modo Avançado com políticas de privacidade e desempenho.\n• Backups, histórico e reversão de alterações.\n• Verificação de atualização ao abrir o aplicativo.", 13, true));
+        ContentHost.Children.Clear(); ContentHost.Children.Add(Surface(root));
+    }
+
+    private void ShowBios()
+    {
+        PageTitle.Text = "BIOS / UEFI"; PageBadge.Visibility = Visibility.Collapsed;
+        var root = new StackPanel { MaxWidth = 820 };
+        root.Children.Add(Label("Assistente seguro de BIOS", 22));
+        root.Children.Add(Label("O Optimizer não grava firmware automaticamente. Esta área orienta ajustes leves conforme seu hardware, reduzindo o risco de configurações incompatíveis.", 13, true));
+        root.Children.Add(Surface(new StackPanel { Children = { Label("Recomendações comuns", 16), Label("• Ativar XMP/EXPO para a memória\n• Ativar Resizable BAR quando suportado\n• Conferir virtualização e modo de energia\n• Usar somente o atualizador oficial da fabricante", 13, true) }}));
+        var open = new Button { Content = "Abrir configurações UEFI", Padding = new Thickness(12, 8, 12, 8), HorizontalAlignment = HorizontalAlignment.Left };
+        open.Click += (_, _) => Process.Start(new ProcessStartInfo("shutdown.exe", "/r /fw /t 0") { UseShellExecute = true }); root.Children.Add(open);
+        ContentHost.Children.Clear(); ContentHost.Children.Add(root);
+    }
 
     #region About Page
     private const string AuthorSiteUrl = "https://pqueiroz.vercel.app/";
