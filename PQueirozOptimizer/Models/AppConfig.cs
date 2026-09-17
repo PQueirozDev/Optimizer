@@ -16,6 +16,9 @@ public class AppConfig
     [JsonPropertyName("activeProfile")]
     public string ActiveProfile { get; set; } = "Padrão";
 
+    [JsonPropertyName("voiceNotification")]
+    public bool VoiceNotification { get; set; } = true;
+
     [JsonPropertyName("profiles")]
     public List<OptimizationProfile> Profiles { get; set; } = new();
 

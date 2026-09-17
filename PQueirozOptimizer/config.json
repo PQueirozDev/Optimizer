@@ -1,4 +1,4 @@
-{
+﻿{
   "version": "1.0.0",
   "theme": "Dark",
   "activeProfile": "Padrão",
@@ -22,7 +22,7 @@
       ]
     },
     {
-      "name": "Modo Gamer",
+      "name": "Modo Avançado",
       "description": "Foco em jogos: latência reduzida, Game Mode, energia de alto desempenho e limpeza rápida.",
       "isBuiltIn": true,
       "enabledOptimizations": [
@@ -112,3 +112,4 @@
     }
   ]
 }
+

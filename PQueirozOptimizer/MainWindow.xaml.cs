@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -35,11 +35,14 @@ public partial class MainWindow : Window
         InitializeComponent();
         _powershell = new PowerShellBridge(_log);
         _cleaner = new QuickCleanService(_log);
-        _log.EntryAdded += line => Dispatcher.Invoke(() => AddLogLine(line));
+        _log.EntryAdded += line => Dispatcher.BeginInvoke(() => AddLogLine(line));
+        foreach (var line in _log.Recent()) AddLogLine(line);
+        VersionLabel.Text = AppVersion;
+        Closing += (_, e) => { if (_operationRunning) { e.Cancel = true; OperationStatus.Text = "Aguarde a operação terminar antes de fechar."; } };
 
         try
         {
-            this.Icon = BitmapFrame.Create(new Uri("pack://application:,,,/Assets/app.ico", UriKind.Absolute));
+            this.Icon = BitmapFrame.Create(new Uri("pack://application:,,,/PQueirozOptimizer;component/Assets/app.ico", UriKind.Absolute));
         }
         catch { }
 
@@ -49,6 +52,7 @@ public partial class MainWindow : Window
         _loc.SetLanguage(_configService.Config.Language ?? "pt");
         UpdateLanguageUi();
         UpdateNavBadges();
+        UpdateActiveNavButton(_currentPage);
     }
 
     #region Window & Language Controls
@@ -62,23 +66,23 @@ public partial class MainWindow : Window
 
     private void UpdateLanguageUi()
     {
-        LangButton.Content = _loc.IsEnglish ? "🌐 EN" : "🌐 PT";
+        LangButton.Content = _loc.IsEnglish ? "EN" : "PT";
         LangButton.ToolTip = _loc.T("Alternar idioma para Inglês (EN)", "Switch language to Portuguese (PT)");
         ThemeButton.ToolTip = _loc.T("Alternar tema claro / escuro", "Toggle light / dark theme");
-        TitlePageHint.Text = _loc.T("✦ Otimizador e Gerenciador do Windows", "✦ Windows Optimizer & System Manager");
-        TitleOptChip.Text = _loc.T("100% Otimizado", "100% Optimized");
+        TitlePageHint.Text = _loc.T(" Otimizador e Gerenciador do Windows", " Windows Optimizer & System Manager");
+        TitleOptChip.Text = _loc.T("Pronto", "Ready");
 
         if (NavSecMonitor != null) NavSecMonitor.Text = _loc.T("MONITORAR", "MONITOR");
         if (NavSecOptimizations != null) NavSecOptimizations.Text = _loc.T("OTIMIZAÇÕES", "OPTIMIZATIONS");
         if (NavSecSystem != null) NavSecSystem.Text = _loc.T("SISTEMA", "SYSTEM");
 
-        if (NavDashboard != null) NavDashboard.Content = _loc.T("⌂   Dashboard", "⌂   Dashboard");
-        if (NavOptText != null) NavOptText.Text = _loc.T("⚡   Otimização", "⚡   Optimization");
-        if (NavDriversText != null) NavDriversText.Text = _loc.T("▣   Drivers", "▣   Drivers");
-        if (NavIsos != null) NavIsos.Content = _loc.T("◈   ISOs do Windows", "◈   Windows ISOs");
-        if (NavTools != null) NavTools.Content = _loc.T("▦   Ferramentas", "▦   Tools");
-        if (NavSettings != null) NavSettings.Content = _loc.T("⚙   Configurações", "⚙   Settings");
-        if (NavAbout != null) NavAbout.Content = _loc.T("?   Sobre", "?   About");
+        if (NavDashboard != null) NavDashboard.Content = _loc.T("Dashboard", "Dashboard");
+        if (NavOptText != null) NavOptText.Text = _loc.T("Otimizações", "Optimization");
+        if (NavDriversText != null) NavDriversText.Text = _loc.T("Drivers", "Drivers");
+        if (NavIsos != null) NavIsos.Content = _loc.T("Imagens do Windows", "Windows images");
+        if (NavTools != null) NavTools.Content = _loc.T("Ferramentas", "Tools");
+        if (NavSettings != null) NavSettings.Content = _loc.T("Configurações", "Settings");
+        if (NavAbout != null) NavAbout.Content = _loc.T("Sobre", "About");
         if (NavFooterStatus != null) NavFooterStatus.Text = _loc.T("Sistema Ativo", "System Active");
     }
 
@@ -102,7 +106,7 @@ public partial class MainWindow : Window
         if (WindowState == WindowState.Maximized)
         {
             MainRootBorder.Padding = new Thickness(7);
-            BtnMaximize.Content = "❐";
+            BtnMaximize.Content = "";
             BtnMaximize.ToolTip = _loc.T("Restaurar", "Restore");
         }
         else
@@ -129,6 +133,7 @@ public partial class MainWindow : Window
         try
         {
             await ShowDashboardAsync();
+            await CheckForUpdateAsync(showPrompt: true);
         }
         catch (Exception ex)
         {
@@ -158,13 +163,13 @@ public partial class MainWindow : Window
             case "isos": ShowIsos(); break;
             case "tools": ShowTools(); break;
             case "settings": ShowSettings(); break;
-            case "about": ShowAbout(); break;
+            case "about": ShowAbout(); break; case "history": ShowHistory(); break;
         }
     }
 
     private void UpdateActiveNavButton(string page)
     {
-        var buttons = new[] { NavDashboard, NavOpt, NavDrivers, NavIsos, NavTools, NavSettings, NavAbout };
+        var buttons = new[] { NavDashboard, NavOpt, NavDrivers, NavIsos, NavTools, NavSettings, NavAbout, NavHistory };
         foreach (var b in buttons)
         {
             if (b == null) continue;
@@ -172,7 +177,8 @@ public partial class MainWindow : Window
             if (isCurrent)
             {
                 b.SetResourceReference(Button.BackgroundProperty, "PanelHoverBrush");
-                b.SetResourceReference(Button.BorderBrushProperty, "BorderBrush");
+                b.SetResourceReference(Button.BorderBrushProperty, "AccentBrush");
+                b.BorderThickness = new Thickness(2, 0, 0, 0);
                 b.SetResourceReference(Button.ForegroundProperty, "TextBrush");
                 b.FontWeight = FontWeights.SemiBold;
             }
@@ -180,6 +186,7 @@ public partial class MainWindow : Window
             {
                 b.Background = Brushes.Transparent;
                 b.BorderBrush = Brushes.Transparent;
+                b.BorderThickness = new Thickness(0);
                 b.SetResourceReference(Button.ForegroundProperty, "MutedBrush");
                 b.FontWeight = FontWeights.Medium;
             }
@@ -201,23 +208,23 @@ public partial class MainWindow : Window
 
         if (isDark)
         {
-            SetBrush(dict, "BackgroundBrush", "#0A0B0E");
-            SetBrush(dict, "HeaderBrush", "#0C0D12");
-            SetBrush(dict, "SidebarBrush", "#0E0F14");
-            SetBrush(dict, "PanelBrush", "#13141B");
-            SetBrush(dict, "PanelHoverBrush", "#1C1E2A");
-            SetBrush(dict, "CardBgBrush", "#161822");
-            SetBrush(dict, "BorderBrush", "#202330");
-            SetBrush(dict, "BorderSubtleBrush", "#181A24");
-            SetBrush(dict, "TextBrush", "#F4F5F8");
-            SetBrush(dict, "MutedBrush", "#8C92A4");
-            SetBrush(dict, "AccentBrush", "#4F6DF5");
-            SetBrush(dict, "AccentHoverBrush", "#3F5CE2");
+            SetBrush(dict, "BackgroundBrush", "#101114");
+            SetBrush(dict, "HeaderBrush", "#15161A");
+            SetBrush(dict, "SidebarBrush", "#15161A");
+            SetBrush(dict, "PanelBrush", "#15161A");
+            SetBrush(dict, "PanelHoverBrush", "#24272E");
+            SetBrush(dict, "CardBgBrush", "#1B1D22");
+            SetBrush(dict, "BorderBrush", "#2A2D34");
+            SetBrush(dict, "BorderSubtleBrush", "#202228");
+            SetBrush(dict, "TextBrush", "#ECEEF2");
+            SetBrush(dict, "MutedBrush", "#969BA6");
+            SetBrush(dict, "AccentBrush", "#648CFF");
+            SetBrush(dict, "AccentHoverBrush", "#7C9EFF");
             SetBrush(dict, "SuccessBrush", "#10B981");
             SetBrush(dict, "WarningBrush", "#F59E0B");
             SetBrush(dict, "DangerBrush", "#EF4444");
 
-            ThemeButton.Content = "☀";
+            ThemeButton.Content = "◐";
             ThemeButton.ToolTip = "Alternar para tema claro";
         }
         else
@@ -238,7 +245,7 @@ public partial class MainWindow : Window
             SetBrush(dict, "WarningBrush", "#D97706");
             SetBrush(dict, "DangerBrush", "#DC2626");
 
-            ThemeButton.Content = "☾";
+            ThemeButton.Content = "◐";
             ThemeButton.ToolTip = "Alternar para tema escuro";
         }
 
@@ -255,82 +262,7 @@ public partial class MainWindow : Window
     #endregion
 
     #region Dashboard
-    private async Task ShowDashboardAsync()
-    {
-        PageTitle.Text = "Dashboard";
-        PageBadge.Visibility = Visibility.Collapsed;
-        ContentHost.Children.Clear();
-
-        var loading = new TextBlock
-        {
-            Text = "Coletando informações do sistema em tempo real...",
-            FontSize = 14,
-            Margin = new Thickness(0, 10, 0, 0)
-        };
-        loading.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
-        ContentHost.Children.Add(loading);
-
-        _snapshot ??= await Task.Run(_system.Read);
-
-        TitleAdminChip.Text = _snapshot.IsAdministrator ? "Admin" : "Usuário";
-        TitleAdminDot.Fill = _snapshot.IsAdministrator ? (Brush)FindResource("SuccessBrush") : (Brush)FindResource("WarningBrush");
-
-        if (!string.IsNullOrEmpty(_snapshot.Memory))
-        {
-            var match = System.Text.RegularExpressions.Regex.Match(_snapshot.Memory, @"\d+(\.\d+)?\s*(MB|GB)");
-            TitleRamChip.Text = match.Success ? match.Value : _snapshot.Memory;
-        }
-
-        var root = new StackPanel();
-
-        // System status card
-        var statusCard = Card(
-            "STATUS DO SISTEMA",
-            _snapshot.IsAdministrator ? "Privilégios de Administrador ativos — pronto para manutenção e otimização total." : "Aplicativo aberto sem privilégios elevados. Alguns ajustes podem requerer confirmação do UAC.",
-            _snapshot.IsAdministrator ? "#10B981" : "#F59E0B"
-        );
-        root.Children.Add(statusCard);
-
-        // Grid of hardware stats
-        var grid = new UniformGrid { Columns = 2, Margin = new Thickness(0, 16, 0, 0) };
-        AddInfo(grid, "Sistema Operacional", _snapshot.OperatingSystem);
-        AddInfo(grid, "Build do Windows", _snapshot.Build);
-        AddInfo(grid, "Arquitetura", _snapshot.Architecture);
-        AddInfo(grid, "Processador", _snapshot.Processor);
-        AddInfo(grid, "Placa de Vídeo", _snapshot.Graphics);
-        AddInfo(grid, "Memória RAM", _snapshot.Memory);
-        AddInfo(grid, "Armazenamento", _snapshot.Storage);
-        AddInfo(grid, "Espaço Livre", _snapshot.FreeSpace);
-        AddInfo(grid, "Tempo de Atividade (Uptime)", _snapshot.Uptime);
-
-        var activeProfile = _configService.GetActiveProfile();
-        AddInfo(grid, "Modo / Perfil Selecionado", $"{activeProfile.Name} ({activeProfile.EnabledOptimizations.Count} ativas)");
-
-        root.Children.Add(grid);
-
-        // Quick Actions
-        var actionsHeader = new TextBlock
-        {
-            Text = "Ações Rápidas",
-            FontSize = 17,
-            FontWeight = FontWeights.SemiBold,
-            Margin = new Thickness(0, 22, 0, 12)
-        };
-        actionsHeader.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
-        root.Children.Add(actionsHeader);
-
-        var actions = new WrapPanel();
-        actions.Children.Add(ActionButton("⚡ Otimização Padrão", "padrao"));
-        actions.Children.Add(ActionButton("🎮 Versão Gamer", "gamer"));
-        actions.Children.Add(ActionButton("🧹 Limpeza Rápida", "quickclean"));
-        actions.Children.Add(ActionButton("🔍 Diagnóstico PC", "analisar"));
-        actions.Children.Add(ActionButton("↩ Histórico / Reverter", "reverter"));
-
-        root.Children.Add(actions);
-
-        ContentHost.Children.Clear();
-        ContentHost.Children.Add(root);
-    }
+    private async Task ShowDashboardAsync() => await RenderDashboardAsync();
     #endregion
 
     #region Optimization Page
@@ -391,7 +323,7 @@ public partial class MainWindow : Window
 
         var customizeBtn = new Button
         {
-            Content = "⚙ Personalizar Otimizações",
+            Content = " Personalizar Otimizações",
             Padding = new Thickness(14, 6, 14, 6),
             Margin = new Thickness(10, 0, 0, 0),
             VerticalAlignment = VerticalAlignment.Center
@@ -404,14 +336,14 @@ public partial class MainWindow : Window
         root.Children.Add(profileBar);
 
         // 2. Category Filter Pills (AgentTrail inspired tabs)
-        var categoryRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 16) };
+        var categoryRow = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 16) };
         var categories = new[]
         {
             ("todas", $"Todas ({visibleOptimizations.Count})"),
-            ("Desempenho", "⚡ Desempenho"),
-            ("Limpeza", "🧹 Limpeza"),
-            ("Manutenção", "🔧 Manutenção"),
-            ("Diagnóstico", "🔍 Diagnóstico"),
+            ("Desempenho", " Desempenho"),
+            ("Limpeza", " Limpeza"),
+            ("Manutenção", " Manutenção"),
+            ("Diagnóstico", " Diagnóstico"),
             ("Segurança", "↩ Segurança")
         };
 
@@ -500,12 +432,12 @@ public partial class MainWindow : Window
         else
         {
             // 3. Optimization Cards Grid with FIXED BUTTON LAYOUT
-            var panel = new WrapPanel();
+            var panel = new StackPanel();
             foreach (var opt in filteredList)
             {
                 var card = new Border
                 {
-                    Width = 460,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
                     BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(10),
                     Padding = new Thickness(18, 16, 18, 16),
@@ -521,7 +453,7 @@ public partial class MainWindow : Window
                 var leftStack = new StackPanel { Margin = new Thickness(0, 0, 16, 0) };
 
                 var titleRow = new StackPanel { Orientation = Orientation.Horizontal };
-                var icon = new TextBlock { Text = opt.Icon + " ", FontSize = 14, VerticalAlignment = VerticalAlignment.Center };
+                var icon = new TextBlock { Text = "", FontSize = 14, VerticalAlignment = VerticalAlignment.Center };
                 var titleText = new TextBlock
                 {
                     Text = opt.Name,
@@ -562,7 +494,7 @@ public partial class MainWindow : Window
                 Grid.SetColumn(leftStack, 0);
                 cardGrid.Children.Add(leftStack);
 
-                var execBtn = ActionButton("Executar", opt.Operation);
+                var execBtn = ActionButton("Revisar", opt.Operation);
                 execBtn.VerticalAlignment = VerticalAlignment.Center;
                 execBtn.Padding = new Thickness(16, 8, 16, 8);
                 execBtn.FontWeight = FontWeights.SemiBold;
@@ -652,7 +584,7 @@ public partial class MainWindow : Window
 
         var applyBtn = new Button
         {
-            Content = "✔ Ativar Este Perfil",
+            Content = " Ativar Este Perfil",
             Margin = new Thickness(0, 0, 8, 8),
             FontWeight = FontWeights.SemiBold
         };
@@ -660,7 +592,7 @@ public partial class MainWindow : Window
 
         var deleteBtn = new Button
         {
-            Content = "🗑 Excluir Perfil",
+            Content = " Excluir Perfil",
             Margin = new Thickness(0, 0, 8, 8)
         };
         selectorRow.Children.Add(deleteBtn);
@@ -738,7 +670,7 @@ public partial class MainWindow : Window
         var saveRow = new WrapPanel();
         var saveCurrentBtn = new Button
         {
-            Content = "💾 Salvar Alterações no Perfil",
+            Content = " Salvar Alterações no Perfil",
             FontWeight = FontWeights.SemiBold,
             Margin = new Thickness(0, 0, 16, 8)
         };
@@ -794,6 +726,7 @@ public partial class MainWindow : Window
                 var prof = _configService.Config.Profiles[profileCombo.SelectedIndex];
                 _configService.SetActiveProfile(prof.Name);
                 UpdateNavBadges();
+        UpdateActiveNavButton(_currentPage);
                 MessageBox.Show($"Perfil '{prof.Name}' ativado com sucesso!", "Perfil Ativado", MessageBoxButton.OK, MessageBoxImage.Information);
                 ShowSettings();
             }
@@ -807,6 +740,7 @@ public partial class MainWindow : Window
                 var enabled = checkBoxes.Where(c => c.Value.IsChecked == true).Select(c => c.Key).ToList();
                 _configService.SaveProfile(prof.Name, prof.Description, enabled);
                 UpdateNavBadges();
+        UpdateActiveNavButton(_currentPage);
                 MessageBox.Show($"Perfil '{prof.Name}' atualizado com sucesso!", "Salvo", MessageBoxButton.OK, MessageBoxImage.Information);
                 ShowSettings();
             }
@@ -823,6 +757,7 @@ public partial class MainWindow : Window
             var enabled = checkBoxes.Where(c => c.Value.IsChecked == true).Select(c => c.Key).ToList();
             _configService.SaveProfile(name, "Perfil personalizado do usuário", enabled);
             UpdateNavBadges();
+        UpdateActiveNavButton(_currentPage);
             MessageBox.Show($"Novo perfil '{name}' criado e ativado com sucesso!", "Perfil Criado", MessageBoxButton.OK, MessageBoxImage.Information);
             ShowSettings();
         };
@@ -842,6 +777,7 @@ public partial class MainWindow : Window
                 {
                     _configService.DeleteProfile(prof.Name);
                     UpdateNavBadges();
+        UpdateActiveNavButton(_currentPage);
                     MessageBox.Show($"Perfil '{prof.Name}' excluído.", "Excluído", MessageBoxButton.OK, MessageBoxImage.Information);
                     ShowSettings();
                 }
@@ -880,7 +816,7 @@ public partial class MainWindow : Window
         var themeBtns = new WrapPanel();
         var darkBtn = new Button
         {
-            Content = "🌙  Modo Escuro (Dark)",
+            Content = "  Modo Escuro (Dark)",
             Padding = new Thickness(16, 9, 16, 9),
             FontWeight = _darkTheme ? FontWeights.Bold : FontWeights.Normal
         };
@@ -888,7 +824,7 @@ public partial class MainWindow : Window
 
         var lightBtn = new Button
         {
-            Content = "☀  Modo Claro (Light)",
+            Content = "  Modo Claro (Light)",
             Padding = new Thickness(16, 9, 16, 9),
             FontWeight = !_darkTheme ? FontWeights.Bold : FontWeights.Normal
         };
@@ -915,7 +851,7 @@ public partial class MainWindow : Window
         var langStack = new StackPanel();
         var langTitle = new TextBlock
         {
-            Text = "🌐 Language / Idioma",
+            Text = " Language / Idioma",
             FontSize = 17.5,
             FontWeight = FontWeights.Bold
         };
@@ -938,7 +874,7 @@ public partial class MainWindow : Window
         var langBtns = new WrapPanel();
         var ptBtn = new Button
         {
-            Content = "🇧🇷  Português (PT)",
+            Content = "  Português (PT)",
             Padding = new Thickness(16, 9, 16, 9),
             FontWeight = !_loc.IsEnglish ? FontWeights.Bold : FontWeights.Normal
         };
@@ -955,7 +891,7 @@ public partial class MainWindow : Window
 
         var enBtn = new Button
         {
-            Content = "🇺🇸  English (EN)",
+            Content = "  English (EN)",
             Padding = new Thickness(16, 9, 16, 9),
             FontWeight = _loc.IsEnglish ? FontWeights.Bold : FontWeights.Normal
         };
@@ -1057,7 +993,7 @@ public partial class MainWindow : Window
 
         var offContent = new StackPanel();
         var offHead = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
-        var offTitle = new TextBlock { Text = "🌐 Windows 11 Oficial (Microsoft)", FontSize = 16, FontWeight = FontWeights.Bold, VerticalAlignment = VerticalAlignment.Center };
+        var offTitle = new TextBlock { Text = " Windows 11 Oficial (Microsoft)", FontSize = 16, FontWeight = FontWeights.Bold, VerticalAlignment = VerticalAlignment.Center };
         offTitle.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
         DockPanel.SetDock(offTitle, Dock.Left);
         offHead.Children.Add(offTitle);
@@ -1107,14 +1043,14 @@ public partial class MainWindow : Window
 
         var dlToolBtn = new Button
         {
-            Content = "🛠 Media Creation Tool",
+            Content = " Media Creation Tool",
             Margin = new Thickness(0, 0, 8, 8)
         };
         dlToolBtn.Click += (_, _) => Process.Start(new ProcessStartInfo("https://go.microsoft.com/fwlink/?linkid=2156295") { UseShellExecute = true });
 
         var copyOffLink = new Button
         {
-            Content = "📋 Copiar Link",
+            Content = " Copiar Link",
             Margin = new Thickness(0, 0, 8, 8)
         };
         copyOffLink.Click += (_, _) =>
@@ -1152,7 +1088,7 @@ public partial class MainWindow : Window
             var headerDock = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
             var isoTitle = new TextBlock
             {
-                Text = "💿 " + iso.Name,
+                Text = " " + iso.Name,
                 FontSize = 16,
                 FontWeight = FontWeights.Bold,
                 VerticalAlignment = VerticalAlignment.Center
@@ -1238,7 +1174,7 @@ public partial class MainWindow : Window
 
             if (exists)
             {
-                var mountBtn = new Button { Content = "💿 Montar ISO", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 8, 8) };
+                var mountBtn = new Button { Content = " Montar ISO", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 8, 8) };
                 mountBtn.Click += async (_, _) => await MountIsoAsync(iso.LocalPath);
                 btnRow.Children.Add(mountBtn);
 
@@ -1246,7 +1182,7 @@ public partial class MainWindow : Window
                 dismountBtn.Click += async (_, _) => await DismountIsoAsync(iso.LocalPath);
                 btnRow.Children.Add(dismountBtn);
 
-                var folderBtn = new Button { Content = "📁 Abrir Pasta", Margin = new Thickness(0, 0, 8, 8) };
+                var folderBtn = new Button { Content = " Abrir Pasta", Margin = new Thickness(0, 0, 8, 8) };
                 folderBtn.Click += (_, _) =>
                 {
                     Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{iso.LocalPath}\"") { UseShellExecute = true });
@@ -1255,7 +1191,7 @@ public partial class MainWindow : Window
             }
             else
             {
-                var locateBtn = new Button { Content = "🔍 Localizar no Meu PC", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 8, 8) };
+                var locateBtn = new Button { Content = " Localizar no Meu PC", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 8, 8) };
                 locateBtn.Click += (_, _) =>
                 {
                     var dlg = new OpenFileDialog { Filter = "Imagens ISO (*.iso)|*.iso", Title = $"Localizar arquivo para {iso.Name}" };
@@ -1278,7 +1214,7 @@ public partial class MainWindow : Window
 
             if (!string.IsNullOrWhiteSpace(iso.LocalPath))
             {
-                var copyBtn = new Button { Content = "📋 Copiar Caminho", Margin = new Thickness(0, 0, 8, 8) };
+                var copyBtn = new Button { Content = " Copiar Caminho", Margin = new Thickness(0, 0, 8, 8) };
                 copyBtn.Click += (_, _) =>
                 {
                     Clipboard.SetText(iso.LocalPath);
@@ -1430,7 +1366,7 @@ public partial class MainWindow : Window
         };
         searchPanel.Children.Add(new TextBlock
         {
-            Text = "🔍",
+            Text = "",
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 8, 0),
             FontSize = 13
@@ -1563,7 +1499,7 @@ public partial class MainWindow : Window
                 var v when v.Contains("AMD") => "#EF4444",
                 var v when v.Contains("Intel") => "#3B82F6",
                 var v when v.Contains("Realtek") => "#8B5CF6",
-                _ => "#4F6DF5"
+                _ => "#648CFF"
             };
 
             var vendorBadge = new Border
@@ -1732,7 +1668,7 @@ public partial class MainWindow : Window
             {
                 var directBtn = new Button
                 {
-                    Content = "⚡ Download Direto",
+                    Content = " Download Direto",
                     Padding = new Thickness(12, 6, 12, 6),
                     FontSize = 12
                 };
@@ -1820,7 +1756,7 @@ public partial class MainWindow : Window
 
                 var folderBtn = new Button
                 {
-                    Content = "📂 Pasta",
+                    Content = " Pasta",
                     Padding = new Thickness(10, 6, 10, 6),
                     FontSize = 12
                 };
@@ -1899,7 +1835,7 @@ public partial class MainWindow : Window
         var abBtns = new WrapPanel();
         var applyAbBtn = new Button
         {
-            Content = "⚡ Aplicar All Black",
+            Content = " Aplicar All Black",
             FontWeight = FontWeights.SemiBold
         };
         applyAbBtn.Click += async (_, _) => await ApplyAllBlackTaskbarAsync(enable: true);
@@ -1912,7 +1848,7 @@ public partial class MainWindow : Window
 
         var copyAbBtn = new Button
         {
-            Content = "📋 Copiar Comando"
+            Content = " Copiar Comando"
         };
         copyAbBtn.Click += (_, _) =>
         {
@@ -1945,7 +1881,7 @@ public partial class MainWindow : Window
 
         // 2. Quick clean card (Fixed shortcuts)
         var quickClean = new StackPanel { Width = 430 };
-        var qcTitle = new TextBlock { Text = "🧹  Limpeza Rápida de Cache", FontSize = 17, FontWeight = FontWeights.SemiBold };
+        var qcTitle = new TextBlock { Text = "  Limpeza Rápida de Cache", FontSize = 17, FontWeight = FontWeights.SemiBold };
         qcTitle.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
 
         var qcDesc = new TextBlock
@@ -1987,15 +1923,7 @@ public partial class MainWindow : Window
         };
 
         var test = new Button { Content = "Executar Limpeza Agora", FontWeight = FontWeights.SemiBold };
-        test.Click += async (_, _) =>
-        {
-            test.IsEnabled = false;
-            test.Content = "Limpando...";
-            var result = await _cleaner.RunAsync();
-            _ = QuickCleanNotification.ShowAsync(result);
-            test.IsEnabled = true;
-            test.Content = "Executar Limpeza Agora";
-        };
+        test.Click += async (_, _) => await PrepareOperationAsync("quickclean");
 
         btnRow.Children.Add(create);
         btnRow.Children.Add(test);
@@ -2174,7 +2102,7 @@ Stop-Process -Name explorer -Force
 
         var appTitle = new TextBlock
         {
-            Text = "PQueiroz Optimizer Pro v1.0.0",
+            Text = "PQueiroz Optimizer " + AppVersion,
             FontSize = 22,
             FontWeight = FontWeights.Bold
         };
@@ -2195,8 +2123,8 @@ Stop-Process -Name explorer -Force
         var disclaimer = new TextBlock
         {
             Text = _loc.T(
-                "Segurança em primeiro lugar: O aplicativo cria pontos de restauração e snapshots automáticos para garantir a reversão segura de qualquer ajuste.",
-                "Safety first: The application creates restore points and automatic snapshots to ensure any change can be safely reverted."),
+                "Segurança em primeiro lugar: Os ajustes possuem backups de configuração. Remoções de arquivos e aplicativos não são desfeitas pelo snapshot; consulte os detalhes antes de aplicar.",
+                "Safety first: Configuration changes have backups. File and application removal cannot be undone by a snapshot; review the details before applying."),
             FontSize = 12,
             TextWrapping = TextWrapping.Wrap
         };
@@ -2224,7 +2152,7 @@ Stop-Process -Name explorer -Force
 
         var promoTitle = new TextBlock
         {
-            Text = "🚀 " + _loc.T("Divulgação", "Promotion"),
+            Text = " " + _loc.T("Divulgação", "Promotion"),
             FontSize = 16,
             FontWeight = FontWeights.Bold
         };
@@ -2255,7 +2183,7 @@ Stop-Process -Name explorer -Force
         var promoBtnRow = new WrapPanel { Margin = new Thickness(0, 12, 0, 0) };
         var promoBtn = new Button
         {
-            Content = _loc.T("🌐 Visitar Site", "🌐 Visit Website"),
+            Content = _loc.T(" Visitar Site", " Visit Website"),
             FontWeight = FontWeights.SemiBold,
             Padding = new Thickness(14, 7, 14, 7)
         };
@@ -2295,50 +2223,7 @@ Stop-Process -Name explorer -Force
         return b;
     }
 
-    private async void RunOperation_Click(object sender, RoutedEventArgs e)
-    {
-        if (_operationRunning) return;
-        var operation = (sender as Button)?.Tag?.ToString() ?? "";
-
-        if (operation.Equals("quickclean", StringComparison.OrdinalIgnoreCase))
-        {
-            _operationRunning = true;
-            Mouse.OverrideCursor = Cursors.Wait;
-            try
-            {
-                var result = await _cleaner.RunAsync();
-                _ = QuickCleanNotification.ShowAsync(result);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Falha na Limpeza", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                _operationRunning = false;
-                Mouse.OverrideCursor = null;
-            }
-            return;
-        }
-
-        _operationRunning = true;
-        Mouse.OverrideCursor = Cursors.Wait;
-        try
-        {
-            await _powershell.RunAsync(operation);
-            MessageBox.Show("Operação concluída com sucesso. Consulte o log para detalhes.", "PQueiroz Optimizer", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-        catch (Exception ex)
-        {
-            _log.Write("ERROR", ex.Message);
-            MessageBox.Show(ex.Message, "Falha na Operação", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-        finally
-        {
-            _operationRunning = false;
-            Mouse.OverrideCursor = null;
-        }
-    }
+    private async void RunOperation_Click(object sender, RoutedEventArgs e) => await PrepareOperationAsync((sender as Button)?.Tag?.ToString() ?? "");
 
     private Border Card(string title, string value, string colorHex)
     {
@@ -2381,6 +2266,11 @@ Stop-Process -Name explorer -Force
         panel.Children.Add(Card(title, value, "#4F75FF"));
     }
 
-    private void AddLogLine(string line) { }
+    private void AddLogLine(string line) { _activity.Add(line); while (_activity.Count > 150) _activity.RemoveAt(0); }
     #endregion
 }
+
+
+
+
+

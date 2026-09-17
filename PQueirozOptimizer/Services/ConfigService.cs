@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
 using PQueirozOptimizer.Models;
 
@@ -16,16 +16,16 @@ public class ConfigService
 
     public static readonly List<OptimizationDef> AllOptimizations = new()
     {
-        new() { Id = "padrao", Name = "Versão Padrão", Description = "Limpeza de temporários, plano de energia, DNS rápido e TRIM em SSDs.", Category = "Desempenho", Icon = "⚡", Operation = "padrao" },
-        new() { Id = "gamer", Name = "Versão Gamer", Description = "Modo de jogo, desativação de throttling, otimização de latência e agendamento de GPU.", Category = "Desempenho", Icon = "🎮", Operation = "gamer" },
+        new() { Id = "padrao", Name = "Versão Padrão", Description = "Revise ajustes de energia, fila de impressão, cache DNS e armazenamento.", Category = "Desempenho", Icon = "⚡", Operation = "padrao" },
+        new() { Id = "gamer", Name = "Versão Avançada", Description = "Desempenho, latência, políticas do Editor de Política de Grupo, privacidade e desativação de componentes em segundo plano.", Category = "Desempenho", Icon = "🎮", Operation = "gamer" },
         new() { Id = "debloat", Name = "Debloat & Privacidade", Description = "Remove bloatware do Windows, aplicativos desnecessários e reduz telemetria.", Category = "Limpeza", Icon = "🛡️", Operation = "debloat" },
-        new() { Id = "quickclean", Name = "Limpeza Rápida", Description = "Limpa arquivos temporários do usuário e do Windows (Temp, Prefetch e logs).", Category = "Limpeza", Icon = "🧹", Operation = "quickclean" },
+        new() { Id = "quickclean", Name = "Limpeza Rápida", Description = "Analisa temporários do usuário e do Windows, preservando arquivos recentes.", Category = "Limpeza", Icon = "🧹", Operation = "quickclean" },
         new() { Id = "analisar", Name = "Diagnóstico / Análise", Description = "Analisa a integridade de CPU, memória, armazenamento e saúde geral do sistema.", Category = "Diagnóstico", Icon = "🔍", Operation = "analisar" },
         new() { Id = "benchmark", Name = "Benchmark do Sistema", Description = "Testa velocidade do processador, tempo de resposta e latência do sistema operacional.", Category = "Diagnóstico", Icon = "📊", Operation = "benchmark" },
         new() { Id = "sfc", Name = "Verificador de Arquivos (SFC)", Description = "Examina e repara arquivos corrompidos ou ausentes do Windows (sfc /scannow).", Category = "Manutenção", Icon = "🔧", Operation = "sfc" },
         new() { Id = "dism", Name = "Reparo de Imagem (DISM)", Description = "Restaura e corrige a imagem do sistema usando o repositório oficial da Microsoft.", Category = "Manutenção", Icon = "🛠️", Operation = "dism" },
-        new() { Id = "chkdsk", Name = "Verificação de Disco (CHKDSK)", Description = "Agenda varredura de setores e sistema de arquivos no disco principal.", Category = "Manutenção", Icon = "💾", Operation = "chkdsk" },
-        new() { Id = "update", Name = "Limpeza de Windows Update", Description = "Verifica atualizações pendentes e limpa caches de download antigos.", Category = "Manutenção", Icon = "🔄", Operation = "update" },
+        new() { Id = "chkdsk", Name = "Verificação de Disco (CHKDSK)", Description = "Executa uma verificação online do sistema de arquivos no disco principal.", Category = "Manutenção", Icon = "💾", Operation = "chkdsk" },
+        new() { Id = "update", Name = "Estado do Windows Update", Description = "Consulta o serviço, as últimas atualizações e reinicializações pendentes.", Category = "Manutenção", Icon = "🔄", Operation = "update" },
         new() { Id = "reverter", Name = "Reverter Última Otimização", Description = "Restaura o snapshot de configurações para o estado anterior à última execução.", Category = "Segurança", Icon = "↩️", Operation = "reverter" }
     };
 
@@ -35,13 +35,14 @@ public class ConfigService
 
     public AppConfig Config => _config;
 
-    public ConfigService()
+    public ConfigService(string? configPath = null)
     {
-        _primaryPath = Path.Combine(AppContext.BaseDirectory, "config.json");
+        _primaryPath = configPath ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PQueirozOptimizer", "config.json");
+        _secondaryPath = Path.Combine(AppContext.BaseDirectory, "config.json");
 
         // If running from bin folder, locate source config.json
         var devPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, @"..\..\..\config.json"));
-        if (File.Exists(devPath))
+        if (!File.Exists(_secondaryPath) && File.Exists(devPath))
         {
             _secondaryPath = devPath;
         }
@@ -51,16 +52,15 @@ public class ConfigService
 
     public void Load()
     {
-        string? loadedFrom = null;
         string? json = null;
 
         if (File.Exists(_primaryPath))
         {
-            try { json = File.ReadAllText(_primaryPath); loadedFrom = _primaryPath; } catch { }
+            try { json = File.ReadAllText(_primaryPath); } catch { }
         }
         else if (_secondaryPath != null && File.Exists(_secondaryPath))
         {
-            try { json = File.ReadAllText(_secondaryPath); loadedFrom = _secondaryPath; } catch { }
+            try { json = File.ReadAllText(_secondaryPath); } catch { }
         }
 
         if (!string.IsNullOrWhiteSpace(json))
@@ -88,14 +88,11 @@ public class ConfigService
         try
         {
             var json = JsonSerializer.Serialize(_config, JsonOpts);
-            File.WriteAllText(_primaryPath, json);
-
-            if (!string.IsNullOrEmpty(_secondaryPath) && File.Exists(Path.GetDirectoryName(_secondaryPath)))
-            {
-                File.WriteAllText(_secondaryPath, json);
-            }
+            Directory.CreateDirectory(Path.GetDirectoryName(_primaryPath)!);
+            File.WriteAllText(_primaryPath + ".tmp", json);
+            File.Move(_primaryPath + ".tmp", _primaryPath, true);
         }
-        catch { }
+        catch (Exception ex) { throw new IOException("Não foi possível salvar suas preferências.", ex); }
     }
 
     private void EnsureDefaults()
@@ -115,6 +112,7 @@ public class ConfigService
             {
                 existing.IsBuiltIn = true;
                 // Remove removed optimizations like "inteligente"
+                existing.EnabledOptimizations ??= new();
                 existing.EnabledOptimizations.RemoveAll(id => id.Equals("inteligente", StringComparison.OrdinalIgnoreCase));
                 if (existing.Name.Equals("Padrão", StringComparison.OrdinalIgnoreCase))
                 {
@@ -135,8 +133,7 @@ public class ConfigService
 
         // Default to "Padrão" (which displays all optimizations)
         if (string.IsNullOrWhiteSpace(_config.ActiveProfile) || 
-            !_config.Profiles.Any(p => p.Name.Equals(_config.ActiveProfile, StringComparison.OrdinalIgnoreCase)) ||
-            _config.ActiveProfile.Equals("Modo Gamer", StringComparison.OrdinalIgnoreCase))
+            !_config.Profiles.Any(p => p.Name.Equals(_config.ActiveProfile, StringComparison.OrdinalIgnoreCase)))
         {
             _config.ActiveProfile = "Padrão";
         }
@@ -192,7 +189,7 @@ public class ConfigService
             },
             new()
             {
-                Name = "Modo Gamer",
+                Name = "Modo Avançado",
                 Description = "Foco em jogos: latência reduzida, Game Mode, energia de alto desempenho e limpeza rápida.",
                 IsBuiltIn = true,
                 EnabledOptimizations = new() { "gamer", "padrao", "quickclean", "benchmark", "reverter" }
@@ -314,3 +311,5 @@ public class ConfigService
         Save();
     }
 }
+
+

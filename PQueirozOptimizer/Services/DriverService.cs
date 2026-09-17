@@ -38,7 +38,7 @@ public class DriverService
                 SecondaryDownloadLabel = "Baixar via Google Drive (Driver Clean)",
                 AlternateLocalPath = Path.Combine(DownloadsFolder, "Driver clean NVIDIA.exe"),
                 ExpectedFileName = "Driver clean NVIDIA.exe",
-                IsRecommendedForCurrentHardware = true
+                IsRecommendedForCurrentHardware = isNvidia
             },
             new DriverInfo
             {

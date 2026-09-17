@@ -23,7 +23,9 @@
 
 param(
     [ValidateSet("", "analisar", "inteligente", "padrao", "gamer", "debloat", "reverter", "sfc", "dism", "chkdsk", "update", "benchmark")]
-    [string]$Operation = ""
+    [string]$Operation = "",
+    [switch]$UiMode,
+    [string]$SelectedStepsBase64 = ""
 )
 
 # ---------------------------------------------------------------
@@ -31,6 +33,7 @@ param(
 # ---------------------------------------------------------------
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    if ($UiMode) { Write-Error "Abra o aplicativo como administrador."; exit 1 }
     Write-Host "Reiniciando como Administrador..." -ForegroundColor Yellow
     Try {
         Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs -ErrorAction Stop
@@ -42,7 +45,16 @@ if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Adm
     exit
 }
 
-$ErrorActionPreference = "SilentlyContinue"
+$ErrorActionPreference = "Continue"
+if ($UiMode) {
+    [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
+    $OutputEncoding = [Console]::OutputEncoding
+    $ProgressPreference = 'SilentlyContinue'
+}
+$script:SelectedSteps = $null
+if ($SelectedStepsBase64) {
+    $script:SelectedSteps = @([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($SelectedStepsBase64)) | ConvertFrom-Json)
+}
 
 # ---------------------------------------------------------------
 # ESTADO GLOBAL - usado pelo sistema de Reverter Ultima Otimizacao
@@ -144,6 +156,7 @@ function Write-Pulado($texto) {
 # Pergunta Sim/Nao ao usuario. Retorna $true para S/Sim, $false para qualquer outra coisa (inclusive ENTER vazio)
 function Confirmar($pergunta) {
     Write-Host ""
+    if ($UiMode) { return $false }
     $resp = Read-Host "  >> $pergunta (S/N)"
     return ($resp -match '^[Ss]')
 }
@@ -172,16 +185,22 @@ function Format-Bytes($bytes) {
 
 # Comeca a registrar uma nova sessao de otimizacao (zera contadores e o registro anterior)
 function Iniciar-Snapshot($nome) {
+    if (Test-Path $script:SnapshotPath) {
+        $historyPath = Join-Path $script:SnapshotDir ("historico_{0}.json" -f [Guid]::NewGuid().ToString('N'))
+        Copy-Item -LiteralPath $script:SnapshotPath -Destination $historyPath -ErrorAction Stop
+    }
     $script:SnapshotAtual = @()
     $script:SnapshotNome  = $nome
     $script:ContAplicados = 0
     $script:ContPulados   = 0
     $script:ContFalhas    = 0
+    Salvar-Snapshot
 }
 
 # Salva em disco tudo que foi registrado nesta sessao (sobrescreve o snapshot anterior:
 # so guardamos a ULTIMA otimizacao, que e o que o Reverter usa)
 function Salvar-Snapshot {
+    if ($script:SnapshotAtual.Count -eq 0) { return }
     Try {
         New-Item -Path $script:SnapshotDir -ItemType Directory -Force | Out-Null
         $objeto = [PSCustomObject]@{
@@ -189,30 +208,34 @@ function Salvar-Snapshot {
             Data  = (Get-Date).ToString("dd/MM/yyyy HH:mm:ss")
             Itens = $script:SnapshotAtual
         }
-        $objeto | ConvertTo-Json -Depth 6 | Out-File -FilePath $script:SnapshotPath -Encoding UTF8 -Force
-    } Catch { }
+        $tempPath = $script:SnapshotPath + '.tmp'
+        $objeto | ConvertTo-Json -Depth 6 | Out-File -LiteralPath $tempPath -Encoding UTF8 -Force -ErrorAction Stop
+        Move-Item -LiteralPath $tempPath -Destination $script:SnapshotPath -Force -ErrorAction Stop
+    } Catch { throw "Nao foi possivel salvar o backup: $($_.Exception.Message)" }
 }
 
 # Guarda o valor ATUAL de uma chave/valor de registro antes de ele ser alterado
 function Capturar-Registro($caminho, $nome) {
     $existia = $false
     $valorAnterior = $null
-    Try {
-        if (Test-Path $caminho) {
-            $prop = Get-ItemProperty -Path $caminho -Name $nome -ErrorAction Stop
-            if ($prop.PSObject.Properties.Name -contains $nome) {
-                $existia = $true
-                $valorAnterior = $prop.$nome
-            }
+    $tipoAnterior = $null
+    if (Test-Path $caminho) {
+        $key = Get-Item -LiteralPath $caminho -ErrorAction Stop
+        if ($key.GetValueNames() -contains $nome) {
+            $existia = $true
+            $valorAnterior = $key.GetValue($nome, $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+            $tipoAnterior = $key.GetValueKind($nome).ToString()
         }
-    } Catch { }
+    }
     $script:SnapshotAtual += [PSCustomObject]@{
         Tipo          = "Registro"
         Caminho       = $caminho
         Nome          = $nome
         Existia       = $existia
         ValorAnterior = $valorAnterior
+        TipoAnterior = $tipoAnterior
     }
+    Salvar-Snapshot
 }
 
 # Guarda o tipo de inicializacao e o status ATUAL de um servico antes de ele ser alterado
@@ -225,7 +248,8 @@ function Capturar-Servico($nomeServico) {
             StartupTypeAnterior = $svc.StartType.ToString()
             StatusAnterior      = $svc.Status.ToString()
         }
-    } Catch { }
+    } Catch { throw }
+    Salvar-Snapshot
 }
 
 # Guarda qual e o plano de energia ATIVO antes de trocar de plano
@@ -236,15 +260,21 @@ function Capturar-PlanoEnergia {
             Tipo         = "PlanoEnergia"
             GuidAnterior = $matches[1]
         }
-    }
+    } else { throw 'Nao foi possivel capturar o plano de energia atual.' }
+    Salvar-Snapshot
 }
 
 # Guarda que uma tarefa agendada foi desativada (para poder reativar depois)
 function Capturar-TarefaAgendada($nomeTarefa) {
+    $xml = schtasks.exe /Query /TN $nomeTarefa /XML
+    if ($LASTEXITCODE -ne 0) { throw "Nao foi possivel capturar tarefa $nomeTarefa" }
+    $task = [xml]($xml -join "`n")
     $script:SnapshotAtual += [PSCustomObject]@{
         Tipo = "TarefaAgendada"
         Nome = $nomeTarefa
+        HabilitadaAnterior = $task.Task.Settings.Enabled -ne 'false'
     }
+    Salvar-Snapshot
 }
 
 # Guarda o caminho do instalador do OneDrive (para poder reinstalar depois)
@@ -253,6 +283,7 @@ function Capturar-OneDrive($caminhoInstalador) {
         Tipo    = "OneDrive"
         Caminho = $caminhoInstalador
     }
+    Salvar-Snapshot
 }
 
 # Registra uma alteracao que NAO pode ser desfeita automaticamente (ex: apps removidos)
@@ -261,6 +292,7 @@ function Registrar-Irreversivel($descricao) {
         Tipo      = "Irreversivel"
         Descricao = $descricao
     }
+    Salvar-Snapshot
 }
 
 # Executa uma lista de etapas mostrando barra de progresso + contador + status OK/FALHOU
@@ -269,13 +301,21 @@ function Executar-Etapas($atividade, $etapas) {
     $i = 0
     foreach ($etapa in $etapas) {
         $i++
+        if ($UiMode -and $atividade -ne 'Ponto de restauracao' -and $null -ne $script:SelectedSteps -and $etapa.Nome -notin $script:SelectedSteps) {
+            $script:ContPulados++; Write-Host "[IGNORADA] $($etapa.Nome)"; continue
+        }
         $percent = [Math]::Round(($i / $total) * 100)
         Write-Progress -Activity $atividade -Status "[$i/$total] $($etapa.Nome)" -PercentComplete $percent
         $sucesso = $true
         Try {
+            $ErrorActionPreference = 'Stop'
+            $global:LASTEXITCODE = 0
             & $etapa.Acao | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "Comando retornou codigo $LASTEXITCODE" }
         } Catch {
             $sucesso = $false
+            Write-Host "[FALHA] $($etapa.Nome): $($_.Exception.Message)"
+            if ($atividade -eq 'Ponto de restauracao') { throw }
         }
         if ($sucesso) { $script:ContAplicados++ } else { $script:ContFalhas++ }
         Write-Host "  [$i/$total] " -NoNewline -ForegroundColor DarkCyan
@@ -288,15 +328,20 @@ function Executar-Etapas($atividade, $etapas) {
 # Pergunta S/N (ou pula a pergunta se $modoRapido) e, se confirmado, executa a etapa.
 function Executar-Se-Confirmado($pergunta, $nomeEtapa, $acao, $modoRapido = $false) {
     $aplicar = $modoRapido
-    if (-not $modoRapido) {
+    if ($UiMode) { $aplicar = $null -ne $script:SelectedSteps -and $nomeEtapa -in $script:SelectedSteps }
+    elseif (-not $modoRapido) {
         $aplicar = Confirmar $pergunta
     }
     if ($aplicar) {
         $sucesso = $true
         Try {
+            $ErrorActionPreference = 'Stop'
+            $global:LASTEXITCODE = 0
             & $acao | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "Comando retornou codigo $LASTEXITCODE" }
         } Catch {
             $sucesso = $false
+            Write-Host "[FALHA] ${nomeEtapa}: $($_.Exception.Message)"
         }
         if ($sucesso) { $script:ContAplicados++ } else { $script:ContFalhas++ }
         Write-Resultado $sucesso $nomeEtapa
@@ -313,7 +358,7 @@ function Criar-PontoDeRestauracao {
     Write-Secao "Criando ponto de restauracao"
     $etapas = @(
         @{ Nome = "Habilitando restauracao do sistema no disco"; Acao = { Enable-ComputerRestore -Drive "$env:SystemDrive\" } }
-        @{ Nome = "Criando ponto de restauracao"; Acao = { Checkpoint-Computer -Description "Antes do Otimizador de PC" -RestorePointType "MODIFY_SETTINGS" } }
+        @{ Nome = "Criando ponto de restauracao"; Acao = { Checkpoint-Computer -Description "Antes do Otimizador de PC" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop -WarningAction Stop } }
     )
     Executar-Etapas "Ponto de restauracao" $etapas
 }
@@ -322,6 +367,7 @@ function Criar-PontoDeRestauracao {
 # 2. Limpeza de arquivos temporarios (usada nas duas versoes)
 # ---------------------------------------------------------------
 function Limpar-Temporarios {
+    if ($UiMode) { Write-Host 'Limpeza de arquivos: use a analise e selecao na Limpeza Rapida.'; return }
     Write-Secao "Limpando arquivos temporarios e cache"
     $etapas = @(
         @{ Nome = "Pasta TEMP do usuario";              Acao = { Remove-Item "$env:TEMP\*" -Recurse -Force } }
@@ -366,7 +412,7 @@ function Otimizar-Padrao {
                 }
             } }
         @{ Nome = "Limpando cache DNS";                  Acao = { ipconfig /flushdns } }
-        @{ Nome = "Executando limpeza de disco (cleanmgr)"; Acao = { Start-Process cleanmgr.exe -ArgumentList "/sagerun:1" -WindowStyle Hidden } }
+        @{ Nome = "Executando limpeza de disco (cleanmgr)"; Acao = { Start-Process cleanmgr.exe -ArgumentList "/sagerun:1" -WindowStyle Hidden -Wait } }
     )
     Executar-Etapas "Otimizacao Padrao" $etapas
     Salvar-Snapshot
@@ -381,10 +427,51 @@ function Otimizar-Padrao {
 }
 
 # ---------------------------------------------------------------
-# 4. Otimizacoes avancadas (Versao Gamer)
+# 4. Otimizacoes avancadas (Versao Avancada)
+function Set-PoliticaDword($caminho, $nome, $valor) {
+    New-Item -Path $caminho -Force | Out-Null
+    Capturar-Registro $caminho $nome
+    Set-ItemProperty -Path $caminho -Name $nome -Value $valor -Type DWord -Force -ErrorAction Stop
+}
+
+function Aplicar-PoliticasAvancadas {
+    $dataCollection = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"
+    Set-PoliticaDword $dataCollection "AllowTelemetry" 0
+
+    $appCompat = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppCompat"
+    Set-PoliticaDword $appCompat "DisableInventory" 1
+    Set-PoliticaDword $appCompat "DisableUAR" 1
+    Set-PoliticaDword $appCompat "DisableEngine" 1
+    Set-PoliticaDword $appCompat "DisablePCA" 1
+    Set-PoliticaDword $appCompat "DisableProblemStepsRecorder" 1
+
+    $cloud = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent"
+    Set-PoliticaDword $cloud "DisableConsumerAccountStateContent" 1
+    Set-PoliticaDword $cloud "DisableCloudOptimizedContent" 1
+    Set-PoliticaDword $cloud "DisableWindowsConsumerFeatures" 1
+    Set-PoliticaDword $cloud "DisableSoftLanding" 1
+
+    $speech = "HKLM:\SOFTWARE\Policies\Microsoft\Speech"
+    Set-PoliticaDword $speech "AllowSpeechModelUpdate" 0
+
+    $explorer = "HKCU:\Software\Policies\Microsoft\Windows\Explorer"
+    Set-PoliticaDword $explorer "DisableGraphRecentItems" 1
+
+    $windowsAi = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI"
+    Set-PoliticaDword $windowsAi "DisableAgenticSearch" 1
+    Set-PoliticaDword $windowsAi "DisableAIDataAnalysis" 1
+
+    $pushPolicy = "HKLM:\SOFTWARE\Policies\Microsoft\PushToInstall"
+    Set-PoliticaDword $pushPolicy "DisablePushToInstall" 1
+    if (Get-Service "PushToInstall" -ErrorAction SilentlyContinue) {
+        Capturar-Servico "PushToInstall"
+        Stop-Service "PushToInstall" -Force -ErrorAction Stop
+        Set-Service "PushToInstall" -StartupType Disabled -ErrorAction Stop
+    }
+}
 # ---------------------------------------------------------------
 function Otimizar-Gamer {
-    Iniciar-Snapshot "Versao Gamer"
+    Iniciar-Snapshot "Versao Avancada"
     Criar-PontoDeRestauracao
     Limpar-Temporarios
 
@@ -454,13 +541,14 @@ function Otimizar-Gamer {
                     Optimize-Volume -DriveLetter $_.DriveLetter -ReTrim
                 }
             } }
+        @{ Nome = "Aplicando politicas do Editor de Politica de Grupo (diagnostico, nuvem, IA e Push)"; Acao = { Aplicar-PoliticasAvancadas } }
     )
-    Executar-Etapas "Otimizacao Gamer" $etapas
+    Executar-Etapas "Otimizacao Avancada" $etapas
     Salvar-Snapshot
 
     Write-Host ""
     Linha "="
-    Write-Host (Centralizar "OTIMIZACAO GAMER CONCLUIDA!") -ForegroundColor Green
+    Write-Host (Centralizar "OTIMIZACAO AVANCADA CONCLUIDA!") -ForegroundColor Green
     Write-Host (Centralizar "Reinicie o PC para aplicar todas as mudancas.") -ForegroundColor Gray
     Write-Host (Centralizar "Resumo: $script:ContAplicados aplicado(s), $script:ContFalhas falha(s)") -ForegroundColor Gray
     Write-Host (Centralizar "Nao gostou? Use a opcao [7] Reverter Ultima Otimizacao.") -ForegroundColor DarkGray
@@ -478,7 +566,7 @@ function Otimizar-Debloat {
     Write-Host "  Para cada item abaixo, digite S para aplicar ou N (ou ENTER) para pular." -ForegroundColor Gray
     Write-Host "  Nada e alterado sem sua confirmacao." -ForegroundColor Gray
     Write-Host ""
-    $modoEscolha = Read-Host "  Prefere aplicar TUDO de uma vez, sem perguntar item por item? (S/N)"
+    $modoEscolha = if ($UiMode) { 'N' } else { Read-Host "  Prefere aplicar TUDO de uma vez, sem perguntar item por item? (S/N)" }
     $modoRapido = ($modoEscolha -match '^[Ss]')
     if ($modoRapido) {
         Write-Host ""
@@ -672,6 +760,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Executar limpeza final de arquivos temporarios?" `
         "Arquivos temporarios removidos" `
         {
+            if ($UiMode) { throw 'Use a Limpeza Rapida para analisar e selecionar arquivos.' }
             Remove-Item "$env:TEMP\*" -Recurse -Force -ErrorAction SilentlyContinue
             Remove-Item "$env:SystemRoot\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
         } $modoRapido
@@ -719,7 +808,7 @@ function Reverter-UltimaOtimizacao {
     Write-Host "  Realizada em: $($snapshot.Data)" -ForegroundColor Gray
     Write-Host "  Itens que serao verificados: $($itensArray.Count)" -ForegroundColor Gray
 
-    if (-not (Confirmar "Deseja reverter essa otimizacao agora?")) {
+    if (-not $UiMode -and -not (Confirmar "Deseja reverter essa otimizacao agora?")) {
         Write-Host ""
         Write-Host "  Nenhuma alteracao foi feita." -ForegroundColor Yellow
         Write-Host ""
@@ -729,6 +818,7 @@ function Reverter-UltimaOtimizacao {
 
     Write-Host ""
     $revertidos = 0
+    $pendentes = @()
     $falhas = 0
     $naoReversiveis = @()
 
@@ -739,9 +829,16 @@ function Reverter-UltimaOtimizacao {
             switch ($item.Tipo) {
                 "Registro" {
                     if ($item.Existia) {
-                        Set-ItemProperty -Path $item.Caminho -Name $item.Nome -Value $item.ValorAnterior -ErrorAction Stop
+                        $value = $item.ValorAnterior
+                        if ($item.TipoAnterior -eq 'Binary') { $value = [byte[]]$value }
+                        if ($item.TipoAnterior -eq 'MultiString') { $value = [string[]]$value }
+                        if ($item.TipoAnterior) {
+                            New-ItemProperty -Path $item.Caminho -Name $item.Nome -Value $value -PropertyType $item.TipoAnterior -Force -ErrorAction Stop | Out-Null
+                        } else { Set-ItemProperty -Path $item.Caminho -Name $item.Nome -Value $value -ErrorAction Stop }
                     } else {
-                        Remove-ItemProperty -Path $item.Caminho -Name $item.Nome -ErrorAction SilentlyContinue
+                        if ((Get-ItemProperty -Path $item.Caminho -ErrorAction Stop).PSObject.Properties.Name -contains $item.Nome) {
+                            Remove-ItemProperty -Path $item.Caminho -Name $item.Nome -ErrorAction Stop
+                        }
                     }
                     Write-Resultado $true "Registro restaurado: $($item.Nome)"
                     $revertidos++
@@ -749,29 +846,34 @@ function Reverter-UltimaOtimizacao {
                 "Servico" {
                     Set-Service -Name $item.Nome -StartupType $item.StartupTypeAnterior -ErrorAction Stop
                     if ($item.StatusAnterior -eq "Running") {
-                        Start-Service -Name $item.Nome -ErrorAction SilentlyContinue
+                        Start-Service -Name $item.Nome -ErrorAction Stop
+                    } elseif ($item.StatusAnterior -eq 'Stopped') {
+                        Stop-Service -Name $item.Nome -Force -ErrorAction Stop
                     }
                     Write-Resultado $true "Servico restaurado: $($item.Nome)"
                     $revertidos++
                 }
                 "PlanoEnergia" {
                     powercfg /setactive $item.GuidAnterior
+                    if ($LASTEXITCODE -ne 0) { throw "Falha no powercfg: $LASTEXITCODE" }
                     Write-Resultado $true "Plano de energia restaurado"
                     $revertidos++
                 }
                 "TarefaAgendada" {
-                    schtasks.exe /Change /TN $item.Nome /Enable | Out-Null
+                    $state = if ($item.HabilitadaAnterior -eq $false) { '/Disable' } else { '/Enable' }
+                    schtasks.exe /Change /TN $item.Nome $state | Out-Null
+                    if ($LASTEXITCODE -ne 0) { throw "Falha no schtasks: $LASTEXITCODE" }
                     Write-Resultado $true "Tarefa reativada: $($item.Nome)"
                     $revertidos++
                 }
                 "OneDrive" {
                     if (Test-Path $item.Caminho) {
-                        Start-Process $item.Caminho -Wait
+                        $installer = Start-Process $item.Caminho -Wait -PassThru -ErrorAction Stop
+                        if ($installer.ExitCode -ne 0) { throw "Falha na reinstalacao: $($installer.ExitCode)" }
                         Write-Resultado $true "OneDrive: reinstalacao iniciada"
                         $revertidos++
                     } else {
-                        Write-Resultado $false "OneDrive: instalador nao encontrado"
-                        $falhas++
+                        throw 'OneDrive: instalador nao encontrado'
                     }
                 }
                 "Irreversivel" {
@@ -782,6 +884,7 @@ function Reverter-UltimaOtimizacao {
         } Catch {
             Write-Resultado $false "Falha ao reverter: $($item.Nome)"
             $falhas++
+            $pendentes = @($item) + $pendentes
         }
     }
 
@@ -798,15 +901,20 @@ function Reverter-UltimaOtimizacao {
             Write-Host "   - $desc" -ForegroundColor DarkYellow
         }
         Write-Host ""
-        Write-Host "  Para esses casos, use o Ponto de Restauracao do Windows criado" -ForegroundColor Gray
-        Write-Host "  antes da otimizacao (Painel de Controle > Recuperacao > Restauracao" -ForegroundColor Gray
-        Write-Host "  do Sistema)." -ForegroundColor Gray
+        Write-Host "  Arquivos excluidos exigem backup proprio; apps podem exigir reinstalacao." -ForegroundColor Gray
+    }
+
+    $script:ContFalhas += $falhas
+    if ($falhas -gt 0) {
+        $script:SnapshotNome = $snapshot.Nome
+        $script:SnapshotAtual = @($pendentes)
+        Salvar-Snapshot
     }
 
     # Arquiva o snapshot para nao tentar reverter a mesma acao duas vezes
     Try {
         $arquivoRevertido = Join-Path $script:SnapshotDir "revertido_$(Get-Date -Format 'yyyyMMdd_HHmmss').json"
-        Move-Item -Path $script:SnapshotPath -Destination $arquivoRevertido -Force
+        if ($falhas -eq 0) { Move-Item -Path $script:SnapshotPath -Destination $arquivoRevertido -Force -ErrorAction Stop }
     } Catch { }
 
     Write-Host ""
@@ -1265,7 +1373,7 @@ function Analisar-PC {
     }
     Write-Host ""
 
-    if (Confirmar "Deseja rodar a Otimizacao Inteligente agora com base nesse diagnostico?") {
+    if (-not $UiMode -and (Confirmar "Deseja rodar a Otimizacao Inteligente agora com base nesse diagnostico?")) {
         Otimizar-Inteligente
     } else {
         Write-Host ""
@@ -1336,7 +1444,7 @@ function Otimizar-Inteligente {
                     Optimize-Volume -DriveLetter $_.DriveLetter -ReTrim
                 }
             } }
-        @{ Nome = "Limpeza de disco (cleanmgr)"; Acao = { Start-Process cleanmgr.exe -ArgumentList "/sagerun:1" -WindowStyle Hidden } }
+        @{ Nome = "Limpeza de disco (cleanmgr)"; Acao = { Start-Process cleanmgr.exe -ArgumentList "/sagerun:1" -WindowStyle Hidden -Wait } }
     )
     if ($perfil -eq "Jogos" -or $perfil -eq "Misto") {
         $etapas += @{ Nome = "Ativando Modo de Jogo do Windows"; Acao = {
@@ -1367,6 +1475,7 @@ function Executar-VerificarSFC {
     Write-Host "  Isso pode demorar alguns minutos..." -ForegroundColor Gray
     Write-Host ""
     sfc /scannow
+    if ($LASTEXITCODE -ne 0) { throw "Comando terminou com codigo $LASTEXITCODE. Consulte a saida para detalhes." }
     Write-Host ""
     Linha "="
 }
@@ -1376,6 +1485,7 @@ function Executar-RepararDISM {
     Write-Host "  Isso pode demorar varios minutos e precisa de internet..." -ForegroundColor Gray
     Write-Host ""
     DISM /Online /Cleanup-Image /RestoreHealth
+    if ($LASTEXITCODE -ne 0) { throw "Comando terminou com codigo $LASTEXITCODE. Consulte a saida para detalhes." }
     Write-Host ""
     Linha "="
 }
@@ -1385,6 +1495,7 @@ function Executar-VerificarDisco {
     Write-Host "  Executando uma verificacao online (sem precisar reiniciar)..." -ForegroundColor Gray
     Write-Host ""
     chkdsk $env:SystemDrive /scan
+    if ($LASTEXITCODE -ne 0) { throw "Comando terminou com codigo $LASTEXITCODE. Consulte a saida para detalhes." }
     Write-Host ""
     Linha "="
 }
@@ -1732,7 +1843,7 @@ function Mostrar-Menu {
         @{ T = "";                                                      C = "White" }
         @{ T = " [2] VERSAO PADRAO";                                    C = "Cyan" }
         @{ T = "     Limpeza e ajustes para uso diario";                C = "DarkGray" }
-        @{ T = " [3] VERSAO GAMER";                                     C = "Magenta" }
+        @{ T = " [3] VERSAO AVANCADA";                                  C = "Magenta" }
         @{ T = "     Desempenho maximo para jogos";                     C = "DarkGray" }
         @{ T = " [4] DEBLOAT";                                          C = "Blue" }
         @{ T = "     Remove apps e servicos (pergunta ou tudo de vez)"; C = "DarkGray" }
@@ -1777,7 +1888,7 @@ function Pausar-Menu {
 }
 
 $script:UltimoScore = $null
-Set-Aparencia
+if (-not $UiMode) { Set-Aparencia }
 
 try {
     if ($Operation) {
@@ -1794,7 +1905,8 @@ try {
             "update" { Executar-VerificarWindowsUpdate }
             "benchmark" { Executar-Benchmark }
         }
-        return
+        if ($script:ContFalhas -gt 0) { exit 1 }
+        exit 0
     }
     $continuar = $true
     while ($continuar) {
@@ -1824,6 +1936,7 @@ catch {
     Write-Host ""
     Write-Host "  Ocorreu um erro durante a execucao:" -ForegroundColor Red
     Write-Host "  $($_.Exception.Message)" -ForegroundColor Red
+    if ($Operation) { exit 1 }
 }
 finally {
     if (-not $Operation) {
@@ -1831,3 +1944,5 @@ finally {
         Read-Host "  Pressione ENTER para sair"
     }
 }
+
+

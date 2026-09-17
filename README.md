@@ -81,7 +81,7 @@ Para novas versoes, repita o processo com `v1.1.0`, `v1.2.0` e assim por diante.
 
 ## Atualizacoes futuras
 
-A estrutura ja usa versionamento semantico e GitHub Releases. Isso permite adicionar atualizacao automatica no futuro usando as Releases como fonte de versoes, sem trocar o empacotamento atual.
+A estrutura usa versionamento semantico e GitHub Releases. O aplicativo consulta a release mais recente ao abrir o dashboard e oferece o link de atualizacao quando uma versao nova esta disponivel.
 
 ## Estrutura importante
 

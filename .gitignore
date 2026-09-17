@@ -5,6 +5,7 @@ TestResults/
 
 # Artefatos de build e instaladores gerados
 artifacts/
+tmp/
 Aplicativo/
 Abrir-Otimizador.bat
 installer/Output/

@@ -12,12 +12,12 @@ public sealed class SystemInfoService
         var json = RunPowerShell(
             "$os=Get-CimInstance Win32_OperatingSystem;" +
             "$cpu=(Get-CimInstance Win32_Processor|Select-Object -First 1);" +
-            "$gpu=(Get-CimInstance Win32_VideoController|Select-Object -First 1);" +
+            "$gpu=(Get-CimInstance Win32_VideoController|ForEach-Object Name) -join ' / ';" +
             "$d=Get-CimInstance Win32_LogicalDisk|Where-Object DeviceID -eq $env:SystemDrive;" +
             "[pscustomobject]@{OS=$os.Caption;Build=$os.BuildNumber;Arch=$os.OSArchitecture;" +
-            "CPU=$cpu.Name;GPU=$gpu.Name;Memory=[math]::Round($os.TotalVisibleMemorySize/1MB,1);" +
+            "CPU=$cpu.Name;GPU=$gpu;Memory=[math]::Round($os.TotalVisibleMemorySize/1MB,1);" +
             "Storage=[math]::Round($d.Size/1GB,1);Free=[math]::Round($d.FreeSpace/1GB,1);" +
-            "Boot=$os.LastBootUpTime}|ConvertTo-Json -Compress");
+            "Boot=$os.LastBootUpTime.ToString('o')}|ConvertTo-Json -Compress");
 
         var info = JsonSerializer.Deserialize<HardwareInfo>(json) ?? new HardwareInfo();
         var uptime = DateTime.TryParse(info.Boot, out var boot)
@@ -35,15 +35,19 @@ public sealed class SystemInfoService
     {
         var start = new ProcessStartInfo("powershell.exe")
         {
-            Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{command}\"",
+            Arguments = $"-NoProfile -ExecutionPolicy Bypass -EncodedCommand {Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes("$ErrorActionPreference='Stop'; [Console]::OutputEncoding=[Text.Encoding]::UTF8;" + command))}",
             RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            StandardOutputEncoding = System.Text.Encoding.UTF8,
             UseShellExecute = false,
             CreateNoWindow = true
         };
         using var process = Process.Start(start) ?? throw new InvalidOperationException("Não foi possível consultar o hardware.");
-        var output = process.StandardOutput.ReadToEnd();
-        process.WaitForExit();
-        return output.Trim();
+        var output = process.StandardOutput.ReadToEndAsync();
+        var error = process.StandardError.ReadToEndAsync();
+        if (!process.WaitForExit(30000)) { process.Kill(true); throw new TimeoutException("A consulta ao sistema excedeu 30 segundos."); }
+        if (process.ExitCode != 0) throw new InvalidOperationException(error.GetAwaiter().GetResult());
+        return output.GetAwaiter().GetResult().Trim();
     }
 
     private sealed class HardwareInfo
