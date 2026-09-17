@@ -36,3 +36,4 @@ installer/Output/
 *.cer
 secrets.*
 appsettings.Local.json
+private/

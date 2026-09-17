@@ -83,6 +83,18 @@ Para novas versoes, repita o processo com `v1.1.0`, `v1.2.0` e assim por diante.
 
 A estrutura usa versionamento semantico e GitHub Releases. O aplicativo consulta a release mais recente ao abrir o dashboard e oferece o link de atualizacao quando uma versao nova esta disponivel.
 
+## Emitir chaves de acesso
+
+O Optimizer só abre após validar uma chave assinada. Na primeira abertura, o aplicativo mostra o **ID deste computador**; use-o para vincular a licença ao equipamento do cliente.
+
+No computador de emissão, mantenha a pasta `private/` fora do Git e execute:
+
+```powershell
+.\tools\New-OptimizerAccessKey.ps1 -Licensee "Nome do cliente" -MachineId "ID-DO-COMPUTADOR"
+```
+
+O comando imprime a chave a ser enviada ao cliente. Para uma licença com validade, acrescente `-ExpiresAtUtc "2027-12-31"`. A chave privada usada para assinar fica em `private/optimizer-license-rsa-private.blob`; faça uma cópia segura dela. Sem essa chave não é possível emitir novas licenças.
+
 ## Estrutura importante
 
 - `PQueirozOptimizer/`: codigo-fonte WPF.
