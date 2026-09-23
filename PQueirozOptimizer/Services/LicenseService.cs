@@ -16,6 +16,8 @@ public sealed class LicenseService
     private const string PublicKey = "BgIAAACkAABSU0ExAAgAAAEAAQB9+XduNkAH/W9GiugLLAh4G7CWFx5go0gQbke9prfzxnQXkuzKf4689pZq02aWwUtSwAIt1zel+Pq90cGT2QT8rxXE4mflu8t9Om2DrFZGO1/anX+FzNunbEW/2BOhZFqUY/lpF0ueZL59XS7hUhbksXJyAH4pbgYHKW5RDo4WLtoEjxLpxdX3R8yhDYDo+FrWeVkVZwf8lvYULAQJdUbjaiUOLVVu5VkE3i2WW0NbfS1Mhjq1KkpHbrC7QVgmYHE11RtrsEo75zCAM5ccBN4UUZW4yT04n0iVcX0tUrWdHerhyyMQqpEdcBOmywgkmc4bAp+351KSe6b5OjyEkqrC";
     private static string LicensePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PQueirozOptimizer", "license.key");
     public string MachineId { get; } = CreateMachineId();
+    // ID antigo (nome do PC + usuário). Só é aceito para manter válidas as chaves já emitidas.
+    private readonly string _legacyMachineId = CreateLegacyMachineId();
 
     public bool TryGetActiveLicense(out LicenseInfo? license, out string error)
     {
@@ -46,14 +48,29 @@ public sealed class LicenseService
             if (string.IsNullOrWhiteSpace(payload.Licensee)) { error = "A chave não informa o titular."; return false; }
             if (payload.ExpiresAtUtc is { } expires && expires < DateTime.UtcNow) { error = "Esta chave de acesso expirou."; return false; }
             if (string.IsNullOrWhiteSpace(payload.MachineId)) { error = "Esta chave não está vinculada a um computador."; return false; }
-            if (!string.Equals(payload.MachineId, MachineId, StringComparison.OrdinalIgnoreCase)) { error = "Esta chave foi emitida para outro computador."; return false; }
+            if (!string.Equals(payload.MachineId, MachineId, StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(payload.MachineId, _legacyMachineId, StringComparison.OrdinalIgnoreCase)) { error = "Esta chave foi emitida para outro computador."; return false; }
             var role = string.Equals(payload.Role, "Admin", StringComparison.Ordinal) ? "Admin" : "Standard";
             license = new LicenseInfo(payload.Licensee, payload.ExpiresAtUtc, payload.MachineId, role); error = string.Empty; return true;
         }
         catch (Exception ex) when (ex is FormatException or CryptographicException or JsonException) { error = "O formato da chave está inválido."; return false; }
     }
 
-    private static string CreateMachineId() => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes($"{Environment.MachineName}|{Environment.UserDomainName}|{Environment.UserName}")))[..20];
+    // MachineGuid é gerado na instalação do Windows: não muda ao renomear o PC ou o usuário
+    // e não pode ser reproduzido em outra máquina apenas copiando nomes.
+    private static string CreateMachineId()
+    {
+        try
+        {
+            using var hive = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry64);
+            using var key = hive.OpenSubKey(@"SOFTWARE\Microsoft\Cryptography");
+            if (key?.GetValue("MachineGuid") is string guid && Guid.TryParse(guid, out var parsed))
+                return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes("PQO2|" + parsed.ToString("D").ToUpperInvariant())))[..20];
+        }
+        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException) { }
+        return CreateLegacyMachineId();
+    }
+    private static string CreateLegacyMachineId() => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes($"{Environment.MachineName}|{Environment.UserDomainName}|{Environment.UserName}")))[..20];
     private static byte[] FromBase64Url(string value) { value = value.Replace('-', '+').Replace('_', '/'); return Convert.FromBase64String(value.PadRight(value.Length + (4 - value.Length % 4) % 4, '=')); }
     private sealed class LicensePayload { public string Product { get; set; } = ""; public string Licensee { get; set; } = ""; public string? MachineId { get; set; } public string? Role { get; set; } public DateTime? ExpiresAtUtc { get; set; } }
 }

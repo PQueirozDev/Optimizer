@@ -59,8 +59,48 @@ if ($SelectedStepsBase64) {
 # ---------------------------------------------------------------
 # ESTADO GLOBAL - usado pelo sistema de Reverter Ultima Otimizacao
 # ---------------------------------------------------------------
-$script:SnapshotDir  = "$env:ProgramData\OtimizadorPC\Snapshots"
+$script:DadosDir     = "$env:ProgramData\OtimizadorPC"
+$script:SnapshotDir  = Join-Path $script:DadosDir "Snapshots"
 $script:SnapshotPath = Join-Path $script:SnapshotDir "ultima_otimizacao.json"
+$script:LimiteHistorico = 20
+
+# Somente estes itens podem ser capturados e restaurados. O Reverter roda como
+# administrador, entao nunca confia cegamente no conteudo do arquivo de backup.
+$script:RegistroPermitido = @(
+    "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection",
+    "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppCompat",
+    "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent",
+    "HKLM:\SOFTWARE\Policies\Microsoft\Speech",
+    "HKCU:\Software\Policies\Microsoft\Windows\Explorer",
+    "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
+    "HKLM:\SOFTWARE\Policies\Microsoft\PushToInstall",
+    "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl",
+    "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile",
+    "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games",
+    "HKCU:\System\GameConfigStore",
+    "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR",
+    "HKCU:\Software\Microsoft\GameBar",
+    "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects",
+    "HKCU:\Control Panel\Mouse",
+    "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance"
+)
+$script:ServicosPermitidos = @(
+    "PushToInstall", "SysMain", "WSearch", "DiagTrack", "dmwappushservice",
+    "diagnosticshub.standardcollector.service", "WerSvc", "PcaSvc", "Spooler", "bthserv",
+    "Fax", "RemoteRegistry", "MapsBroker", "WdiServiceHost", "WdiSystemHost", "DPS"
+)
+$script:TiposRegistroPermitidos = @("String", "ExpandString", "Binary", "DWord", "MultiString", "QWord")
+$script:StartupTypesPermitidos = @("Automatic", "AutomaticDelayedStart", "Manual", "Disabled")
+$script:InstaladoresOneDrive = @(
+    "$env:SystemRoot\System32\OneDriveSetup.exe",
+    "$env:SystemRoot\SysWOW64\OneDriveSetup.exe"
+)
+$script:RunKeysPermitidas = @(
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run",
+    "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run",
+    "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Run"
+)
 $script:SnapshotAtual = @()
 $script:SnapshotNome  = ""
 $script:ContAplicados = 0
@@ -183,18 +223,109 @@ function Format-Bytes($bytes) {
 # SISTEMA DE SNAPSHOT / REVERSAO
 # ---------------------------------------------------------------
 
-# Comeca a registrar uma nova sessao de otimizacao (zera contadores e o registro anterior)
-function Iniciar-Snapshot($nome) {
-    if (Test-Path $script:SnapshotPath) {
-        $historyPath = Join-Path $script:SnapshotDir ("historico_{0}.json" -f [Guid]::NewGuid().ToString('N'))
-        Copy-Item -LiteralPath $script:SnapshotPath -Destination $historyPath -ErrorAction Stop
+# Garante que somente Administradores/SYSTEM possam escrever nos backups.
+# Por padrao, usuarios comuns podem criar arquivos em subpastas de ProgramData;
+# sem isso, um usuario sem privilegios poderia plantar um backup falso que o
+# Reverter (executado como administrador) aplicaria.
+function Proteger-PastaDados {
+    $confiaveis = @("S-1-5-32-544", "S-1-5-18")
+    foreach ($pasta in @($script:DadosDir, $script:SnapshotDir, (Join-Path $script:DadosDir "Backups"))) {
+        $item = Get-Item -LiteralPath $pasta -Force -ErrorAction SilentlyContinue
+        if ($item -and ($item.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+            # Junction/symlink plantado: remove apenas o link, sem seguir o destino
+            [IO.Directory]::Delete($pasta)
+        }
+        New-Item -Path $pasta -ItemType Directory -Force | Out-Null
+
+        $admins = New-Object Security.Principal.SecurityIdentifier "S-1-5-32-544"
+        $system = New-Object Security.Principal.SecurityIdentifier "S-1-5-18"
+        $acl = New-Object Security.AccessControl.DirectorySecurity
+        $acl.SetAccessRuleProtection($true, $false)
+        $acl.SetOwner($admins)
+        foreach ($sid in @($admins, $system)) {
+            $acl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($sid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")))
+        }
+        Set-Acl -LiteralPath $pasta -AclObject $acl -ErrorAction Stop
+
+        # Arquivos criados por outra conta nao sao confiaveis: ficam em quarentena
+        # (renomeados) e nunca sao lidos. Com a ACL acima, quem os criou nao consegue
+        # mais renomea-los de volta.
+        Get-ChildItem -LiteralPath $pasta -Force -File -ErrorAction SilentlyContinue |
+            Where-Object { $_.Extension -ne ".nao-confiavel" } | ForEach-Object {
+                $donoArquivo = (Get-Acl -LiteralPath $_.FullName).GetOwner([Security.Principal.SecurityIdentifier]).Value
+                if (($_.Attributes -band [IO.FileAttributes]::ReparsePoint) -or $donoArquivo -notin $confiaveis) {
+                    $destino = "$($_.FullName).{0}.nao-confiavel" -f [Guid]::NewGuid().ToString('N')
+                    [IO.File]::Move($_.FullName, $destino)
+                    Write-Host "[AVISO] Arquivo de backup de origem desconhecida isolado: $($_.Name)"
+                }
+            }
     }
+}
+
+# Mantem somente os arquivos mais recentes de historico/reversao
+function Limpar-HistoricoAntigo {
+    Get-ChildItem -LiteralPath $script:SnapshotDir -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -like "historico_*.json" -or $_.Name -like "revertido_*.json" } |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -Skip $script:LimiteHistorico |
+        Remove-Item -Force -ErrorAction SilentlyContinue
+}
+
+# Comeca a registrar uma nova sessao de otimizacao.
+# Se ainda existe um backup nao revertido, ele e mantido e as novas capturas sao
+# acrescentadas: assim o Reverter sempre volta ao estado ORIGINAL, mesmo que o
+# usuario rode varias otimizacoes seguidas (a primeira captura de cada item vence).
+function Iniciar-Snapshot($nome) {
     $script:SnapshotAtual = @()
     $script:SnapshotNome  = $nome
+    if (Test-Path -LiteralPath $script:SnapshotPath) {
+        $historyPath = Join-Path $script:SnapshotDir ("historico_{0}.json" -f [Guid]::NewGuid().ToString('N'))
+        Copy-Item -LiteralPath $script:SnapshotPath -Destination $historyPath -ErrorAction Stop
+        Try {
+            $anterior = Get-Content -LiteralPath $script:SnapshotPath -Raw | ConvertFrom-Json
+            $script:SnapshotAtual = @($anterior.Itens | Where-Object { $_ })
+            if ($anterior.Nome -and $anterior.Nome -ne $nome) { $script:SnapshotNome = "$($anterior.Nome) + $nome" }
+        } Catch {
+            Write-Host "[AVISO] Backup anterior ilegivel; arquivado em $historyPath"
+            Remove-Item -LiteralPath $script:SnapshotPath -Force
+        }
+    }
+    Limpar-HistoricoAntigo
     $script:ContAplicados = 0
     $script:ContPulados   = 0
     $script:ContFalhas    = 0
     Salvar-Snapshot
+}
+
+# Retorna $true se o item ja foi capturado nesta sessao ou em uma sessao ainda nao revertida
+function Ja-Capturado($tipo, $chave) {
+    foreach ($item in $script:SnapshotAtual) {
+        if ($item.Tipo -ne $tipo) { continue }
+        switch ($tipo) {
+            "Registro"       { if ("$($item.Caminho)|$($item.Nome)" -eq $chave) { return $true } }
+            "PlanoEnergia"   { return $true }
+            default          { if ($item.Nome -eq $chave -or $item.Caminho -eq $chave) { return $true } }
+        }
+    }
+    return $false
+}
+
+function Test-ItemPermitido($item) {
+    switch ($item.Tipo) {
+        "Registro" {
+            return ($script:RegistroPermitido -contains $item.Caminho) -and
+                   ($item.Nome -is [string]) -and
+                   (-not $item.Existia -or -not $item.TipoAnterior -or $script:TiposRegistroPermitidos -contains $item.TipoAnterior)
+        }
+        "Servico" {
+            return ($script:ServicosPermitidos -contains $item.Nome) -and ($script:StartupTypesPermitidos -contains $item.StartupTypeAnterior)
+        }
+        "PlanoEnergia"   { return "$($item.GuidAnterior)" -match '^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$' }
+        "TarefaAgendada" { return "$($item.Nome)" -match '^\\Microsoft\\Windows\\[A-Za-z0-9 .\\-]+$' }
+        "OneDrive"       { return $script:InstaladoresOneDrive -contains $item.Caminho }
+        "Irreversivel"   { return $true }
+        default          { return $false }
+    }
 }
 
 # Salva em disco tudo que foi registrado nesta sessao (sobrescreve o snapshot anterior:
@@ -216,6 +347,8 @@ function Salvar-Snapshot {
 
 # Guarda o valor ATUAL de uma chave/valor de registro antes de ele ser alterado
 function Capturar-Registro($caminho, $nome) {
+    if ($script:RegistroPermitido -notcontains $caminho) { throw "Chave de registro fora da lista permitida: $caminho" }
+    if (Ja-Capturado "Registro" "$caminho|$nome") { return }
     $existia = $false
     $valorAnterior = $null
     $tipoAnterior = $null
@@ -240,6 +373,8 @@ function Capturar-Registro($caminho, $nome) {
 
 # Guarda o tipo de inicializacao e o status ATUAL de um servico antes de ele ser alterado
 function Capturar-Servico($nomeServico) {
+    if ($script:ServicosPermitidos -notcontains $nomeServico) { throw "Servico fora da lista permitida: $nomeServico" }
+    if (Ja-Capturado "Servico" $nomeServico) { return }
     Try {
         $svc = Get-Service -Name $nomeServico -ErrorAction Stop
         $script:SnapshotAtual += [PSCustomObject]@{
@@ -254,6 +389,7 @@ function Capturar-Servico($nomeServico) {
 
 # Guarda qual e o plano de energia ATIVO antes de trocar de plano
 function Capturar-PlanoEnergia {
+    if (Ja-Capturado "PlanoEnergia" "") { return }
     $atual = powercfg /getactivescheme
     if ($atual -match "([0-9a-fA-F-]{36})") {
         $script:SnapshotAtual += [PSCustomObject]@{
@@ -266,6 +402,7 @@ function Capturar-PlanoEnergia {
 
 # Guarda que uma tarefa agendada foi desativada (para poder reativar depois)
 function Capturar-TarefaAgendada($nomeTarefa) {
+    if (Ja-Capturado "TarefaAgendada" $nomeTarefa) { return }
     $xml = schtasks.exe /Query /TN $nomeTarefa /XML
     if ($LASTEXITCODE -ne 0) { throw "Nao foi possivel capturar tarefa $nomeTarefa" }
     $task = [xml]($xml -join "`n")
@@ -279,6 +416,8 @@ function Capturar-TarefaAgendada($nomeTarefa) {
 
 # Guarda o caminho do instalador do OneDrive (para poder reinstalar depois)
 function Capturar-OneDrive($caminhoInstalador) {
+    if ($script:InstaladoresOneDrive -notcontains $caminhoInstalador) { throw "Instalador do OneDrive inesperado: $caminhoInstalador" }
+    if (Ja-Capturado "OneDrive" $caminhoInstalador) { return }
     $script:SnapshotAtual += [PSCustomObject]@{
         Tipo    = "OneDrive"
         Caminho = $caminhoInstalador
@@ -288,6 +427,7 @@ function Capturar-OneDrive($caminhoInstalador) {
 
 # Registra uma alteracao que NAO pode ser desfeita automaticamente (ex: apps removidos)
 function Registrar-Irreversivel($descricao) {
+    if (@($script:SnapshotAtual | Where-Object { $_.Tipo -eq "Irreversivel" -and $_.Descricao -eq $descricao }).Count -gt 0) { return }
     $script:SnapshotAtual += [PSCustomObject]@{
         Tipo      = "Irreversivel"
         Descricao = $descricao
@@ -354,11 +494,27 @@ function Executar-Se-Confirmado($pergunta, $nomeEtapa, $acao, $modoRapido = $fal
 # ---------------------------------------------------------------
 # 1. Ponto de restauracao (seguranca antes de mexer no sistema)
 # ---------------------------------------------------------------
+# O Windows so cria um ponto de restauracao a cada 24h por padrao; nesse caso o
+# Checkpoint-Computer apenas emite um aviso e nada e criado. Liberamos o limite
+# durante a criacao e devolvemos o valor original em seguida.
+function Criar-PontoRestauracaoSemLimite {
+    $chave = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore"
+    $nome  = "SystemRestorePointCreationFrequency"
+    $original = (Get-ItemProperty -LiteralPath $chave -Name $nome -ErrorAction SilentlyContinue).$nome
+    Try {
+        Set-ItemProperty -LiteralPath $chave -Name $nome -Value 0 -Type DWord -ErrorAction Stop
+        Checkpoint-Computer -Description "Antes do PQueiroz Optimizer" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop -WarningAction Stop
+    } Finally {
+        if ($null -eq $original) { Remove-ItemProperty -LiteralPath $chave -Name $nome -ErrorAction SilentlyContinue }
+        else { Set-ItemProperty -LiteralPath $chave -Name $nome -Value $original -Type DWord -ErrorAction SilentlyContinue }
+    }
+}
+
 function Criar-PontoDeRestauracao {
     Write-Secao "Criando ponto de restauracao"
     $etapas = @(
         @{ Nome = "Habilitando restauracao do sistema no disco"; Acao = { Enable-ComputerRestore -Drive "$env:SystemDrive\" } }
-        @{ Nome = "Criando ponto de restauracao"; Acao = { Checkpoint-Computer -Description "Antes do Otimizador de PC" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop -WarningAction Stop } }
+        @{ Nome = "Criando ponto de restauracao"; Acao = { Criar-PontoRestauracaoSemLimite } }
     )
     Executar-Etapas "Ponto de restauracao" $etapas
 }
@@ -407,9 +563,7 @@ function Otimizar-Padrao {
                 Start-Service Spooler
             } }
         @{ Nome = "Otimizando/TRIM das unidades de disco"; Acao = {
-                Get-Volume | Where-Object { $_.DriveLetter } | ForEach-Object {
-                    Optimize-Volume -DriveLetter $_.DriveLetter -ReTrim
-                }
+                Otimizar-Unidades
             } }
         @{ Nome = "Limpando cache DNS";                  Acao = { ipconfig /flushdns } }
         @{ Nome = "Executando limpeza de disco (cleanmgr)"; Acao = { Start-Process cleanmgr.exe -ArgumentList "/sagerun:1" -WindowStyle Hidden -Wait } }
@@ -524,6 +678,10 @@ function Otimizar-Gamer {
                 Set-ItemProperty "HKCU:\Software\Microsoft\GameBar" "AutoGameModeEnabled" 1 -Type DWord
             } }
         @{ Nome = "Habilitando GPU Scheduling por hardware"; Acao = {
+                if (-not (Suporta-GpuScheduling)) {
+                    Write-Host "[INFO] GPU/driver sem suporte a agendamento por hardware (HAGS); ajuste ignorado."
+                    return
+                }
                 Capturar-Registro "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" "HwSchMode"
                 Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" "HwSchMode" 2 -Type DWord
             } }
@@ -544,16 +702,19 @@ function Otimizar-Gamer {
                 powercfg /setactive SCHEME_CURRENT | Out-Null
             } }
         @{ Nome = "Ajustando SysMain e Windows Search";   Acao = {
-                Capturar-Servico "SysMain"
-                Set-Service "SysMain" -StartupType Manual
+                # Em HD o SysMain (Superfetch) acelera a abertura de programas; so mexemos em SSD
+                if ((Obter-TipoMidia $env:SystemDrive.TrimEnd(":")) -eq "SSD") {
+                    Capturar-Servico "SysMain"
+                    Set-Service "SysMain" -StartupType Manual
+                } else {
+                    Write-Host "[INFO] Disco do sistema nao e SSD; SysMain mantido."
+                }
                 Capturar-Servico "WSearch"
                 Set-Service "WSearch" -StartupType Manual
             } }
         @{ Nome = "Limpando cache DNS";                   Acao = { ipconfig /flushdns } }
         @{ Nome = "Otimizando unidades de disco";         Acao = {
-                Get-Volume | Where-Object { $_.DriveLetter } | ForEach-Object {
-                    Optimize-Volume -DriveLetter $_.DriveLetter -ReTrim
-                }
+                Otimizar-Unidades
             } }
         @{ Nome = "Aplicando politicas do Editor de Politica de Grupo (diagnostico, nuvem, IA e Push)"; Acao = { Aplicar-PoliticasAvancadas } }
     )
@@ -699,10 +860,12 @@ function Otimizar-Debloat {
         } $modoRapido
 
     # 12. Servicos de diagnostico adicionais
-    Executar-Se-Confirmado "Desativar servicos adicionais de diagnostico (WdiServiceHost, WdiSystemHost, DPS)?" `
+    # O DPS (Diagnostic Policy Service) fica ativo: sem ele o solucionador de problemas
+    # de rede e a deteccao de problemas do Windows param de funcionar.
+    Executar-Se-Confirmado "Desativar servicos adicionais de diagnostico (WdiServiceHost, WdiSystemHost)?" `
         "Servicos adicionais de diagnostico desativados" `
         {
-            $diagnosticServices = @("WdiServiceHost", "WdiSystemHost", "DPS")
+            $diagnosticServices = @("WdiServiceHost", "WdiSystemHost")
             foreach ($service in $diagnosticServices) {
                 if (Get-Service $service -ErrorAction SilentlyContinue) {
                     Capturar-Servico $service
@@ -741,7 +904,7 @@ function Otimizar-Debloat {
             Registrar-Irreversivel "Apps pre-instalados removidos (Bing News/Weather, Solitaire, Teams, Skype, YourPhone, etc - reinstale pela Microsoft Store se precisar)"
             $removeApps = @(
                 "*BingNews*", "*BingWeather*", "*GetHelp*", "*Getstarted*",
-                "*MicrosoftOfficeHub*", "*MicrosoftSolitaireCollection*", "*People*",
+                "*MicrosoftOfficeHub*", "*MicrosoftSolitaireCollection*", "Microsoft.People",
                 "*PowerAutomateDesktop*", "*Todos*", "*YourPhone*", "*MicrosoftTeams*",
                 "*SkypeApp*", "*MixedReality*", "*WindowsMaps*"
             )
@@ -839,6 +1002,10 @@ function Reverter-UltimaOtimizacao {
     # Percorre de tras para frente (ordem inversa a de aplicacao)
     for ($i = $itensArray.Count - 1; $i -ge 0; $i--) {
         $item = $itensArray[$i]
+        if (-not (Test-ItemPermitido $item)) {
+            Write-Host "[IGNORADO] Item de backup nao reconhecido ou fora da lista permitida: $($item.Tipo) $($item.Caminho) $($item.Nome)"
+            continue
+        }
         Try {
             switch ($item.Tipo) {
                 "Registro" {
@@ -928,8 +1095,11 @@ function Reverter-UltimaOtimizacao {
     # Arquiva o snapshot para nao tentar reverter a mesma acao duas vezes
     Try {
         $arquivoRevertido = Join-Path $script:SnapshotDir "revertido_$(Get-Date -Format 'yyyyMMdd_HHmmss').json"
-        if ($falhas -eq 0) { Move-Item -Path $script:SnapshotPath -Destination $arquivoRevertido -Force -ErrorAction Stop }
-    } Catch { }
+        if ($falhas -eq 0) { Move-Item -LiteralPath $script:SnapshotPath -Destination $arquivoRevertido -Force -ErrorAction Stop }
+        Limpar-HistoricoAntigo
+    } Catch {
+        Write-Host "[AVISO] Nao foi possivel arquivar o backup revertido: $($_.Exception.Message)"
+    }
 
     Write-Host ""
     Linha "="
@@ -1114,6 +1284,10 @@ function Reativar-ItensInicializacao {
     foreach ($linha in $linhas) {
         if ($linha -match 'Caminho=(.*?)\|Nome=(.*?)\|Valor=(.*)$') {
             $caminho = $matches[1]; $nome = $matches[2]; $valor = $matches[3]
+            if ($script:RunKeysPermitidas -notcontains $caminho) {
+                Write-Resultado $false "Ignorado (local de inicializacao nao permitido): $nome"
+                continue
+            }
             Try {
                 if (-not (Test-Path $caminho)) { New-Item -Path $caminho -Force | Out-Null }
                 Set-ItemProperty -Path $caminho -Name $nome -Value $valor -Type String -ErrorAction Stop
@@ -1204,6 +1378,52 @@ function Obter-TamanhoTemporarios {
 }
 
 # Detecta se a unidade do sistema e um SSD (usado pela Otimizacao Inteligente)
+# Retorna "SSD", "HDD" ou "Desconhecido" para a unidade informada (ex: "C")
+function Obter-TipoMidia($letra) {
+    Try {
+        $particao = Get-Partition -DriveLetter $letra -ErrorAction Stop
+        $disco = Get-PhysicalDisk -ErrorAction Stop | Where-Object { "$($_.DeviceId)" -eq "$($particao.DiskNumber)" } | Select-Object -First 1
+        switch ("$($disco.MediaType)") {
+            "SSD" { return "SSD" }
+            "HDD" { return "HDD" }
+        }
+    } Catch { }
+    return "Desconhecido"
+}
+
+# TRIM somente em SSDs fixos. HDs e unidades removiveis/virtuais sao ignorados,
+# porque -ReTrim falha nelas e desfragmentar pode levar horas.
+function Otimizar-Unidades {
+    $volumes = Get-Volume | Where-Object { $_.DriveLetter -and $_.DriveType -eq "Fixed" -and $_.FileSystem -eq "NTFS" }
+    foreach ($volume in $volumes) {
+        $tipo = Obter-TipoMidia $volume.DriveLetter
+        if ($tipo -eq "SSD") {
+            Optimize-Volume -DriveLetter $volume.DriveLetter -ReTrim -ErrorAction Stop
+            Write-Host "[INFO] TRIM executado em $($volume.DriveLetter):"
+        } else {
+            Write-Host "[INFO] $($volume.DriveLetter): ignorada ($tipo) - o Windows ja agenda a otimizacao desta unidade."
+        }
+    }
+}
+
+# HAGS exige Windows 10 2004+ e um driver de video que declare suporte (WDDM 2.7+).
+# O dxdiag informa isso diretamente na linha "Hardware Scheduling".
+function Suporta-GpuScheduling {
+    if ([Environment]::OSVersion.Version.Build -lt 19041) { return $false }
+    $relatorio = Join-Path $env:TEMP ("pqo-dxdiag-{0}.txt" -f [Guid]::NewGuid().ToString('N'))
+    Try {
+        $proc = Start-Process dxdiag.exe -ArgumentList "/whql:off", "/t", "`"$relatorio`"" -WindowStyle Hidden -PassThru
+        if (-not $proc.WaitForExit(90000)) { $proc.Kill(); return $false }
+        for ($i = 0; $i -lt 20 -and -not (Test-Path -LiteralPath $relatorio); $i++) { Start-Sleep -Milliseconds 250 }
+        $texto = Get-Content -LiteralPath $relatorio -Raw -ErrorAction Stop
+        $linhas = [regex]::Matches($texto, 'Hardware Scheduling:\s*(.+)') | ForEach-Object { $_.Groups[1].Value }
+        if ($linhas) { return [bool]($linhas | Where-Object { $_ -match 'DriverSupportState:(Stable|Supported|Experimental)' }) }
+        $modelos = [regex]::Matches($texto, 'Driver Model:\s*WDDM\s*(\d+)\.(\d+)') | ForEach-Object { [version]"$($_.Groups[1].Value).$($_.Groups[2].Value)" }
+        return [bool]($modelos | Where-Object { $_ -ge [version]"2.7" })
+    } Catch { return $false }
+    Finally { Remove-Item -LiteralPath $relatorio -Force -ErrorAction SilentlyContinue }
+}
+
 function Detectar-SSD {
     Try {
         $letra = $env:SystemDrive.TrimEnd(":")
@@ -1454,9 +1674,7 @@ function Otimizar-Inteligente {
             } }
         @{ Nome = "Limpando cache DNS"; Acao = { ipconfig /flushdns } }
         @{ Nome = "Otimizando/TRIM das unidades de disco"; Acao = {
-                Get-Volume | Where-Object { $_.DriveLetter } | ForEach-Object {
-                    Optimize-Volume -DriveLetter $_.DriveLetter -ReTrim
-                }
+                Otimizar-Unidades
             } }
         @{ Nome = "Limpeza de disco (cleanmgr)"; Acao = { Start-Process cleanmgr.exe -ArgumentList "/sagerun:1" -WindowStyle Hidden -Wait } }
     )
@@ -1905,6 +2123,7 @@ $script:UltimoScore = $null
 if (-not $UiMode) { Set-Aparencia }
 
 try {
+    Proteger-PastaDados
     if ($Operation) {
         switch ($Operation) {
             "analisar" { Analisar-PC }

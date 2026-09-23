@@ -1,6 +1,6 @@
 #define MyAppName "PQueiroz Optimizer"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.0.1"
+  #define MyAppVersion "1.2.0"
 #endif
 #ifndef MyAppPublisher
   #define MyAppPublisher "Pedro Queiroz"
@@ -30,6 +30,8 @@ AllowNoIcons=no
 Compression=lzma2
 SolidCompression=yes
 SetupLogging=yes
+CloseApplications=yes
+RestartApplications=no
 UninstallDisplayIcon={app}\{#MyAppExeName}
 UninstallDisplayName={#MyAppName}
 VersionInfoVersion={#MyAppVersion}
@@ -56,3 +58,6 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 ; O aplicativo exige elevação. ShellExecute com o verbo "runas" solicita o UAC;
 ; CreateProcess direto falha com ERROR_ELEVATION_REQUIRED (740).
 Filename: "{app}\{#MyAppExeName}"; Description: "Executar o aplicativo"; Verb: "runas"; Flags: nowait postinstall skipifsilent shellexec
+; Atualização automática (/VERYSILENT): o instalador já está elevado, então reabre o
+; aplicativo diretamente quando termina.
+Filename: "{app}\{#MyAppExeName}"; Flags: nowait; Check: WizardSilent

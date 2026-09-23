@@ -105,56 +105,40 @@ public sealed class QuickCleanService
     {
         var exe = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "PQueirozOptimizer.exe");
         var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico");
-        if (!File.Exists(iconPath))
+        if (!File.Exists(iconPath)) iconPath = exe;
+
+        // WScript.Shell via COM: cria o .lnk diretamente, sem montar scripts PowerShell.
+        var shellType = Type.GetTypeFromProgID("WScript.Shell") ?? throw new InvalidOperationException("WScript.Shell não está disponível neste Windows.");
+        dynamic shell = Activator.CreateInstance(shellType)!;
+        try
         {
-            iconPath = exe;
+            foreach (var target in new[] { DesktopShortcut, StartMenuShortcut })
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                dynamic link = shell.CreateShortcut(target);
+                try
+                {
+                    link.TargetPath = exe;
+                    link.Arguments = "--quick-clean";
+                    link.WorkingDirectory = AppContext.BaseDirectory;
+                    link.IconLocation = iconPath + ",0";
+                    link.Description = "Limpeza Rápida - PQueiroz Optimizer";
+                    link.Save();
+                }
+                finally { System.Runtime.InteropServices.Marshal.FinalReleaseComObject(link); }
+            }
         }
-
-        var startMenuDir = Path.GetDirectoryName(StartMenuShortcut) ?? "";
-        var ps = $@"
-$sh = New-Object -ComObject WScript.Shell
-$targets = @('{DesktopShortcut.Replace("'", "''")}', '{StartMenuShortcut.Replace("'", "''")}')
-
-foreach ($t in $targets) {{
-    $dir = [System.IO.Path]::GetDirectoryName($t)
-    if (-not (Test-Path $dir)) {{ New-Item -ItemType Directory -Path $dir -Force | Out-Null }}
-    $s = $sh.CreateShortcut($t)
-    $s.TargetPath = '{exe.Replace("'", "''")}'
-    $s.Arguments = '--quick-clean'
-    $s.WorkingDirectory = '{AppContext.BaseDirectory.Replace("'", "''")}'
-    $s.IconLocation = '{iconPath.Replace("'", "''")},0'
-    $s.Save()
-}}
-
-try {{
-    $shell = New-Object -ComObject Shell.Application
-    $folder = $shell.NameSpace('{startMenuDir.Replace("'", "''")}')
-    $item = $folder.ParseName('{Path.GetFileName(StartMenuShortcut)}')
-    if ($item) {{
-        $verbs = $item.Verbs()
-        foreach ($v in $verbs) {{
-            if ($v.Name.Replace('&','') -match '(taskbar|barra de tarefas|Fixar)') {{
-                $v.DoIt()
-                break
-            }}
-        }}
-    }}
-}} catch {{ }}
-";
-        var psi = new System.Diagnostics.ProcessStartInfo("powershell.exe", $"-NoProfile -WindowStyle Hidden -Command \"{ps}\"")
-        {
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-        System.Diagnostics.Process.Start(psi)?.WaitForExit();
+        finally { System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shell); }
         _log.Write("SUCCESS", "Atalho de Limpeza Rápida configurado");
     }
 
     public void RemoveShortcut()
     {
-        try { if (File.Exists(DesktopShortcut)) File.Delete(DesktopShortcut); } catch { }
-        try { if (File.Exists(StartMenuShortcut)) File.Delete(StartMenuShortcut); } catch { }
-        try { if (File.Exists(TaskbarShortcut)) File.Delete(TaskbarShortcut); } catch { }
+        foreach (var shortcut in new[] { DesktopShortcut, StartMenuShortcut, TaskbarShortcut })
+        {
+            try { if (File.Exists(shortcut)) File.Delete(shortcut); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { _log.Write("WARN", $"Não foi possível remover {shortcut}: {ex.Message}"); }
+        }
         _log.Write("INFO", "Atalhos de Limpeza Rápida removidos");
     }
 }

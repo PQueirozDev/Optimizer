@@ -12,6 +12,43 @@ public sealed class PowerShellBridge
     private readonly string _scriptPath = Path.Combine(AppContext.BaseDirectory, "Otimizador_de_PC.ps1");
     public PowerShellBridge(ActivityLog log) => _log = log;
 
+    /// <summary>
+    /// Executa um script curto via -EncodedCommand. Valores externos (caminhos, nomes) devem
+    /// ir em <paramref name="variables"/> e ser lidos no script como $env:NOME, nunca
+    /// interpolados no texto, para evitar problemas de aspas e injeção de comandos.
+    /// </summary>
+    public static async Task<string> RunScriptAsync(string script, IReadOnlyDictionary<string, string>? variables = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        var wrapped = "$ErrorActionPreference='Stop'; [Console]::OutputEncoding=[Text.Encoding]::UTF8;\n" + script;
+        var psi = new ProcessStartInfo("powershell.exe")
+        {
+            UseShellExecute = false, CreateNoWindow = true,
+            RedirectStandardOutput = true, RedirectStandardError = true,
+            StandardOutputEncoding = Encoding.UTF8, StandardErrorEncoding = Encoding.UTF8
+        };
+        foreach (var argument in new[] { "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", Convert.ToBase64String(Encoding.Unicode.GetBytes(wrapped)) })
+            psi.ArgumentList.Add(argument);
+        if (variables != null) foreach (var (name, value) in variables) psi.Environment[name] = value;
+
+        using var process = Process.Start(psi) ?? throw new InvalidOperationException("Não foi possível iniciar o PowerShell.");
+        using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutSource.CancelAfter(timeout ?? TimeSpan.FromMinutes(2));
+        var output = process.StandardOutput.ReadToEndAsync(timeoutSource.Token);
+        var error = process.StandardError.ReadToEndAsync(timeoutSource.Token);
+        try { await process.WaitForExitAsync(timeoutSource.Token); }
+        catch (OperationCanceledException)
+        {
+            try { process.Kill(true); } catch (InvalidOperationException) { }
+            throw new TimeoutException("O comando do PowerShell excedeu o tempo limite.");
+        }
+        if (process.ExitCode != 0)
+        {
+            var message = (await error).Trim();
+            throw new InvalidOperationException(string.IsNullOrWhiteSpace(message) ? $"O PowerShell terminou com código {process.ExitCode}." : message);
+        }
+        return (await output).Trim();
+    }
+
     public IReadOnlyList<string> GetSteps(string operation)
     {
         var function = operation switch { "padrao" => "Otimizar-Padrao", "gamer" => "Otimizar-Gamer", "debloat" => "Otimizar-Debloat", _ => "" };

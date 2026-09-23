@@ -65,23 +65,29 @@ artifacts\installer\PQueirozOptimizer-Setup-v1.0.0.exe
 
 ## Criar uma release no GitHub
 
-Atualize a versao desejada e crie uma tag:
+1. Atualize a versao em `Directory.Build.props` (ex.: `1.2.0`) e as notas em `PQueirozOptimizer/Pages/MainWindow.Info.cs`.
+2. Rode os testes localmente:
+
+```powershell
+.\tests\Verify-PowerShell.ps1
+dotnet run --project .\tests\Optimizer.Verification
+```
+
+3. Crie e envie a tag:
 
 ```powershell
 git add .
-git commit -m "Prepare release v1.0.0"
-git tag v1.0.0
+git commit -m "Prepare release v1.2.0"
+git tag v1.2.0
 git push origin main
-git push origin v1.0.0
+git push origin v1.2.0
 ```
 
-Ao receber a tag `v1.0.0`, o GitHub Actions compila o aplicativo, gera o instalador e cria uma Release com o `.exe` anexado.
+Ao receber a tag, o GitHub Actions roda os testes, compila o aplicativo, gera o instalador, publica o `SHA256SUMS.txt` e cria a Release com notas automaticas. Pull requests tambem rodam os testes.
 
-Para novas versoes, repita o processo com `v1.1.0`, `v1.2.0` e assim por diante.
+## Atualizacoes automaticas
 
-## Atualizacoes futuras
-
-A estrutura usa versionamento semantico e GitHub Releases. O aplicativo consulta a release mais recente ao abrir o dashboard e oferece o link de atualizacao quando uma versao nova esta disponivel.
+O aplicativo consulta a release mais recente ao abrir. Quando a release contem `SHA256SUMS.txt`, o instalador e baixado para uma pasta protegida em `ProgramData`, conferido pelo hash e executado em modo silencioso; o aplicativo reabre sozinho ao terminar. Releases sem o arquivo de hash abrem apenas a pagina de download.
 
 ## Emitir chaves de acesso
 

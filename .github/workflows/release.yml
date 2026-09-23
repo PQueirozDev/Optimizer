@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*.*.*"
+  pull_request:
   workflow_dispatch:
     inputs:
       version:
@@ -15,8 +16,33 @@ permissions:
   contents: write
 
 jobs:
+  test:
+    name: Tests
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: PowerShell script tests
+        shell: powershell
+        run: ./tests/Verify-PowerShell.ps1 -OutputDirectory "$env:RUNNER_TEMP\powershell-verification"
+
+      - name: App verification tests
+        shell: powershell
+        run: |
+          dotnet run --project tests/Optimizer.Verification -- "$env:RUNNER_TEMP\app-verification"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
   build:
     name: Build installer
+    needs: test
+    if: github.event_name != 'pull_request'
     runs-on: windows-latest
 
     steps:
@@ -49,11 +75,22 @@ jobs:
         shell: powershell
         run: ./scripts/build-installer.ps1 -Version "${{ steps.version.outputs.version }}"
 
+      # O aplicativo só instala atualizações automaticamente quando o hash confere com este arquivo.
+      - name: Generate checksums
+        shell: powershell
+        run: |
+          $installer = Get-Item "artifacts/installer/PQueirozOptimizer-Setup-v${{ steps.version.outputs.version }}.exe"
+          $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $installer.FullName).Hash.ToLowerInvariant()
+          "$hash  $($installer.Name)" | Out-File -FilePath "artifacts/installer/SHA256SUMS.txt" -Encoding ascii -NoNewline
+          Get-Content "artifacts/installer/SHA256SUMS.txt"
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: PQueirozOptimizer-Setup-v${{ steps.version.outputs.version }}
-          path: artifacts/installer/PQueirozOptimizer-Setup-v${{ steps.version.outputs.version }}.exe
+          path: |
+            artifacts/installer/PQueirozOptimizer-Setup-v${{ steps.version.outputs.version }}.exe
+            artifacts/installer/SHA256SUMS.txt
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
@@ -65,5 +102,6 @@ jobs:
           $version = "${{ steps.version.outputs.version }}"
           gh release create $tag `
             "artifacts/installer/PQueirozOptimizer-Setup-v$version.exe" `
+            "artifacts/installer/SHA256SUMS.txt" `
             --title "PQueiroz Optimizer $tag" `
-            --notes "Instalador Windows x64 do PQueiroz Optimizer."
+            --generate-notes

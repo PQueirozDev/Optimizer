@@ -53,14 +53,12 @@ public class ConfigService
     public void Load()
     {
         string? json = null;
+        var source = File.Exists(_primaryPath) ? _primaryPath : _secondaryPath != null && File.Exists(_secondaryPath) ? _secondaryPath : null;
 
-        if (File.Exists(_primaryPath))
+        if (source != null)
         {
-            try { json = File.ReadAllText(_primaryPath); } catch { }
-        }
-        else if (_secondaryPath != null && File.Exists(_secondaryPath))
-        {
-            try { json = File.ReadAllText(_secondaryPath); } catch { }
+            try { json = File.ReadAllText(source); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { LastLoadError = ex.Message; }
         }
 
         if (!string.IsNullOrWhiteSpace(json))
@@ -73,15 +71,30 @@ public class ConfigService
                     _config = parsed;
                 }
             }
-            catch
+            catch (JsonException ex)
             {
+                // Guarda uma cópia antes de voltar aos padrões, para não perder perfis do usuário
+                LastLoadError = "Preferências corrompidas; os padrões foram restaurados. " + ex.Message;
+                if (source == _primaryPath)
+                {
+                    try { File.Copy(_primaryPath, $"{_primaryPath}.corrompido-{DateTime.Now:yyyyMMddHHmmss}", true); }
+                    catch (Exception copyError) when (copyError is IOException or UnauthorizedAccessException) { }
+                }
                 _config = new AppConfig();
             }
         }
 
         EnsureDefaults();
-        Save();
+        // Falha ao gravar não deve impedir o app de abrir: as preferências ficam em memória.
+        try { Save(); }
+        catch (IOException ex) { LastSaveError = ex.InnerException?.Message ?? ex.Message; }
     }
+
+    /// <summary>Último erro ao gravar as preferências na inicialização, se houver.</summary>
+    public string? LastSaveError { get; private set; }
+
+    /// <summary>Último erro ao ler as preferências na inicialização, se houver.</summary>
+    public string? LastLoadError { get; private set; }
 
     public void Save()
     {
@@ -126,9 +139,13 @@ public class ConfigService
         }
 
         // Clean up any references to "inteligente" across all profiles
+        _config.Profiles.RemoveAll(p => p is null || string.IsNullOrWhiteSpace(p.Name));
         foreach (var p in _config.Profiles)
         {
-            p.EnabledOptimizations?.RemoveAll(id => id.Equals("inteligente", StringComparison.OrdinalIgnoreCase));
+            // Perfis salvos sem lista (JSON antigo ou editado à mão) voltam a exibir tudo
+            if (p.EnabledOptimizations is null || p.EnabledOptimizations.Count == 0)
+                p.EnabledOptimizations = AllOptimizations.Select(o => o.Id).ToList();
+            p.EnabledOptimizations.RemoveAll(id => id.Equals("inteligente", StringComparison.OrdinalIgnoreCase));
         }
 
         // Default to "Padrão" (which displays all optimizations)

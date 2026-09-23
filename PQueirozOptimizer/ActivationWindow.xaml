@@ -1,8 +1,38 @@
-<Window x:Class="PQueirozOptimizer.ActivationWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Ativar PQueiroz Optimizer" Width="570" Height="510" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Background="#101114" Foreground="#ECEEF2" FontFamily="Segoe UI">
-  <Border Margin="1" Padding="42" Background="#15161A" BorderBrush="#2A2D34" BorderThickness="1"><StackPanel>
-    <TextBlock Text="PQueiroz / Optimizer" FontSize="14" Foreground="#969BA6"/><TextBlock Text="Ative sua licença" FontSize="28" FontWeight="SemiBold" Margin="0,14,0,8"/><TextBlock Text="É necessária uma chave de acesso válida para usar o aplicativo." Foreground="#969BA6" TextWrapping="Wrap" Margin="0,0,0,24"/>
-    <TextBlock Text="Chave de acesso" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,7"/><TextBox x:Name="AccessKeyTextBox" Height="42" VerticalContentAlignment="Center" FontFamily="Consolas" FontSize="12"/>
-    <TextBlock Text="ID deste computador" FontSize="12" FontWeight="SemiBold" Margin="0,20,0,7"/><DockPanel><TextBox x:Name="MachineIdTextBox" IsReadOnly="True" Height="36" VerticalContentAlignment="Center" FontFamily="Consolas" FontSize="12" Background="#1B1D22" BorderBrush="#2A2D34"/><Button Content="Copiar" Width="78" Margin="10,0,0,0" Click="CopyMachineId_Click"/></DockPanel>
-    <TextBlock x:Name="StatusText" Foreground="#EF4444" TextWrapping="Wrap" MinHeight="22" Margin="0,14,0,0"/><DockPanel Margin="0,18,0,0"><Button Content="Sair" Width="92" Click="Exit_Click"/><Button Content="Ativar e continuar" Width="156" HorizontalAlignment="Right" DockPanel.Dock="Right" Background="#648CFF" Foreground="#FFFFFF" Click="Activate_Click"/></DockPanel>
-  </StackPanel></Border>
+<Window x:Class="PQueirozOptimizer.ActivationWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Ativar PQueiroz Optimizer" Width="560" Height="560" WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
+        Background="{DynamicResource BackgroundBrush}" Foreground="{DynamicResource TextBrush}" FontFamily="{StaticResource UiFont}"
+        TextOptions.TextFormattingMode="Display" UseLayoutRounding="True">
+  <Grid>
+    <Border Background="{DynamicResource GlowBrush}" IsHitTestVisible="False"/>
+    <StackPanel Margin="44,38,44,32">
+      <StackPanel Orientation="Horizontal">
+        <Border Width="44" Height="44" CornerRadius="13" Background="{DynamicResource AccentGradientBrush}">
+          <Image Source="pack://application:,,,/PQueirozOptimizer;component/Assets/app.png" Width="26" Height="26" RenderOptions.BitmapScalingMode="HighQuality"/>
+        </Border>
+        <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+          <TextBlock Text="PQueiroz" FontSize="16" FontWeight="Bold" FontFamily="{StaticResource DisplayFont}"/>
+          <TextBlock Text="OPTIMIZER" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}"/>
+        </StackPanel>
+      </StackPanel>
+
+      <TextBlock Text="Ative sua licença" FontSize="28" FontWeight="SemiBold" FontFamily="{StaticResource DisplayFont}" Margin="0,28,0,6"/>
+      <TextBlock Text="Cole abaixo a chave de acesso recebida. Ela fica vinculada a este computador." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" FontSize="13" Margin="0,0,0,24"/>
+
+      <TextBlock Text="Chave de acesso" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+      <TextBox x:Name="AccessKeyTextBox" Height="44" VerticalContentAlignment="Center" FontFamily="Cascadia Mono, Consolas" FontSize="12"/>
+
+      <TextBlock Text="ID deste computador" FontSize="12" FontWeight="SemiBold" Margin="0,20,0,8"/>
+      <DockPanel>
+        <Button DockPanel.Dock="Right" Content="Copiar" Width="86" Height="40" Margin="10,0,0,0" Padding="0" Click="CopyMachineId_Click"/>
+        <TextBox x:Name="MachineIdTextBox" IsReadOnly="True" Height="40" VerticalContentAlignment="Center" FontFamily="Cascadia Mono, Consolas" FontSize="12" Background="{DynamicResource CardBgBrush}"/>
+      </DockPanel>
+      <TextBlock Text="Envie esse ID ao solicitar uma chave." FontSize="11.5" Foreground="{DynamicResource MutedBrush}" Margin="2,6,0,0"/>
+
+      <TextBlock x:Name="StatusText" Foreground="{DynamicResource DangerBrush}" TextWrapping="Wrap" MinHeight="22" FontSize="12.5" Margin="0,16,0,0"/>
+      <DockPanel Margin="0,14,0,0">
+        <Button Content="Sair" Width="96" Height="42" Padding="0" Margin="0" Style="{StaticResource GhostButton}" Click="Exit_Click"/>
+        <Button Content="Ativar e continuar" Width="180" Height="42" Padding="0" Margin="0" HorizontalAlignment="Right" DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" IsDefault="True" Click="Activate_Click"/>
+      </DockPanel>
+    </StackPanel>
+  </Grid>
 </Window>

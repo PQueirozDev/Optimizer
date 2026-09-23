@@ -22,7 +22,9 @@ internal static class Program
             var log = new ActivityLog(Path.Combine(root, "verification.log"));
             var bridge = new PowerShellBridge(log);
             Assert(bridge.GetSteps("padrao").Count == 5, "Plano padrão contém 5 etapas");
-            Assert(bridge.GetSteps("gamer").Count == 12, "Plano avançado contém 12 etapas");
+            Assert(bridge.GetSteps("gamer").Count == 13, "Plano avançado contém 13 etapas");
+            Assert(!UpdateService.CanAutoInstall(new UpdateInfo(true, "1.0.0", "1.1.0", null, "https://github.com/PQueirozDev/Optimizer/releases/download/v1.1.0/Setup.exe", "Setup.exe", null)), "Atualização sem hash publicado não é instalada automaticamente");
+            Assert(new LicenseService().MachineId.Length == 20, "ID do computador gerado");
             Assert(bridge.GetSteps("debloat").Count == 15, "Plano debloat contém 15 etapas, limpeza usa análise separada");
             var configPath = Path.Combine(root, "config-test.json");
             File.WriteAllText(configPath, """{"activeProfile":"Modo Gamer","profiles":[{"name":"Modo Gamer","enabledOptimizations":null}]}""");
@@ -82,6 +84,17 @@ internal static class Program
                 Render("review-dark", 1060, 700);
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "history" });
                 Render("history-dark", 1320, 860);
+                foreach (var page in new[] { "drivers", "tools", "settings", "about", "patchnotes", "bios" })
+                {
+                    typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { page });
+                    Render(page + "-dark", 1320, 860);
+                }
+                typeof(MainWindow).GetMethod("ApplyTheme", flags)!.Invoke(window, new object[] { false, false });
+                typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "dashboard" });
+                Pump((Task)typeof(MainWindow).GetMethod("RenderDashboardAsync", flags)!.Invoke(window, null)!);
+                Render("dashboard-light", 1320, 860);
+                typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "optimization" });
+                Render("optimizations-light", 1320, 860);
             }
             return 0;
         }

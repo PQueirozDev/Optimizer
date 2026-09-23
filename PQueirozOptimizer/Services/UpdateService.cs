@@ -1,68 +1,166 @@
+using System.Diagnostics;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
+using System.Security.AccessControl;
+using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Text.Json;
-using System.IO;
 
 namespace PQueirozOptimizer.Services;
 
-public sealed record UpdateInfo(bool IsAvailable, string CurrentVersion, string LatestVersion, string? DownloadUrl, string? AssetUrl, string? AssetName);
+public sealed record UpdateInfo(bool IsAvailable, string CurrentVersion, string LatestVersion, string? DownloadUrl, string? AssetUrl, string? AssetName, string? ChecksumUrl);
+
+/// <summary>Instalador baixado, validado e travado contra escrita até ser executado.</summary>
+public sealed class VerifiedInstaller : IDisposable
+{
+    private readonly FileStream _lock;
+    internal VerifiedInstaller(string path, FileStream lockHandle) { Path = path; _lock = lockHandle; }
+    public string Path { get; }
+
+    /// <summary>Executa o instalador sem interface; ele fecha o app e o reabre ao terminar.</summary>
+    public void LaunchSilent()
+    {
+        var psi = new ProcessStartInfo(Path) { UseShellExecute = true, Verb = "runas" };
+        psi.ArgumentList.Add("/VERYSILENT");
+        psi.ArgumentList.Add("/SUPPRESSMSGBOXES");
+        psi.ArgumentList.Add("/NORESTART");
+        psi.ArgumentList.Add("/CLOSEAPPLICATIONS");
+        // O handle continua aberto (somente leitura) até o processo ter sido criado.
+        Process.Start(psi);
+    }
+
+    public void Dispose() => _lock.Dispose();
+}
 
 public sealed class UpdateService
 {
+    public const string ChecksumAssetName = "SHA256SUMS.txt";
     private static readonly HttpClient Client = CreateClient();
+    private static readonly string UpdatesFolder = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "PQueirozOptimizer", "Updates");
+
     private static HttpClient CreateClient()
     {
-        var client = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
-        client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("PQueirozOptimizer", "1.0"));
+        var client = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
+        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0";
+        client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("PQueirozOptimizer", version));
         return client;
     }
 
     public async Task<UpdateInfo> CheckAsync(string currentVersion, CancellationToken token = default)
     {
         var current = Normalize(currentVersion);
-        using var response = await Client.GetAsync("https://api.github.com/repos/PQueirozDev/Optimizer/releases/latest", token);
-        if (!response.IsSuccessStatusCode) return new(false, current, current, null, null, null);
-        await using var stream = await response.Content.ReadAsStreamAsync(token);
-        using var json = await JsonDocument.ParseAsync(stream, cancellationToken: token);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
+        timeout.CancelAfter(TimeSpan.FromSeconds(8));
+        using var response = await Client.GetAsync("https://api.github.com/repos/PQueirozDev/Optimizer/releases/latest", timeout.Token);
+        if (!response.IsSuccessStatusCode) return new(false, current, current, null, null, null, null);
+        await using var stream = await response.Content.ReadAsStreamAsync(timeout.Token);
+        using var json = await JsonDocument.ParseAsync(stream, cancellationToken: timeout.Token);
         var tag = json.RootElement.TryGetProperty("tag_name", out var tagElement) ? tagElement.GetString() : null;
-        if (string.IsNullOrWhiteSpace(tag)) return new(false, current, current, null, null, null);
+        if (string.IsNullOrWhiteSpace(tag)) return new(false, current, current, null, null, null, null);
         var latest = Normalize(tag);
         var url = json.RootElement.TryGetProperty("html_url", out var urlElement) ? urlElement.GetString() : null;
-        string? assetUrl = null, assetName = null;
+        string? assetUrl = null, assetName = null, checksumUrl = null;
         if (json.RootElement.TryGetProperty("assets", out var assets))
         {
             foreach (var asset in assets.EnumerateArray())
             {
                 var name = asset.TryGetProperty("name", out var n) ? n.GetString() : null;
-                if (name?.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) == true)
-                {
-                    assetName = name;
-                    assetUrl = asset.TryGetProperty("browser_download_url", out var a) ? a.GetString() : null;
-                    break;
-                }
+                var download = asset.TryGetProperty("browser_download_url", out var a) ? a.GetString() : null;
+                if (assetUrl is null && name?.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) == true) { assetName = name; assetUrl = download; }
+                else if (string.Equals(name, ChecksumAssetName, StringComparison.OrdinalIgnoreCase)) checksumUrl = download;
             }
         }
-        return new(Compare(latest, current) > 0, current, latest, url, assetUrl, assetName);
+        return new(Compare(latest, current) > 0, current, latest, url, assetUrl, assetName, checksumUrl);
     }
 
-    public async Task<string> DownloadAsync(UpdateInfo update, IProgress<(long read, long total)>? progress = null, CancellationToken token = default)
+    /// <summary>Indica se a release permite instalação automática (instalador + hash publicado).</summary>
+    public static bool CanAutoInstall(UpdateInfo update) => !string.IsNullOrWhiteSpace(update.AssetUrl) && !string.IsNullOrWhiteSpace(update.ChecksumUrl);
+
+    public async Task<VerifiedInstaller> DownloadAsync(UpdateInfo update, IProgress<(long read, long total)>? progress = null, CancellationToken token = default)
     {
-        if (string.IsNullOrWhiteSpace(update.AssetUrl)) throw new InvalidOperationException("A release não possui instalador disponível.");
-        var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
-        Directory.CreateDirectory(folder);
-        var path = Path.Combine(folder, string.IsNullOrWhiteSpace(update.AssetName) ? $"PQueirozOptimizer-Setup-v{update.LatestVersion}.exe" : update.AssetName);
-        using var response = await Client.GetAsync(update.AssetUrl, HttpCompletionOption.ResponseHeadersRead, token);
-        response.EnsureSuccessStatusCode();
-        var total = response.Content.Headers.ContentLength ?? -1;
-        await using var input = await response.Content.ReadAsStreamAsync(token);
-        await using var output = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None, 81920, true);
-        var buffer = new byte[81920]; long read = 0; int count;
-        while ((count = await input.ReadAsync(buffer.AsMemory(), token)) > 0)
+        if (!CanAutoInstall(update)) throw new InvalidOperationException("Esta versão não publica o hash do instalador. Baixe pela página de releases.");
+        if (!IsTrustedGitHubUrl(update.AssetUrl!) || !IsTrustedGitHubUrl(update.ChecksumUrl!)) throw new InvalidOperationException("Endereço de download inesperado.");
+
+        var expected = await GetExpectedHashAsync(update, token);
+        var folder = PrepareUpdatesFolder();
+        var fileName = System.IO.Path.GetFileName(string.IsNullOrWhiteSpace(update.AssetName) ? $"PQueirozOptimizer-Setup-v{update.LatestVersion}.exe" : update.AssetName);
+        var path = System.IO.Path.Combine(folder, $"{Guid.NewGuid():N}-{fileName}");
+
+        using (var response = await Client.GetAsync(update.AssetUrl, HttpCompletionOption.ResponseHeadersRead, token))
         {
-            await output.WriteAsync(buffer.AsMemory(0, count), token); read += count; progress?.Report((read, total));
+            response.EnsureSuccessStatusCode();
+            var total = response.Content.Headers.ContentLength ?? -1;
+            await using var input = await response.Content.ReadAsStreamAsync(token);
+            await using var output = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, true);
+            var buffer = new byte[81920]; long read = 0; int count;
+            while ((count = await input.ReadAsync(buffer.AsMemory(), token)) > 0)
+            {
+                await output.WriteAsync(buffer.AsMemory(0, count), token); read += count; progress?.Report((read, total));
+            }
         }
-        return path;
+
+        // Reabre sem permitir escrita por ninguém e calcula o hash a partir desse mesmo handle:
+        // o arquivo verificado é exatamente o que será executado.
+        var handle = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        try
+        {
+            var actual = Convert.ToHexString(await SHA256.HashDataAsync(handle, token));
+            if (!string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("O instalador baixado não confere com o hash publicado na release. A atualização foi cancelada.");
+            return new VerifiedInstaller(path, handle);
+        }
+        catch
+        {
+            handle.Dispose();
+            try { File.Delete(path); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            throw;
+        }
     }
+
+    private static async Task<string> GetExpectedHashAsync(UpdateInfo update, CancellationToken token)
+    {
+        var sums = await Client.GetStringAsync(update.ChecksumUrl, token);
+        foreach (var line in sums.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            // Formato do sha256sum: "<hash>  <arquivo>" (o nome pode vir com '*' no modo binário)
+            var parts = line.Split((char[])[' ', '\t'], 2, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 2 && parts[0].Length == 64 && string.Equals(parts[1].Trim().TrimStart('*'), update.AssetName, StringComparison.OrdinalIgnoreCase))
+                return parts[0];
+        }
+        throw new InvalidDataException("O hash do instalador não foi encontrado na release.");
+    }
+
+    // Pasta em ProgramData acessível apenas a Administradores/SYSTEM: um processo sem
+    // privilégios não consegue trocar o instalador entre o download e a execução.
+    private static string PrepareUpdatesFolder()
+    {
+        var security = new DirectorySecurity();
+        security.SetAccessRuleProtection(true, false);
+        var admins = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+        var system = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+        security.SetOwner(admins);
+        foreach (var sid in new[] { admins, system })
+            security.AddAccessRule(new FileSystemAccessRule(sid, FileSystemRights.FullControl, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
+
+        var info = new DirectoryInfo(UpdatesFolder);
+        if (info.Exists && info.Attributes.HasFlag(FileAttributes.ReparsePoint)) info.Delete();
+        info = new DirectoryInfo(UpdatesFolder);
+        if (!info.Exists) info.Create(security); else info.SetAccessControl(security);
+
+        foreach (var old in info.EnumerateFiles("*.exe"))
+        {
+            try { if (old.LastWriteTimeUtc < DateTime.UtcNow.AddDays(-1)) old.Delete(); }
+            catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+        return UpdatesFolder;
+    }
+
+    private static bool IsTrustedGitHubUrl(string url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps &&
+        uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase) &&
+        uri.AbsolutePath.StartsWith("/PQueirozDev/Optimizer/releases/download/", StringComparison.OrdinalIgnoreCase);
 
     private static string Normalize(string value) => value.Trim().TrimStart('v', 'V');
     private static int Compare(string left, string right)
