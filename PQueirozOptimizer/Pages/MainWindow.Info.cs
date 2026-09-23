@@ -68,7 +68,7 @@ public partial class MainWindow
             foreach (var note in notes)
             {
                 var row = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
-                var mark = Icon(Glyphs.Check, 12, i == 0 ? "AccentBrush" : "MutedBrush"); mark.VerticalAlignment = VerticalAlignment.Top; mark.Margin = new Thickness(0, 3, 12, 0);
+                var mark = GlyphIcon(Glyphs.Check, 12, i == 0 ? "AccentBrush" : "MutedBrush"); mark.VerticalAlignment = VerticalAlignment.Top; mark.Margin = new Thickness(0, 3, 12, 0);
                 row.Children.Add(mark);
                 var text = Label(note, 13, i != 0); text.Margin = new Thickness(0);
                 row.Children.Add(text);
@@ -152,7 +152,7 @@ public partial class MainWindow
         var logo = new Border { Width = 72, Height = 72, CornerRadius = new CornerRadius(20), VerticalAlignment = VerticalAlignment.Top };
         logo.SetResourceReference(Border.BackgroundProperty, "AccentGradientBrush");
         try { logo.Child = new Image { Source = new BitmapImage(new Uri("pack://application:,,,/PQueirozOptimizer;component/Assets/app.png")), Width = 44, Height = 44 }; }
-        catch (Exception ex) when (ex is System.IO.IOException or UriFormatException) { logo.Child = Icon(Glyphs.Lightning, 30, "OnAccentBrush"); }
+        catch (Exception ex) when (ex is System.IO.IOException or UriFormatException) { logo.Child = GlyphIcon(Glyphs.Lightning, 30, "OnAccentBrush"); }
         DockPanel.SetDock(logo, Dock.Left); hero.Children.Add(logo);
         var heroText = new StackPanel { Margin = new Thickness(22, 0, 0, 0) };
         var name = new TextBlock { Text = "PQueiroz Optimizer", FontSize = 26, FontWeight = FontWeights.Bold };

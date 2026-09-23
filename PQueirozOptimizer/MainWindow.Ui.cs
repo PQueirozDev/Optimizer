@@ -55,7 +55,7 @@ public partial class MainWindow
         return label;
     }
 
-    private static TextBlock Icon(string glyph, double size = 16, string brushKey = "TextBrush")
+    private static TextBlock GlyphIcon(string glyph, double size = 16, string brushKey = "TextBrush")
     {
         var icon = new TextBlock { Text = glyph, FontSize = size, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
         icon.SetResourceReference(TextBlock.FontFamilyProperty, "IconFont");
@@ -66,7 +66,7 @@ public partial class MainWindow
     /// <summary>Quadrado arredondado com ícone colorido sobre fundo translúcido da mesma cor.</summary>
     private static Border IconChip(string glyph, string tone = "Accent", double size = 40)
     {
-        var chip = new Border { Width = size, Height = size, CornerRadius = new CornerRadius(size * 0.3), Child = Icon(glyph, size * 0.42, tone + "Brush") };
+        var chip = new Border { Width = size, Height = size, CornerRadius = new CornerRadius(size * 0.3), Child = GlyphIcon(glyph, size * 0.42, tone + "Brush") };
         chip.SetResourceReference(Border.BackgroundProperty, tone + "SoftBrush");
         return chip;
     }
@@ -108,7 +108,7 @@ public partial class MainWindow
     private static Button IconButton(string glyph, string text, bool primary = false)
     {
         var content = new StackPanel { Orientation = Orientation.Horizontal };
-        var icon = Icon(glyph, 13, primary ? "OnAccentBrush" : "AccentBrush");
+        var icon = GlyphIcon(glyph, 13, primary ? "OnAccentBrush" : "AccentBrush");
         icon.Margin = new Thickness(0, 0, 8, 0);
         content.Children.Add(icon);
         content.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center, Foreground = null });

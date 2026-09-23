@@ -207,7 +207,7 @@ public partial class MainWindow : Window
     {
         _darkTheme = isDark;
         ThemeService.Apply(Application.Current.Resources, isDark);
-        ThemeButton.Content = Icon(isDark ? Glyphs.Sun : Glyphs.Moon, 13);
+        ThemeButton.Content = GlyphIcon(isDark ? Glyphs.Sun : Glyphs.Moon, 13);
         ThemeButton.ToolTip = isDark ? "Alternar para tema claro" : "Alternar para tema escuro";
 
         if (saveConfig)

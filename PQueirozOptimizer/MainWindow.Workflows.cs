@@ -116,7 +116,7 @@ public partial class MainWindow
             intro.Children.Add(SectionHeader("Escolha exatamente o que deseja aplicar",
                 "Um ponto de restauração é criado antes dos ajustes; se ele falhar, nada é alterado. Alterações de energia, registro e serviços têm backup e podem ser revertidas em “Atividade e reversão”."));
             var notice = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
-            notice.Children.Add(Icon(Glyphs.Warning, 13, "WarningBrush"));
+            notice.Children.Add(GlyphIcon(Glyphs.Warning, 13, "WarningBrush"));
             var noticeText = Label("Remoções de apps e arquivos não são desfeitas pelo backup. Alguns ajustes só valem depois de reiniciar o Windows.", 12, true);
             noticeText.Margin = new Thickness(8, 0, 0, 0);
             notice.Children.Add(noticeText);
@@ -301,7 +301,7 @@ public partial class MainWindow
                         using var archived = JsonDocument.Parse(File.ReadAllText(path));
                         var reverted = Path.GetFileName(path).StartsWith("revertido_");
                         var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
-                        row.Children.Add(Icon(reverted ? Glyphs.Undo : Glyphs.History, 12, "MutedBrush"));
+                        row.Children.Add(GlyphIcon(reverted ? Glyphs.Undo : Glyphs.History, 12, "MutedBrush"));
                         var line = Label($"{archived.RootElement.GetProperty("Nome")} · {archived.RootElement.GetProperty("Data")}{(reverted ? " · revertido" : "")}", 12, true);
                         line.Margin = new Thickness(10, 0, 0, 0);
                         row.Children.Add(line);
@@ -449,7 +449,7 @@ public partial class MainWindow
 
             var profile = _configService.GetActiveProfile();
             var profileLine = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(4, 0, 0, 8) };
-            profileLine.Children.Add(Icon(Glyphs.Settings, 12, "MutedBrush"));
+            profileLine.Children.Add(GlyphIcon(Glyphs.Settings, 12, "MutedBrush"));
             var pl = Label($"Perfil selecionado: {profile.Name}. Você sempre revisa os ajustes antes de aplicar.", 12, true); pl.Margin = new Thickness(8, 0, 0, 0);
             profileLine.Children.Add(pl);
             root.Children.Add(profileLine);

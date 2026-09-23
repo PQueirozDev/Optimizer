@@ -106,7 +106,7 @@ public partial class MainWindow
             tile.SetResourceReference(Button.BorderBrushProperty, "BorderSubtleBrush");
             var row = new DockPanel();
             var chip = IconChip(glyph, "Accent", 34); DockPanel.SetDock(chip, Dock.Left); row.Children.Add(chip);
-            var arrow = Icon(Glyphs.ChevronRight, 11, "MutedBrush"); DockPanel.SetDock(arrow, Dock.Right); row.Children.Add(arrow);
+            var arrow = GlyphIcon(Glyphs.ChevronRight, 11, "MutedBrush"); DockPanel.SetDock(arrow, Dock.Right); row.Children.Add(arrow);
             var label = new TextBlock { Text = name, FontSize = 12.5, FontWeight = FontWeights.SemiBold, Margin = new Thickness(12, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = name };
             label.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
             row.Children.Add(label);
