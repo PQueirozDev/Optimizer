@@ -159,6 +159,7 @@ public static partial class Translator
         ["Versão Avançada ativa o modo MSI na placa de vídeo (reversível)."] = "Advanced Mode enables MSI mode on the graphics card (reversible).",
         ["Efeitos visuais e precisão do ponteiro agora são aplicados na hora; antes só mudavam o registro."] = "Visual effects and pointer precision are now applied immediately; before they only changed the registry.",
         ["Serviços já removidos do Windows não geram mais falha, e o plano Desempenho Máximo não é mais duplicado."] = "Services already removed from Windows no longer cause failures, and the Ultimate Performance plan is no longer duplicated.",
+        ["O aplicativo abre uma única vez: clicar de novo traz a janela já aberta para frente."] = "The app opens only once: clicking again brings the open window to the front.",
         ["Todo o aplicativo agora muda de idioma, incluindo mensagens e a saída das operações."] = "The whole app now switches language, including messages and operation output.",
         ["Saída completa das operações ao vivo, com cores, contadores e botão para copiar o resultado."] = "Full live output for operations, with colors, counters and a copy-result button.",
         ["Nova página Inicialização do Windows para ativar e desativar programas que abrem com o PC."] = "New Windows startup page to enable and disable programs that start with the PC.",

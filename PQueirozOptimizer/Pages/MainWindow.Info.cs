@@ -31,6 +31,7 @@ public partial class MainWindow
             "Versão Avançada ativa o modo MSI na placa de vídeo (reversível).",
             "Efeitos visuais e precisão do ponteiro agora são aplicados na hora; antes só mudavam o registro.",
             "Serviços já removidos do Windows não geram mais falha, e o plano Desempenho Máximo não é mais duplicado.",
+            "O aplicativo abre uma única vez: clicar de novo traz a janela já aberta para frente.",
         }),
         ("v1.3.0", "23/09/2026", new[]
         {
