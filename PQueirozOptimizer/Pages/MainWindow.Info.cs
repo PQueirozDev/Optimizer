@@ -24,6 +24,14 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.4.0", "24/09/2026", new[]
+        {
+            "Análise do PC mostra placa-mãe, BIOS, memória (XMP/EXPO e dual channel), temperatura e Integridade de Memória.",
+            "Nova medição de latência DPC e interrupções na análise e no benchmark, com comparação antes → depois.",
+            "Versão Avançada ativa o modo MSI na placa de vídeo (reversível).",
+            "Efeitos visuais e precisão do ponteiro agora são aplicados na hora; antes só mudavam o registro.",
+            "Serviços já removidos do Windows não geram mais falha, e o plano Desempenho Máximo não é mais duplicado.",
+        }),
         ("v1.3.0", "23/09/2026", new[]
         {
             "Todo o aplicativo agora muda de idioma, incluindo mensagens e a saída das operações.",
