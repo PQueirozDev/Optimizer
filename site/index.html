@@ -1,84 +1,316 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="PQueiroz Optimizer e Windows Personalizado: desempenho, controle e uma experiência limpa no Windows.">
+  <meta name="theme-color" content="#060709">
   <title>PQueiroz · Optimizer & Windows</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Mono:wght@400;500&family=Raleway:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="theme.css">
-  <link rel="stylesheet" href="motion.css">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <script>document.documentElement.classList.add("js");</script>
 </head>
 <body>
-  <div class="noise" aria-hidden="true"></div>
-  <div class="ambient ambient-one" aria-hidden="true"></div><div class="ambient ambient-two" aria-hidden="true"></div><div class="scanlines" aria-hidden="true"></div>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></symbol>
+      <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10Z"/></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+      <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></symbol>
+      <symbol id="i-broom" viewBox="0 0 24 24"><path d="M19 3 11 11"/><path d="M11 11c-3 0-6 2-7 6l3 3c4-1 6-4 6-7l-2-2Z"/><path d="m7 14 3 3"/></symbol>
+      <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></symbol>
+      <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    </defs>
+  </svg>
+
   <header class="topbar">
-    <a class="brand" href="#inicio" aria-label="PQueiroz início"><span class="brand-mark">P</span><span>PQueiroz</span><em>/</em><small>Optimizer</small></a>
-    <nav class="nav" aria-label="Navegação principal">
-      <a href="#optimizer">Optimizer</a><a href="#windows">Windows personalizado</a><a href="#beneficios">Vantagens</a><a href="#patch-notes">Atualizações</a><a href="#comprar">Comprar</a><a href="#diretrizes">Diretrizes</a><a href="#suporte">Suporte</a><a href="#faq">FAQ</a>
-    </nav>
-    <a class="nav-cta" href="#comprar">Ver produtos <span>?</span></a>
-    <button class="menu-toggle" aria-label="Abrir menu">☰</button>
+    <div class="container topbar-inner">
+      <a class="brand" href="#inicio" aria-label="PQueiroz Optimizer, início">
+        <span class="brand-mark" aria-hidden="true">P</span>
+        <span>PQueiroz</span><small>Optimizer</small>
+      </a>
+      <nav class="nav" aria-label="Navegação principal">
+        <a href="#optimizer">Optimizer</a>
+        <a href="#windows">Windows</a>
+        <a href="#comprar">Planos</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <div class="topbar-actions">
+        <a class="btn btn-outline btn-sm" href="#suporte">Suporte</a>
+        <a class="btn btn-primary btn-sm" href="https://discord.gg/FPpy5ENqq" target="_blank" rel="noreferrer">Comprar agora</a>
+      </div>
+    </div>
   </header>
 
   <main id="inicio">
-    <section class="hero section-wrap">
-      <div class="hero-copy reveal">
-        <div class="eyebrow"><span class="status-dot"></span> Otimização para quem exige mais</div>
-        <h1>EXTRAIA<br><span>MAIS FPS.</span></h1>
-        <p class="hero-text">Um painel direto para deixar seu Windows mais leve, responsivo e pronto para jogar — com controle total em cada ajuste.</p>
-        <div class="hero-actions"><a class="button primary" href="#optimizer">Conhecer o Optimizer <span>?</span></a><a class="button ghost" href="#windows">Conhecer o Windows <span>→</span></a></div>
-        <div class="hero-meta"><span>v1.1.1</span><i></i><span>Windows 10 / 11 · x64</span><i></i><span>Otimização avançada</span></div>
-      </div>
-      <div class="hero-visual reveal" aria-label="Prévia do dashboard do Optimizer">
-        <div class="window-card">
-          <div class="window-top"><span class="mini-logo">P</span><b>PQueiroz <small>/ Optimizer</small></b><div class="window-dots"><i></i><i></i><i></i></div></div>
-          <div class="window-body"><aside><div class="side-label">VISÃO GERAL</div><strong>Dashboard</strong><div class="side-label">GERENCIAR</div><span>Otimizações</span><span>Drivers</span><span>Ferramentas</span><span>Atividade</span></aside><div class="dash"><div class="dash-kicker">SEU COMPUTADOR, SOB CONTROLE</div><h3>Visão geral</h3><div class="metric-row"><div><small>PROCESSADOR</small><b>i7-10700F</b></div><div><small>MEMÓRIA</small><b>15.9 GB</b></div><div><small>ESPAÇO LIVRE</small><b>241.1 GB</b></div></div><div class="dash-panel"><small>STATUS DO SISTEMA</small><b>Pronto para manutenção e otimização.</b><div class="bar"><span></span></div></div><div class="dash-buttons"><i></i><i></i><i></i></div></div></div>
+    <!-- Hero -->
+    <section class="hero">
+      <canvas class="particles" aria-hidden="true"></canvas>
+      <div class="container hero-inner">
+        <p class="kicker reveal">Otimização para quem exige mais · Windows 10 / 11</p>
+        <h1 class="reveal" style="--d: 60ms">Extraia mais FPS<br>com <span class="accent">controle total</span>.</h1>
+        <p class="lead reveal" style="--d: 120ms">Um painel direto para deixar seu Windows mais leve, responsivo e pronto para jogar — com controle total em cada ajuste.</p>
+        <div class="hero-actions reveal" style="--d: 180ms">
+          <a class="btn btn-primary btn-lg" href="#comprar">Ver planos e valores</a>
+          <a class="btn btn-outline btn-lg" href="#optimizer">Ver como funciona</a>
         </div>
-        <div class="glow"></div>
+        <p class="meta reveal" style="--d: 240ms">v1.1.1 · Windows 10 / 11 x64 · Backup antes de cada ajuste</p>
+      </div>
+      <div class="hero-glow" aria-hidden="true"></div>
+    </section>
+
+    <!-- Números -->
+    <section class="container stats" aria-label="Destaques">
+      <div class="stat reveal"><svg class="icon"><use href="#i-layers"/></svg><strong>3</strong><span>Produtos: Optimizer e duas edições do Windows</span></div>
+      <div class="stat reveal" style="--d: 60ms"><svg class="icon"><use href="#i-cpu"/></svg><strong>x64</strong><span>Windows 10 e 11 compatíveis</span></div>
+      <div class="stat reveal" style="--d: 120ms"><svg class="icon"><use href="#i-shield"/></svg><strong>Backup</strong><span>Snapshots e reversão antes dos ajustes</span></div>
+      <div class="stat reveal" style="--d: 180ms"><svg class="icon"><use href="#i-clock"/></svg><strong>1–2 dias</strong><span>úteis para receber sua chave</span></div>
+    </section>
+
+    <!-- Optimizer -->
+    <section id="optimizer" class="section">
+      <div class="container narrow center">
+        <p class="kicker reveal">Por dentro do Optimizer</p>
+        <h2 class="reveal">Otimização sem caixa-preta</h2>
+        <p class="section-lead reveal">O PQueiroz Optimizer reúne diagnóstico, manutenção e ajustes avançados em um painel direto. Você escolhe o que aplicar e acompanha cada etapa.</p>
+      </div>
+
+      <div class="app-window reveal" aria-label="Demonstração do Optimizer aplicando ajustes">
+        <div class="app-top">
+          <span class="brand-mark sm" aria-hidden="true">P</span>
+          <b>PQueiroz Optimizer</b>
+          <span class="app-version">v1.1.1</span>
+          <span class="app-dots" aria-hidden="true"><i></i><i></i></span>
+        </div>
+        <div class="app-body">
+          <h3 class="app-title">Otimizando<span class="dots">...</span></h3>
+          <ol class="steps-list">
+            <li>Criando backup e ponto de restauração</li>
+            <li>Limpeza inteligente de arquivos temporários</li>
+            <li>Aplicando plano de energia PQueiroz</li>
+            <li>Reduzindo latência de mouse, teclado e USB</li>
+            <li>Ajustando privacidade e serviços</li>
+            <li>Registrando ações no histórico</li>
+          </ol>
+          <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="48"><span></span></div>
+          <p class="progress-label">48%</p>
+        </div>
+      </div>
+      <p class="container narrow center fine reveal">Demonstração ilustrativa. No app você revisa e seleciona exatamente o que será aplicado.</p>
+
+      <div class="container cards-4">
+        <article class="card reveal"><span class="card-icon"><svg class="icon"><use href="#i-zap"/></svg></span><h3>Versão Avançada</h3><p>Desempenho, latência, privacidade e políticas do Editor de Política de Grupo em um único fluxo revisável.</p><a class="card-link" href="https://github.com/PQueirozDev/Optimizer/releases/latest">Ver release ↗</a></article>
+        <article class="card reveal" style="--d: 60ms"><span class="card-icon"><svg class="icon"><use href="#i-broom"/></svg></span><h3>Limpeza inteligente</h3><p>Analise antes de excluir. Arquivos recentes e itens protegidos ficam preservados.</p></article>
+        <article class="card reveal" style="--d: 120ms"><span class="card-icon"><svg class="icon"><use href="#i-undo"/></svg></span><h3>Backup e reversão</h3><p>Snapshots, histórico e tentativa de reversão dos itens que falharem.</p></article>
+        <article class="card reveal" style="--d: 180ms"><span class="card-icon"><svg class="icon"><use href="#i-chart"/></svg></span><h3>Diagnóstico real</h3><p>Hardware, espaço livre, benchmark e atividade reunidos no dashboard.</p></article>
       </div>
     </section>
 
-    <section class="proof section-wrap"><div><strong>01</strong><span>Uma interface limpa para decisões claras.</span></div><div><strong>02</strong><span>Backups e reversão antes de ajustes.</span></div><div><strong>03</strong><span>Políticas avançadas para privacidade e latência.</span></div></section>
+    <!-- Windows -->
+    <section id="windows" class="section">
+      <div class="container narrow center">
+        <p class="kicker reveal">Imagem personalizada · 24H2</p>
+        <h2 class="reveal">Um Windows mais silencioso</h2>
+        <p class="section-lead reveal">Uma imagem personalizada para quem quer começar com uma base limpa, com menos componentes desnecessários e foco em consistência.</p>
+        <div class="pills reveal">
+          <span class="pill"><i class="pill-dot"></i>Windows 11 Leve · competitivo</span>
+          <span class="pill"><i class="pill-dot alt"></i>Windows 11 Otimizado Avançado</span>
+        </div>
+      </div>
 
-    <section id="optimizer" class="product section-wrap">
-      <div class="section-intro"><div><div class="eyebrow">01 · Aplicativo desktop</div><h2>Otimização sem<br><span>caixa-preta.</span></h2></div><p>O PQueiroz Optimizer reúne diagnóstico, manutenção e ajustes avançados em um painel direto. Você escolhe o que aplicar e acompanha cada etapa.</p></div>
-      <div class="product-photo"><img src="assets/optimizer-art.png" alt="Prévia do painel do PQueiroz Optimizer"></div><div class="feature-grid"><article class="feature large"><div class="feature-number">A</div><h3>Versão Avançada</h3><p>Desempenho, latência, privacidade e políticas do Editor de Política de Grupo em um único fluxo revisável.</p><a href="https://github.com/PQueirozDev/Optimizer/releases/latest">Ver release <span>↗</span></a></article><article class="feature"><div class="feature-icon">⌁</div><h3>Limpeza inteligente</h3><p>Analise antes de excluir. Arquivos recentes e itens protegidos ficam preservados.</p></article><article class="feature"><div class="feature-icon">↶</div><h3>Backup e reversão</h3><p>Snapshots, histórico e tentativa de reversão dos itens que falharem.</p></article><article class="feature"><div class="feature-icon">▦</div><h3>Diagnóstico real</h3><p>Hardware, espaço livre, benchmark e atividade reunidos no dashboard.</p></article></div>
+      <div class="container windows-grid">
+        <div class="iso-card reveal">
+          <div class="iso-top"><span class="iso-badge">ISO</span><span class="mono muted">24H2 · x64</span></div>
+          <h3>Windows 11 Custom</h3>
+          <p>Escolha entre a edição Leve, focada em jogos competitivos, e a edição Otimizada Avançada, indicada para jogos convencionais.</p>
+          <dl>
+            <div><dt>Requisitos</dt><dd>4 GB+ RAM · 64 GB · SSD recomendado</dd></div>
+            <div><dt>Distribuição</dt><dd>Google Drive</dd></div>
+          </dl>
+          <p class="warning">Confira o hash e crie um backup antes de instalar.</p>
+        </div>
+        <div class="benefits reveal" style="--d: 80ms">
+          <article><b>01</b><div><h3>Mais desempenho</h3><p>Prioridade para jogos e aplicativos importantes, com menos consumo em segundo plano.</p></div></article>
+          <article><b>02</b><div><h3>Privacidade reforçada</h3><p>Telemetria e sugestões desnecessárias reduzidas para você ter mais controle.</p></div></article>
+          <article><b>03</b><div><h3>Instalação orientada</h3><p>Receba instruções claras, requisitos e suporte para preparar seu computador.</p></div></article>
+          <article><b>04</b><div><h3>Base consistente</h3><p>Uma instalação organizada para começar seus projetos sem perder tempo ajustando tudo.</p></div></article>
+        </div>
+      </div>
     </section>
 
-    <section id="windows" class="windows section-wrap"><div class="windows-grid"><div><div class="eyebrow">02 · Imagem personalizada</div><h2>Um Windows<br><span>mais silencioso.</span></h2><p>Uma imagem personalizada para quem quer começar com uma base limpa, com menos componentes desnecessários e foco em consistência.</p><div class="tag-list"><span>Windows 11 Leve e Avançado · 24H2</span><span>x64</span><span>SSD recomendado</span></div><a class="button primary" href="#comprar">Conhecer o produto <span>→</span></a></div><div class="iso-card"><div class="iso-top"><span class="iso-badge">ISO</span><span class="iso-size">24H2 · x64</span></div><h3>Windows 11 Custom</h3><p>Escolha entre a edição Leve, focada em jogos competitivos, e a edição Otimizada Avançada, indicada para jogos convencionais.</p><div class="iso-line"><span>Requisitos</span><b>4 GB+ RAM · 64 GB</b></div><div class="iso-line"><span>Distribuição</span><b>Google Drive</b></div><div class="iso-warning">Confira o hash e crie um backup antes de instalar.</div></div></div></section>
-    <section class="showcase section-wrap"><div class="eyebrow">Por dentro do produto</div><div class="showcase-head"><h2>Um Windows feito para<br><span>render melhor.</span></h2><p>Uma experiência mais limpa desde o primeiro boot, com ajustes pensados para jogos, trabalho e uso diário.</p></div><div class="visual-grid"><div class="visual-card visual-main"><div class="visual-window"><div class="visual-bar"><span>Windows 11 Custom</span><i></i><i></i><i></i></div><div class="visual-content"><div class="visual-orb"></div><b>Seu sistema.<br>Do seu jeito.</b><small>Perfil avançado pronto para usar</small></div></div></div><div class="visual-card visual-stats"><span class="visual-label">FOCO EM DESEMPENHO</span><strong>+<em>fluidez</em></strong><p>Menos processos desnecessários e inicialização mais rápida.</p></div><div class="visual-card visual-clean"><span class="visual-label">EXPERIÊNCIA LIMPA</span><div class="clean-lines"><i></i><i></i><i></i><i></i></div><p>Interface enxuta, sem excesso de aplicativos e notificações.</p></div></div></section><section id="beneficios" class="benefits section-wrap"><div class="eyebrow">Por que escolher</div><div class="benefits-grid"><article><b>01</b><h3>Mais desempenho</h3><p>Prioridade para jogos e aplicativos importantes, com menos consumo em segundo plano.</p></article><article><b>02</b><h3>Privacidade reforçada</h3><p>Telemetria e sugestões desnecessárias reduzidas para você ter mais controle.</p></article><article><b>03</b><h3>Instalação orientada</h3><p>Receba instruções claras, requisitos e suporte para preparar seu computador.</p></article><article><b>04</b><h3>Base consistente</h3><p>Uma instalação organizada para começar seus projetos sem perder tempo ajustando tudo.</p></article></div></section>
-    <section id="patch-notes" class="patch-notes section-wrap"><div class="eyebrow">Histórico de versões</div><div class="patch-head"><h2>Patch<br><span>notes.</span></h2><p>Acompanhe o que entrou em cada atualização do PQueiroz Optimizer.</p></div><div class="patch-list"><article><div><b>v1.1.1</b><span>Atual</span></div><ul><li>Ativação por chave assinada e vínculo ao computador.</li><li>Plano de energia com nome PQueiroz Optimizer.</li><li>Otimização de latência para mouse, teclado e USB.</li><li>Novas edições Windows 11 Leve e Otimizado Avançado.</li></ul></article><article><div><b>v1.0.5</b><span>Anterior</span></div><ul><li>Modo Avançado com políticas de privacidade e desempenho.</li><li>Backups, histórico e reversão de alterações.</li><li>Verificação de atualização ao abrir o aplicativo.</li></ul></article></div></section>
+    <!-- Passos -->
+    <section class="section">
+      <div class="container narrow center">
+        <p class="kicker reveal">Como comprar</p>
+        <h2 class="reveal">Três passos,<br>nenhuma complicação</h2>
+      </div>
+      <div class="container cards-3">
+        <article class="card step reveal"><span class="step-num">01</span><h3>Faça o Pix</h3><p>Escolha o produto e envie o Pix no valor exato para a chave informada abaixo.</p></article>
+        <article class="card step reveal" style="--d: 60ms"><span class="step-num">02</span><h3>Envie o comprovante</h3><p>Mande o comprovante junto com seu e-mail ou WhatsApp pelo suporte.</p></article>
+        <article class="card step reveal" style="--d: 120ms"><span class="step-num">03</span><h3>Receba seu acesso</h3><p>A chave do Optimizer ou o acesso ao Windows chega em 1 a 2 dias úteis.</p></article>
+      </div>
+    </section>
 
-    <section class="download section-wrap"><div><div class="eyebrow">Conheça os produtos</div><h2>Mais controle.<br><span>Menos ruído.</span></h2></div><div class="download-side"><p>Veja os recursos do Optimizer e do Windows personalizado. O acesso é liberado após a confirmação do pagamento.</p><a class="button primary" href="#comprar">Ver opções e valores <span>→</span></a><small>Entrega da chave em 1 a 2 dias úteis</small></div></section>
+    <!-- Planos -->
+    <section id="comprar" class="section">
+      <div class="container narrow center">
+        <p class="kicker reveal">Acesso e licenças</p>
+        <h2 class="reveal">Escolha seu próximo nível</h2>
+        <p class="section-lead reveal">Pagamento único via Pix. Após a confirmação, você recebe a chave de acesso em até 1 a 2 dias úteis.</p>
+      </div>
+      <div class="container plans">
+        <article class="plan reveal">
+          <p class="plan-tag">Aplicativo</p>
+          <h3>PQueiroz Optimizer</h3>
+          <p class="price">R$ 50</p>
+          <p class="price-note">pagamento único</p>
+          <ul class="checks">
+            <li><svg class="icon"><use href="#i-check"/></svg>Chave da Versão Avançada</li>
+            <li><svg class="icon"><use href="#i-check"/></svg>Limpeza, diagnóstico e latência</li>
+            <li><svg class="icon"><use href="#i-check"/></svg>Backup, histórico e reversão</li>
+            <li><svg class="icon"><use href="#i-check"/></svg>Ativação vinculada ao computador</li>
+          </ul>
+          <a class="btn btn-outline btn-block" href="#pix">Quero o Optimizer</a>
+        </article>
+        <article class="plan featured reveal" style="--d: 60ms">
+          <span class="plan-badge">Competitivo</span>
+          <p class="plan-tag">Sistema</p>
+          <h3>Windows 11 Leve</h3>
+          <p class="price">R$ 100</p>
+          <p class="price-note">pagamento único</p>
+          <ul class="checks">
+            <li><svg class="icon"><use href="#i-check"/></svg>Base enxuta, sem distrações</li>
+            <li><svg class="icon"><use href="#i-check"/></svg>Estabilidade para jogos competitivos</li>
+            <li><svg class="icon"><use href="#i-check"/></svg>Imagem 24H2 · x64</li>
+            <li><svg class="icon"><use href="#i-check"/></svg>Instruções de instalação</li>
+          </ul>
+          <a class="btn btn-primary btn-block" href="#pix">Quero o Windows Leve</a>
+        </article>
+        <article class="plan reveal" style="--d: 120ms">
+          <p class="plan-tag">Sistema · avançado</p>
+          <h3>Windows 11 Otimizado Avançado</h3>
+          <p class="price">R$ 150</p>
+          <p class="price-note">pagamento único</p>
+          <ul class="checks">
+            <li><svg class="icon"><use href="#i-check"/></svg>Ajustes avançados de desempenho</li>
+            <li><svg class="icon"><use href="#i-check"/></svg>Jogos convencionais e uso diário</li>
+            <li><svg class="icon"><use href="#i-check"/></svg>Mais recursos de personalização</li>
+            <li><svg class="icon"><use href="#i-check"/></svg>Instruções de instalação</li>
+          </ul>
+          <a class="btn btn-outline btn-block" href="#pix">Quero o Windows Avançado</a>
+        </article>
+      </div>
 
-    <section id="comprar" class="buy section-wrap"><div class="buy-heading"><div><div class="eyebrow">03 · Acesso e licenças</div><h2>Escolha seu<br><span>próximo nível.</span></h2></div><p>Envie o Pix do produto escolhido. Após a confirmação, você recebe a chave de acesso em até 1 a 2 dias úteis.</p></div><div class="plans"><article class="plan"><div class="plan-tag">APLICATIVO</div><h3>PQueiroz Optimizer</h3><strong>R$ 50</strong><p>Chave de acesso para a Versão Avançada e seus recursos de otimização.</p><a class="button primary" href="#pix">Quero o Optimizer <span>→</span></a></article><article class="plan featured"><div class="plan-tag">SISTEMA · COMPETITIVO</div><h3>Windows 11 Leve</h3><strong>R$ 100</strong><p>Base enxuta para reduzir distrações e priorizar estabilidade em jogos competitivos.</p><a class="button primary" href="#pix">Quero o Windows Leve <span>→</span></a></article><article class="plan featured advanced"><div class="plan-tag">SISTEMA · AVANÇADO</div><h3>Windows 11 Otimizado Avançado</h3><strong>R$ 150</strong><p>Ajustes avançados para jogos convencionais, uso diário e mais recursos de personalização.</p><a class="button primary" href="#pix">Quero o Windows Avançado <span>→</span></a></article></div><div class="purchase-photo"><img src="assets/windows-art.png" alt="Prévia da área de compra"></div><div id="pix" class="pix-box"><div><div class="eyebrow">Pagamento via Pix</div><h3>Chave Pix</h3><code>pqueirozdev@gmail.com</code><p>Depois de pagar, envie o comprovante e o e-mail ou WhatsApp para receber o acesso.</p></div><div class="steps"><div><b>01</b><span>Faça o Pix no valor do produto.</span></div><div><b>02</b><span>Envie o comprovante e seus dados.</span></div><div><b>03</b><span>Receba a chave em 1–2 dias úteis.</span></div></div></div><div class="buy-guidelines"><b>Diretrizes de compra</b><span>Confira o valor antes de transferir.</span><span>O prazo conta após o envio do comprovante.</span><span>Não compartilhe sua chave de acesso.</span></div></section>
-    <section id="diretrizes" class="guidelines section-wrap"><div class="eyebrow">Diretrizes</div><div class="guidelines-grid"><div><h2>Compra<br><span>transparente.</span></h2><p>Leia estas orientações antes de enviar o pagamento para garantir que seu pedido seja processado corretamente.</p></div><div class="guidelines-list"><div><b>01</b><span>Confira o produto e o valor escolhido: Optimizer R$ 50, Windows 11 Leve R$ 100 ou Windows 11 Otimizado Avançado R$ 150.</span></div><div><b>02</b><span>Faça o Pix para pqueirozdev@gmail.com e guarde o comprovante.</span></div><div><b>03</b><span>Envie o comprovante junto com seu e-mail ou WhatsApp.</span></div><div><b>04</b><span>A chave de acesso é enviada em até 1 a 2 dias úteis após a confirmação.</span></div><div><b>05</b><span>Após a confirmação do pagamento, não há reembolso nem garantia. Confira compatibilidade e detalhes antes da compra.</span></div></div></div></section>
+      <div id="pix" class="container pix reveal">
+        <div class="pix-main">
+          <p class="kicker">Pagamento via Pix</p>
+          <h3>Chave Pix</h3>
+          <div class="pix-key">
+            <code>pqueirozdev@gmail.com</code>
+            <button class="copy-btn" type="button" data-copy="pqueirozdev@gmail.com"><svg class="icon"><use href="#i-copy"/></svg><span>Copiar</span></button>
+          </div>
+          <p class="muted">Depois de pagar, envie o comprovante e o e-mail ou WhatsApp para receber o acesso.</p>
+        </div>
+        <ul class="pix-rules">
+          <li>Confira o valor antes de transferir.</li>
+          <li>O prazo conta após o envio do comprovante.</li>
+          <li>Não compartilhe sua chave de acesso.</li>
+        </ul>
+      </div>
+    </section>
 
-    <section id="suporte" class="support section-wrap"><div class="eyebrow">Suporte</div><div class="support-grid"><div><h2>Fale com<br><span>a gente.</span></h2><p>Precisa de ajuda com pagamento, instalação ou ativação? Entre em contato e envie seu comprovante.</p></div><div class="support-card"><a href="https://wa.me/5511947762153" class="support-link"><b>WhatsApp</b><span>Abrir conversa <i>↗</i></span></a><a href="mailto:pqueirozdev@gmail.com" class="support-link"><b>E-mail</b><span>Enviar mensagem <i>↗</i></span></a></div></div></section>
+    <!-- Patch notes -->
+    <section id="patch-notes" class="section">
+      <div class="container narrow center">
+        <p class="kicker reveal">Histórico de versões</p>
+        <h2 class="reveal">Patch notes</h2>
+        <p class="section-lead reveal">Acompanhe o que entrou em cada atualização do PQueiroz Optimizer.</p>
+      </div>
+      <div class="container narrow releases">
+        <article class="release current reveal">
+          <div class="release-head"><b>v1.1.1</b><span class="tag">Atual</span></div>
+          <ul>
+            <li>Ativação por chave assinada e vínculo ao computador.</li>
+            <li>Plano de energia com nome PQueiroz Optimizer.</li>
+            <li>Otimização de latência para mouse, teclado e USB.</li>
+            <li>Novas edições Windows 11 Leve e Otimizado Avançado.</li>
+          </ul>
+        </article>
+        <article class="release reveal" style="--d: 60ms">
+          <div class="release-head"><b>v1.0.5</b><span class="tag muted-tag">Anterior</span></div>
+          <ul>
+            <li>Modo Avançado com políticas de privacidade e desempenho.</li>
+            <li>Backups, histórico e reversão de alterações.</li>
+            <li>Verificação de atualização ao abrir o aplicativo.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
 
-    <section id="faq" class="faq section-wrap"><div class="eyebrow">Perguntas rápidas</div><details open><summary>O Optimizer altera o Windows automaticamente?</summary><p>Não. Os fluxos avançados mostram as etapas e permitem selecionar exatamente o que será aplicado.</p></details><details><summary>Posso desfazer as alterações?</summary><p>Configurações de registro, energia e serviços têm backup. Remoções de arquivos e aplicativos exigem reinstalação ou backup próprio.</p></details><details><summary>Qual versão do Windows é compatível?</summary><p>Windows 10 e 11 em computadores x64. Algumas políticas dependem da edição e da versão do Windows.</p></details><details><summary>Como recebo o acesso após o Pix?</summary><p>Envie o comprovante e seu e-mail ou WhatsApp. A chave do Optimizer ou o acesso ao Windows será enviado em até 1 a 2 dias úteis.</p></details><details><summary>Como uso o Optimizer depois de receber a chave?</summary><p>Instale e abra o aplicativo como administrador, informe sua chave na tela de ativação e escolha um perfil. Revise as otimizações, selecione apenas o que deseja aplicar e clique em executar. O app cria backup e registra as ações para você acompanhar ou reverter quando disponível.</p></details><details><summary>O que preciso enviar no suporte?</summary><p>Informe seu nome, produto, e-mail ou WhatsApp, além do comprovante e uma descrição do problema. Nunca envie sua chave publicamente.</p></details></section>
+    <!-- Diretrizes -->
+    <section id="diretrizes" class="section">
+      <div class="container narrow center">
+        <p class="kicker reveal">Diretrizes</p>
+        <h2 class="reveal">Compra transparente</h2>
+        <p class="section-lead reveal">Leia estas orientações antes de enviar o pagamento para garantir que seu pedido seja processado corretamente.</p>
+      </div>
+      <ol class="container narrow rules reveal">
+        <li>Confira o produto e o valor escolhido: Optimizer R$ 50, Windows 11 Leve R$ 100 ou Windows 11 Otimizado Avançado R$ 150.</li>
+        <li>Faça o Pix para pqueirozdev@gmail.com e guarde o comprovante.</li>
+        <li>Envie o comprovante junto com seu e-mail ou WhatsApp.</li>
+        <li>A chave de acesso é enviada em até 1 a 2 dias úteis após a confirmação.</li>
+        <li>Após a confirmação do pagamento, não há reembolso nem garantia. Confira compatibilidade e detalhes antes da compra.</li>
+      </ol>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="section">
+      <div class="container narrow center">
+        <p class="kicker reveal">Perguntas frequentes</p>
+        <h2 class="reveal">Antes de comprar</h2>
+      </div>
+      <div class="container narrow faq reveal">
+        <details><summary>O Optimizer altera o Windows automaticamente?<svg class="icon"><use href="#i-plus"/></svg></summary><p>Não. Os fluxos avançados mostram as etapas e permitem selecionar exatamente o que será aplicado.</p></details>
+        <details><summary>Posso desfazer as alterações?<svg class="icon"><use href="#i-plus"/></svg></summary><p>Configurações de registro, energia e serviços têm backup. Remoções de arquivos e aplicativos exigem reinstalação ou backup próprio.</p></details>
+        <details><summary>Qual versão do Windows é compatível?<svg class="icon"><use href="#i-plus"/></svg></summary><p>Windows 10 e 11 em computadores x64. Algumas políticas dependem da edição e da versão do Windows.</p></details>
+        <details><summary>Como recebo o acesso após o Pix?<svg class="icon"><use href="#i-plus"/></svg></summary><p>Envie o comprovante e seu e-mail ou WhatsApp. A chave do Optimizer ou o acesso ao Windows será enviado em até 1 a 2 dias úteis.</p></details>
+        <details><summary>Como uso o Optimizer depois de receber a chave?<svg class="icon"><use href="#i-plus"/></svg></summary><p>Instale e abra o aplicativo como administrador, informe sua chave na tela de ativação e escolha um perfil. Revise as otimizações, selecione apenas o que deseja aplicar e clique em executar. O app cria backup e registra as ações para você acompanhar ou reverter quando disponível.</p></details>
+        <details><summary>O que preciso enviar no suporte?<svg class="icon"><use href="#i-plus"/></svg></summary><p>Informe seu nome, produto, e-mail ou WhatsApp, além do comprovante e uma descrição do problema. Nunca envie sua chave publicamente.</p></details>
+      </div>
+    </section>
+
+    <!-- Suporte -->
+    <section id="suporte" class="support">
+      <div class="container narrow center">
+        <p class="kicker reveal">Suporte</p>
+        <h2 class="reveal">Precisa de ajuda?</h2>
+        <p class="section-lead reveal">Dúvidas sobre pagamento, instalação ou ativação? Fale com a gente e envie seu comprovante.</p>
+        <div class="hero-actions reveal">
+          <a class="btn btn-primary btn-lg" href="https://wa.me/5511947762153" target="_blank" rel="noreferrer">Falar no WhatsApp</a>
+          <a class="btn btn-outline btn-lg" href="mailto:pqueirozdev@gmail.com">Enviar e-mail</a>
+        </div>
+      </div>
+    </section>
   </main>
-  <footer class="footer section-wrap"><a class="brand" href="#inicio"><span class="brand-mark">P</span><span>PQueiroz</span><em>/</em><small>Optimizer</small></a><span>Construído para Windows · 2026</span><a href="https://github.com/PQueirozDev/Optimizer">GitHub ↗</a></footer>
-<a class="whatsapp-float" href="https://wa.me/5511947762153" aria-label="Falar no WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0 0 12.1 0C5.6 0 .3 5.3.3 11.8c0 2.1.6 4.1 1.6 5.8L.2 24l6.5-1.7a11.8 11.8 0 0 0 5.4 1.3h.1c6.5 0 11.8-5.3 11.8-11.8 0-3.1-1.3-6.1-3.5-8.3ZM12.2 21.6h-.1a9.8 9.8 0 0 1-5-1.4l-.4-.2-3.8 1 1-3.7-.2-.4a9.8 9.8 0 0 1-1.5-5.2C2.2 6.3 6.7 1.9 12.1 1.9c2.6 0 5.1 1 6.9 2.9a9.7 9.7 0 0 1 2.9 6.9c0 5.5-4.4 9.9-9.7 9.9Zm5.4-7.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.6-.8-2.7-1.5-3.8-3.3-.3-.5.3-.5.8-1.6.1-.2 0-.4 0-.6s-.7-1.7-.9-2.3c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.1 1.1-1.1 2.7s1.1 3.1 1.3 3.3c.2.2 2.2 3.4 5.4 4.8.8.4 1.4.6 1.9.7.8.3 1.5.2 2 .1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.1-1.4-.1-.2-.3-.3-.6-.4Z"/></svg></a>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <a class="brand" href="#inicio"><span class="brand-mark sm" aria-hidden="true">P</span><span>PQueiroz</span><small>Optimizer</small></a>
+      <span class="muted">© <span id="year">2026</span> PQueiroz · Construído para Windows</span>
+      <a class="footer-link" href="https://github.com/PQueirozDev/Optimizer">GitHub ↗</a>
+    </div>
+  </footer>
+
+  <a class="whatsapp-float" href="https://wa.me/5511947762153" target="_blank" rel="noreferrer" aria-label="Falar no WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0 0 12.1 0C5.6 0 .3 5.3.3 11.8c0 2.1.6 4.1 1.6 5.8L.2 24l6.5-1.7a11.8 11.8 0 0 0 5.4 1.3h.1c6.5 0 11.8-5.3 11.8-11.8 0-3.1-1.3-6.1-3.5-8.3ZM12.2 21.6h-.1a9.8 9.8 0 0 1-5-1.4l-.4-.2-3.8 1 1-3.7-.2-.4a9.8 9.8 0 0 1-1.5-5.2C2.2 6.3 6.7 1.9 12.1 1.9c2.6 0 5.1 1 6.9 2.9a9.7 9.7 0 0 1 2.9 6.9c0 5.5-4.4 9.9-9.7 9.9Zm5.4-7.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.6-.8-2.7-1.5-3.8-3.3-.3-.5.3-.5.8-1.6.1-.2 0-.4 0-.6s-.7-1.7-.9-2.3c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.1 1.1-1.1 2.7s1.1 3.1 1.3 3.3c.2.2 2.2 3.4 5.4 4.8.8.4 1.4.6 1.9.7.8.3 1.5.2 2 .1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.1-1.4-.1-.2-.3-.3-.6-.4Z"/></svg></a>
+
   <script src="script.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
