@@ -25,6 +25,7 @@ public class ConfigService
         new() { Id = "sfc", Name = "Verificador de Arquivos (SFC)", Description = "Examina e repara arquivos corrompidos ou ausentes do Windows (sfc /scannow).", Category = "Manutenção", Icon = "🔧", Operation = "sfc" },
         new() { Id = "dism", Name = "Reparo de Imagem (DISM)", Description = "Restaura e corrige a imagem do sistema usando o repositório oficial da Microsoft.", Category = "Manutenção", Icon = "🛠️", Operation = "dism" },
         new() { Id = "chkdsk", Name = "Verificação de Disco (CHKDSK)", Description = "Executa uma verificação online do sistema de arquivos no disco principal.", Category = "Manutenção", Icon = "💾", Operation = "chkdsk" },
+        new() { Id = "reparar", Name = "Reparar Configurações do Windows", Description = "Restaura os padrões do agendador multimídia (áudio e jogos) apagados por versões antigas do otimizador. Só adiciona o que estiver faltando.", Category = "Manutenção", Icon = "🔧", Operation = "reparar" },
         new() { Id = "update", Name = "Estado do Windows Update", Description = "Consulta o serviço, as últimas atualizações e reinicializações pendentes.", Category = "Manutenção", Icon = "🔄", Operation = "update" },
         new() { Id = "reverter", Name = "Reverter Última Otimização", Description = "Restaura o snapshot de configurações para o estado anterior à última execução.", Category = "Segurança", Icon = "↩️", Operation = "reverter" }
     };
@@ -127,7 +128,7 @@ public class ConfigService
                 // Remove removed optimizations like "inteligente"
                 existing.EnabledOptimizations ??= new();
                 existing.EnabledOptimizations.RemoveAll(id => id.Equals("inteligente", StringComparison.OrdinalIgnoreCase));
-                if (existing.Name.Equals("Padrão", StringComparison.OrdinalIgnoreCase))
+                if (existing.Name.Equals("Padrão", StringComparison.OrdinalIgnoreCase) || existing.Name.Equals("Modo Completo", StringComparison.OrdinalIgnoreCase))
                 {
                     existing.EnabledOptimizations = AllOptimizations.Select(o => o.Id).ToList();
                 }
@@ -135,6 +136,9 @@ public class ConfigService
                 {
                     existing.EnabledOptimizations = def.EnabledOptimizations;
                 }
+                // Ferramentas novas entram nos perfis prontos que já existiam na config do usuário
+                foreach (var id in def.EnabledOptimizations.Where(id => id == "reparar" && !existing.EnabledOptimizations.Contains(id)))
+                    existing.EnabledOptimizations.Add(id);
             }
         }
 
@@ -230,7 +234,7 @@ public class ConfigService
                 Name = "Modo Manutenção",
                 Description = "Ferramentas de integridade e diagnósticos: SFC, DISM, CHKDSK, Updates e análise de saúde.",
                 IsBuiltIn = true,
-                EnabledOptimizations = new() { "analisar", "sfc", "dism", "chkdsk", "update", "quickclean", "reverter" }
+                EnabledOptimizations = new() { "analisar", "sfc", "dism", "chkdsk", "update", "reparar", "quickclean", "reverter" }
             },
             new()
             {

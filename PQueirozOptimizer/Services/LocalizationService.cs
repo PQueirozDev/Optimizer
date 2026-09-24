@@ -9,6 +9,7 @@ public class LocalizationService
     public void SetLanguage(string language)
     {
         CurrentLanguage = language.Equals("en", StringComparison.OrdinalIgnoreCase) ? "en" : "pt";
+        Translator.IsEnglish = IsEnglish;
     }
 
     public string ToggleLanguage()

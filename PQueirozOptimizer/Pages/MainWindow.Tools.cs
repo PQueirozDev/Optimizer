@@ -57,18 +57,18 @@ public partial class MainWindow
                 if ((bool)create.Tag)
                 {
                     _cleaner.RemoveShortcut();
-                    MessageBox.Show("Atalhos de Limpeza Rápida removidos com sucesso.", "Limpeza Rápida", MessageBoxButton.OK, MessageBoxImage.Information);
+                    Msg("Atalhos de Limpeza Rápida removidos com sucesso.", "Limpeza Rápida", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
                     _cleaner.CreateShortcut();
-                    MessageBox.Show("Atalho 'Limpeza Rápida' criado na sua Área de Trabalho e no Menu Iniciar.\n\nPara fixá-lo na barra de tarefas, clique com o botão direito no atalho e escolha 'Fixar na barra de tarefas' (o Windows 11 não permite que aplicativos façam isso sozinhos).", "Atalho Criado", MessageBoxButton.OK, MessageBoxImage.Information);
+                    Msg("Atalho 'Limpeza Rápida' criado na sua Área de Trabalho e no Menu Iniciar.\n\nPara fixá-lo na barra de tarefas, clique com o botão direito no atalho e escolha 'Fixar na barra de tarefas' (o Windows 11 não permite que aplicativos façam isso sozinhos).", "Atalho Criado", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
             {
                 _log.Write("ERROR", "Atalho de limpeza: " + ex.Message);
-                MessageBox.Show("Não foi possível alterar os atalhos: " + ex.Message, "Limpeza Rápida", MessageBoxButton.OK, MessageBoxImage.Warning);
+                Msg("Não foi possível alterar os atalhos: " + ex.Message, "Limpeza Rápida", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             ShowTools();
         };
@@ -199,7 +199,7 @@ Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
             await PowerShellBridge.RunScriptAsync(ps);
             _log.Write("SUCCESS", enable ? "Barra de tarefas All Black aplicada" : "Barra de tarefas padrão restaurada");
 
-            MessageBox.Show(
+            Msg(
                 enable 
                     ? "Barra de tarefas All Black aplicada com sucesso!\nO Windows Explorer foi reiniciado para atualizar o visual." 
                     : "Barra de tarefas padrão restaurada com sucesso!\nO Windows Explorer foi reiniciado.",
@@ -212,7 +212,7 @@ Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Falha ao aplicar alteração: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+            Msg($"Falha ao aplicar alteração: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {

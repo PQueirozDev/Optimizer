@@ -324,7 +324,7 @@ public partial class MainWindow
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Falha ao abrir navegador: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Msg($"Falha ao abrir navegador: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             };
             btnRow.Children.Add(officialBtn);
@@ -346,7 +346,7 @@ public partial class MainWindow
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Falha ao abrir navegador: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                        Msg($"Falha ao abrir navegador: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 };
                 btnRow.Children.Add(secondaryBtn);
@@ -392,7 +392,7 @@ public partial class MainWindow
                         status.Text = $"● Concluído! Salvo em: {Path.GetFileName(downloadedPath)}";
                         status.Foreground = (Brush)FindResource("SuccessBrush");
 
-                        var res = MessageBox.Show(
+                        var res = Msg(
                             $"Download de '{driver.Name}' concluído com sucesso!\n\nSalvo em:\n{downloadedPath}\n\nDeseja executar o instalador agora?",
                             "Download Concluído",
                             MessageBoxButton.YesNo,
@@ -439,7 +439,7 @@ public partial class MainWindow
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Falha ao iniciar o instalador: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                        Msg($"Falha ao iniciar o instalador: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 };
                 btnRow.Children.Add(runBtn);

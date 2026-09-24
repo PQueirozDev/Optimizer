@@ -41,12 +41,18 @@ public static class Glyphs
     public static readonly string Maximize = G(0xE922);
     public static readonly string Restore = G(0xE923);
     public static readonly string ChevronRight = G(0xE76C);
+    public static readonly string Power = G(0xE7E8);
 
     private static string G(int code) => char.ConvertFromUtf32(code);
 }
 
 public partial class MainWindow
 {
+    /// <summary>MessageBox com texto e título traduzidos para o idioma ativo.</summary>
+    private static MessageBoxResult Msg(string text, string caption = "PQueiroz Optimizer", MessageBoxButton button = MessageBoxButton.OK,
+        MessageBoxImage icon = MessageBoxImage.None, MessageBoxResult defaultResult = MessageBoxResult.None)
+        => MessageBox.Show(Services.Translator.Tr(text), Services.Translator.Tr(caption), button, icon, defaultResult);
+
     private TextBlock Label(string text, double size = 13, bool muted = false)
     {
         var label = new TextBlock { Text = text, FontSize = size, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 8) };

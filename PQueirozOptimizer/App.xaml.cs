@@ -19,6 +19,16 @@ public partial class App : Application
         }
         catch { }
 
+        // Tradução e tema valem para todas as janelas, inclusive a de ativação
+        Services.Translator.Attach();
+        try
+        {
+            var config = new Services.ConfigService().Config;
+            Services.Translator.IsEnglish = string.Equals(config.Language, "en", StringComparison.OrdinalIgnoreCase);
+            Services.ThemeService.Apply(Resources, !string.Equals(config.Theme, "Light", StringComparison.OrdinalIgnoreCase));
+        }
+        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException) { }
+
         var licenseService = new Services.LicenseService();
         if (!licenseService.TryGetActiveLicense(out var activeLicense, out _))
         {
@@ -41,6 +51,7 @@ public partial class App : Application
             var service = new Services.QuickCleanService(new Services.ActivityLog());
             var status = new System.Windows.Controls.TextBlock { Text = "Removendo arquivos temporários...", Margin = new Thickness(0, 18, 0, 8) };
             var window = new Window { Title = "Limpeza Rápida", Width = 410, Height = 190, WindowStartupLocation = WindowStartupLocation.CenterScreen, ResizeMode = ResizeMode.NoResize, Content = new System.Windows.Controls.StackPanel { Margin = new Thickness(28), Children = { new System.Windows.Controls.TextBlock { Text = "🧹  Limpeza Rápida", FontSize = 24, FontWeight = FontWeights.SemiBold }, status } } };
+            window.SetResourceReference(Window.BackgroundProperty, "BackgroundBrush");
             MainWindow = window; window.Show();
             var result = await service.RunAsync(new Progress<string>(value => status.Text = value));
             status.Text = $"Limpeza concluída. {result.BytesFreed / 1024d / 1024d:N1} MB liberados";

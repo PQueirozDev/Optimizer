@@ -228,7 +228,7 @@ public partial class MainWindow
                 _configService.SetActiveProfile(prof.Name);
                 UpdateNavBadges();
         UpdateActiveNavButton(_currentPage);
-                MessageBox.Show($"Perfil '{prof.Name}' ativado com sucesso!", "Perfil Ativado", MessageBoxButton.OK, MessageBoxImage.Information);
+                Msg($"Perfil '{prof.Name}' ativado com sucesso!", "Perfil Ativado", MessageBoxButton.OK, MessageBoxImage.Information);
                 ShowSettings();
             }
         };
@@ -242,7 +242,7 @@ public partial class MainWindow
                 _configService.SaveProfile(prof.Name, prof.Description, enabled);
                 UpdateNavBadges();
         UpdateActiveNavButton(_currentPage);
-                MessageBox.Show($"Perfil '{prof.Name}' atualizado com sucesso!", "Salvo", MessageBoxButton.OK, MessageBoxImage.Information);
+                Msg($"Perfil '{prof.Name}' atualizado com sucesso!", "Salvo", MessageBoxButton.OK, MessageBoxImage.Information);
                 ShowSettings();
             }
         };
@@ -252,14 +252,14 @@ public partial class MainWindow
             var name = newProfileBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(name))
             {
-                MessageBox.Show("Por favor, digite um nome para o novo perfil.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                Msg("Por favor, digite um nome para o novo perfil.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             var enabled = checkBoxes.Where(c => c.Value.IsChecked == true).Select(c => c.Key).ToList();
             _configService.SaveProfile(name, "Perfil personalizado do usuário", enabled);
             UpdateNavBadges();
         UpdateActiveNavButton(_currentPage);
-            MessageBox.Show($"Novo perfil '{name}' criado e ativado com sucesso!", "Perfil Criado", MessageBoxButton.OK, MessageBoxImage.Information);
+            Msg($"Novo perfil '{name}' criado e ativado com sucesso!", "Perfil Criado", MessageBoxButton.OK, MessageBoxImage.Information);
             ShowSettings();
         };
 
@@ -270,16 +270,16 @@ public partial class MainWindow
                 var prof = _configService.Config.Profiles[profileCombo.SelectedIndex];
                 if (prof.IsBuiltIn)
                 {
-                    MessageBox.Show("Perfis padrão do sistema não podem ser excluídos.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    Msg("Perfis padrão do sistema não podem ser excluídos.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
-                var confirm = MessageBox.Show($"Deseja realmente excluir o perfil '{prof.Name}'?", "Confirmar Exclusão", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                var confirm = Msg($"Deseja realmente excluir o perfil '{prof.Name}'?", "Confirmar Exclusão", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (confirm == MessageBoxResult.Yes)
                 {
                     _configService.DeleteProfile(prof.Name);
                     UpdateNavBadges();
         UpdateActiveNavButton(_currentPage);
-                    MessageBox.Show($"Perfil '{prof.Name}' excluído.", "Excluído", MessageBoxButton.OK, MessageBoxImage.Information);
+                    Msg($"Perfil '{prof.Name}' excluído.", "Excluído", MessageBoxButton.OK, MessageBoxImage.Information);
                     ShowSettings();
                 }
             }
@@ -379,16 +379,7 @@ public partial class MainWindow
             Padding = new Thickness(16, 9, 16, 9),
             FontWeight = !_loc.IsEnglish ? FontWeights.Bold : FontWeights.Normal
         };
-        ptBtn.Click += (_, _) =>
-        {
-            if (_loc.IsEnglish)
-            {
-                _loc.SetLanguage("pt");
-                _configService.SaveLanguage("pt");
-                UpdateLanguageUi();
-            }
-            ShowSettings();
-        };
+        ptBtn.Click += (_, _) => ChangeLanguage("pt");
 
         var enBtn = new Button
         {
@@ -396,16 +387,7 @@ public partial class MainWindow
             Padding = new Thickness(16, 9, 16, 9),
             FontWeight = _loc.IsEnglish ? FontWeights.Bold : FontWeights.Normal
         };
-        enBtn.Click += (_, _) =>
-        {
-            if (!_loc.IsEnglish)
-            { 
-                _loc.SetLanguage("en");
-                _configService.SaveLanguage("en");
-                UpdateLanguageUi();
-            }
-            ShowSettings();
-        };
+        enBtn.Click += (_, _) => ChangeLanguage("en");
 
         langBtns.Children.Add(ptBtn);
         langBtns.Children.Add(enBtn);

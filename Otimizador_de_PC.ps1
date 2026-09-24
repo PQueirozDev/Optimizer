@@ -22,7 +22,7 @@
 #>
 
 param(
-    [ValidateSet("", "analisar", "inteligente", "padrao", "gamer", "debloat", "reverter", "sfc", "dism", "chkdsk", "update", "benchmark")]
+    [ValidateSet("", "analisar", "inteligente", "padrao", "gamer", "debloat", "reverter", "sfc", "dism", "chkdsk", "update", "benchmark", "reparar")]
     [string]$Operation = "",
     [switch]$UiMode,
     [string]$SelectedStepsBase64 = ""
@@ -33,7 +33,7 @@ param(
 # ---------------------------------------------------------------
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    if ($UiMode) { Write-Error "Abra o aplicativo como administrador."; exit 1 }
+    if ($UiMode) { [Console]::Error.WriteLine("Abra o aplicativo como administrador."); exit 1 }
     Write-Host "Reiniciando como Administrador..." -ForegroundColor Yellow
     Try {
         Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs -ErrorAction Stop
@@ -83,7 +83,18 @@ $script:RegistroPermitido = @(
     "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers",
     "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects",
     "HKCU:\Control Panel\Mouse",
-    "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance"
+    "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+    "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization",
+    "HKCU:\Software\Microsoft\DirectX\UserGpuPreferences",
+    "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo",
+    "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search",
+    "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System",
+    "HKCU:\Software\Policies\Microsoft\Windows\WindowsCopilot",
+    "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot"
 )
 $script:ServicosPermitidos = @(
     "PushToInstall", "SysMain", "WSearch", "DiagTrack", "dmwappushservice",
@@ -567,6 +578,20 @@ function Otimizar-Padrao {
             } }
         @{ Nome = "Limpando cache DNS";                  Acao = { ipconfig /flushdns } }
         @{ Nome = "Executando limpeza de disco (cleanmgr)"; Acao = { Start-Process cleanmgr.exe -ArgumentList "/sagerun:1" -WindowStyle Hidden -Wait } }
+        @{ Nome = "Desativando sugestoes, anuncios e apps instalados automaticamente"; Acao = {
+                # Impede o Windows de instalar jogos/apps promocionais e mostrar anuncios no Iniciar e no Explorer
+                $cdm = "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
+                foreach ($nome in @("SilentInstalledAppsEnabled", "PreInstalledAppsEnabled", "OemPreInstalledAppsEnabled", "SystemPaneSuggestionsEnabled",
+                                    "SoftLandingEnabled", "SubscribedContent-338388Enabled", "SubscribedContent-338389Enabled",
+                                    "SubscribedContent-353694Enabled", "SubscribedContent-353696Enabled")) {
+                    Set-PoliticaDword $cdm $nome 0
+                }
+                Set-PoliticaDword "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "ShowSyncProviderNotifications" 0
+            } }
+        @{ Nome = "Limitando o upload de atualizacoes a rede local (Delivery Optimization)"; Acao = {
+                # 1 = compartilha atualizacoes somente com PCs da mesma rede, nunca com a internet
+                Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization" "DODownloadMode" 1
+            } }
     )
     Executar-Etapas "Otimizacao Padrao" $etapas
     Salvar-Snapshot
@@ -576,14 +601,66 @@ function Otimizar-Padrao {
     Write-Host (Centralizar "OTIMIZACAO PADRAO CONCLUIDA!") -ForegroundColor Green
     Write-Host (Centralizar "Seu PC deve estar mais leve e rapido.") -ForegroundColor Gray
     Write-Host (Centralizar "Resumo: $script:ContAplicados aplicado(s), $script:ContFalhas falha(s)") -ForegroundColor Gray
-    Write-Host (Centralizar "Nao gostou? Use a opcao [7] Reverter Ultima Otimizacao.") -ForegroundColor DarkGray
+    if (-not $UiMode) { Write-Host (Centralizar "Nao gostou? Use a opcao [7] Reverter Ultima Otimizacao.") -ForegroundColor DarkGray }
     Linha "="
 }
 
 # ---------------------------------------------------------------
 # 4. Otimizacoes avancadas (Versao Avancada)
+# Cria a chave de registro somente se ela nao existir.
+# ATENCAO: "New-Item -Force" em uma chave existente APAGA todos os valores e subchaves dela.
+function Garantir-Chave($caminho) {
+    if (-not (Test-Path -LiteralPath $caminho)) { New-Item -Path $caminho -Force | Out-Null }
+}
+
+# Valores padrao do Windows para as tarefas do agendador multimidia (MMCSS).
+# Versoes anteriores do otimizador recriavam a chave SystemProfile e apagavam essas tarefas;
+# sem elas, audio e video perdem a prioridade de tempo real (estalos no som, travadas).
+$script:TarefasMMCSS = [ordered]@{
+    "Audio"                 = @{ Priority = 6; "Scheduling Category" = "Medium"; "Background Only" = "True" }
+    "Capture"               = @{ Priority = 5; "Scheduling Category" = "Medium"; "Background Only" = "True" }
+    "DisplayPostProcessing" = @{ Priority = 8; "Scheduling Category" = "High";   "Background Only" = "True"; BackgroundPriority = 8 }
+    "Distribution"          = @{ Priority = 4; "Scheduling Category" = "Medium"; "Background Only" = "True" }
+    "Games"                 = @{ Priority = 2; "Scheduling Category" = "Medium"; "Background Only" = "False" }
+    "Playback"              = @{ Priority = 3; "Scheduling Category" = "Medium"; "Background Only" = "False"; BackgroundPriority = 4 }
+    "Pro Audio"             = @{ Priority = 1; "Scheduling Category" = "High";   "Background Only" = "False" }
+    "Window Manager"        = @{ Priority = 5; "Scheduling Category" = "Medium"; "Background Only" = "True" }
+}
+
+# Recria somente o que estiver faltando; valores existentes (inclusive ajustes do usuario) sao mantidos.
+function Reparar-MMCSS {
+    $base = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile"
+    $reparados = 0
+    Garantir-Chave $base
+    $raiz = Get-Item -LiteralPath $base
+    if ($raiz.GetValueNames() -notcontains "SystemResponsiveness") { New-ItemProperty -LiteralPath $base -Name "SystemResponsiveness" -Value 20 -PropertyType DWord | Out-Null; $reparados++ }
+    if ($raiz.GetValueNames() -notcontains "NetworkThrottlingIndex") { New-ItemProperty -LiteralPath $base -Name "NetworkThrottlingIndex" -Value 10 -PropertyType DWord | Out-Null; $reparados++ }
+    foreach ($tarefa in $script:TarefasMMCSS.Keys) {
+        $caminho = "$base\Tasks\$tarefa"
+        Garantir-Chave $caminho
+        $existentes = (Get-Item -LiteralPath $caminho).GetValueNames()
+        $valores = [ordered]@{ Affinity = 0; "Clock Rate" = 10000; "GPU Priority" = 8; "SFIO Priority" = "Normal" }
+        foreach ($par in $script:TarefasMMCSS[$tarefa].GetEnumerator()) { $valores[$par.Key] = $par.Value }
+        foreach ($par in $valores.GetEnumerator()) {
+            if ($existentes -contains $par.Key) { continue }
+            $tipo = if ($par.Value -is [string]) { "String" } else { "DWord" }
+            New-ItemProperty -LiteralPath $caminho -Name $par.Key -Value $par.Value -PropertyType $tipo | Out-Null
+            $reparados++
+        }
+    }
+    if ($reparados -gt 0) { Write-Host "[INFO] Agendador multimidia (MMCSS): $reparados valores padrao do Windows restaurados." }
+    else { Write-Host "[INFO] Agendador multimidia (MMCSS): nenhuma correcao necessaria." }
+}
+
+function Executar-RepararConfiguracoes {
+    Write-Secao "Reparando configuracoes do Windows"
+    Reparar-MMCSS
+    Write-Host ""
+    Linha "="
+}
+
 function Set-PoliticaDword($caminho, $nome, $valor) {
-    New-Item -Path $caminho -Force | Out-Null
+    Garantir-Chave $caminho
     Capturar-Registro $caminho $nome
     Set-ItemProperty -Path $caminho -Name $nome -Value $valor -Type DWord -Force -ErrorAction Stop
 }
@@ -631,6 +708,7 @@ function Otimizar-Gamer {
 
     Write-Secao "Aplicando otimizacoes de desempenho maximo para jogos"
     $etapas = @(
+        @{ Nome = "Verificando agendador multimidia do Windows (MMCSS)"; Acao = { Reparar-MMCSS } }
         @{ Nome = "Plano de energia 'Desempenho Maximo'"; Acao = {
                 Capturar-PlanoEnergia
                 $ultimatePlan = powercfg /duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61
@@ -648,12 +726,12 @@ function Otimizar-Gamer {
             } }
         @{ Nome = "Reduzindo latencia de rede/multimidia"; Acao = {
                 $multimediaPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile"
-                New-Item -Path $multimediaPath -Force | Out-Null
+                Garantir-Chave $multimediaPath
                 Capturar-Registro $multimediaPath "SystemResponsiveness"
                 Set-ItemProperty $multimediaPath "SystemResponsiveness" 0 -Type DWord
 
                 $gamesPath = "$multimediaPath\Tasks\Games"
-                New-Item -Path $gamesPath -Force | Out-Null
+                Garantir-Chave $gamesPath
                 Capturar-Registro $gamesPath "GPU Priority"
                 Set-ItemProperty $gamesPath "GPU Priority" 8 -Type DWord
                 Capturar-Registro $gamesPath "Priority"
@@ -668,12 +746,12 @@ function Otimizar-Gamer {
         @{ Nome = "Desativando Xbox Game Bar / Game DVR"; Acao = {
                 Capturar-Registro "HKCU:\System\GameConfigStore" "GameDVR_Enabled"
                 Set-ItemProperty "HKCU:\System\GameConfigStore" "GameDVR_Enabled" 0 -Type DWord
-                New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" -Force | Out-Null
+                Garantir-Chave "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR"
                 Capturar-Registro "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" "AllowGameDVR"
                 Set-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" "AllowGameDVR" 0 -Type DWord
             } }
         @{ Nome = "Ativando Modo de Jogo do Windows";     Acao = {
-                New-Item -Path "HKCU:\Software\Microsoft\GameBar" -Force | Out-Null
+                Garantir-Chave "HKCU:\Software\Microsoft\GameBar"
                 Capturar-Registro "HKCU:\Software\Microsoft\GameBar" "AutoGameModeEnabled"
                 Set-ItemProperty "HKCU:\Software\Microsoft\GameBar" "AutoGameModeEnabled" 1 -Type DWord
             } }
@@ -717,6 +795,22 @@ function Otimizar-Gamer {
                 Otimizar-Unidades
             } }
         @{ Nome = "Aplicando politicas do Editor de Politica de Grupo (diagnostico, nuvem, IA e Push)"; Acao = { Aplicar-PoliticasAvancadas } }
+        @{ Nome = "Ativando otimizacoes para jogos em janela"; Acao = {
+                # Recurso do Windows 11 que reduz a latencia de jogos DirectX 10/11 em janela/borderless
+                if ([Environment]::OSVersion.Version.Build -lt 22000) { Write-Host "[INFO] Recurso disponivel apenas no Windows 11; ajuste ignorado."; return }
+                $caminho = "HKCU:\Software\Microsoft\DirectX\UserGpuPreferences"
+                Garantir-Chave $caminho
+                Capturar-Registro $caminho "DirectXUserGlobalSettings"
+                $atual = "$((Get-ItemProperty -LiteralPath $caminho -Name DirectXUserGlobalSettings -ErrorAction SilentlyContinue).DirectXUserGlobalSettings)"
+                $partes = @($atual -split ';' | Where-Object { $_ -and $_ -notmatch '^SwapEffectUpgradeEnable=' })
+                $novo = (($partes + "SwapEffectUpgradeEnable=1") -join ';') + ';'
+                Set-ItemProperty -LiteralPath $caminho -Name "DirectXUserGlobalSettings" -Value $novo -Type String
+            } }
+        @{ Nome = "Desativando limitacao de energia de processos (Power Throttling)"; Acao = {
+                # Em notebooks isso reduz a bateria; so aplicamos em desktops
+                if (Get-CimInstance Win32_Battery -ErrorAction SilentlyContinue) { Write-Host "[INFO] Notebook detectado; Power Throttling mantido para preservar a bateria."; return }
+                Set-PoliticaDword "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling" "PowerThrottlingOff" 1
+            } }
     )
     Executar-Etapas "Otimizacao Avancada" $etapas
     Salvar-Snapshot
@@ -726,7 +820,7 @@ function Otimizar-Gamer {
     Write-Host (Centralizar "OTIMIZACAO AVANCADA CONCLUIDA!") -ForegroundColor Green
     Write-Host (Centralizar "Reinicie o PC para aplicar todas as mudancas.") -ForegroundColor Gray
     Write-Host (Centralizar "Resumo: $script:ContAplicados aplicado(s), $script:ContFalhas falha(s)") -ForegroundColor Gray
-    Write-Host (Centralizar "Nao gostou? Use a opcao [7] Reverter Ultima Otimizacao.") -ForegroundColor DarkGray
+    if (-not $UiMode) { Write-Host (Centralizar "Nao gostou? Use a opcao [7] Reverter Ultima Otimizacao.") -ForegroundColor DarkGray }
     Linha "="
 }
 
@@ -738,8 +832,8 @@ function Otimizar-Debloat {
     Criar-PontoDeRestauracao
 
     Write-Secao "Debloat do Windows"
-    Write-Host "  Para cada item abaixo, digite S para aplicar ou N (ou ENTER) para pular." -ForegroundColor Gray
-    Write-Host "  Nada e alterado sem sua confirmacao." -ForegroundColor Gray
+    if (-not $UiMode) { Write-Host "  Para cada item abaixo, digite S para aplicar ou N (ou ENTER) para pular." -ForegroundColor Gray }
+    if (-not $UiMode) { Write-Host "  Nada e alterado sem sua confirmacao." -ForegroundColor Gray }
     Write-Host ""
     $modoEscolha = if ($UiMode) { 'N' } else { Read-Host "  Prefere aplicar TUDO de uma vez, sem perguntar item por item? (S/N)" }
     $modoRapido = ($modoEscolha -match '^[Ss]')
@@ -914,12 +1008,44 @@ function Otimizar-Debloat {
             }
         } $modoRapido
 
+    # 14b. Privacidade: ID de publicidade, pesquisa na web, historico e Copilot
+    Executar-Se-Confirmado "Desativar o ID de publicidade (anuncios personalizados)?" `
+        "ID de publicidade desativado" `
+        {
+            Set-PoliticaDword "HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo" "Enabled" 0
+            Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo" "DisabledByGroupPolicy" 1
+        } $modoRapido
+
+    Executar-Se-Confirmado "Remover resultados da web (Bing) da pesquisa do menu Iniciar?" `
+        "Pesquisa na web removida do menu Iniciar" `
+        {
+            Set-PoliticaDword "HKCU:\Software\Policies\Microsoft\Windows\Explorer" "DisableSearchBoxSuggestions" 1
+            Set-PoliticaDword "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" "BingSearchEnabled" 0
+        } $modoRapido
+
+    Executar-Se-Confirmado "Desativar o historico de atividades (linha do tempo)?" `
+        "Historico de atividades desativado" `
+        {
+            $sistema = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System"
+            Set-PoliticaDword $sistema "EnableActivityFeed" 0
+            Set-PoliticaDword $sistema "PublishUserActivities" 0
+            Set-PoliticaDword $sistema "UploadUserActivities" 0
+        } $modoRapido
+
+    Executar-Se-Confirmado "Desativar o Copilot do Windows?" `
+        "Copilot desativado" `
+        {
+            Set-PoliticaDword "HKCU:\Software\Policies\Microsoft\Windows\WindowsCopilot" "TurnOffWindowsCopilot" 1
+            Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot" "TurnOffWindowsCopilot" 1
+            Set-PoliticaDword "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "ShowCopilotButton" 0
+        } $modoRapido
+
     # 15. Efeitos visuais
     Executar-Se-Confirmado "Ajustar efeitos visuais para melhor desempenho?" `
         "Efeitos visuais ajustados" `
         {
             $visualPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects"
-            New-Item -Path $visualPath -Force | Out-Null
+            Garantir-Chave $visualPath
             Capturar-Registro $visualPath "VisualFXSetting"
             Set-ItemProperty $visualPath "VisualFXSetting" -Type DWord -Value 2
         } $modoRapido
@@ -949,7 +1075,7 @@ function Otimizar-Debloat {
     Write-Host (Centralizar "DEBLOAT CONCLUIDO!") -ForegroundColor Green
     Write-Host (Centralizar "Reinicie o PC para aplicar todas as mudancas.") -ForegroundColor Gray
     Write-Host (Centralizar "Resumo: $script:ContAplicados aplicado(s), $script:ContPulados pulado(s), $script:ContFalhas falha(s)") -ForegroundColor Gray
-    Write-Host (Centralizar "Nao gostou? Use a opcao [7] Reverter Ultima Otimizacao.") -ForegroundColor DarkGray
+    if (-not $UiMode) { Write-Host (Centralizar "Nao gostou? Use a opcao [7] Reverter Ultima Otimizacao.") -ForegroundColor DarkGray }
     Linha "="
 }
 
@@ -1600,10 +1726,20 @@ function Analisar-PC {
     Linha "="
     Write-Host (Centralizar "RECOMENDACOES") -ForegroundColor Yellow
     Linha "="
-    Write-Host "  [1] Otimizacao Inteligente  - deixa o programa decidir o que aplicar" -ForegroundColor Cyan
-    Write-Host "  [2] Versao Padrao           - limpeza e ajustes basicos" -ForegroundColor Cyan
-    if ($itensInicializacao.Count -ge 5) {
-        Write-Host "  [8] Gerenciar Inicializacao - reduzir programas no boot" -ForegroundColor Cyan
+    if ($UiMode) {
+        # Recomendacoes apontam para as telas do aplicativo, nao para o menu do console
+        $recomendou = $false
+        if ($tamanhoTemp -gt 500MB) { Write-Status "info" "Use a Limpeza rapida para liberar $(Format-Bytes $tamanhoTemp)"; $recomendou = $true }
+        if ($itensInicializacao.Count -ge 5) { Write-Status "info" "Desative programas desnecessarios em Ferramentas > Inicializacao do Windows"; $recomendou = $true }
+        if ($nomePlano -notmatch "Alto Desempenho|Ultimate|Desempenho|PQueiroz") { Write-Status "info" "Aplique a Versao Padrao para usar o plano de energia de alto desempenho"; $recomendou = $true }
+        if (Test-PendingReboot) { Write-Status "info" "Reinicie o computador para concluir atualizacoes pendentes"; $recomendou = $true }
+        if (-not $recomendou) { Write-Status "ok" "Nenhuma acao recomendada no momento" }
+    } else {
+        Write-Host "  [1] Otimizacao Inteligente  - deixa o programa decidir o que aplicar" -ForegroundColor Cyan
+        Write-Host "  [2] Versao Padrao           - limpeza e ajustes basicos" -ForegroundColor Cyan
+        if ($itensInicializacao.Count -ge 5) {
+            Write-Host "  [8] Gerenciar Inicializacao - reduzir programas no boot" -ForegroundColor Cyan
+        }
     }
     Write-Host ""
 
@@ -1680,7 +1816,7 @@ function Otimizar-Inteligente {
     )
     if ($perfil -eq "Jogos" -or $perfil -eq "Misto") {
         $etapas += @{ Nome = "Ativando Modo de Jogo do Windows"; Acao = {
-                New-Item -Path "HKCU:\Software\Microsoft\GameBar" -Force | Out-Null
+                Garantir-Chave "HKCU:\Software\Microsoft\GameBar"
                 Capturar-Registro "HKCU:\Software\Microsoft\GameBar" "AutoGameModeEnabled"
                 Set-ItemProperty "HKCU:\Software\Microsoft\GameBar" "AutoGameModeEnabled" 1 -Type DWord
             } }
@@ -1702,11 +1838,39 @@ function Otimizar-Inteligente {
 # ---------------------------------------------------------------
 # 11. Manutencao do Windows (SFC / DISM / CHKDSK / Windows Update)
 # ---------------------------------------------------------------
+# Executa um comando do Windows lendo a saida na codificacao certa e repassando linha a linha.
+# sfc escreve em UTF-16 e chkdsk/DISM na pagina de codigo OEM; lidos como UTF-8, viram texto quebrado.
+# Linhas de progresso ("12% concluido") so sao repassadas a cada 10% para nao inundar a tela.
+function Invoke-Nativo($arquivo, $argumentos, $codificacao = "oem") {
+    $encoding = if ($codificacao -eq "unicode") { [Text.Encoding]::Unicode } else { [Text.Encoding]::GetEncoding([Globalization.CultureInfo]::CurrentCulture.TextInfo.OEMCodePage) }
+    $psi = New-Object Diagnostics.ProcessStartInfo $arquivo, $argumentos
+    $psi.UseShellExecute = $false; $psi.CreateNoWindow = $true
+    $psi.RedirectStandardOutput = $true; $psi.RedirectStandardError = $true
+    $psi.StandardOutputEncoding = $encoding; $psi.StandardErrorEncoding = $encoding
+    $proc = [Diagnostics.Process]::Start($psi)
+    $erro = $proc.StandardError.ReadToEndAsync()
+    $ultimoPercentual = -10
+    while ($null -ne ($linha = $proc.StandardOutput.ReadLine())) {
+        $linha = ($linha -replace "`0", "").Trim()
+        if (-not $linha) { continue }
+        if ($linha -match '(\d{1,3})(?:[.,]\d+)?\s?%') {
+            $percentual = [int]$matches[1]
+            if ($percentual -lt 100 -and $percentual -lt $ultimoPercentual + 10) { continue }
+            $ultimoPercentual = $percentual
+        }
+        Write-Host "  $linha"
+    }
+    $proc.WaitForExit()
+    $mensagemErro = $erro.Result.Trim()
+    if ($mensagemErro) { Write-Host "  $mensagemErro" }
+    $global:LASTEXITCODE = $proc.ExitCode
+}
+
 function Executar-VerificarSFC {
     Write-Secao "Verificando arquivos do sistema (SFC)"
     Write-Host "  Isso pode demorar alguns minutos..." -ForegroundColor Gray
     Write-Host ""
-    sfc /scannow
+    Invoke-Nativo "sfc.exe" "/scannow" "unicode"
     if ($LASTEXITCODE -ne 0) { throw "Comando terminou com codigo $LASTEXITCODE. Consulte a saida para detalhes." }
     Write-Host ""
     Linha "="
@@ -1716,7 +1880,7 @@ function Executar-RepararDISM {
     Write-Secao "Reparando imagem do Windows (DISM)"
     Write-Host "  Isso pode demorar varios minutos e precisa de internet..." -ForegroundColor Gray
     Write-Host ""
-    DISM /Online /Cleanup-Image /RestoreHealth
+    Invoke-Nativo "dism.exe" "/Online /Cleanup-Image /RestoreHealth"
     if ($LASTEXITCODE -ne 0) { throw "Comando terminou com codigo $LASTEXITCODE. Consulte a saida para detalhes." }
     Write-Host ""
     Linha "="
@@ -1726,7 +1890,7 @@ function Executar-VerificarDisco {
     Write-Secao "Verificando o disco (CHKDSK)"
     Write-Host "  Executando uma verificacao online (sem precisar reiniciar)..." -ForegroundColor Gray
     Write-Host ""
-    chkdsk $env:SystemDrive /scan
+    Invoke-Nativo "chkdsk.exe" "$env:SystemDrive /scan"
     if ($LASTEXITCODE -ne 0) { throw "Comando terminou com codigo $LASTEXITCODE. Consulte a saida para detalhes." }
     Write-Host ""
     Linha "="
@@ -1817,7 +1981,27 @@ function Menu-ManutencaoWindows {
 # ---------------------------------------------------------------
 $script:BenchmarkPath = "$env:ProgramData\OtimizadorPC\Snapshots\benchmark.json"
 
+# Mede a velocidade sequencial com o winsat (ferramenta oficial do Windows, ignora o cache de disco).
+# Sem winsat, cai para o teste simples, cujo resultado de leitura e inflado pelo cache.
 function Medir-VelocidadeDisco {
+    $letra = $env:SystemDrive.TrimEnd(":")
+    Try {
+        $leitura = $null; $escrita = $null
+        foreach ($modo in @("-read", "-write")) {
+            $saida = & winsat.exe disk -seq $modo -drive $letra 2>&1 | Out-String
+            if ($saida -match 'Sequential\s+64\.0\s+(Read|Write)\s+([\d.,]+)\s*MB/s') {
+                $valor = [double]::Parse(($matches[2] -replace ',', '.'), [Globalization.CultureInfo]::InvariantCulture)
+                if ($matches[1] -eq "Read") { $leitura = [Math]::Round($valor, 1) } else { $escrita = [Math]::Round($valor, 1) }
+            }
+        }
+        if ($leitura -and $escrita) { return @{ Leitura = $leitura; Escrita = $escrita; Metodo = "winsat" } }
+    } Catch { }
+    $resultado = Medir-VelocidadeDiscoSimples
+    $resultado.Metodo = "estimado"
+    return $resultado
+}
+
+function Medir-VelocidadeDiscoSimples {
     $pasta = "$env:TEMP\otimizador_bench"
     New-Item -Path $pasta -ItemType Directory -Force | Out-Null
     $arquivo = Join-Path $pasta "teste.tmp"
@@ -1826,7 +2010,7 @@ function Medir-VelocidadeDisco {
     (New-Object Random).NextBytes($bloco)
 
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
-    $fs = [System.IO.File]::Open($arquivo, [System.IO.FileMode]::Create)
+    $fs = New-Object IO.FileStream($arquivo, [IO.FileMode]::Create, [IO.FileAccess]::Write, [IO.FileShare]::None, 1MB, [IO.FileOptions]::WriteThrough)
     for ($i = 0; $i -lt $tamanhoMB; $i++) { $fs.Write($bloco, 0, $bloco.Length) }
     $fs.Flush($true)
     $fs.Close()
@@ -1883,6 +2067,7 @@ function Executar-Benchmark {
     Barra-Score $ramPercent
     Write-Host ""
     Write-Host "  DISCO" -ForegroundColor Cyan
+    if ($disco.Metodo -ne "winsat") { Write-Status "warn" "winsat indisponivel: leitura estimada (pode estar acima do real por causa do cache)" }
     Write-Status "info" "Leitura:  $($disco.Leitura) MB/s"
     Write-Status "info" "Escrita:  $($disco.Escrita) MB/s"
     if ($null -ne $discoLivrePercent) { Write-Status "info" "Espaco usado: $(100 - $discoLivrePercent)%" }
@@ -2136,6 +2321,7 @@ try {
             "dism" { Executar-RepararDISM }
             "chkdsk" { Executar-VerificarDisco }
             "update" { Executar-VerificarWindowsUpdate }
+            "reparar" { Executar-RepararConfiguracoes }
             "benchmark" { Executar-Benchmark }
         }
         if ($script:ContFalhas -gt 0) { exit 1 }

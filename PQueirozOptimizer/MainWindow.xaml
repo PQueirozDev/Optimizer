@@ -53,6 +53,9 @@
          <TextBlock x:Name="NavOptText" Text="Otimizações" VerticalAlignment="Center" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
         </DockPanel>
        </RadioButton>
+       <RadioButton x:Name="NavStartup" Tag="startup" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
+        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE7E8;" Style="{StaticResource NavIcon}"/><TextBlock Text="Inicialização" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+       </RadioButton>
        <RadioButton x:Name="NavDrivers" Tag="drivers" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE7F4;" Style="{StaticResource NavIcon}"/><TextBlock x:Name="NavDriversText" Text="Drivers" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/><TextBlock x:Name="NavDriversBadgeText" Visibility="Collapsed"/></StackPanel>
        </RadioButton>

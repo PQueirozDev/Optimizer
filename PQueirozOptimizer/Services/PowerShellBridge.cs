@@ -87,7 +87,8 @@ public sealed class PowerShellBridge
             {
                 if (string.IsNullOrWhiteSpace(line)) continue;
                 _log.Write(level, line);
-                progress?.Report(line);
+                // Erros vão marcados para a tela destacá-los e contá-los como falha
+                progress?.Report(level == "ERROR" ? "[ERRO] " + line : line);
             }
         }
         await Task.WhenAll(ReadAsync(process.StandardOutput, "INFO"), ReadAsync(process.StandardError, "ERROR"), process.WaitForExitAsync());

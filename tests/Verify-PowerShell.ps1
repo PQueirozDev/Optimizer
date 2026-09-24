@@ -15,7 +15,7 @@ function Centralizar($text) { return $text }
 function Write-Resultado($ok, $text) { }
 function Write-Pulado($text) { }
 # Load the real allowlists so the tests exercise the same rules the script uses.
-$allowlists = 'RegistroPermitido|ServicosPermitidos|TiposRegistroPermitidos|StartupTypesPermitidos|InstaladoresOneDrive|RunKeysPermitidas|LimiteHistorico'
+$allowlists = 'TarefasMMCSS|RegistroPermitido|ServicosPermitidos|TiposRegistroPermitidos|StartupTypesPermitidos|InstaladoresOneDrive|RunKeysPermitidas|LimiteHistorico'
 foreach ($assignment in $ast.EndBlock.Statements | Where-Object { $_ -is [System.Management.Automation.Language.AssignmentStatementAst] -and $_.Left.Extent.Text -match "^\`$script:($allowlists)$" }) {
     . ([scriptblock]::Create($assignment.Extent.Text))
 }
@@ -83,3 +83,23 @@ Assert (-not (Test-Path -LiteralPath $script:SnapshotPath)) 'Successful retry ar
 Limpar-HistoricoAntigo
 Assert (@(Get-ChildItem -LiteralPath $script:SnapshotDir -Filter '*.json' | Where-Object { $_.Name -like 'historico_*' -or $_.Name -like 'revertido_*' }).Count -eq $script:LimiteHistorico) 'History is capped'
 Write-Host 'All tests used isolated files and mocked system mutations.'
+
+# New-Item -Force apaga chaves existentes; Garantir-Chave nunca pode fazer isso
+$chaveTeste = 'HKCU:\Software\PQO-Verificacao'
+Remove-Item $chaveTeste -Recurse -Force -ErrorAction SilentlyContinue
+New-Item -Path "$chaveTeste\Sub" -Force | Out-Null
+Set-ItemProperty $chaveTeste -Name 'Existente' -Value 1 -Type DWord
+Garantir-Chave $chaveTeste
+Assert (((Get-ItemProperty $chaveTeste).Existente -eq 1) -and (Test-Path "$chaveTeste\Sub")) 'Garantir-Chave preserves existing values and subkeys'
+Remove-Item $chaveTeste -Recurse -Force
+$ast2 = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $projectRoot 'Otimizador_de_PC.ps1'), [ref]$null, [ref]$null)
+function Test-ProtegidoPorTestPath($node) {
+    for ($p = $node.Parent; $p; $p = $p.Parent) {
+        if ($p -is [System.Management.Automation.Language.IfStatementAst] -and ($p.Clauses | Where-Object { $_.Item1.Extent.Text -match 'Test-Path' })) { return $true }
+        if ($p -is [System.Management.Automation.Language.ScriptBlockAst]) { return $false }
+    }
+    return $false
+}
+$perigosos = $ast2.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -eq 'New-Item' -and $n.Extent.Text -match '-Force' -and $n.Extent.Text -notmatch 'Directory' }, $true) | Where-Object { -not (Test-ProtegidoPorTestPath $_) }
+Assert (@($perigosos).Count -eq 0) 'No unguarded New-Item -Force on registry keys'
+Assert ($script:TarefasMMCSS.Count -eq 8 -and $script:TarefasMMCSS['Pro Audio'].Priority -eq 1) 'MMCSS defaults cover all Windows tasks'

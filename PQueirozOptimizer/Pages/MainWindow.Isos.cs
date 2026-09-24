@@ -151,7 +151,7 @@ public partial class MainWindow
         copyOffLink.Click += (_, _) =>
         {
             Clipboard.SetText("https://www.microsoft.com/software-download/windows11");
-            MessageBox.Show("Link oficial copiado para a área de transferência!", "Copiado", MessageBoxButton.OK, MessageBoxImage.Information);
+            Msg("Link oficial copiado para a área de transferência!", "Copiado", MessageBoxButton.OK, MessageBoxImage.Information);
         };
 
         offBtns.Children.Add(dlOfficialBtn);
@@ -313,7 +313,7 @@ public partial class MainWindow
                 copyBtn.Click += (_, _) =>
                 {
                     Clipboard.SetText(iso.LocalPath);
-                    MessageBox.Show("Caminho copiado para a área de transferência!", "Copiado", MessageBoxButton.OK, MessageBoxImage.Information);
+                    Msg("Caminho copiado para a área de transferência!", "Copiado", MessageBoxButton.OK, MessageBoxImage.Information);
                 };
                 btnRow.Children.Add(copyBtn);
             }
@@ -349,7 +349,7 @@ public partial class MainWindow
                 Description = "Imagem ISO personalizada adicionada pelo usuário."
             };
             _configService.AddIso(entry);
-            MessageBox.Show($"ISO '{fileName}' adicionada com sucesso!", "ISO Adicionada", MessageBoxButton.OK, MessageBoxImage.Information);
+            Msg($"ISO '{fileName}' adicionada com sucesso!", "ISO Adicionada", MessageBoxButton.OK, MessageBoxImage.Information);
             ShowIsos();
         }
     }
@@ -358,7 +358,7 @@ public partial class MainWindow
     {
         if (!File.Exists(isoPath))
         {
-            MessageBox.Show($"O arquivo ISO não foi localizado:\n{isoPath}", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+            Msg($"O arquivo ISO não foi localizado:\n{isoPath}", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -373,16 +373,16 @@ public partial class MainWindow
             {
                 var path = $"{driveLetter}:\\";
                 Process.Start(new ProcessStartInfo("explorer.exe", path) { UseShellExecute = true });
-                MessageBox.Show($"A imagem ISO foi montada na unidade {path} e aberta no Explorador de Arquivos.", "ISO Montada", MessageBoxButton.OK, MessageBoxImage.Information);
+                Msg($"A imagem ISO foi montada na unidade {path} e aberta no Explorador de Arquivos.", "ISO Montada", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
             {
-                MessageBox.Show("A imagem ISO foi montada com sucesso. Acesse 'Este Computador' para visualizar a unidade.", "ISO Montada", MessageBoxButton.OK, MessageBoxImage.Information);
+                Msg("A imagem ISO foi montada com sucesso. Acesse 'Este Computador' para visualizar a unidade.", "ISO Montada", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Falha ao montar ISO: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+            Msg($"Falha ao montar ISO: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -398,11 +398,11 @@ public partial class MainWindow
             await PowerShellBridge.RunScriptAsync(
                 "Dismount-DiskImage -ImagePath $env:PQO_ISO | Out-Null",
                 new Dictionary<string, string> { ["PQO_ISO"] = isoPath });
-            MessageBox.Show("A imagem ISO foi desmontada com sucesso.", "ISO Desmontada", MessageBoxButton.OK, MessageBoxImage.Information);
+            Msg("A imagem ISO foi desmontada com sucesso.", "ISO Desmontada", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Falha ao desmontar ISO: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+            Msg($"Falha ao desmontar ISO: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {

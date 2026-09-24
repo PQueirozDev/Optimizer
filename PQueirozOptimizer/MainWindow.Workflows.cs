@@ -104,7 +104,7 @@ public partial class MainWindow
             var steps = _powershell.GetSteps(operation);
             if (steps.Count == 0)
             {
-                await ExecuteTrackedAsync(operation, () => _powershell.RunAsync(operation, progress: new Progress<string>(s => OperationStatus.Text = s)));
+                await RunLiveAsync(operation);
                 return;
             }
             PageTitle.Text = "Revisar ajustes";
@@ -147,12 +147,8 @@ public partial class MainWindow
             selectAll.Click += (_, _) => { var all = checks.All(c => c.IsChecked == true); foreach (var c in checks) c.IsChecked = !all; };
             apply.Click += async (_, _) =>
             {
-                apply.IsEnabled = false; selectAll.IsEnabled = false;
-                foreach (var check in checks) check.IsEnabled = false;
                 var selected = checks.Where(c => c.IsChecked == true).Select(c => (string)c.Tag).ToArray();
-                await ExecuteTrackedAsync("Aplicar ajustes", () => _powershell.RunAsync(operation, selected, new Progress<string>(s => OperationStatus.Text = s)));
-                foreach (var check in checks) check.IsEnabled = true;
-                selectAll.IsEnabled = true; Refresh();
+                await RunLiveAsync(operation, selected);
             };
             root.Children.Add(ActionBar(selectedLabel, selectAll, apply));
             ContentHost.Children.Clear(); ContentHost.Children.Add(root);
@@ -243,9 +239,7 @@ public partial class MainWindow
                 revert.IsEnabled = items.Length > 0; revert.Margin = new Thickness(12, 0, 0, 0); revert.VerticalAlignment = VerticalAlignment.Center;
                 revert.Click += async (_, _) =>
                 {
-                    revert.IsEnabled = false;
-                    await ExecuteTrackedAsync("Reverter configurações", () => _powershell.RunAsync("reverter", progress: new Progress<string>(s => OperationStatus.Text = s)));
-                    if (_currentPage == "history") ShowHistory();
+                    await RunLiveAsync("reverter");
                 };
                 DockPanel.SetDock(revert, Dock.Right); head.Children.Add(revert);
                 var chip = IconChip(Glyphs.Shield, "Success", 44); DockPanel.SetDock(chip, Dock.Left); head.Children.Add(chip);
@@ -549,7 +543,7 @@ public partial class MainWindow
                 OperationStatus.Text = $"Atualização disponível: {info.LatestVersion}";
                 if (showPrompt)
                 {
-                    var answer = MessageBox.Show($"A versão {info.LatestVersion} está disponível. Deseja atualizar agora?", "Atualização disponível", MessageBoxButton.YesNo, MessageBoxImage.Information);
+                    var answer = Msg($"A versão {info.LatestVersion} está disponível. Deseja atualizar agora?", "Atualização disponível", MessageBoxButton.YesNo, MessageBoxImage.Information);
                     if (answer == MessageBoxResult.Yes) update.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 }
             }

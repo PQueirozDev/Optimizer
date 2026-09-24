@@ -17,13 +17,22 @@ public partial class MainWindow
         {
             (Application.Current as App)?.SetActiveLicense(license);
             UpdateLicenseUi();
-            MessageBox.Show("Chave ativada. Os recursos de administrador já estão disponíveis.", "Ativação concluída", MessageBoxButton.OK, MessageBoxImage.Information);
+            Msg("Chave ativada. Os recursos de administrador já estão disponíveis.", "Ativação concluída", MessageBoxButton.OK, MessageBoxImage.Information);
             NavigateTo("dashboard");
         }
     }
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.3.0", "23/09/2026", new[]
+        {
+            "Todo o aplicativo agora muda de idioma, incluindo mensagens e a saída das operações.",
+            "Saída completa das operações ao vivo, com cores, contadores e botão para copiar o resultado.",
+            "Nova página Inicialização do Windows para ativar e desativar programas que abrem com o PC.",
+            "Corrige a Versão Avançada, que apagava configurações do agendador multimídia; nova ferramenta Reparar Configurações do Windows.",
+            "Novos ajustes reversíveis: anúncios e apps automáticos, Delivery Optimization, jogos em janela, Power Throttling, ID de publicidade, Bing, histórico de atividades e Copilot.",
+            "SFC, DISM e CHKDSK exibem a saída corretamente; benchmark de disco usa o winsat (sem cache).",
+        }),
         ("v1.2.0", "23/09/2026", new[]
         {
             "Visual novo: tema escuro/claro redesenhado, ícones na navegação e painel com pontuação de saúde.",
@@ -91,7 +100,7 @@ public partial class MainWindow
         open.VerticalAlignment = VerticalAlignment.Center; open.Margin = new Thickness(16, 0, 0, 0);
         open.Click += (_, _) =>
         {
-            var answer = MessageBox.Show(
+            var answer = Msg(
                 "O computador será reiniciado AGORA e abrirá diretamente as configurações de firmware (BIOS/UEFI).\n\nSalve seus trabalhos e feche outros programas antes de continuar.\n\nDeseja reiniciar agora?",
                 "Reiniciar na BIOS/UEFI", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
             if (answer != MessageBoxResult.Yes) return;
@@ -101,7 +110,7 @@ public partial class MainWindow
                 _log.Write("INFO", "Reinício para a BIOS/UEFI solicitado pelo usuário.");
                 Process.Start(new ProcessStartInfo("shutdown.exe", "/r /fw /t 5") { UseShellExecute = true, CreateNoWindow = true });
             }
-            catch (Exception ex) { MessageBox.Show("Não foi possível reiniciar na BIOS: " + ex.Message, "BIOS / UEFI", MessageBoxButton.OK, MessageBoxImage.Warning); }
+            catch (Exception ex) { Msg("Não foi possível reiniciar na BIOS: " + ex.Message, "BIOS / UEFI", MessageBoxButton.OK, MessageBoxImage.Warning); }
         };
         DockPanel.SetDock(open, Dock.Right); hero.Children.Add(open);
         var chip = IconChip(Glyphs.Chip, "Accent", 52); DockPanel.SetDock(chip, Dock.Left); hero.Children.Add(chip);
@@ -209,7 +218,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Falha ao abrir navegador: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+            Msg($"Falha ao abrir navegador: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
     #endregion

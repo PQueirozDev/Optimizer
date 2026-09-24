@@ -31,9 +31,15 @@ public partial class MainWindow : Window
     private string _driverSearch = "";
     private bool IsAdminLicense => (Application.Current as App)?.ActiveLicense?.IsAdmin == true;
 
-    public MainWindow()
+    public MainWindow() : this("dashboard") { _promptForUpdates = true; }
+
+    // Só pergunta sobre atualização na abertura do app, não quando a janela é recriada (troca de idioma)
+    private bool _promptForUpdates;
+
+    public MainWindow(string startPage)
     {
         InitializeComponent();
+        _currentPage = startPage;
         _powershell = new PowerShellBridge(_log);
         _cleaner = new QuickCleanService(_log);
         _log.EntryAdded += line => Dispatcher.BeginInvoke(() => AddLogLine(line));
@@ -57,39 +63,41 @@ public partial class MainWindow : Window
     {
         var license = (Application.Current as App)?.ActiveLicense;
         NavIsos.Visibility = IsAdminLicense ? Visibility.Visible : Visibility.Collapsed;
-        LicenseLabel.Text = license is null ? "Sem licença ativa" : $"{(license.IsAdmin ? "Admin" : "Padrão")} · {license.Licensee}";
+        LicenseLabel.Text = license is null ? "Sem licença ativa" : $"{(license.IsAdmin ? "Admin" : _loc.T("Padrão", "Standard"))} · {license.Licensee}";
         LicenseLabel.ToolTip = license?.ExpiresAtUtc is { } expires ? $"Válida até {expires.ToLocalTime():dd/MM/yyyy}" : "Licença sem data de expiração";
     }
 
     #region Window & Language Controls
-    private void LangButton_Click(object sender, RoutedEventArgs e)
+    private void LangButton_Click(object sender, RoutedEventArgs e) => ChangeLanguage(_loc.IsEnglish ? "pt" : "en");
+
+    /// <summary>
+    /// Troca o idioma recriando a janela na mesma posição e página: assim todos os textos,
+    /// inclusive os fixos do layout, são exibidos de novo já no idioma escolhido.
+    /// </summary>
+    private void ChangeLanguage(string language)
     {
-        var newLang = _loc.ToggleLanguage();
-        _configService.SaveLanguage(newLang);
-        UpdateLanguageUi();
-        NavigateTo(_currentPage);
+        if (_operationRunning) { OperationStatus.Text = "Aguarde a operação em andamento."; return; }
+        if (language == _loc.CurrentLanguage) return;
+        _loc.SetLanguage(language);
+        _configService.SaveLanguage(language);
+
+        var replacement = new MainWindow(_currentPage == "admin" ? "dashboard" : _currentPage);
+        if (WindowState == WindowState.Normal)
+        {
+            replacement.WindowStartupLocation = WindowStartupLocation.Manual;
+            replacement.Left = Left; replacement.Top = Top; replacement.Width = Width; replacement.Height = Height;
+        }
+        replacement.WindowState = WindowState;
+        Application.Current.MainWindow = replacement;
+        replacement.Show();
+        Close();
     }
 
     private void UpdateLanguageUi()
     {
+        // Os demais textos fixos do layout são traduzidos pelo Translator ao serem exibidos
         LangButton.Content = _loc.IsEnglish ? "EN" : "PT";
-        LangButton.ToolTip = _loc.T("Alternar idioma para Inglês (EN)", "Switch language to Portuguese (PT)");
-        TitlePageHint.Text = _loc.T(" Otimizador e Gerenciador do Windows", " Windows Optimizer & System Manager");
-        TitleOptChip.Text = _loc.T("Pronto", "Ready");
-
-        NavSecMonitor.Text = _loc.T("MONITORAR", "MONITOR");
-        NavSecOptimizations.Text = _loc.T("OTIMIZAÇÕES", "OPTIMIZATIONS");
-        NavSecSystem.Text = _loc.T("SISTEMA", "SYSTEM");
-
-        NavDashboardText.Text = _loc.T("Visão geral", "Overview");
-        NavOptText.Text = _loc.T("Otimizações", "Optimization");
-        NavDriversText.Text = _loc.T("Drivers", "Drivers");
-        NavIsosText.Text = _loc.T("Imagens do Windows", "Windows images");
-        NavToolsText.Text = _loc.T("Ferramentas", "Tools");
-        NavHistoryText.Text = _loc.T("Atividade e reversão", "Activity & restore");
-        NavSettingsText.Text = _loc.T("Configurações", "Settings");
-        NavAboutText.Text = _loc.T("Sobre", "About");
-        NavFooterStatus.Text = _loc.T("Sistema ativo", "System active");
+        LangButton.ToolTip = _loc.T("Alternar idioma para inglês (EN)", "Switch language to Portuguese (PT)");
     }
 
     private void BtnMinimize_Click(object sender, RoutedEventArgs e)
@@ -138,8 +146,9 @@ public partial class MainWindow : Window
     {
         try
         {
-            await ShowDashboardAsync();
-            await CheckForUpdateAsync(showPrompt: true);
+            if (_currentPage == "dashboard") await ShowDashboardAsync();
+            else NavigateTo(_currentPage);
+            await CheckForUpdateAsync(showPrompt: _promptForUpdates);
         }
         catch (Exception ex)
         {
@@ -160,7 +169,7 @@ public partial class MainWindow : Window
     {
         if (page == "isos" && !IsAdminLicense)
         {
-            MessageBox.Show("As imagens personalizadas do Windows estão disponíveis somente para licenças de administrador.", "Acesso restrito", MessageBoxButton.OK, MessageBoxImage.Information);
+            Msg("As imagens personalizadas do Windows estão disponíveis somente para licenças de administrador.", "Acesso restrito", MessageBoxButton.OK, MessageBoxImage.Information);
             UpdateActiveNavButton(_currentPage);
             return;
         }
@@ -186,12 +195,13 @@ public partial class MainWindow : Window
             case "about": ShowAbout(); break; case "history": ShowHistory(); break;
             case "patchnotes": ShowPatchNotes(); break;
             case "bios": ShowBios(); break;
+            case "startup": ShowStartup(); break;
         }
     }
 
     private void UpdateActiveNavButton(string page)
     {
-        var buttons = new[] { NavDashboard, NavOpt, NavDrivers, NavIsos, NavTools, NavSettings, NavAbout, NavHistory, NavPatchNotes, NavBios, NavAdmin };
+        var buttons = new[] { NavDashboard, NavOpt, NavStartup, NavDrivers, NavIsos, NavTools, NavSettings, NavAbout, NavHistory, NavPatchNotes, NavBios, NavAdmin };
         foreach (var b in buttons) b.IsChecked = b.Tag?.ToString() == page;
     }
 
