@@ -83,6 +83,9 @@ $script:RegistroPermitido = @(
     "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers",
     "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects",
     "HKCU:\Control Panel\Mouse",
+    "HKCU:\Control Panel\Desktop",
+    "HKCU:\Control Panel\Desktop\WindowMetrics",
+    "HKCU:\Software\Microsoft\Windows\DWM",
     "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance",
     "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager",
     "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
@@ -95,6 +98,11 @@ $script:RegistroPermitido = @(
     "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System",
     "HKCU:\Software\Policies\Microsoft\Windows\WindowsCopilot",
     "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot"
+)
+# Chaves que dependem do hardware (ID do dispositivo PCI) e por isso nao cabem numa lista fixa.
+# Cada padrao so libera os valores listados para ele.
+$script:RegistroPermitidoPadroes = @(
+    @{ Padrao = '^HKLM:\\SYSTEM\\CurrentControlSet\\Enum\\PCI\\VEN_[0-9A-Fa-f]{4}&DEV_[0-9A-Fa-f]{4}[^\\]*\\[^\\]+\\Device Parameters\\Interrupt Management\\MessageSignaledInterruptProperties$'; Nomes = @("MSISupported") }
 )
 $script:ServicosPermitidos = @(
     "PushToInstall", "SysMain", "WSearch", "DiagTrack", "dmwappushservice",
@@ -321,10 +329,18 @@ function Ja-Capturado($tipo, $chave) {
     return $false
 }
 
+function Test-RegistroPermitido($caminho, $nome) {
+    if ($script:RegistroPermitido -contains $caminho) { return $true }
+    foreach ($regra in $script:RegistroPermitidoPadroes) {
+        if ("$caminho" -match $regra.Padrao -and $regra.Nomes -contains $nome) { return $true }
+    }
+    return $false
+}
+
 function Test-ItemPermitido($item) {
     switch ($item.Tipo) {
         "Registro" {
-            return ($script:RegistroPermitido -contains $item.Caminho) -and
+            return (Test-RegistroPermitido $item.Caminho $item.Nome) -and
                    ($item.Nome -is [string]) -and
                    (-not $item.Existia -or -not $item.TipoAnterior -or $script:TiposRegistroPermitidos -contains $item.TipoAnterior)
         }
@@ -358,7 +374,7 @@ function Salvar-Snapshot {
 
 # Guarda o valor ATUAL de uma chave/valor de registro antes de ele ser alterado
 function Capturar-Registro($caminho, $nome) {
-    if ($script:RegistroPermitido -notcontains $caminho) { throw "Chave de registro fora da lista permitida: $caminho" }
+    if (-not (Test-RegistroPermitido $caminho $nome)) { throw "Chave de registro fora da lista permitida: $caminho" }
     if (Ja-Capturado "Registro" "$caminho|$nome") { return }
     $existia = $false
     $valorAnterior = $null
@@ -665,6 +681,77 @@ function Set-PoliticaDword($caminho, $nome, $valor) {
     Set-ItemProperty -Path $caminho -Name $nome -Value $valor -Type DWord -Force -ErrorAction Stop
 }
 
+# Muitos PCs ja tiveram servicos removidos por outras ferramentas; isso nao e uma falha.
+function Servico-Existe($nome) { return [bool](Get-Service -Name $nome -ErrorAction SilentlyContinue) }
+
+function Desativar-Servico($nome) {
+    if (-not (Servico-Existe $nome)) { Write-Host "[INFO] Servico $nome nao existe neste Windows; nada a fazer."; return }
+    Capturar-Servico $nome
+    Stop-Service $nome -Force
+    Set-Service $nome -StartupType Disabled
+}
+
+# Chamadas SystemParametersInfo: aplicam o ajuste NA HORA e gravam no perfil do usuario
+function Carregar-SPI {
+    if ('PqoSpi' -as [type]) { return }
+    Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public static class PqoSpi {
+    [StructLayout(LayoutKind.Sequential)] public struct ANIMATIONINFO { public uint cbSize; public int iMinAnimate; }
+    [DllImport("user32.dll", SetLastError = true)] public static extern bool SystemParametersInfo(uint acao, uint ui, IntPtr pv, uint flags);
+    [DllImport("user32.dll", SetLastError = true)] public static extern bool SystemParametersInfo(uint acao, uint ui, ref ANIMATIONINFO pv, uint flags);
+    [DllImport("user32.dll", SetLastError = true)] public static extern bool SystemParametersInfo(uint acao, uint ui, int[] pv, uint flags);
+}
+"@
+}
+$script:SPIF_SALVAR = 3  # SPIF_UPDATEINIFILE | SPIF_SENDCHANGE
+
+# O valor VisualFXSetting sozinho so muda a opcao marcada na janela "Opcoes de desempenho";
+# os efeitos continuam ligados. Aqui desligamos as animacoes de fato, mantendo a suavizacao
+# de fontes (ClearType), as miniaturas e o conteudo da janela ao arrastar.
+function Aplicar-EfeitosVisuaisDesempenho {
+    $desktop = "HKCU:\Control Panel\Desktop"
+    $metricas = "HKCU:\Control Panel\Desktop\WindowMetrics"
+    $avancado = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
+    $dwm = "HKCU:\Software\Microsoft\Windows\DWM"
+    $visual = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects"
+    Capturar-Registro $desktop "UserPreferencesMask"
+    Capturar-Registro $metricas "MinAnimate"
+    Set-PoliticaDword $avancado "TaskbarAnimations" 0
+    Set-PoliticaDword $dwm "EnableAeroPeek" 0
+    Set-PoliticaDword $visual "VisualFXSetting" 3  # 3 = personalizado (reflete o que foi aplicado)
+
+    Carregar-SPI
+    $info = New-Object PqoSpi+ANIMATIONINFO
+    $info.cbSize = 8; $info.iMinAnimate = 0
+    if (-not [PqoSpi]::SystemParametersInfo(0x0049, 8, [ref]$info, $script:SPIF_SALVAR)) { throw "Falha ao desativar a animacao de janelas" }  # SPI_SETANIMATION
+    # Animacao de menus, caixas de combinacao, rolagem suave, fade de menus/selecao/dicas e animacoes do Windows 10/11
+    foreach ($acao in 0x1003, 0x1005, 0x1007, 0x1013, 0x1015, 0x1017, 0x1019, 0x1043) {
+        [void][PqoSpi]::SystemParametersInfo($acao, 0, [IntPtr]::Zero, $script:SPIF_SALVAR)
+    }
+}
+
+# Reaproveita o plano criado em execucoes anteriores em vez de duplicar um novo a cada vez
+function Ativar-PlanoDesempenhoMaximo {
+    $nomePlano = "PQueiroz Optimizer - Desempenho Avancado"
+    $existente = (powercfg /list) | Where-Object { $_ -match [regex]::Escape($nomePlano) } | Select-Object -First 1
+    if ($existente -match "([0-9a-fA-F-]{36})") {
+        powercfg /setactive $matches[1]
+        return
+    }
+    $ultimatePlan = powercfg /duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61
+    if ($ultimatePlan -match "([0-9a-fA-F-]{36})") {
+        $planGuid = $matches[1]
+        powercfg /changename $planGuid $nomePlano | Out-Null
+        powercfg /setactive $planGuid
+    } else {
+        # Notebooks com Modern Standby nao oferecem o Desempenho Maximo
+        $global:LASTEXITCODE = 0
+        powercfg /setactive SCHEME_MIN
+    }
+}
+
 function Aplicar-PoliticasAvancadas {
     $dataCollection = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"
     Set-PoliticaDword $dataCollection "AllowTelemetry" 0
@@ -711,16 +798,13 @@ function Otimizar-Gamer {
         @{ Nome = "Verificando agendador multimidia do Windows (MMCSS)"; Acao = { Reparar-MMCSS } }
         @{ Nome = "Plano de energia 'Desempenho Maximo'"; Acao = {
                 Capturar-PlanoEnergia
-                $ultimatePlan = powercfg /duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61
-                if ($ultimatePlan -match "([0-9a-fA-F-]{36})") {
-                    $planGuid = $matches[1]
-                    powercfg /changename $planGuid "PQueiroz Optimizer - Desempenho Avancado" | Out-Null
-                    powercfg /setactive $planGuid
-                } else {
-                    powercfg /setactive SCHEME_MIN
-                }
+                Ativar-PlanoDesempenhoMaximo
             } }
         @{ Nome = "Priorizando CPU para o jogo em foco";  Acao = {
+                # 38 (0x26) = quantum curto, variavel, 3x para a janela em foco. No Windows cliente o
+                # padrao (2) ja equivale a isso; o ajuste corrige PCs configurados para "servicos em segundo plano".
+                $atual = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" -Name Win32PrioritySeparation -ErrorAction SilentlyContinue).Win32PrioritySeparation
+                if ($atual -in 2, 38) { Write-Host "[INFO] O Windows ja prioriza o programa em foco; nenhuma mudanca necessaria."; return }
                 Capturar-Registro "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" "Win32PrioritySeparation"
                 Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" "Win32PrioritySeparation" 38 -Type DWord
             } }
@@ -728,7 +812,7 @@ function Otimizar-Gamer {
                 $multimediaPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile"
                 Garantir-Chave $multimediaPath
                 Capturar-Registro $multimediaPath "SystemResponsiveness"
-                Set-ItemProperty $multimediaPath "SystemResponsiveness" 0 -Type DWord
+                Set-ItemProperty $multimediaPath "SystemResponsiveness" 10 -Type DWord  # 10 e o minimo aceito; 0 nao e um valor documentado
 
                 $gamesPath = "$multimediaPath\Tasks\Games"
                 Garantir-Chave $gamesPath
@@ -763,32 +847,50 @@ function Otimizar-Gamer {
                 Capturar-Registro "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" "HwSchMode"
                 Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" "HwSchMode" 2 -Type DWord
             } }
-        @{ Nome = "Ajustando efeitos visuais p/ desempenho"; Acao = {
-                Capturar-Registro "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" "VisualFXSetting"
-                Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" "VisualFXSetting" 2 -Type DWord
+        @{ Nome = "Ativando modo MSI (interrupcoes por mensagem) na placa de video"; Acao = {
+                # Interrupcoes por mensagem (MSI) evitam o compartilhamento de linhas IRQ e reduzem a latencia DPC da GPU
+                $gpus = @(Obter-GpusPCI)
+                if ($gpus.Count -eq 0) { Write-Host "[INFO] Nenhuma placa de video PCI encontrada; ajuste ignorado."; return }
+                foreach ($gpu in $gpus) {
+                    if ($gpu.MSI -eq $true) { Write-Host "[INFO] $($gpu.Nome): modo MSI ja ativo."; continue }
+                    Garantir-Chave $gpu.CaminhoMSI
+                    Capturar-Registro $gpu.CaminhoMSI "MSISupported"
+                    Set-ItemProperty -LiteralPath $gpu.CaminhoMSI -Name "MSISupported" -Value 1 -Type DWord -ErrorAction Stop
+                    Write-Host "[INFO] $($gpu.Nome): modo MSI ativado (vale apos reiniciar)."
+                }
             } }
+        @{ Nome = "Ajustando efeitos visuais p/ desempenho"; Acao = { Aplicar-EfeitosVisuaisDesempenho } }
         @{ Nome = "Reduzindo latencia de mouse, teclado e USB"; Acao = {
                 $mousePath = "HKCU:\Control Panel\Mouse"
                 Capturar-Registro $mousePath "MouseSpeed"
-                Set-ItemProperty $mousePath "MouseSpeed" "0" -Type String
                 Capturar-Registro $mousePath "MouseThreshold1"
-                Set-ItemProperty $mousePath "MouseThreshold1" "0" -Type String
                 Capturar-Registro $mousePath "MouseThreshold2"
-                Set-ItemProperty $mousePath "MouseThreshold2" "0" -Type String
+                # SPI_SETMOUSE desliga a "precisao aprimorada do ponteiro" na hora (o registro sozinho so vale no proximo logon)
+                Carregar-SPI
+                if (-not [PqoSpi]::SystemParametersInfo(0x0004, 0, [int[]](0, 0, 0), $script:SPIF_SALVAR)) {
+                    Set-ItemProperty $mousePath "MouseSpeed" "0" -Type String
+                    Set-ItemProperty $mousePath "MouseThreshold1" "0" -Type String
+                    Set-ItemProperty $mousePath "MouseThreshold2" "0" -Type String
+                }
                 powercfg /setacvalueindex SCHEME_CURRENT SUB_USB USBSELECTIVE 0 | Out-Null
                 powercfg /setdcvalueindex SCHEME_CURRENT SUB_USB USBSELECTIVE 0 | Out-Null
                 powercfg /setactive SCHEME_CURRENT | Out-Null
             } }
         @{ Nome = "Ajustando SysMain e Windows Search";   Acao = {
                 # Em HD o SysMain (Superfetch) acelera a abertura de programas; so mexemos em SSD
-                if ((Obter-TipoMidia $env:SystemDrive.TrimEnd(":")) -eq "SSD") {
+                if ((Obter-TipoMidia $env:SystemDrive.TrimEnd(":")) -ne "SSD") {
+                    Write-Host "[INFO] Disco do sistema nao e SSD; SysMain mantido."
+                } elseif (Servico-Existe "SysMain") {
                     Capturar-Servico "SysMain"
                     Set-Service "SysMain" -StartupType Manual
-                } else {
-                    Write-Host "[INFO] Disco do sistema nao e SSD; SysMain mantido."
+                    Stop-Service "SysMain" -Force  # sem isso ele continuaria rodando ate reiniciar
                 }
-                Capturar-Servico "WSearch"
-                Set-Service "WSearch" -StartupType Manual
+                if (Servico-Existe "WSearch") {
+                    Capturar-Servico "WSearch"
+                    Set-Service "WSearch" -StartupType Manual
+                } else {
+                    Write-Host "[INFO] Servico WSearch nao existe neste Windows; nada a fazer."
+                }
             } }
         @{ Nome = "Limpando cache DNS";                   Acao = { ipconfig /flushdns } }
         @{ Nome = "Otimizando unidades de disco";         Acao = {
@@ -848,11 +950,7 @@ function Otimizar-Debloat {
         {
             $services = @("DiagTrack", "dmwappushservice", "diagnosticshub.standardcollector.service", "WerSvc", "PcaSvc")
             foreach ($service in $services) {
-                if (Get-Service $service -ErrorAction SilentlyContinue) {
-                    Capturar-Servico $service
-                    Stop-Service $service -Force
-                    Set-Service $service -StartupType Disabled
-                }
+                Desativar-Servico $service
             }
         } $modoRapido
 
@@ -904,36 +1002,28 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Desativar o servico de Impressao (Spooler)? So faca isso se NAO usa impressora." `
         "Servico de impressao desativado" `
         {
-            Capturar-Servico "Spooler"
-            Stop-Service "Spooler" -Force
-            Set-Service "Spooler" -StartupType Disabled
+            Desativar-Servico "Spooler"
         } $modoRapido
 
     # 7. Bluetooth
     Executar-Se-Confirmado "Desativar o servico de Bluetooth? So faca isso se NAO usa Bluetooth." `
         "Bluetooth desativado" `
         {
-            Capturar-Servico "bthserv"
-            Stop-Service "bthserv" -Force
-            Set-Service "bthserv" -StartupType Disabled
+            Desativar-Servico "bthserv"
         } $modoRapido
 
     # 8. Fax
     Executar-Se-Confirmado "Desativar o servico de Fax?" `
         "Servico de Fax desativado" `
         {
-            Capturar-Servico "Fax"
-            Stop-Service "Fax" -Force
-            Set-Service "Fax" -StartupType Disabled
+            Desativar-Servico "Fax"
         } $modoRapido
 
     # 9. Remote Registry
     Executar-Se-Confirmado "Desativar o servico de Registro Remoto (Remote Registry)?" `
         "Remote Registry desativado" `
         {
-            Capturar-Servico "RemoteRegistry"
-            Stop-Service "RemoteRegistry" -Force
-            Set-Service "RemoteRegistry" -StartupType Disabled
+            Desativar-Servico "RemoteRegistry"
         } $modoRapido
 
     # 10. Remote Assistance
@@ -948,9 +1038,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Desativar o servico de Mapas (Maps Broker)?" `
         "Servico de Mapas desativado" `
         {
-            Capturar-Servico "MapsBroker"
-            Stop-Service "MapsBroker" -Force
-            Set-Service "MapsBroker" -StartupType Disabled
+            Desativar-Servico "MapsBroker"
         } $modoRapido
 
     # 12. Servicos de diagnostico adicionais
@@ -961,11 +1049,7 @@ function Otimizar-Debloat {
         {
             $diagnosticServices = @("WdiServiceHost", "WdiSystemHost")
             foreach ($service in $diagnosticServices) {
-                if (Get-Service $service -ErrorAction SilentlyContinue) {
-                    Capturar-Servico $service
-                    Stop-Service $service -Force
-                    Set-Service $service -StartupType Disabled
-                }
+                Desativar-Servico $service
             }
         } $modoRapido
 
@@ -1044,19 +1128,14 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Ajustar efeitos visuais para melhor desempenho?" `
         "Efeitos visuais ajustados" `
         {
-            $visualPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects"
-            Garantir-Chave $visualPath
-            Capturar-Registro $visualPath "VisualFXSetting"
-            Set-ItemProperty $visualPath "VisualFXSetting" -Type DWord -Value 2
+            Aplicar-EfeitosVisuaisDesempenho
         } $modoRapido
 
     # 16. Indexacao do Windows Search
     Executar-Se-Confirmado "Desativar a indexacao do Windows Search?" `
         "Indexacao do Windows Search desativada" `
         {
-            Capturar-Servico "WSearch"
-            Stop-Service "WSearch" -Force
-            Set-Service "WSearch" -StartupType Disabled
+            Desativar-Servico "WSearch"
         } $modoRapido
 
     # 17. Limpeza final de temporarios
@@ -1561,6 +1640,120 @@ function Detectar-SSD {
     return $true  # assume SSD se nao for possivel detectar (mais comum hoje em dia)
 }
 
+# Placas de video PCI (dedicadas ou integradas) e o estado atual do modo MSI de cada uma
+function Obter-GpusPCI {
+    $lista = @()
+    Try {
+        $dispositivos = Get-PnpDevice -Class Display -PresentOnly -ErrorAction Stop | Where-Object { $_.InstanceId -like 'PCI\VEN_*' }
+        foreach ($d in $dispositivos) {
+            $caminho = "HKLM:\SYSTEM\CurrentControlSet\Enum\$($d.InstanceId)\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties"
+            $valor = $null
+            Try { $valor = (Get-ItemProperty -LiteralPath $caminho -Name MSISupported -ErrorAction Stop).MSISupported } Catch { }
+            $lista += [PSCustomObject]@{ Nome = $d.FriendlyName; CaminhoMSI = $caminho; MSI = ($valor -eq 1) }
+        }
+    } Catch { }
+    return $lista
+}
+
+# Mede por alguns segundos quanto da CPU vai para interrupcoes e DPCs (chamadas adiadas de drivers).
+# Valores altos causam travadas, estalos no audio e input lag mesmo com FPS alto.
+# Usa as classes WMI (nomes em ingles em qualquer idioma do Windows) em vez do Get-Counter.
+# Usa os contadores brutos (a classe "Formatted" arredonda para inteiro e mostraria 0%).
+function Medir-LatenciaDPC($segundos = 5) {
+    Try {
+        $filtro = "Name='_Total'"
+        $a = Get-CimInstance Win32_PerfRawData_PerfOS_Processor -Filter $filtro -ErrorAction Stop
+        Start-Sleep -Seconds $segundos
+        $b = Get-CimInstance Win32_PerfRawData_PerfOS_Processor -Filter $filtro -ErrorAction Stop
+        $intervalo = [double]($b.Timestamp_Sys100NS - $a.Timestamp_Sys100NS)
+        if ($intervalo -le 0) { return $null }
+        $dpc = [Math]::Round(100 * ($b.PercentDPCTime - $a.PercentDPCTime) / $intervalo, 2)
+        $irq = [Math]::Round(100 * ($b.PercentInterruptTime - $a.PercentInterruptTime) / $intervalo, 2)
+        $porSegundo = [Math]::Round(($b.InterruptsPersec - $a.InterruptsPersec) / ($intervalo / 1e7))
+        $nivel = if (($dpc + $irq) -ge 5) { "bad" } elseif (($dpc + $irq) -ge 2) { "warn" } else { "ok" }
+        return [PSCustomObject]@{ DPC = $dpc; Interrupcao = $irq; PorSegundo = $porSegundo; Nivel = $nivel }
+    } Catch { return $null }
+}
+
+# Temperatura dos sensores ACPI da placa-mae (nem todo PC expoe; nao e a temperatura por nucleo da CPU)
+function Obter-Temperatura {
+    Try {
+        $zonas = @(Get-CimInstance Win32_PerfFormattedData_Counters_ThermalZoneInformation -ErrorAction Stop |
+                   Where-Object { $_.HighPrecisionTemperature -gt 0 })
+        if ($zonas.Count -gt 0) {
+            $max = ($zonas | Measure-Object HighPrecisionTemperature -Maximum).Maximum
+            $c = [Math]::Round(($max / 10) - 273.15)
+            if ($c -gt 0 -and $c -lt 130) { return $c }
+        }
+    } Catch { }
+    Try {
+        $zonas = @(Get-CimInstance -Namespace root/wmi -ClassName MSAcpi_ThermalZoneTemperature -ErrorAction Stop)
+        if ($zonas.Count -gt 0) {
+            $c = [Math]::Round((($zonas | Measure-Object CurrentTemperature -Maximum).Maximum / 10) - 273.15)
+            if ($c -gt 0 -and $c -lt 130) { return $c }
+        }
+    } Catch { }
+    return $null
+}
+
+# Velocidade nominal do kit de memoria lida do part number (ex.: CMK16GX4M2B3200C16 -> 3200, KF436C16 -> 3600)
+function Obter-VelocidadeNominalRAM($partNumber) {
+    $pn = "$partNumber".Trim().ToUpper()
+    if ($pn -match '^KF(4|5)(\d{2})') { return [int]$matches[2] * 100 }
+    if ($pn -match '(?<!\d)(2[4-9]\d{2}|3\d{3}|4\d{3}|[5-8]\d{3})(?!\d)') { return [int]$matches[1] }
+    return $null
+}
+
+# Levanta o setup do cliente: placa-mae, BIOS, memoria (XMP/EXPO, canais), CPU e timer do sistema.
+# Nada disso e alterado pelo otimizador - BIOS/overclock precisam ser feitos manualmente na BIOS.
+function Obter-SetupHardware {
+    $setup = [ordered]@{
+        PlacaMae = "Nao disponivel"; BIOS = "Nao disponivel"; BIOSIdadeAnos = $null
+        CPUNucleos = "Nao disponivel"; RAMDetalhe = "Nao disponivel"; RAMModulos = 0
+        RAMAtual = $null; RAMNominal = $null; RAMTipo = ""; PlatformClock = $false; HVCI = $false
+    }
+    Try {
+        $placa = Get-CimInstance Win32_BaseBoard -ErrorAction Stop | Select-Object -First 1
+        $setup.PlacaMae = ("$($placa.Manufacturer) $($placa.Product)").Trim()
+    } Catch { }
+    Try {
+        $bios = Get-CimInstance Win32_BIOS -ErrorAction Stop | Select-Object -First 1
+        $data = $bios.ReleaseDate
+        $setup.BIOS = "$($bios.SMBIOSBIOSVersion)".Trim()
+        if ($data) {
+            $setup.BIOS += " ($($data.ToString('dd/MM/yyyy')))"
+            $setup.BIOSIdadeAnos = [Math]::Round(((Get-Date) - $data).TotalDays / 365, 1)
+        }
+    } Catch { }
+    Try {
+        $cpu = Get-CimInstance Win32_Processor -ErrorAction Stop | Select-Object -First 1
+        $setup.CPUNucleos = "$($cpu.NumberOfCores) nucleos / $($cpu.NumberOfLogicalProcessors) threads - $($cpu.MaxClockSpeed) MHz base"
+    } Catch { }
+    Try {
+        $modulos = @(Get-CimInstance Win32_PhysicalMemory -ErrorAction Stop)
+        $setup.RAMModulos = $modulos.Count
+        $tipo = switch (($modulos | Select-Object -First 1).SMBIOSMemoryType) { 26 { "DDR4" } 34 { "DDR5" } 24 { "DDR3" } default { "" } }
+        $setup.RAMTipo = $tipo
+        $atual = ($modulos | Measure-Object ConfiguredClockSpeed -Minimum).Minimum
+        $nominais = @($modulos | ForEach-Object { Obter-VelocidadeNominalRAM $_.PartNumber } | Where-Object { $_ })
+        $setup.RAMAtual = $atual
+        if ($nominais.Count -gt 0) { $setup.RAMNominal = ($nominais | Measure-Object -Minimum).Minimum }
+        $totalGB = [Math]::Round((($modulos | Measure-Object Capacity -Sum).Sum) / 1GB)
+        $canal = if ($modulos.Count -ge 2) { "dual channel" } else { "single channel" }
+        $setup.RAMDetalhe = "$totalGB GB $tipo - $($modulos.Count) pente(s), $canal - $atual MT/s".Replace("  ", " ")
+    } Catch { }
+    Try {
+        # 2 = Integridade de Memoria (HVCI) em execucao
+        $dg = Get-CimInstance -Namespace root\Microsoft\Windows\DeviceGuard -ClassName Win32_DeviceGuard -ErrorAction Stop
+        $setup.HVCI = @($dg.SecurityServicesRunning) -contains 2
+    } Catch { }
+    Try {
+        $bcd = (bcdedit /enum "{current}") -join "`n"
+        $setup.PlatformClock = ($bcd -match '(?im)^useplatformclock\s+(Yes|Sim)')
+    } Catch { }
+    return $setup
+}
+
 # Tenta identificar o "perfil" do PC (trabalho / jogos / geral) olhando programas instalados,
 # so para ORIENTAR a Otimizacao Inteligente - nunca decide algo destrutivo sozinho por causa disso
 function Detectar-PerfilPC {
@@ -1696,6 +1889,31 @@ function Analisar-PC {
     Write-Host "  GPU           " -NoNewline -ForegroundColor DarkGray; Write-Host $info.GPU -ForegroundColor Cyan
     Write-Host "  Disco         " -NoNewline -ForegroundColor DarkGray; Write-Host "$tipoDisco - $($info.Disco)" -ForegroundColor Cyan
 
+    $setup = Obter-SetupHardware
+    $gpus = @(Obter-GpusPCI)
+    $temperatura = Obter-Temperatura
+    Write-Host "  Medindo latencia DPC e interrupcoes (5 s)..." -ForegroundColor DarkGray
+    $latencia = Medir-LatenciaDPC 5
+
+    Write-Host ""
+    Write-Host "  Placa-mae     " -NoNewline -ForegroundColor DarkGray; Write-Host $setup.PlacaMae -ForegroundColor Cyan
+    Write-Host "  BIOS          " -NoNewline -ForegroundColor DarkGray; Write-Host $setup.BIOS -ForegroundColor Cyan
+    Write-Host "  Nucleos       " -NoNewline -ForegroundColor DarkGray; Write-Host $setup.CPUNucleos -ForegroundColor Cyan
+    Write-Host "  Memoria       " -NoNewline -ForegroundColor DarkGray; Write-Host $setup.RAMDetalhe -ForegroundColor Cyan
+    if ($null -ne $temperatura) {
+        $corTemp = if ($temperatura -ge 85) { "Red" } elseif ($temperatura -ge 70) { "Yellow" } else { "Cyan" }
+        Write-Host "  Temperatura   " -NoNewline -ForegroundColor DarkGray; Write-Host "$temperatura C (sensor ACPI)" -ForegroundColor $corTemp
+    }
+    if ($latencia) {
+        $corLat = Cor-Nivel $latencia.Nivel
+        Write-Host "  Latencia DPC  " -NoNewline -ForegroundColor DarkGray
+        Write-Host ("DPC {0}% | Interrupcoes {1}% ({2}/s)" -f $latencia.DPC, $latencia.Interrupcao, $latencia.PorSegundo) -ForegroundColor $corLat
+    }
+    foreach ($gpu in $gpus) {
+        $estadoMsi = if ($gpu.MSI) { "ativo" } else { "desativado" }
+        Write-Host "  Modo MSI      " -NoNewline -ForegroundColor DarkGray; Write-Host "$($gpu.Nome): $estadoMsi" -ForegroundColor Cyan
+    }
+
     $score = Calcular-HealthScore
     $script:UltimoScore = $score
     Mostrar-HealthScore $score
@@ -1713,6 +1931,18 @@ function Analisar-PC {
     if (-not $trimAtivo -and $ehSSD) { $problemas += "TRIM parece desativado no SSD" }
     if (Test-PendingReboot) { $problemas += "Ha uma reinicializacao pendente" }
     if ($score.Disco -lt 40) { $problemas += "Pouco espaco livre em disco" }
+    if ($latencia -and $latencia.Nivel -ne "ok") { $problemas += "Latencia DPC/interrupcoes alta ($($latencia.DPC + $latencia.Interrupcao)% da CPU)" }
+    if (@($gpus | Where-Object { -not $_.MSI }).Count -gt 0) { $problemas += "Placa de video sem modo MSI (interrupcoes por linha IRQ)" }
+    if ($setup.PlatformClock) { $problemas += "Timer HPET forcado no boot (useplatformclock) - aumenta a latencia" }
+    if ($setup.HVCI) { $problemas += "Integridade de Memoria (HVCI) ativa - pode custar de 5% a 10% de FPS em alguns jogos" }
+    if ($null -ne $temperatura -and $temperatura -ge 85) { $problemas += "Temperatura alta: $temperatura C - verifique cooling e pasta termica" }
+    if ($setup.RAMModulos -eq 1) { $problemas += "Memoria em single channel (1 pente) - 2 pentes dobram a largura de banda" }
+    $ramSemXmp = $false
+    if ($setup.RAMNominal -and $setup.RAMAtual -and $setup.RAMAtual -lt ($setup.RAMNominal - 100)) {
+        $ramSemXmp = $true
+        $problemas += "Memoria rodando a $($setup.RAMAtual) MT/s, mas o kit suporta $($setup.RAMNominal) MT/s (XMP/EXPO desligado na BIOS)"
+    }
+    if ($setup.BIOSIdadeAnos -and $setup.BIOSIdadeAnos -ge 3) { $problemas += "BIOS com $($setup.BIOSIdadeAnos) anos - pode haver versao mais nova no site da placa-mae" }
 
     if ($problemas.Count -eq 0) {
         Write-Status "ok" "Nenhum problema relevante encontrado. Seu PC esta em bom estado!"
@@ -1733,6 +1963,10 @@ function Analisar-PC {
         if ($itensInicializacao.Count -ge 5) { Write-Status "info" "Desative programas desnecessarios em Ferramentas > Inicializacao do Windows"; $recomendou = $true }
         if ($nomePlano -notmatch "Alto Desempenho|Ultimate|Desempenho|PQueiroz") { Write-Status "info" "Aplique a Versao Padrao para usar o plano de energia de alto desempenho"; $recomendou = $true }
         if (Test-PendingReboot) { Write-Status "info" "Reinicie o computador para concluir atualizacoes pendentes"; $recomendou = $true }
+        if (@($gpus | Where-Object { -not $_.MSI }).Count -gt 0) { Write-Status "info" "Aplique a Versao Avancada para ativar o modo MSI da placa de video"; $recomendou = $true }
+        if ($ramSemXmp) { Write-Status "info" "Ative o perfil XMP/EXPO na BIOS (menu BIOS / UEFI > Reiniciar na BIOS/UEFI)"; $recomendou = $true }
+        if ($setup.HVCI) { Write-Status "info" "Se o PC e so para jogos, avalie desligar a Integridade de Memoria em Seguranca do Windows > Seguranca do dispositivo (reduz a protecao)"; $recomendou = $true }
+        if ($setup.PlatformClock) { Write-Status "info" "Remova o HPET forcado: bcdedit /deletevalue useplatformclock (como administrador)"; $recomendou = $true }
         if (-not $recomendou) { Write-Status "ok" "Nenhuma acao recomendada no momento" }
     } else {
         Write-Host "  [1] Otimizacao Inteligente  - deixa o programa decidir o que aplicar" -ForegroundColor Cyan
@@ -2042,7 +2276,7 @@ function Obter-TempoBoot {
 
 function Executar-Benchmark {
     Write-Secao "Teste de desempenho (benchmark)"
-    Write-Host "  Medindo CPU, RAM, disco e tempo de boot..." -ForegroundColor Gray
+    Write-Host "  Medindo CPU, RAM, disco, tempo de boot e latencia..." -ForegroundColor Gray
     Write-Host ""
 
     $cpuPercent = 0
@@ -2054,6 +2288,8 @@ function Executar-Benchmark {
     } Catch { }
     $disco = Medir-VelocidadeDisco
     $bootSeg = Obter-TempoBoot
+    $latencia = Medir-LatenciaDPC 5
+    $temperatura = Obter-Temperatura
     $discoLivrePercent = $null
     Try {
         $letra = $env:SystemDrive.TrimEnd(":")
@@ -2076,6 +2312,16 @@ function Executar-Benchmark {
         Write-Host "  BOOT" -ForegroundColor Cyan
         Write-Status "info" "Ultima inicializacao: $bootSeg s"
     }
+    if ($latencia) {
+        Write-Host ""
+        Write-Host "  LATENCIA (DPC / INTERRUPCOES)" -ForegroundColor Cyan
+        Write-Status $latencia.Nivel "DPC: $($latencia.DPC)% da CPU"
+        Write-Status $latencia.Nivel "Interrupcoes: $($latencia.Interrupcao)% da CPU ($($latencia.PorSegundo)/s)"
+    }
+    if ($null -ne $temperatura) {
+        $nivelTemp = if ($temperatura -ge 85) { "bad" } elseif ($temperatura -ge 70) { "warn" } else { "ok" }
+        Write-Status $nivelTemp "Temperatura: $temperatura C (sensor ACPI)"
+    }
 
     $resultadoAtual = [PSCustomObject]@{
         Data          = (Get-Date).ToString("dd/MM/yyyy HH:mm:ss")
@@ -2085,6 +2331,9 @@ function Executar-Benchmark {
         DiscoEscrita  = $disco.Escrita
         DiscoUsado    = if ($null -ne $discoLivrePercent) { 100 - $discoLivrePercent } else { $null }
         BootSegundos  = $bootSeg
+        DPC           = if ($latencia) { $latencia.DPC } else { $null }
+        Interrupcao   = if ($latencia) { $latencia.Interrupcao } else { $null }
+        Temperatura   = $temperatura
     }
 
     if (Test-Path $script:BenchmarkPath) {
@@ -2106,6 +2355,13 @@ function Executar-Benchmark {
             Write-Host ("  Disco usado   : {0}% -> {1}%" -f $anterior.DiscoUsado, $resultadoAtual.DiscoUsado) -ForegroundColor Gray
             Write-Host ("  Leitura disco : {0} MB/s -> {1} MB/s" -f $anterior.DiscoLeitura, $disco.Leitura) -ForegroundColor Gray
             Write-Host ("  Escrita disco : {0} MB/s -> {1} MB/s" -f $anterior.DiscoEscrita, $disco.Escrita) -ForegroundColor Gray
+            if ($null -ne $anterior.DPC -and $latencia) {
+                Write-Host ("  Latencia DPC  : {0}% -> {1}%" -f $anterior.DPC, $latencia.DPC) -ForegroundColor Gray
+                Write-Host ("  Interrupcoes  : {0}% -> {1}%" -f $anterior.Interrupcao, $latencia.Interrupcao) -ForegroundColor Gray
+            }
+            if ($null -ne $anterior.Temperatura -and $null -ne $temperatura) {
+                Write-Host ("  Temperatura   : {0} C -> {1} C" -f $anterior.Temperatura, $temperatura) -ForegroundColor Gray
+            }
         } Catch { }
     } else {
         Write-Host ""
@@ -2117,7 +2373,7 @@ function Executar-Benchmark {
     $resultadoAtual | ConvertTo-Json | Out-File -FilePath $script:BenchmarkPath -Encoding UTF8 -Force
 
     Write-Host ""
-    Write-Host "  Obs: isso NAO garante ganho de FPS - mede uso de CPU/RAM/disco e o boot." -ForegroundColor DarkGray
+    Write-Host "  Obs: isso NAO garante ganho de FPS - mede CPU/RAM/disco, boot e latencia." -ForegroundColor DarkGray
     Write-Host ""
     Linha "="
 }

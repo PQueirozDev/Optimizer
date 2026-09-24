@@ -32,7 +32,7 @@ internal static class Program
             var log = new ActivityLog(Path.Combine(root, "verification.log"));
             var bridge = new PowerShellBridge(log);
             Assert(bridge.GetSteps("padrao").Count == 7, "Plano padrão contém 7 etapas");
-            Assert(bridge.GetSteps("gamer").Count == 16, "Plano avançado contém 16 etapas");
+            Assert(bridge.GetSteps("gamer").Count == 17, "Plano avançado contém 17 etapas");
             Assert(!UpdateService.CanAutoInstall(new UpdateInfo(true, "1.0.0", "1.1.0", null, "https://github.com/PQueirozDev/Optimizer/releases/download/v1.1.0/Setup.exe", "Setup.exe", null)), "Atualização sem hash publicado não é instalada automaticamente");
             Assert(new LicenseService().MachineId.Length == 20, "ID do computador gerado");
             Assert(bridge.GetSteps("debloat").Count == 19, "Plano debloat contém 19 etapas, limpeza usa análise separada");

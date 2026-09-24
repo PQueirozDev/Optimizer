@@ -15,7 +15,7 @@ function Centralizar($text) { return $text }
 function Write-Resultado($ok, $text) { }
 function Write-Pulado($text) { }
 # Load the real allowlists so the tests exercise the same rules the script uses.
-$allowlists = 'TarefasMMCSS|RegistroPermitido|ServicosPermitidos|TiposRegistroPermitidos|StartupTypesPermitidos|InstaladoresOneDrive|RunKeysPermitidas|LimiteHistorico'
+$allowlists = 'TarefasMMCSS|RegistroPermitido|RegistroPermitidoPadroes|ServicosPermitidos|TiposRegistroPermitidos|StartupTypesPermitidos|InstaladoresOneDrive|RunKeysPermitidas|LimiteHistorico'
 foreach ($assignment in $ast.EndBlock.Statements | Where-Object { $_ -is [System.Management.Automation.Language.AssignmentStatementAst] -and $_.Left.Extent.Text -match "^\`$script:($allowlists)$" }) {
     . ([scriptblock]::Create($assignment.Extent.Text))
 }
@@ -103,3 +103,15 @@ function Test-ProtegidoPorTestPath($node) {
 $perigosos = $ast2.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -eq 'New-Item' -and $n.Extent.Text -match '-Force' -and $n.Extent.Text -notmatch 'Directory' }, $true) | Where-Object { -not (Test-ProtegidoPorTestPath $_) }
 Assert (@($perigosos).Count -eq 0) 'No unguarded New-Item -Force on registry keys'
 Assert ($script:TarefasMMCSS.Count -eq 8 -and $script:TarefasMMCSS['Pro Audio'].Priority -eq 1) 'MMCSS defaults cover all Windows tasks'
+$msi = 'HKLM:\SYSTEM\CurrentControlSet\Enum\PCI\VEN_10DE&DEV_2484&SUBSYS_146B10DE&REV_A1\4&1a2b3c4d&0&0019\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties'
+Assert (Test-RegistroPermitido $msi 'MSISupported') 'MSI mode key of a PCI device is allowed'
+Assert (-not (Test-RegistroPermitido $msi 'MessageNumberLimit')) 'Only MSISupported is allowed under the MSI key'
+Assert (-not (Test-RegistroPermitido 'HKLM:\SYSTEM\CurrentControlSet\Enum\PCI\VEN_10DE&DEV_2484\x\Device Parameters' 'MSISupported')) 'Other device keys stay blocked'
+Assert (-not (Test-ItemPermitido ([pscustomobject]@{ Tipo='Registro'; Caminho='HKLM:\SYSTEM\CurrentControlSet\Services\evil'; Nome='MSISupported'; Existia=$false }))) 'Revert refuses MSI value outside a PCI device key'
+Assert ((Obter-VelocidadeNominalRAM 'CMK16GX4M2B3200C16') -eq 3200 -and (Obter-VelocidadeNominalRAM 'KF436C16BB/8') -eq 3600 -and (Obter-VelocidadeNominalRAM 'F5-6000J3038F16G') -eq 6000) 'RAM rated speed parsed from part number'
+Assert ($null -eq (Obter-VelocidadeNominalRAM 'M378A1K43CB2-CTD')) 'Unknown part number yields no rated speed'
+function Get-Service($Name) { $null }
+$script:SnapshotAtual = @()
+Desativar-Servico 'Fax'
+Assert (@($script:SnapshotAtual).Count -eq 0) 'Missing service is skipped without capture or failure'
+Assert ($script:RegistroPermitido -contains 'HKCU:\Control Panel\Desktop' -and $script:RegistroPermitido -contains 'HKCU:\Control Panel\Desktop\WindowMetrics') 'Visual effects keys can be restored'
