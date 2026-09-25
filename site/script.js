@@ -20,20 +20,6 @@ if (reduceMotion || !("IntersectionObserver" in window)) {
   reveals.forEach((el) => observer.observe(el));
 }
 
-// Copiar a chave Pix.
-document.querySelectorAll("[data-copy]").forEach((button) => {
-  const label = button.querySelector("span");
-  button.addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(button.dataset.copy);
-      label.textContent = "Copiado!";
-    } catch {
-      label.textContent = "Selecione e copie";
-    }
-    setTimeout(() => (label.textContent = "Copiar"), 1800);
-  });
-});
-
 // Demonstração do app: percorre as etapas em loop enquanto está visível.
 const steps = [...document.querySelectorAll(".steps-list li")];
 const bar = document.querySelector(".progress span");
