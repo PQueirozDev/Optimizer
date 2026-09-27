@@ -12,7 +12,7 @@ if (-not (Test-Path -LiteralPath $privateKeyPath)) {
 $payload = [ordered]@{
     Product = 'PQueirozOptimizer'
     Licensee = $Licensee.Trim()
-    MachineId = $MachineId.Trim().ToUpperInvariant()
+    MachineId = ($MachineId.ToUpperInvariant() -replace '[^0-9A-F]', '')
     ExpiresAtUtc = if ($PSBoundParameters.ContainsKey('ExpiresAtUtc')) { $ExpiresAtUtc.ToUniversalTime().ToString('o') } else { $null }
 } | ConvertTo-Json -Compress
 

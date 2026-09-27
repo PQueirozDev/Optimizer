@@ -35,6 +35,11 @@ internal static class Program
             Assert(bridge.GetSteps("gamer").Count == 17, "Plano avançado contém 17 etapas");
             Assert(!UpdateService.CanAutoInstall(new UpdateInfo(true, "1.0.0", "1.1.0", null, "https://github.com/PQueirozDev/Optimizer/releases/download/v1.1.0/Setup.exe", "Setup.exe", null)), "Atualização sem hash publicado não é instalada automaticamente");
             Assert(new LicenseService().MachineId.Length == 20, "ID do computador gerado");
+            Assert(new LicenseService().DisplayMachineId.Replace("-", "") == new LicenseService().MachineId, "ID exibido em blocos equivale ao ID real");
+            var sampleKey = "PQO1-eyJQcm9kdWN0IjoiUFEifQ." + new string('A', 342);
+            Assert(LicenseService.ExtractKey($"Sua chave:\n{sampleKey[..60]}\n{sampleKey[60..]}\nObrigado!") == sampleKey, "Chave extraída de mensagem com quebras de linha");
+            Assert(LicenseService.ExtractKey("sem chave aqui") is null, "Texto sem chave é ignorado");
+            Assert(!new LicenseService().TryActivate(sampleKey, out _, out _), "Chave com assinatura falsa é recusada");
             Assert(bridge.GetSteps("debloat").Count == 19, "Plano debloat contém 19 etapas, limpeza usa análise separada");
             var configPath = Path.Combine(root, "config-test.json");
             File.WriteAllText(configPath, """{"activeProfile":"Modo Gamer","profiles":[{"name":"Modo Gamer","enabledOptimizations":null}]}""");

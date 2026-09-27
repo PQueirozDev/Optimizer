@@ -91,9 +91,9 @@ O aplicativo consulta a release mais recente ao abrir. Quando a release contem `
 
 ## Emitir chaves de acesso
 
-O Optimizer só abre após validar uma chave assinada. Na primeira abertura, o aplicativo mostra o **ID deste computador**; use-o para vincular a licença ao equipamento do cliente.
+O Optimizer só abre após validar uma chave assinada. Na primeira abertura, o aplicativo mostra o **ID deste computador**; o botão **Copiar pedido** copia uma mensagem pronta com esse ID para o cliente enviar. A chave recebida é colada automaticamente quando está na área de transferência, mesmo que venha dentro de uma mensagem ou quebrada em linhas.
 
-No computador de emissão, mantenha a pasta `private/` fora do Git e execute:
+O jeito recomendado de emitir chaves é o **PQueiroz License Manager** (repositório separado), que lê o pedido do cliente, gera a chave e monta a mensagem de resposta. Como alternativa por linha de comando, mantenha a pasta `private/` fora do Git e execute:
 
 ```powershell
 .\tools\New-OptimizerAccessKey.ps1 -Licensee "Nome do cliente" -MachineId "ID-DO-COMPUTADOR"

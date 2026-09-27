@@ -2,6 +2,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace PQueirozOptimizer.Services;
 
@@ -16,6 +17,8 @@ public sealed class LicenseService
     private const string PublicKey = "BgIAAACkAABSU0ExAAgAAAEAAQB9+XduNkAH/W9GiugLLAh4G7CWFx5go0gQbke9prfzxnQXkuzKf4689pZq02aWwUtSwAIt1zel+Pq90cGT2QT8rxXE4mflu8t9Om2DrFZGO1/anX+FzNunbEW/2BOhZFqUY/lpF0ueZL59XS7hUhbksXJyAH4pbgYHKW5RDo4WLtoEjxLpxdX3R8yhDYDo+FrWeVkVZwf8lvYULAQJdUbjaiUOLVVu5VkE3i2WW0NbfS1Mhjq1KkpHbrC7QVgmYHE11RtrsEo75zCAM5ccBN4UUZW4yT04n0iVcX0tUrWdHerhyyMQqpEdcBOmywgkmc4bAp+351KSe6b5OjyEkqrC";
     private static string LicensePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PQueirozOptimizer", "license.key");
     public string MachineId { get; } = CreateMachineId();
+    // Mesmo ID em blocos de 5 (XXXXX-XXXXX-...), mais fácil de ler e ditar. O emissor aceita os dois formatos.
+    public string DisplayMachineId => string.Join("-", Enumerable.Range(0, MachineId.Length / 5).Select(i => MachineId.Substring(i * 5, 5)));
     // ID antigo (nome do PC + usuário). Só é aceito para manter válidas as chaves já emitidas.
     private readonly string _legacyMachineId = CreateLegacyMachineId();
 
@@ -28,9 +31,22 @@ public sealed class LicenseService
 
     public bool TryActivate(string accessKey, out LicenseInfo? license, out string error)
     {
+        accessKey = ExtractKey(accessKey) ?? accessKey.Trim();
         if (!TryValidate(accessKey, out license, out error)) return false;
-        try { Directory.CreateDirectory(Path.GetDirectoryName(LicensePath)!); File.WriteAllText(LicensePath, accessKey.Trim(), new UTF8Encoding(false)); return true; }
+        try { Directory.CreateDirectory(Path.GetDirectoryName(LicensePath)!); File.WriteAllText(LicensePath, accessKey, new UTF8Encoding(false)); return true; }
         catch { error = "A chave é válida, mas não foi possível salvá-la neste perfil do Windows."; return false; }
+    }
+
+    // Texto pronto para o cliente enviar ao pedir a chave (WhatsApp, e-mail...). O License Manager lê o ID direto dele.
+    public string BuildActivationRequest() => $"Pedido de ativação - PQueiroz Optimizer\nID do computador: {DisplayMachineId}\nComputador: {Environment.MachineName}";
+
+    // Localiza a chave dentro de qualquer texto colado, mesmo quebrada em linhas ou junto de uma mensagem.
+    public static string? ExtractKey(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return null;
+        // A assinatura RSA-2048 em base64url tem sempre 342 caracteres: o limite evita "colar" o texto seguinte na chave.
+        var match = Regex.Match(Regex.Replace(text, @"\s+", ""), @"PQO1-[A-Za-z0-9_-]+\.[A-Za-z0-9_-]{1,342}");
+        return match.Success ? match.Value : null;
     }
 
     private bool TryValidate(string accessKey, out LicenseInfo? license, out string error)
