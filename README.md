@@ -2,7 +2,7 @@
 
 Aplicativo desktop para Windows, feito em C# + WPF (.NET 8), para otimização, manutenção e gerenciamento do Windows.
 
-**Download:** [release mais recente](https://github.com/PQueirozDev/Optimizer/releases/latest) · **Site:** [site-mu-six-24.vercel.app](https://site-mu-six-24.vercel.app) · **Compra e suporte:** [servidor do Discord](https://discord.gg/pHJ4Waxft)
+**Download:** [release mais recente](https://github.com/PQueirozDev/Optimizer/releases/latest) · **Site:** [pqoptimizer.vercel.app](https://pqoptimizer.vercel.app/) · **Compra e suporte:** [servidor do Discord](https://discord.gg/pHJ4Waxft)
 
 ## Principais funcionalidades
 
