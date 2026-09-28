@@ -14,6 +14,9 @@ public static partial class Translator
 {
     public static bool IsEnglish { get; set; }
 
+    /// <summary>Marca (Tag) de textos que vêm do sistema, como nomes de programas e caminhos: não são traduzidos.</summary>
+    public const string SystemDataTag = "dado-do-sistema";
+
     // Guarda no próprio TextBlock o último texto já processado, para cada texto ser traduzido uma vez só
     private static readonly DependencyProperty ProcessedProperty = DependencyProperty.RegisterAttached("Processed", typeof(string), typeof(Translator));
     private static readonly FrameworkElement LayoutProbe = new();
@@ -59,7 +62,7 @@ public static partial class Translator
     private static void Apply(TextBlock tb)
     {
         var text = tb.Text;
-        if (string.IsNullOrWhiteSpace(text) || text == (string?)tb.GetValue(ProcessedProperty)) return;
+        if (string.IsNullOrWhiteSpace(text) || tb.Tag as string == SystemDataTag || text == (string?)tb.GetValue(ProcessedProperty)) return;
         var translated = Tr(text);
         // SetCurrentValue preserva bindings (ex.: conteúdo de botões gerado pelo template)
         if (translated != text) tb.SetCurrentValue(TextBlock.TextProperty, translated);

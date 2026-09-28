@@ -76,12 +76,16 @@ public partial class App : Application
     {
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
         RegisterErrorHandlers();
-        // O atalho de Limpeza Rápida roda à parte e pode ser usado com o app aberto
-        if (!e.Args.Contains("--quick-clean", StringComparer.OrdinalIgnoreCase) && !AcquireSingleInstance())
+        var quickClean = e.Args.Contains("--quick-clean", StringComparer.OrdinalIgnoreCase);
+        var powerMode = e.Args.Contains("--power-mode", StringComparer.OrdinalIgnoreCase);
+        // Os atalhos de Limpeza Rápida e de modo de energia rodam à parte e podem ser usados com o app aberto
+        if (!quickClean && !powerMode && !AcquireSingleInstance())
         {
             Shutdown();
             return;
         }
+        // O atalho de modo de energia abre sem elevação (__COMPAT_LAYER=RunAsInvoker); nada aberto daqui deve herdar isso
+        if (powerMode) Environment.SetEnvironmentVariable("__COMPAT_LAYER", null);
         try
         {
             SetCurrentProcessExplicitAppUserModelID("PedroQueiroz.Optimizer.App.v1");
@@ -115,7 +119,16 @@ public partial class App : Application
         }
         ActiveLicense = activeLicense;
 
-        if (e.Args.Contains("--quick-clean", StringComparer.OrdinalIgnoreCase))
+        if (powerMode)
+        {
+            var picker = new PowerModeWindow(Log, closeAfterChoice: true);
+            MainWindow = picker;
+            picker.Closed += (_, _) => Shutdown();
+            picker.Show();
+            return;
+        }
+
+        if (quickClean)
         {
             var service = new Services.QuickCleanService(Log);
             var status = new System.Windows.Controls.TextBlock { Text = "Removendo arquivos temporários...", Margin = new Thickness(0, 18, 0, 8) };

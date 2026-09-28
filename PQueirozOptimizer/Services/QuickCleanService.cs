@@ -103,32 +103,11 @@ public sealed class QuickCleanService
 
     public void CreateShortcut()
     {
-        var exe = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "PQueirozOptimizer.exe");
+        var exe = ShortcutFile.AppExecutable;
         var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico");
         if (!File.Exists(iconPath)) iconPath = exe;
-
-        // WScript.Shell via COM: cria o .lnk diretamente, sem montar scripts PowerShell.
-        var shellType = Type.GetTypeFromProgID("WScript.Shell") ?? throw new InvalidOperationException("WScript.Shell não está disponível neste Windows.");
-        dynamic shell = Activator.CreateInstance(shellType)!;
-        try
-        {
-            foreach (var target in new[] { DesktopShortcut, StartMenuShortcut })
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-                dynamic link = shell.CreateShortcut(target);
-                try
-                {
-                    link.TargetPath = exe;
-                    link.Arguments = "--quick-clean";
-                    link.WorkingDirectory = AppContext.BaseDirectory;
-                    link.IconLocation = iconPath + ",0";
-                    link.Description = "Limpeza Rápida - PQueiroz Optimizer";
-                    link.Save();
-                }
-                finally { System.Runtime.InteropServices.Marshal.FinalReleaseComObject(link); }
-            }
-        }
-        finally { System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shell); }
+        foreach (var target in new[] { DesktopShortcut, StartMenuShortcut })
+            ShortcutFile.Create(target, exe, "--quick-clean", AppContext.BaseDirectory, iconPath + ",0", "Limpeza Rápida - PQueiroz Optimizer");
         _log.Write("SUCCESS", "Atalho de Limpeza Rápida configurado");
     }
 

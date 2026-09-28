@@ -77,6 +77,37 @@ public partial class MainWindow
             configured ? "Atalhos criados" : "Sem atalhos", configured ? "Success" : "Info"));
         var qcCard = Surface(quickClean); qcCard.Margin = new Thickness(0, 0, 14, 14);
         featured.Children.Add(qcCard);
+
+        // 3. Atalho de modo de energia (pensado para notebooks: bateria x desempenho)
+        var powerSource = PowerModeService.GetSource();
+        var powerShortcut = PowerModeService.IsShortcutCreated();
+        var power = new DockPanel();
+        var pmButtons = new WrapPanel { Margin = new Thickness(0, 16, 0, 0) };
+        var pmShortcut = IconButton(powerShortcut ? Glyphs.Delete : Glyphs.Check, powerShortcut ? "Remover atalho" : "Criar atalho na Área de Trabalho", primary: !powerShortcut);
+        pmShortcut.Click += (_, _) =>
+        {
+            try
+            {
+                if (powerShortcut) { PowerModeService.RemoveShortcut(_log); OperationStatus.Text = "Atalho de modo de energia removido."; }
+                else { PowerModeService.CreateShortcut(_log); OperationStatus.Text = "Atalho 'Modo de Energia' criado na Área de Trabalho. Ele abre o seletor sem pedir permissão de administrador."; }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or System.Runtime.InteropServices.COMException)
+            {
+                _log.Write("ERROR", "Atalho de modo de energia: " + ex.Message);
+                Msg("Não foi possível alterar os atalhos: " + ex.Message, "Modo de energia", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            ShowTools();
+        };
+        var pmOpen = IconButton(Glyphs.Battery, "Abrir seletor", primary: powerShortcut);
+        pmOpen.Click += (_, _) => new PowerModeWindow(_log, closeAfterChoice: false) { Owner = this }.ShowDialog();
+        pmButtons.Children.Add(pmShortcut); pmButtons.Children.Add(pmOpen);
+        DockPanel.SetDock(pmButtons, Dock.Bottom); power.Children.Add(pmButtons);
+        var (pmStatus, pmTone) = powerShortcut ? ("Atalho criado", "Success") : powerSource.HasBattery ? ("Recomendado para este PC", "Accent") : ("Recomendado para notebooks", "Info");
+        power.Children.Add(FeatureHeader(Glyphs.Battery, "Success", "Atalho de modo de energia",
+            "Cria um atalho na Área de Trabalho que abre um seletor rápido: economia de energia, equilibrado, melhor desempenho ou outro plano de energia. Abre sem pedir permissão de administrador.",
+            pmStatus, pmTone));
+        var pmCard = Surface(power); pmCard.Margin = new Thickness(0, 0, 14, 14);
+        featured.Children.Add(pmCard);
         root.Children.Add(featured);
 
         // 3. Utilitários nativos do Windows

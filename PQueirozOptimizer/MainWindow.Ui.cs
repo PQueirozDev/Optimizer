@@ -43,6 +43,13 @@ public static class Glyphs
     public static readonly string ChevronRight = G(0xE76C);
     public static readonly string Power = G(0xE7E8);
     public static readonly string Cancel = G(0xE711);
+    public static readonly string Battery = G(0xE83F);
+    public static readonly string BatteryCharging = G(0xEBB5);
+    public static readonly string SpeedLow = G(0xEC48);
+    public static readonly string SpeedMedium = G(0xEC49);
+    public static readonly string OpenInNew = G(0xE8A7);
+    public static readonly string Search = G(0xE721);
+    public static readonly string Person = G(0xE77B);
 
     private static string G(int code) => char.ConvertFromUtf32(code);
 }

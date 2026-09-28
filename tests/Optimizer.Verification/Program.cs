@@ -22,6 +22,130 @@ internal static class Program
         events[key] = null;
         return app;
     }
+
+    // Inicialização no estilo Autoruns: leitura real deste PC e liga/desliga de itens criados só para o teste
+    static void TestStartupPage(ActivityLog log)
+    {
+        Assert(StartupService.ExecutablePath("rundll32.exe \"C:\\Program Files\\X\\x.dll\",Iniciar") == @"C:\Program Files\X\x.dll", "rundll32 aponta para a DLL que ele carrega");
+        Assert(StartupService.ResolveImage("explorer.exe") is { } explorer && File.Exists(explorer), "Nome solto resolvido como o Windows faria");
+        Assert(StartupService.ResolveImage("powershell.exe") is { } powershell && File.Exists(powershell), "Programa do PATH encontrado");
+        Assert(string.Equals(AutorunsService.ServiceImage(@"%SystemRoot%\system32\svchost.exe -k netsvcs -p", @"%SystemRoot%\System32\wuaueng.dll"), Path.Combine(Environment.SystemDirectory, "wuaueng.dll"), StringComparison.OrdinalIgnoreCase), "Serviço do svchost representado pela DLL");
+        Assert(AutorunsService.ServiceImage("\"C:\\Program Files\\X\\svc.exe\" -service", null) == @"C:\Program Files\X\svc.exe", "Serviço com argumentos");
+        Assert(string.Equals(AutorunsService.ServiceImage(@"\SystemRoot\System32\x.exe", null), Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), @"System32\x.exe"), StringComparison.OrdinalIgnoreCase), "Caminho \\SystemRoot\\ resolvido");
+        Assert(AutorunsService.IsWindowsSigner("Microsoft Windows") && AutorunsService.IsWindowsSigner("Microsoft Windows Publisher") && !AutorunsService.IsWindowsSigner("Microsoft Corporation") && !AutorunsService.IsWindowsSigner("Microsoft Windows Hardware Compatibility Publisher"), "Só o que é do Windows fica oculto (Edge, OneDrive e drivers de terceiros aparecem)");
+        Assert(AutorunsService.TriggerLabel(9) == "Ao fazer logon" && AutorunsService.TriggerLabel(8) == "Ao iniciar o Windows", "Gatilhos das tarefas descritos");
+        Assert(StartupService.IsDefaultWinlogon("Shell", "explorer.exe") && !StartupService.IsDefaultWinlogon("Shell", "explorer.exe, outro.exe"), "Shell do Winlogon alterado aparece");
+        var scriptTask = new AutorunEntry { Category = AutorunCategory.Tasks, Name = "Atualizador", Location = "Agendador de Tarefas", Key = @"\Atualizador", ImagePath = Path.Combine(Environment.SystemDirectory, @"WindowsPowerShell\v1.0\powershell.exe"), Signature = SignatureStatus.Verified, Signer = "Microsoft Windows" };
+        Assert(!AutorunsService.IsWindowsEntry(scriptTask), "Tarefa de terceiros que roda o PowerShell não fica oculta");
+
+        const string runKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
+        const string approvedKey = @"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run";
+        const string testName = "PQO-Verificacao";
+        var service = new AutorunsService(log);
+        using (var run = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(runKey)) run.SetValue(testName, "\"" + Path.Combine(Environment.SystemDirectory, "notepad.exe") + "\" /teste");
+        try
+        {
+            var entries = service.ScanAsync().GetAwaiter().GetResult();
+            Assert(entries.Any(e => e.Category == AutorunCategory.Tasks) && entries.Any(e => e.Category == AutorunCategory.Services), "Tarefas agendadas e serviços lidos");
+            Assert(entries.Any(e => e.Category == AutorunCategory.Services && e.Key == "EventLog" && e.ImagePath!.EndsWith("wevtsvc.dll", StringComparison.OrdinalIgnoreCase)), "Serviço do Log de Eventos encontrado pela DLL");
+            var item = entries.Single(e => e.Category == AutorunCategory.Logon && e.Key == testName);
+            Assert(item.Enabled && item.CanToggle && item.FileExists && item.Icon != null && item.Company.Contains("Microsoft"), "Item de logon lido com arquivo, ícone e fabricante");
+            service.SetEnabledAsync(item, false).GetAwaiter().GetResult();
+            using (var approved = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(approvedKey))
+                Assert(!StartupService.IsEnabled(approved?.GetValue(testName) as byte[]), "Desativar grava no mesmo lugar que o Gerenciador de Tarefas");
+            Assert(!service.ScanAsync().GetAwaiter().GetResult().Single(e => e.Key == testName).Enabled, "Item desativado aparece desmarcado na leitura seguinte");
+            service.SetEnabledAsync(item, true).GetAwaiter().GetResult();
+            using (var approved = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(approvedKey))
+                Assert(StartupService.IsEnabled(approved?.GetValue(testName) as byte[]), "Reativar desfaz a desativação");
+            var eventLog = entries.Where(e => e.Key == "EventLog").ToList();
+            service.VerifySignaturesAsync(eventLog).GetAwaiter().GetResult();
+            Assert(eventLog[0].Signature == SignatureStatus.Verified && eventLog[0].IsWindows, "Assinatura de catálogo do Windows verificada e item oculto como do Windows");
+        }
+        finally
+        {
+            using (var run = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(runKey, true)) run?.DeleteValue(testName, false);
+            using (var approved = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(approvedKey, true)) approved?.DeleteValue(testName, false);
+        }
+        TestScheduledTaskToggle(service);
+        TestServiceToggle(service);
+    }
+
+    static void TestScheduledTaskToggle(AutorunsService service)
+    {
+        const string task = "PQO-Verificacao";
+        // Roda o cmd: mesmo sendo um programa do Windows, tarefa de terceiros que usa interpretador fica visível
+        var created = RunTool("schtasks.exe", "/Create", "/TN", task, "/TR", "cmd.exe /c exit", "/SC", "DAILY", "/ST", "23:59", "/F");
+        if (created != 0) { Console.WriteLine($"SKIP Tarefa de teste não pôde ser criada (código {created})"); return; }
+        try
+        {
+            AutorunEntry Find() => service.ScanAsync().GetAwaiter().GetResult().Single(e => e.Category == AutorunCategory.Tasks && e.Key == @"\" + task);
+            var entry = Find();
+            Assert(entry.Enabled && entry.Detail.Contains("Diariamente") && !entry.IsWindows, "Tarefa agendada lida com o gatilho e visível");
+            service.SetEnabledAsync(entry, false).GetAwaiter().GetResult();
+            Assert(!Find().Enabled, "Tarefa desativada no Agendador de Tarefas");
+            service.SetEnabledAsync(entry, true).GetAwaiter().GetResult();
+            Assert(Find().Enabled, "Tarefa reativada");
+        }
+        finally { RunTool("schtasks.exe", "/Delete", "/TN", task, "/F"); }
+    }
+
+    // Mexer em serviços exige administrador: roda no GitHub Actions, localmente só quando o terminal está elevado
+    static void TestServiceToggle(AutorunsService service)
+    {
+        var principal = new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent());
+        if (!principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator)) { Console.WriteLine("SKIP Serviço de teste exige administrador"); return; }
+        const string name = "PQOVerificacao";
+        RunTool("sc.exe", "delete", name);
+        Assert(RunTool("sc.exe", "create", name, "binPath=", Path.Combine(Environment.SystemDirectory, "notepad.exe"), "start=", "delayed-auto") == 0, "Serviço de teste criado");
+        try
+        {
+            AutorunEntry Find() => service.ScanAsync().GetAwaiter().GetResult().Single(e => e.Category == AutorunCategory.Services && e.Key == name);
+            var entry = Find();
+            Assert(entry.Enabled && entry.Detail.StartsWith("Automático (atraso"), "Serviço automático com início atrasado lido");
+            service.SetEnabledAsync(entry, false).GetAwaiter().GetResult();
+            var disabled = Find();
+            Assert(!disabled.Enabled && disabled.Detail.StartsWith("Manual"), "Desativar passa o serviço para Manual e ele continua na lista");
+            service.SetEnabledAsync(disabled, true).GetAwaiter().GetResult();
+            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\" + name);
+            Assert(key?.GetValue("Start") as int? == 2 && key.GetValue("DelayedAutostart") as int? == 1, "Reativar devolve o início automático atrasado original");
+        }
+        finally { RunTool("sc.exe", "delete", name); }
+    }
+
+    static void TestPowerMode()
+    {
+        // Resolve as funções nativas declaradas (DLL + nome) sem executá-las. As do modo de energia ficam de
+        // fora: não são documentadas e podem faltar no Windows Server do CI (o app só esconde os modos).
+        System.Runtime.InteropServices.Marshal.PrelinkAll(typeof(AutorunsService));
+        foreach (var method in typeof(PowerModeService).GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
+                     .Where(m => m.GetCustomAttribute<System.Runtime.InteropServices.DllImportAttribute>() != null && !m.Name.Contains("Overlay")))
+            System.Runtime.InteropServices.Marshal.Prelink(method);
+        Assert(true, "Funções nativas de energia, serviços e ícones existem neste Windows");
+        Assert(PowerModeService.ModeFromOverlay(PowerModeService.OverlayFor(PowerMode.Efficiency)) == PowerMode.Efficiency
+            && PowerModeService.ModeFromOverlay(PowerModeService.OverlayFor(PowerMode.Performance)) == PowerMode.Performance
+            && PowerModeService.ModeFromOverlay(Guid.Empty) == PowerMode.Balanced, "Modos de energia mapeados para os valores do Windows");
+        var plans = PowerModeService.GetPlans();
+        Assert(PowerModeService.GetActivePlan() is { } active && plans.Any(p => p.Id == active && p.Name.Length > 0), "Planos de energia lidos com nome e plano ativo");
+        Assert(PowerModeService.Describe(new PowerSource(true, false, 45, TimeSpan.FromMinutes(130), false)) == "Na bateria · 45% · cerca de 2h 10min restantes"
+            && PowerModeService.Describe(new PowerSource(false, true, null, null, false)) == "Computador sem bateria (desktop)", "Estado da bateria descrito");
+        var arguments = PowerModeService.ShortcutArguments(@"C:\Program Files\PQueiroz Optimizer\PQueirozOptimizer.exe");
+        Assert(arguments.Contains("__COMPAT_LAYER=RunAsInvoker") && arguments.EndsWith("\"C:\\Program Files\\PQueiroz Optimizer\\PQueirozOptimizer.exe\" --power-mode"), "Atalho abre o seletor sem pedir administrador");
+        Translator.IsEnglish = true;
+        Assert(Translator.Tr("Na bateria · 45% · cerca de 2h 10min restantes") == "On battery · 45% · about 2h 10min left" && Translator.Tr("Ativado: Melhor desempenho") == "Activated: Best performance", "Seletor de energia traduzido");
+        Assert(Translator.Tr("5 ativos · 0 desativados · 210 itens do Windows ocultos") == "5 enabled · 0 disabled · 210 Windows entries hidden", "Resumo da Inicialização traduzido");
+        Translator.IsEnglish = false;
+    }
+
+    static int RunTool(string file, params string[] arguments)
+    {
+        var start = new System.Diagnostics.ProcessStartInfo(file) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
+        foreach (var argument in arguments) start.ArgumentList.Add(argument);
+        using var process = System.Diagnostics.Process.Start(start)!;
+        process.StandardOutput.ReadToEnd(); process.StandardError.ReadToEnd();
+        process.WaitForExit();
+        return process.ExitCode;
+    }
+
     [STAThread]
     static int Main(string[] args)
     {
@@ -112,6 +236,8 @@ internal static class Program
             Assert(StartupService.BuildApprovedValue(true, DateTime.UtcNow) is { Length: 12 } on && on[0] == 2, "Ativar grava 02");
             Assert(StartupService.ExecutablePath("\"C:\\Program Files\\App\\a.exe\" --min") == @"C:\Program Files\App\a.exe", "Caminho entre aspas extraído");
             Assert(StartupService.ExecutablePath(@"C:\Tools\b.exe -silent") == @"C:\Tools\b.exe", "Caminho sem aspas extraído");
+            TestStartupPage(log);
+            TestPowerMode();
 
             if (args.Contains("--i18n"))
             {
@@ -129,7 +255,8 @@ internal static class Program
                 var found = new SortedSet<string>();
                 void Collect(DependencyObject node)
                 {
-                    if (node is System.Windows.Controls.TextBlock tb && !string.IsNullOrWhiteSpace(tb.Text) && portuguese.IsMatch(tb.Text) && !ignore.IsMatch(tb.Text)) found.Add(tb.Text.Replace("\n", " ⏎ "));
+                    // Textos marcados como dados do sistema (nomes e descrições de programas) não são do app
+                    if (node is System.Windows.Controls.TextBlock tb && tb.Tag as string != Translator.SystemDataTag && !string.IsNullOrWhiteSpace(tb.Text) && portuguese.IsMatch(tb.Text) && !ignore.IsMatch(tb.Text)) found.Add(tb.Text.Replace("\n", " ⏎ "));
 
                     for (var i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++) Collect(VisualTreeHelper.GetChild(node, i));
                 }
@@ -142,11 +269,13 @@ internal static class Program
                 foreach (var page in new[] { "dashboard", "optimization", "startup", "drivers", "tools", "history", "settings", "about", "patchnotes", "bios" })
                 {
                     typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { page });
-                    Wait(page == "dashboard" ? 4000 : 600);
+                    Wait(page == "dashboard" ? 4000 : page == "startup" ? 8000 : 600);
                     Collect(window); Snap("en-" + page);
                 }
                 typeof(MainWindow).GetMethod("ShowIsos", flags)!.Invoke(window, null);
                 Wait(600); Collect(window); Snap("en-isos");
+                var picker = new PowerModeWindow(log, closeAfterChoice: false) { WindowStartupLocation = WindowStartupLocation.Manual, Left = -20000, Top = -20000, ShowActivated = false };
+                picker.Show(); Wait(800); Collect(picker); picker.Close();
                 foreach (var op in new[] { "padrao", "gamer", "debloat", "quickclean" })
                 {
                     ((Task)typeof(MainWindow).GetMethod("PrepareOperationAsync", flags)!.Invoke(window, new object[] { op })!).ContinueWith(_ => { });

@@ -61,6 +61,8 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 ; O curinga evita depender da codificacao deste arquivo para o "a" acentuado do nome.
 Type: files; Name: "{userdesktop}\Limpeza R*pida.lnk"
 Type: files; Name: "{userprograms}\Limpeza R*pida.lnk"
+; Atalho do seletor de modo de energia (Ferramentas)
+Type: files; Name: "{userdesktop}\Modo de Energia.lnk"
 ; Instaladores de atualizacao baixados pelo aplicativo
 Type: filesandordirs; Name: "{commonappdata}\PQueirozOptimizer\Updates"
 

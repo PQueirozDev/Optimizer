@@ -8,6 +8,8 @@ Aplicativo desktop nativo para Windows feito em C# + WPF (.NET 8) para otimizaca
 - Perfis de otimizacao para uso padrao, gamer, manutencao e privacidade.
 - Execucao das rotinas existentes do `Otimizador_de_PC.ps1` pela interface grafica.
 - Limpeza rapida de arquivos temporarios.
+- Inicialização no estilo do Autoruns: itens de logon, tarefas agendadas e serviços automáticos, com editor verificado, filtro dos itens do Windows e liga/desliga reversível.
+- Atalho de modo de energia na Área de Trabalho (recomendado para notebooks): troca entre eficiência, equilibrado, desempenho e os planos instalados sem pedir permissão de administrador.
 - Ferramentas de manutencao do Windows, drivers e catalogo de ISOs.
 - Temas claro/escuro e interface em portugues/ingles.
 
