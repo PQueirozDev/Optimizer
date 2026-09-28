@@ -219,16 +219,6 @@ public partial class MainWindow
         ContentHost.Children.Add(root);
     }
 
-    private void OpenAuthorSite()
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo(AuthorSiteUrl) { UseShellExecute = true });
-        }
-        catch (Exception ex)
-        {
-            Msg($"Falha ao abrir navegador: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-    }
+    private void OpenAuthorSite() => OpenUrl(AuthorSiteUrl);
     #endregion
 }

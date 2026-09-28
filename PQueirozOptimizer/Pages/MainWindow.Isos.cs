@@ -1,11 +1,8 @@
-﻿using System.Diagnostics;
-using System.IO;
+﻿using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 using PQueirozOptimizer.Models;
 using PQueirozOptimizer.Services;
@@ -14,6 +11,8 @@ namespace PQueirozOptimizer;
 public partial class MainWindow
 {
     #region ISOs Page
+    private const string OfficialWindowsIsoUrl = "https://www.microsoft.com/software-download/windows11";
+
     private void ShowIsos()
     {
         PageTitle.Text = "ISOs do Windows";
@@ -21,311 +20,138 @@ public partial class MainWindow
         PageBadgeText.Text = "Download & Gerenciamento";
         var root = new StackPanel();
 
-        // 1. Prominent Download & Mount Banner
-        var banner = new Border
-        {
-            CornerRadius = new CornerRadius(12),
-            Padding = new Thickness(22, 18, 22, 18),
-            Margin = new Thickness(0, 0, 0, 20),
-            BorderThickness = new Thickness(1)
-        };
-        banner.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
-        banner.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
-
-        var bannerGrid = new Grid();
-        bannerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        bannerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-        var bText = new StackPanel { Margin = new Thickness(0, 0, 16, 0) };
-        var bTitle = new TextBlock
-        {
-            Text = "Central de Instalação & Download do Windows 11",
-            FontSize = 16.5,
-            FontWeight = FontWeights.Bold
-        };
-        bTitle.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
-
-        var bSub = new TextBlock
-        {
-            Text = "Qualquer usuário pode baixar a ISO oficial do Windows 11 diretamente dos servidores da Microsoft ou utilizar a versão personalizada Pedro Queiroz para máxima performance.",
-            FontSize = 12.5,
-            TextWrapping = TextWrapping.Wrap,
-            LineHeight = 18,
-            Margin = new Thickness(0, 4, 0, 0)
-        };
-        bSub.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
-
-        bText.Children.Add(bTitle);
-        bText.Children.Add(bSub);
-        Grid.SetColumn(bText, 0);
-        bannerGrid.Children.Add(bText);
-
-        var addBtn = new Button
-        {
-            Content = "+ Adicionar Imagem ISO",
-            VerticalAlignment = VerticalAlignment.Center,
-            FontWeight = FontWeights.SemiBold,
-            Padding = new Thickness(14, 8, 14, 8)
-        };
+        // 1. Destaque com a ação de adicionar
+        var hero = new DockPanel();
+        var addBtn = IconButton(Glyphs.Folder, "Adicionar Imagem ISO", primary: true);
+        addBtn.VerticalAlignment = VerticalAlignment.Center; addBtn.Margin = new Thickness(16, 0, 0, 0);
         addBtn.Click += AddIso_Click;
-        Grid.SetColumn(addBtn, 1);
-        bannerGrid.Children.Add(addBtn);
+        DockPanel.SetDock(addBtn, Dock.Right); hero.Children.Add(addBtn);
+        var heroChip = IconChip(Glyphs.Disc, "Accent", 52); DockPanel.SetDock(heroChip, Dock.Left); hero.Children.Add(heroChip);
+        var heroText = new StackPanel { Margin = new Thickness(18, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        var heroTitle = Label("Central de Instalação & Download do Windows 11", 18); heroTitle.Margin = new Thickness(0, 0, 0, 4);
+        heroText.Children.Add(heroTitle);
+        var heroSub = Label("Qualquer usuário pode baixar a ISO oficial do Windows 11 diretamente dos servidores da Microsoft ou utilizar a versão personalizada Pedro Queiroz para máxima performance.", 12.5, true); heroSub.Margin = new Thickness(0);
+        heroText.Children.Add(heroSub);
+        hero.Children.Add(heroText);
+        var heroCard = Surface(hero); heroCard.SetResourceReference(Border.BackgroundProperty, "HeroBrush");
+        root.Children.Add(heroCard);
 
-        banner.Child = bannerGrid;
-        root.Children.Add(banner);
+        var cards = new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, -14, 0) };
 
-        // 2. Official Windows 11 Card
-        var officialCard = new Border
+        // 2. Windows 11 oficial
+        var officialButtons = new WrapPanel();
+        var downloadOfficial = IconButton(Glyphs.Download, "Baixar ISO Oficial", primary: true);
+        downloadOfficial.Click += (_, _) => OpenUrl(OfficialWindowsIsoUrl);
+        var mediaTool = IconButton(Glyphs.Download, "Media Creation Tool");
+        mediaTool.Click += (_, _) => OpenUrl("https://go.microsoft.com/fwlink/?linkid=2156295");
+        var copyLink = IconButton(Glyphs.Document, "Copiar Link");
+        copyLink.Click += (_, _) => CopyText(OfficialWindowsIsoUrl, "Link oficial copiado para a área de transferência!");
+        foreach (var b in new[] { downloadOfficial, mediaTool, copyLink }) officialButtons.Children.Add(b);
+        cards.Children.Add(IsoCard("Windows 11 Oficial (Microsoft)", "Oficial 24H2", ("Disponível para Download Gratuito", "Success"),
+            "Imagem original e limpa direto da Microsoft. Permite gerar pendrive bootável via Media Creation Tool ou baixar a imagem ISO oficial para instalação limpa.", null, officialButtons));
+
+        // 3. Catálogo (a ISO personalizada e as adicionadas pelo usuário)
+        foreach (var iso in _configService.Config.IsoCatalog)
         {
-            Width = 470,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(12),
-            Padding = new Thickness(20),
-            Margin = new Thickness(0, 0, 18, 18)
-        };
-        officialCard.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
-        officialCard.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
-
-        var offContent = new StackPanel();
-        var offHead = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
-        var offTitle = new TextBlock { Text = " Windows 11 Oficial (Microsoft)", FontSize = 16, FontWeight = FontWeights.Bold, VerticalAlignment = VerticalAlignment.Center };
-        offTitle.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
-        DockPanel.SetDock(offTitle, Dock.Left);
-        offHead.Children.Add(offTitle);
-
-        var offBadge = new Border
-        {
-            CornerRadius = new CornerRadius(4),
-            Padding = new Thickness(7, 2, 7, 2),
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        offBadge.SetResourceReference(Border.BackgroundProperty, "PanelHoverBrush");
-        var offBadgeText = new TextBlock { Text = "Oficial 24H2", FontSize = 10.5, FontWeight = FontWeights.SemiBold };
-        offBadgeText.SetResourceReference(TextBlock.ForegroundProperty, "AccentBrush");
-        offBadge.Child = offBadgeText;
-        DockPanel.SetDock(offBadge, Dock.Right);
-        offHead.Children.Add(offBadge);
-        offContent.Children.Add(offHead);
-
-        var offStatus = new TextBlock
-        {
-            Text = "● Disponível para Download Gratuito",
-            Foreground = (Brush)FindResource("SuccessBrush"),
-            FontSize = 11.5,
-            FontWeight = FontWeights.Medium,
-            Margin = new Thickness(0, 0, 0, 8)
-        };
-        offContent.Children.Add(offStatus);
-
-        var offDesc = new TextBlock
-        {
-            Text = "Imagem original e limpa direto da Microsoft. Permite gerar pendrive bootável via Media Creation Tool ou baixar a imagem ISO oficial para instalação limpa.",
-            TextWrapping = TextWrapping.Wrap,
-            FontSize = 12,
-            Margin = new Thickness(0, 0, 0, 14)
-        };
-        offDesc.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
-        offContent.Children.Add(offDesc);
-
-        var offBtns = new WrapPanel();
-        var dlOfficialBtn = new Button
-        {
-            Content = "⬇ Baixar ISO Oficial",
-            FontWeight = FontWeights.SemiBold,
-            Margin = new Thickness(0, 0, 8, 8)
-        };
-        dlOfficialBtn.Click += (_, _) => Process.Start(new ProcessStartInfo("https://www.microsoft.com/software-download/windows11") { UseShellExecute = true });
-
-        var dlToolBtn = new Button
-        {
-            Content = " Media Creation Tool",
-            Margin = new Thickness(0, 0, 8, 8)
-        };
-        dlToolBtn.Click += (_, _) => Process.Start(new ProcessStartInfo("https://go.microsoft.com/fwlink/?linkid=2156295") { UseShellExecute = true });
-
-        var copyOffLink = new Button
-        {
-            Content = " Copiar Link",
-            Margin = new Thickness(0, 0, 8, 8)
-        };
-        copyOffLink.Click += (_, _) =>
-        {
-            Clipboard.SetText("https://www.microsoft.com/software-download/windows11");
-            Msg("Link oficial copiado para a área de transferência!", "Copiado", MessageBoxButton.OK, MessageBoxImage.Information);
-        };
-
-        offBtns.Children.Add(dlOfficialBtn);
-        offBtns.Children.Add(dlToolBtn);
-        offBtns.Children.Add(copyOffLink);
-        offContent.Children.Add(offBtns);
-
-        officialCard.Child = offContent;
-
-        var panel = new WrapPanel();
-        panel.Children.Add(officialCard);
-
-        var isos = _configService.Config.IsoCatalog;
-        foreach (var iso in isos)
-        {
-            var card = new Border
-            {
-                Width = 470,
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(12),
-                Padding = new Thickness(20),
-                Margin = new Thickness(0, 0, 18, 18)
-            };
-            card.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
-            card.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
-
-            var content = new StackPanel();
-
-            var headerDock = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
-            var isoTitle = new TextBlock
-            {
-                Text = " " + iso.Name,
-                FontSize = 16,
-                FontWeight = FontWeights.Bold,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            isoTitle.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
-            DockPanel.SetDock(isoTitle, Dock.Left);
-            headerDock.Children.Add(isoTitle);
-
-            var vBadge = new Border
-            {
-                CornerRadius = new CornerRadius(4),
-                Padding = new Thickness(7, 2, 7, 2),
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            vBadge.SetResourceReference(Border.BackgroundProperty, "PanelHoverBrush");
-            var vt = new TextBlock { Text = string.IsNullOrWhiteSpace(iso.Version) ? "Personalizada" : iso.Version, FontSize = 10.5, FontWeight = FontWeights.SemiBold };
-            vt.SetResourceReference(TextBlock.ForegroundProperty, "AccentBrush");
-            vBadge.Child = vt;
-            DockPanel.SetDock(vBadge, Dock.Right);
-            headerDock.Children.Add(vBadge);
-            content.Children.Add(headerDock);
+            // O config.json de fábrica repete o Windows oficial, que já tem o cartão acima
+            if (iso.DownloadUrl.Equals(OfficialWindowsIsoUrl, StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(iso.LocalPath)) continue;
 
             var exists = !string.IsNullOrWhiteSpace(iso.LocalPath) && File.Exists(iso.LocalPath);
-            string sizeStr = "";
+            var status = ("Imagem disponível para download / associação", "Muted");
             if (exists)
             {
-                try
-                {
-                    var len = new FileInfo(iso.LocalPath).Length;
-                    sizeStr = $" • {len / 1024.0 / 1024.0 / 1024.0:N2} GB";
-                }
-                catch { }
+                try { status = ($"Disponível Localmente • {new FileInfo(iso.LocalPath).Length / 1073741824d:N2} GB", "Success"); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { status = ("Disponível Localmente", "Success"); }
             }
 
-            var statusText = new TextBlock
-            {
-                Text = exists ? $"● Disponível Localmente{sizeStr}" : "○ Imagem disponível para download / associação",
-                Foreground = exists ? (Brush)FindResource("SuccessBrush") : (Brush)FindResource("MutedBrush"),
-                FontSize = 11.5,
-                FontWeight = FontWeights.Medium,
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-            content.Children.Add(statusText);
-
-            if (!string.IsNullOrWhiteSpace(iso.Description))
-            {
-                var desc = new TextBlock
-                {
-                    Text = iso.Description,
-                    TextWrapping = TextWrapping.Wrap,
-                    FontSize = 12,
-                    LineHeight = 17,
-                    Margin = new Thickness(0, 0, 0, 10)
-                };
-                desc.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
-                content.Children.Add(desc);
-            }
-
-            if (!string.IsNullOrWhiteSpace(iso.LocalPath))
-            {
-                var pathBox = new Border
-                {
-                    CornerRadius = new CornerRadius(6),
-                    BorderThickness = new Thickness(1),
-                    Padding = new Thickness(8, 5, 8, 5),
-                    Margin = new Thickness(0, 0, 0, 12)
-                };
-                pathBox.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
-                pathBox.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
-
-                var pathText = new TextBlock
-                {
-                    Text = iso.LocalPath,
-                    FontSize = 11,
-                    TextTrimming = TextTrimming.CharacterEllipsis
-                };
-                pathText.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
-                pathBox.Child = pathText;
-                content.Children.Add(pathBox);
-            }
-
-            var btnRow = new WrapPanel { Margin = new Thickness(0, 2, 0, 0) };
-
+            var buttons = new WrapPanel();
             if (exists)
             {
-                var mountBtn = new Button { Content = " Montar ISO", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 8, 8) };
-                mountBtn.Click += async (_, _) => await MountIsoAsync(iso.LocalPath);
-                btnRow.Children.Add(mountBtn);
-
-                var dismountBtn = new Button { Content = "⏏ Desmontar", Margin = new Thickness(0, 0, 8, 8) };
-                dismountBtn.Click += async (_, _) => await DismountIsoAsync(iso.LocalPath);
-                btnRow.Children.Add(dismountBtn);
-
-                var folderBtn = new Button { Content = " Abrir Pasta", Margin = new Thickness(0, 0, 8, 8) };
-                folderBtn.Click += (_, _) =>
-                {
-                    Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{iso.LocalPath}\"") { UseShellExecute = true });
-                };
-                btnRow.Children.Add(folderBtn);
+                var mount = IconButton(Glyphs.Disc, "Montar ISO", primary: true);
+                mount.Click += async (_, _) => await MountIsoAsync(iso.LocalPath);
+                var unmount = IconButton(Glyphs.Undo, "Desmontar");
+                unmount.Click += async (_, _) => await DismountIsoAsync(iso.LocalPath);
+                var folder = IconButton(Glyphs.Folder, "Abrir Pasta");
+                folder.Click += (_, _) => ShowInFolder(iso.LocalPath);
+                foreach (var b in new[] { mount, unmount, folder }) buttons.Children.Add(b);
             }
             else
             {
-                var locateBtn = new Button { Content = " Localizar no Meu PC", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 8, 8) };
-                locateBtn.Click += (_, _) =>
+                var locate = IconButton(Glyphs.Folder, "Localizar no Meu PC", primary: string.IsNullOrWhiteSpace(iso.DownloadUrl));
+                locate.Click += (_, _) =>
                 {
                     var dlg = new OpenFileDialog { Filter = "Imagens ISO (*.iso)|*.iso", Title = $"Localizar arquivo para {iso.Name}" };
-                    if (dlg.ShowDialog() == true)
-                    {
-                        iso.LocalPath = dlg.FileName;
-                        _configService.Save();
-                        ShowIsos();
-                    }
+                    if (dlg.ShowDialog(this) != true) return;
+                    iso.LocalPath = dlg.FileName;
+                    SaveIsoCatalog();
+                    ShowIsos();
                 };
-                btnRow.Children.Add(locateBtn);
+                buttons.Children.Add(locate);
             }
-
             if (!string.IsNullOrWhiteSpace(iso.DownloadUrl))
             {
-                var dlBtn = new Button { Content = "⬇ Baixar via Google Drive", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 8, 8) };
-                dlBtn.Click += (_, _) => Process.Start(new ProcessStartInfo(iso.DownloadUrl) { UseShellExecute = true });
-                btnRow.Children.Add(dlBtn);
+                var fromDrive = Uri.TryCreate(iso.DownloadUrl, UriKind.Absolute, out var uri) && uri.Host.EndsWith("drive.google.com", StringComparison.OrdinalIgnoreCase);
+                var download = IconButton(Glyphs.Download, fromDrive ? "Baixar via Google Drive" : "Baixar", primary: !exists);
+                download.Click += (_, _) => OpenUrl(iso.DownloadUrl);
+                buttons.Children.Add(download);
             }
-
             if (!string.IsNullOrWhiteSpace(iso.LocalPath))
             {
-                var copyBtn = new Button { Content = " Copiar Caminho", Margin = new Thickness(0, 0, 8, 8) };
-                copyBtn.Click += (_, _) =>
-                {
-                    Clipboard.SetText(iso.LocalPath);
-                    Msg("Caminho copiado para a área de transferência!", "Copiado", MessageBoxButton.OK, MessageBoxImage.Information);
-                };
-                btnRow.Children.Add(copyBtn);
+                var copyPath = IconButton(Glyphs.Document, "Copiar Caminho");
+                copyPath.Click += (_, _) => CopyText(iso.LocalPath, "Caminho copiado para a área de transferência!");
+                buttons.Children.Add(copyPath);
             }
-
-            content.Children.Add(btnRow);
-            card.Child = content;
-            panel.Children.Add(card);
+            cards.Children.Add(IsoCard(iso.Name, string.IsNullOrWhiteSpace(iso.Version) ? "Personalizada" : iso.Version, status, iso.Description, iso.LocalPath, buttons));
         }
 
-        root.Children.Add(panel);
+        root.Children.Add(cards);
         ContentHost.Children.Clear();
         ContentHost.Children.Add(root);
+    }
+
+    private Border IsoCard(string name, string version, (string Text, string Tone) status, string description, string? localPath, Panel buttons)
+    {
+        var body = new DockPanel();
+        buttons.Margin = new Thickness(0, 14, 0, 0);
+        DockPanel.SetDock(buttons, Dock.Bottom); body.Children.Add(buttons);
+
+        var head = new DockPanel { Margin = new Thickness(0, 0, 0, 10) };
+        var badge = Pill(version, "Accent"); badge.VerticalAlignment = VerticalAlignment.Top; badge.Margin = new Thickness(12, 2, 0, 0);
+        DockPanel.SetDock(badge, Dock.Right); head.Children.Add(badge);
+        var chip = IconChip(Glyphs.Disc, "Info", 40); chip.VerticalAlignment = VerticalAlignment.Top;
+        DockPanel.SetDock(chip, Dock.Left); head.Children.Add(chip);
+        var titles = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        var title = Label(name, 15); title.FontWeight = FontWeights.SemiBold; title.Margin = new Thickness(0, 0, 0, 2);
+        titles.Children.Add(title);
+        var state = Label(status.Text, 12); state.Margin = new Thickness(0);
+        state.SetResourceReference(TextBlock.ForegroundProperty, status.Tone + "Brush");
+        titles.Children.Add(state);
+        head.Children.Add(titles);
+        DockPanel.SetDock(head, Dock.Top); body.Children.Add(head);
+
+        var text = new StackPanel();
+        if (!string.IsNullOrWhiteSpace(description))
+        {
+            var d = Label(description, 12, true); d.Margin = new Thickness(0); d.LineHeight = 18;
+            text.Children.Add(d);
+        }
+        if (!string.IsNullOrWhiteSpace(localPath))
+        {
+            var path = Label(localPath, 11, true); path.Margin = new Thickness(0, 10, 0, 0);
+            path.TextWrapping = TextWrapping.NoWrap; path.TextTrimming = TextTrimming.CharacterEllipsis; path.ToolTip = localPath;
+            path.SetResourceReference(TextBlock.FontFamilyProperty, "MonoFont");
+            text.Children.Add(path);
+        }
+        body.Children.Add(text);
+
+        var card = Surface(body); card.Margin = new Thickness(0, 0, 14, 14); card.Padding = new Thickness(20, 18, 20, 18);
+        return card;
+    }
+
+    private void SaveIsoCatalog()
+    {
+        try { _configService.Save(); }
+        catch (IOException ex) { _log.Write("WARN", "Preferências não foram salvas: " + (ex.InnerException?.Message ?? ex.Message)); }
     }
 
     private void AddIso_Click(object sender, RoutedEventArgs e)
@@ -334,24 +160,22 @@ public partial class MainWindow
         {
             Title = "Selecionar Imagem ISO do Windows",
             Filter = "Imagens ISO (*.iso)|*.iso|Todos os Arquivos (*.*)|*.*",
-            InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + @"\Downloads"
+            InitialDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads")
         };
+        if (dialog.ShowDialog(this) != true) return;
 
-        if (dialog.ShowDialog() == true)
+        var fileName = Path.GetFileNameWithoutExtension(dialog.FileName);
+        _configService.Config.IsoCatalog.Add(new IsoEntry
         {
-            var fileName = Path.GetFileNameWithoutExtension(dialog.FileName);
-            var entry = new IsoEntry
-            {
-                Name = fileName,
-                LocalPath = dialog.FileName,
-                Version = "Custom",
-                Architecture = "x64",
-                Description = "Imagem ISO personalizada adicionada pelo usuário."
-            };
-            _configService.AddIso(entry);
-            Msg($"ISO '{fileName}' adicionada com sucesso!", "ISO Adicionada", MessageBoxButton.OK, MessageBoxImage.Information);
-            ShowIsos();
-        }
+            Name = fileName,
+            LocalPath = dialog.FileName,
+            Version = "Custom",
+            Architecture = "x64",
+            Description = "Imagem ISO personalizada adicionada pelo usuário."
+        });
+        SaveIsoCatalog();
+        OperationStatus.Text = $"ISO '{fileName}' adicionada com sucesso!";
+        ShowIsos();
     }
 
     private async Task MountIsoAsync(string isoPath)
@@ -372,7 +196,8 @@ public partial class MainWindow
             if (!string.IsNullOrWhiteSpace(driveLetter))
             {
                 var path = $"{driveLetter}:\\";
-                Process.Start(new ProcessStartInfo("explorer.exe", path) { UseShellExecute = true });
+                try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", path) { UseShellExecute = true }); }
+                catch (System.ComponentModel.Win32Exception ex) { _log.Write("WARN", "Não foi possível abrir a pasta: " + ex.Message); }
                 Msg($"A imagem ISO foi montada na unidade {path} e aberta no Explorador de Arquivos.", "ISO Montada", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else

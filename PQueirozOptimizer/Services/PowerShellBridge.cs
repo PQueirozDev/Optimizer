@@ -6,6 +6,11 @@ using System.Text.RegularExpressions;
 
 namespace PQueirozOptimizer.Services;
 
+/// <summary>O que uma etapa faz com o sistema, para a tela de revisão avisar antes de aplicar.</summary>
+public enum StepEffect { Backup, Irreversible, OneOff }
+
+public sealed record OperationStep(string Name, StepEffect Effect);
+
 public sealed class PowerShellBridge
 {
     private readonly ActivityLog _log;
@@ -49,18 +54,33 @@ public sealed class PowerShellBridge
         return (await output).Trim();
     }
 
-    public IReadOnlyList<string> GetSteps(string operation)
+    public IReadOnlyList<OperationStep> GetSteps(string operation)
     {
         var function = operation switch { "padrao" => "Otimizar-Padrao", "gamer" => "Otimizar-Gamer", "debloat" => "Otimizar-Debloat", _ => "" };
-        if (function.Length == 0) return Array.Empty<string>();
+        if (function.Length == 0) return Array.Empty<OperationStep>();
         var script = File.ReadAllText(_scriptPath);
         var start = script.IndexOf("function " + function + " {", StringComparison.Ordinal);
         if (start < 0) throw new InvalidDataException("Plano de execução não encontrado.");
         var end = script.IndexOf("\nfunction ", start + 1, StringComparison.Ordinal);
         var body = script[start..(end < 0 ? script.Length : end)];
         var pattern = operation == "debloat" ? @"Executar-Se-Confirmado\s+""[^""]*""\s*`?\s*""([^""]+)""" : @"@\{ Nome = ""([^""]+)""";
-        return Regex.Matches(body, pattern).Select(m => m.Groups[1].Value).Where(name => name != "Arquivos temporarios removidos").Distinct().ToArray();
+        var matches = Regex.Matches(body, pattern);
+        var steps = new List<OperationStep>();
+        for (var i = 0; i < matches.Count; i++)
+        {
+            var name = matches[i].Groups[1].Value;
+            if (name == "Arquivos temporarios removidos" || steps.Any(s => s.Name == name)) continue;
+            // O efeito vem do código da própria etapa (do nome dela até o início da próxima)
+            var code = body[matches[i].Index..(i + 1 < matches.Count ? matches[i + 1].Index : body.Length)];
+            steps.Add(new OperationStep(name, ClassifyStep(code)));
+        }
+        return steps;
     }
+
+    public static StepEffect ClassifyStep(string code) =>
+        Regex.IsMatch(code, @"Registrar-Irreversivel|Remove-Item|Remove-Appx|cleanmgr", RegexOptions.IgnoreCase) ? StepEffect.Irreversible
+        : Regex.IsMatch(code, @"Capturar-|Set-PoliticaDword|Desativar-Servico|Aplicar-EfeitosVisuais|Aplicar-Politicas", RegexOptions.IgnoreCase) ? StepEffect.Backup
+        : StepEffect.OneOff;
 
     public async Task RunAsync(string operation, IReadOnlyList<string>? selectedSteps = null, IProgress<string>? progress = null, CancellationToken cancellationToken = default)
     {
@@ -81,6 +101,14 @@ public sealed class PowerShellBridge
             psi.ArgumentList.Add(Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(selectedSteps))));
         }
         using var process = Process.Start(psi) ?? throw new InvalidOperationException("Não foi possível iniciar o PowerShell.");
+        // Cancelar encerra o PowerShell e o que ele abriu (sfc, dism, chkdsk...). O backup é gravado
+        // a cada item capturado, então o que já foi aplicado continua podendo ser revertido.
+        using var cancellation = cancellationToken.Register(() =>
+        {
+            try { process.Kill(entireProcessTree: true); }
+            // AggregateException: algum processo filho já tinha saído ou não pôde ser encerrado
+            catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or AggregateException) { }
+        });
         async Task ReadAsync(StreamReader reader, string level)
         {
             while (await reader.ReadLineAsync() is { } line)
@@ -92,6 +120,11 @@ public sealed class PowerShellBridge
             }
         }
         await Task.WhenAll(ReadAsync(process.StandardOutput, "INFO"), ReadAsync(process.StandardError, "ERROR"), process.WaitForExitAsync());
+        if (cancellationToken.IsCancellationRequested)
+        {
+            _log.Write("WARN", $"Operação cancelada pelo usuário: {operation}");
+            throw new OperationCanceledException(cancellationToken);
+        }
         if (process.ExitCode != 0) throw new InvalidOperationException($"A execução terminou com falhas (código {process.ExitCode}). Consulte a atividade e a reversão para alterações parciais.");
         _log.Write("SUCCESS", $"Execução concluída: {operation}");
     }

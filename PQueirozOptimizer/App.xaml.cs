@@ -7,6 +7,9 @@ public partial class App : Application
 {
     public Services.LicenseInfo? ActiveLicense { get; private set; }
     public void SetActiveLicense(Services.LicenseInfo license) => ActiveLicense = license;
+    /// <summary>Log único do processo: a janela principal mostra também os erros registrados aqui.</summary>
+    public Services.ActivityLog Log { get; } = new();
+    private bool _showingError;
     [DllImport("shell32.dll", SetLastError = true)]
     private static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string appId);
     [DllImport("user32.dll")] private static extern bool SetForegroundWindow(IntPtr hWnd);
@@ -45,9 +48,34 @@ public partial class App : Application
         return false;
     }
 
+    /// <summary>
+    /// Um erro inesperado em um botão não deve fechar o aplicativo nem apagar o que está na tela:
+    /// ele é registrado na atividade e o usuário recebe um aviso.
+    /// </summary>
+    private void RegisterErrorHandlers()
+    {
+        static string Describe(Exception ex) => $"{ex.GetType().Name}: {ex.Message} | {ex.StackTrace?.Replace(Environment.NewLine, " ")}";
+        DispatcherUnhandledException += (_, args) =>
+        {
+            Log.Write("ERROR", "Erro inesperado: " + Describe(args.Exception));
+            args.Handled = true;
+            if (_showingError) return;
+            _showingError = true;
+            try
+            {
+                MessageBox.Show(Services.Translator.Tr("Ocorreu um erro inesperado, mas o aplicativo continua aberto. Os detalhes foram salvos em Atividade e reversão.") + "\n\n" + args.Exception.Message,
+                    "PQueiroz Optimizer", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            finally { _showingError = false; }
+        };
+        TaskScheduler.UnobservedTaskException += (_, args) => { Log.Write("ERROR", "Erro em segundo plano: " + Describe(args.Exception.GetBaseException())); args.SetObserved(); };
+        AppDomain.CurrentDomain.UnhandledException += (_, args) => { if (args.ExceptionObject is Exception ex) Log.Write("ERROR", "Erro fatal: " + Describe(ex)); };
+    }
+
     private async void Application_Startup(object sender, StartupEventArgs e)
     {
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        RegisterErrorHandlers();
         // O atalho de Limpeza Rápida roda à parte e pode ser usado com o app aberto
         if (!e.Args.Contains("--quick-clean", StringComparer.OrdinalIgnoreCase) && !AcquireSingleInstance())
         {
@@ -89,7 +117,7 @@ public partial class App : Application
 
         if (e.Args.Contains("--quick-clean", StringComparer.OrdinalIgnoreCase))
         {
-            var service = new Services.QuickCleanService(new Services.ActivityLog());
+            var service = new Services.QuickCleanService(Log);
             var status = new System.Windows.Controls.TextBlock { Text = "Removendo arquivos temporários...", Margin = new Thickness(0, 18, 0, 8) };
             var window = new Window { Title = "Limpeza Rápida", Width = 410, Height = 190, WindowStartupLocation = WindowStartupLocation.CenterScreen, ResizeMode = ResizeMode.NoResize, Content = new System.Windows.Controls.StackPanel { Margin = new Thickness(28), Children = { new System.Windows.Controls.TextBlock { Text = "🧹  Limpeza Rápida", FontSize = 24, FontWeight = FontWeights.SemiBold }, status } } };
             window.SetResourceReference(Window.BackgroundProperty, "BackgroundBrush");

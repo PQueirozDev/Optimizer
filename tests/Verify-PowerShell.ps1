@@ -15,7 +15,7 @@ function Centralizar($text) { return $text }
 function Write-Resultado($ok, $text) { }
 function Write-Pulado($text) { }
 # Load the real allowlists so the tests exercise the same rules the script uses.
-$allowlists = 'TarefasMMCSS|RegistroPermitido|RegistroPermitidoPadroes|ServicosPermitidos|TiposRegistroPermitidos|StartupTypesPermitidos|InstaladoresOneDrive|RunKeysPermitidas|LimiteHistorico'
+$allowlists = 'TarefasMMCSS|RegistroPermitido|RegistroPermitidoPadroes|ServicosPermitidos|TiposRegistroPermitidos|StartupTypesPermitidos|InstaladoresOneDrive|RunKeysPermitidas|LimiteHistorico|Plano\w+|InicializacaoAprovada|PerfilCleanmgr|CategoriasCleanmgr'
 foreach ($assignment in $ast.EndBlock.Statements | Where-Object { $_ -is [System.Management.Automation.Language.AssignmentStatementAst] -and $_.Left.Extent.Text -match "^\`$script:($allowlists)$" }) {
     . ([scriptblock]::Create($assignment.Extent.Text))
 }
@@ -115,3 +115,78 @@ $script:SnapshotAtual = @()
 Desativar-Servico 'Fax'
 Assert (@($script:SnapshotAtual).Count -eq 0) 'Missing service is skipped without capture or failure'
 Assert ($script:RegistroPermitido -contains 'HKCU:\Control Panel\Desktop' -and $script:RegistroPermitido -contains 'HKCU:\Control Panel\Desktop\WindowMetrics') 'Visual effects keys can be restored'
+
+# Tarefas agendadas removidas do Windows 11 recente nao podem interromper o Debloat
+function Get-ScheduledTask($TaskPath, $TaskName) { if ($TaskName -eq 'Existe') { [pscustomobject]@{ State = 'Ready' } } }
+$script:SnapshotAtual = @()
+Assert (-not (Capturar-TarefaAgendada '\Microsoft\Windows\Teste\Removida')) 'Missing scheduled task is reported as absent instead of failing'
+Assert ((Capturar-TarefaAgendada '\Microsoft\Windows\Teste\Existe') -and $script:SnapshotAtual[-1].HabilitadaAnterior -eq $true) 'Existing scheduled task state is captured'
+
+# Servicos com inicio atrasado (Windows Search) voltam como estavam
+& {
+    function Get-Service($Name) { [pscustomobject]@{ StartType = 'Automatic'; Status = 'Running' } }
+    function Get-ItemProperty { [pscustomobject]@{ DelayedAutostart = 1 } }
+    $script:SnapshotAtual = @()
+    Capturar-Servico 'WSearch'
+    Assert ($script:SnapshotAtual[0].StartupTypeAnterior -eq 'AutomaticDelayedStart') 'Delayed start is captured before the service changes'
+}
+& {
+    $script:tiposAplicados = @(); $script:scArgs = $null
+    function Set-Service($Name, $StartupType) { $script:tiposAplicados += "$Name=$StartupType" }
+    function Start-Service($Name) { }
+    function sc.exe { $script:scArgs = "$args"; $global:LASTEXITCODE = 0 }
+    $script:SnapshotNome = 'Delayed fixture'
+    $script:SnapshotAtual = @([pscustomobject]@{ Tipo = 'Servico'; Nome = 'WSearch'; StartupTypeAnterior = 'AutomaticDelayedStart'; StatusAnterior = 'Running' })
+    Salvar-Snapshot
+    $script:ContFalhas = 0
+    Reverter-UltimaOtimizacao
+    Assert ($script:tiposAplicados -contains 'WSearch=Automatic' -and $script:scArgs -eq 'config WSearch start= delayed-auto' -and $script:ContFalhas -eq 0) 'Delayed-start service is restored as delayed start'
+}
+
+# OneDrive: no Windows 11 o desinstalador so e achado pelo registro; nunca executa algo sem assinatura da Microsoft
+& {
+    function Get-ItemProperty { if ("$args" -like '*HKCU:*') { [pscustomobject]@{ UninstallString = '"C:\Users\x\AppData\Local\Microsoft\OneDrive\25.1\OneDriveSetup.exe"  /uninstall ' } } }
+    function Test-Path { "$args" -like '*C:\Users\x\*' }
+    function Get-AuthenticodeSignature { [pscustomobject]@{ Status = 'Valid'; SignerCertificate = [pscustomobject]@{ Subject = 'CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond' } } }
+    $desinstalador = Obter-DesinstaladorOneDrive
+    Assert ($desinstalador.Exe -eq 'C:\Users\x\AppData\Local\Microsoft\OneDrive\25.1\OneDriveSetup.exe' -and $desinstalador.Argumentos -eq '/uninstall') 'Per-user OneDrive uninstaller found in the registry (Windows 11)'
+    function Get-AuthenticodeSignature { [pscustomobject]@{ Status = 'Valid'; SignerCertificate = [pscustomobject]@{ Subject = 'CN=Outro, O=Outra Empresa' } } }
+    $recusado = $false
+    try { Obter-DesinstaladorOneDrive | Out-Null } catch { $recusado = $true }
+    Assert $recusado 'OneDrive uninstaller without a Microsoft signature is never run'
+    function Get-ItemProperty { }
+    function Test-Path { $false }
+    Assert ($null -eq (Obter-DesinstaladorOneDrive)) 'OneDrive not installed is not treated as a failure'
+}
+
+# Plano Alto Desempenho apagado por outro otimizador e recriado; sem ele (Modern Standby) a etapa nao falha
+& {
+    $script:chamadas = @()
+    function powercfg { $script:chamadas += "$args"; $global:LASTEXITCODE = 0; switch ($args[0]) { '/list' { 'Power Scheme GUID: 381b4222-f694-41f0-9685-ff5bb260df2e  (Balanced) *' } '/duplicatescheme' { 'Power Scheme GUID: 11111111-2222-3333-4444-555555555555  (High performance)' } } }
+    Assert ((Ativar-PlanoAltoDesempenho) -and $script:chamadas -contains '/setactive 11111111-2222-3333-4444-555555555555') 'Deleted High Performance plan is recreated and activated'
+    function powercfg { $global:LASTEXITCODE = 0; switch ($args[0]) { '/list' { 'Power Scheme GUID: 381b4222-f694-41f0-9685-ff5bb260df2e  (Balanced) *' } '/duplicatescheme' { 'Unable to perform operation.'; $global:LASTEXITCODE = 1 } } }
+    Assert (-not (Ativar-PlanoAltoDesempenho) -and $LASTEXITCODE -eq 0) 'Balanced-only laptop keeps its plan without failing the step'
+}
+
+# cleanmgr /sagerun sem categorias marcadas nao apaga nada; o perfil proprio evita as categorias perigosas
+Assert (-not ($script:CategoriasCleanmgr | Where-Object { $_ -in 'Recycle Bin', 'DownloadsFolder', 'Previous Installations', 'Windows ESD installation files', 'D3D Shader Cache', 'User file versions', 'Update Cleanup' })) 'Disk cleanup never touches Recycle Bin, Downloads, Windows.old, reset files or shader cache'
+& {
+    $script:marcadas = @(); $script:argumentosCleanmgr = $null
+    function Test-Path { $true }
+    function Set-ItemProperty($LiteralPath, $Name, $Value) { $script:marcadas += "$LiteralPath|$Name|$Value" }
+    function Start-Process($FilePath, $ArgumentList) { $script:argumentosCleanmgr = $ArgumentList; [pscustomobject]@{ Id = 0 } | Add-Member -MemberType ScriptMethod -Name WaitForExit -Value { param($ms) $true } -PassThru }
+    Executar-Cleanmgr
+    Assert ($script:argumentosCleanmgr -eq '/sagerun:4242' -and @($script:marcadas | Where-Object { $_ -like '*\Temporary Files|StateFlags4242|2' }).Count -eq 1) 'Disk cleanup marks its own profile before running'
+}
+
+# Itens desativados pelo Gerenciador de Tarefas nao contam como "iniciando com o Windows"
+$chaveAprovados = 'HKCU:\Software\PQO-Verificacao-Aprovados'
+New-Item -Path $chaveAprovados -Force | Out-Null
+New-ItemProperty -Path $chaveAprovados -Name 'Desligado' -Value ([byte[]](3,0,0,0,0,0,0,0,0,0,0,0)) -PropertyType Binary | Out-Null
+New-ItemProperty -Path $chaveAprovados -Name 'Ligado' -Value ([byte[]](2,0,0,0,0,0,0,0,0,0,0,0)) -PropertyType Binary | Out-Null
+$aprovados = Get-Item -LiteralPath $chaveAprovados
+Assert (-not (Test-InicializacaoAtiva $aprovados 'Desligado') -and (Test-InicializacaoAtiva $aprovados 'Ligado') -and (Test-InicializacaoAtiva $aprovados 'SemMarca') -and (Test-InicializacaoAtiva $null 'x')) 'Startup items disabled in Task Manager are not counted'
+Remove-Item $chaveAprovados -Recurse -Force
+
+# Linhas de diagnostico saem marcadas para o app colori-las
+Assert ("$(Write-Status 'warn' 'Pouco espaco' 6>&1)" -eq '[AVISO] Pouco espaco' -and "$(Write-Status 'ok' 'TRIM: Ativo' 6>&1)" -eq '[OK] TRIM: Ativo') 'Diagnostic lines are tagged for the app'

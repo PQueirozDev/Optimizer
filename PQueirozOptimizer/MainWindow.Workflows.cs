@@ -19,22 +19,34 @@ public partial class MainWindow
     private static readonly string SnapshotDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "OtimizadorPC", "Snapshots");
     private readonly UpdateService _updates = new();
     private StackPanel? _updateSlot;
+    private UpdateInfo? _pendingUpdate;
 
     private void History_Click(object sender, RoutedEventArgs e) => NavigateTo("history");
 
-    private async Task ExecuteTrackedAsync(string title, Func<Task> action)
+    private CancellationTokenSource? _operationCts;
+    private bool _closeAfterOperation;
+
+    private async Task ExecuteTrackedAsync(string title, Func<CancellationToken, Task> action)
     {
         if (_operationRunning) { OperationStatus.Text = "Aguarde a operação em andamento."; return; }
         _operationRunning = true;
+        using var cts = new CancellationTokenSource();
+        _operationCts = cts;
         OperationProgress.Visibility = Visibility.Visible;
         OperationStatus.Text = title;
         TitleOptChip.Text = "Em execução";
         try
         {
-            await action();
+            await action(cts.Token);
             _snapshot = null;
             OperationStatus.Text = title + " — concluído. Confira os resultados na atividade.";
             TitleOptChip.Text = "Concluído";
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+            _snapshot = null;
+            OperationStatus.Text = title + " — cancelado. O que já foi aplicado aparece em Atividade e reversão.";
+            TitleOptChip.Text = "Cancelado";
         }
         catch (Exception ex)
         {
@@ -42,7 +54,25 @@ public partial class MainWindow
             OperationStatus.Text = ex.Message;
             TitleOptChip.Text = "Verificar resultado";
         }
-        finally { _operationRunning = false; OperationProgress.Visibility = Visibility.Collapsed; }
+        finally
+        {
+            _operationRunning = false; _operationCts = null; OperationProgress.Visibility = Visibility.Collapsed;
+            // O usuário pediu para fechar durante a operação: fecha assim que ela termina de ser cancelada
+            if (_closeAfterOperation) Close();
+        }
+    }
+
+    /// <summary>Confirma com o usuário e cancela a operação em andamento.</summary>
+    private bool ConfirmCancelOperation()
+    {
+        if (_operationCts is not { IsCancellationRequested: false } cts) return false;
+        if (Msg("Cancelar a operação agora? O que já foi aplicado continua registrado no backup e pode ser revertido em Atividade e reversão.",
+                "Cancelar operação", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return false;
+        // A operação pode ter terminado enquanto a pergunta estava aberta
+        if (_operationCts != cts) return false;
+        OperationStatus.Text = "Cancelando...";
+        cts.Cancel();
+        return true;
     }
 
     /// <summary>Linha selecionável (checkbox) com título, descrição e etiqueta de impacto.</summary>
@@ -126,10 +156,15 @@ public partial class MainWindow
             var checks = new List<CheckBox>();
             foreach (var step in steps)
             {
-                var irreversible = step.Contains("removid", StringComparison.OrdinalIgnoreCase) || step.Contains("Limp", StringComparison.OrdinalIgnoreCase);
-                var check = new CheckBox { Tag = step, IsChecked = false };
+                var (pill, tone, detail) = step.Effect switch
+                {
+                    StepEffect.Irreversible => ("Não reversível", "Warning", "Remove arquivos ou apps: não é desfeito pela reversão."),
+                    StepEffect.OneOff => ("Ação pontual", "Info", "Não altera configurações, então não precisa de backup."),
+                    _ => ("Com backup", "Success", ""),
+                };
+                var check = new CheckBox { Tag = step.Name, IsChecked = false };
                 checks.Add(check);
-                root.Children.Add(ChoiceRow(check, step, "", irreversible ? "Não reversível" : "Com backup", irreversible ? "Warning" : "Success"));
+                root.Children.Add(ChoiceRow(check, step.Name, detail, pill, tone));
             }
 
             var selectedLabel = Label("Nenhum ajuste selecionado", 13, true);
@@ -166,9 +201,9 @@ public partial class MainWindow
         loading.Children.Add(new ProgressBar { IsIndeterminate = true, Height = 5 });
         root.Children.Add(Surface(loading));
         ContentHost.Children.Clear(); ContentHost.Children.Add(root);
-        await ExecuteTrackedAsync("Analisar temporários", async () =>
+        await ExecuteTrackedAsync("Analisar temporários", async token =>
         {
-            var categories = await _cleaner.AnalyzeAsync();
+            var categories = await _cleaner.AnalyzeAsync(token);
             root.Children.Clear();
 
             var totalBytes = categories.Sum(c => c.Bytes);
@@ -207,11 +242,11 @@ public partial class MainWindow
             {
                 clean.IsEnabled = false;
                 foreach (var (check, _) in choices) check.IsEnabled = false;
-                await ExecuteTrackedAsync("Limpeza de temporários", async () =>
+                await ExecuteTrackedAsync("Limpeza de temporários", async token =>
                 {
                     var selected = choices.Where(c => c.Check.IsChecked == true).Select(c => c.Category).ToArray();
                     var before = selected.Sum(c => c.Bytes);
-                    var result = await _cleaner.CleanAsync(selected, new Progress<string>(s => OperationStatus.Text = s));
+                    var result = await _cleaner.CleanAsync(selected, new Progress<string>(s => OperationStatus.Text = s), token);
                     total.Text = $"Previsto: {before / 1048576d:N1} MB → liberado: {result.BytesFreed / 1048576d:N1} MB · {result.Removed} removidos · {result.Ignored} preservados";
                     _log.Write("INFO", total.Text);
                 });
@@ -335,9 +370,9 @@ public partial class MainWindow
     private static (int Score, string Headline, string Tone) HealthScore(SystemSnapshot snapshot)
     {
         var score = 100.0;
-        var free = Percent(snapshot.FreeSpace, snapshot.Storage);
-        if (free < 10) score -= 35; else if (free < 20) score -= 20; else if (free < 30) score -= 8;
-        var hours = ParseUptimeHours(snapshot.Uptime);
+        var free = snapshot.FreePercent;
+        if (snapshot.StorageGb > 0) { if (free < 10) score -= 35; else if (free < 20) score -= 20; else if (free < 30) score -= 8; }
+        var hours = snapshot.Uptime.TotalHours;
         if (hours > 24 * 7) score -= 20; else if (hours > 24 * 3) score -= 10;
         if (!snapshot.IsAdministrator) score -= 5;
         var value = (int)Math.Round(Math.Clamp(score, 0, 100));
@@ -349,27 +384,46 @@ public partial class MainWindow
         };
     }
 
+    private Task<SystemSnapshot>? _snapshotRead;
+    private DateTime _snapshotReadAt;
+    private SystemSnapshot? FreshSnapshot => _snapshot is { } s && DateTime.Now - _snapshotReadAt < TimeSpan.FromMinutes(5) ? s : null;
+
+    /// <summary>Lê o sistema e reaproveita a leitura por alguns minutos; cada operação concluída a descarta.</summary>
+    private async Task<SystemSnapshot> ReadSnapshotAsync()
+    {
+        if (FreshSnapshot is { } cached) return cached;
+        _snapshotRead ??= Task.Run(_system.Read);
+        try { _snapshot = await _snapshotRead; _snapshotReadAt = DateTime.Now; return _snapshot; }
+        finally { _snapshotRead = null; }
+    }
+
     private async Task RenderDashboardAsync()
     {
         PageTitle.Text = "Visão geral";
         PageBadge.Visibility = Visibility.Collapsed;
         var root = new StackPanel();
-        var loading = new StackPanel();
-        loading.Children.Add(SectionHeader("Consultando seu computador...", "Lendo processador, memória, armazenamento e sistema."));
-        loading.Children.Add(new ProgressBar { IsIndeterminate = true, Height = 5 });
-        root.Children.Add(Surface(loading));
         ContentHost.Children.Clear(); ContentHost.Children.Add(root);
         try
         {
-            var snapshot = await Task.Run(_system.Read);
-            _snapshot = snapshot;
-            if (_currentPage != "dashboard") return;
+            // A leitura leva alguns segundos (PowerShell + WMI): voltar ao painel reaproveita a última
+            var snapshot = FreshSnapshot;
+            if (snapshot is null)
+            {
+                var loading = new StackPanel();
+                loading.Children.Add(SectionHeader("Consultando seu computador...", "Lendo processador, memória, armazenamento e sistema."));
+                loading.Children.Add(new ProgressBar { IsIndeterminate = true, Height = 5 });
+                root.Children.Add(Surface(loading));
+                snapshot = await ReadSnapshotAsync();
+                // O usuário pode ter trocado de página (ou reaberto o painel) durante a leitura
+                if (_currentPage != "dashboard" || !ContentHost.Children.Contains(root)) return;
+            }
             root.Children.Clear();
             TitleAdminChip.Text = snapshot.IsAdministrator ? "Administrador" : "Usuário";
             TitleAdminDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, snapshot.IsAdministrator ? "SuccessBrush" : "WarningBrush");
 
             _updateSlot = new StackPanel();
             root.Children.Add(_updateSlot);
+            ShowUpdateBanner();
 
             // Destaque: pontuação de saúde + ações principais
             var (score, headline, tone) = HealthScore(snapshot);
@@ -383,7 +437,7 @@ public partial class MainWindow
             var headlineText = new TextBlock { Text = headline, FontSize = 24, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
             headlineText.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
             heroText.Children.Add(headlineText);
-            var heroSub = Label($"{snapshot.OperatingSystem} · Build {snapshot.Build} · ligado há {snapshot.Uptime}", 12.5, true);
+            var heroSub = Label($"{snapshot.OperatingSystem} · Build {snapshot.Build} · ligado há {snapshot.UptimeText}", 12.5, true);
             heroSub.Margin = new Thickness(0, 6, 0, 18);
             heroText.Children.Add(heroSub);
             var actions = new WrapPanel();
@@ -460,11 +514,11 @@ public partial class MainWindow
     {
         var panel = new StackPanel();
         panel.Children.Add(SectionHeader("Leitura rápida", "Indicadores que mais influenciam o desempenho do dia a dia."));
-        var free = Percent(snapshot.FreeSpace, snapshot.Storage);
+        var free = snapshot.FreePercent;
         AddMeter(panel, Glyphs.Drive, "Espaço livre no disco", free, $"{free:N0}% livre", free >= 20 ? "Success" : free >= 10 ? "Warning" : "Danger");
-        var hours = ParseUptimeHours(snapshot.Uptime);
+        var hours = snapshot.Uptime.TotalHours;
         AddMeter(panel, Glyphs.Clock, "Tempo desde o último reinício", Math.Min(100, hours / 168d * 100), hours < 72 ? "Recente" : "Reinicie em breve", hours < 72 ? "Success" : "Warning");
-        var memory = ParseNumber(snapshot.Memory);
+        var memory = snapshot.MemoryGb;
         AddMeter(panel, Glyphs.Memory, "Memória instalada", Math.Min(100, memory / 32d * 100), memory >= 16 ? "Ideal para jogos" : memory >= 8 ? "Suficiente" : "Limitada", memory >= 16 ? "Success" : memory >= 8 ? "Warning" : "Danger");
         return Surface(panel);
     }
@@ -489,69 +543,69 @@ public partial class MainWindow
         panel.Children.Add(row);
     }
 
-    private static double ParseNumber(string value)
-        => double.TryParse(System.Text.RegularExpressions.Regex.Match(value ?? "", @"[\d,.]+").Value.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var n) ? n : 0;
-    private static double Percent(string free, string total) => ParseNumber(total) <= 0 ? 0 : ParseNumber(free) / ParseNumber(total) * 100;
-    private static double ParseUptimeHours(string value)
-    {
-        var m = System.Text.RegularExpressions.Regex.Match(value ?? "", @"(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?");
-        return (int.TryParse(m.Groups[1].Value, out var d) ? d * 24 : 0) + (int.TryParse(m.Groups[2].Value, out var h) ? h : 0) + (int.TryParse(m.Groups[3].Value, out var min) ? min / 60d : 0);
-    }
-
     private async Task CheckForUpdateAsync(bool showPrompt = false)
     {
         try
         {
             var info = await _updates.CheckAsync(AppVersion);
-            if (info.IsAvailable && (!string.IsNullOrWhiteSpace(info.AssetUrl) || !string.IsNullOrWhiteSpace(info.DownloadUrl)))
-            {
-                var update = IconButton(Glyphs.Download, UpdateService.CanAutoInstall(info) ? $"Atualizar para {info.LatestVersion}" : $"Baixar {info.LatestVersion}", primary: true);
-                update.Margin = new Thickness(12, 0, 0, 0); update.VerticalAlignment = VerticalAlignment.Center;
-                update.Click += async (_, _) =>
-                {
-                    if (_operationRunning) { OperationStatus.Text = "Aguarde a operação em andamento terminar antes de atualizar."; return; }
-                    update.IsEnabled = false; OperationProgress.Visibility = Visibility.Visible; OperationStatus.Text = "Baixando instalador...";
-                    try
-                    {
-                        if (UpdateService.CanAutoInstall(info))
-                        {
-                            using var installer = await _updates.DownloadAsync(info, new Progress<(long read, long total)>(p => OperationStatus.Text = p.total > 0 ? $"Baixando instalador... {p.read * 100d / p.total:N0}%" : $"Baixando instalador... {p.read / 1048576d:N1} MB"));
-                            OperationStatus.Text = "Instalador verificado. Atualizando — o aplicativo será reaberto automaticamente...";
-                            _log.Write("INFO", $"Atualização {info.LatestVersion} verificada por SHA256; iniciando instalação silenciosa.");
-                            installer.LaunchSilent();
-                            await Task.Delay(500);
-                            Application.Current.Shutdown();
-                        }
-                        else Process.Start(new ProcessStartInfo(info.DownloadUrl!) { UseShellExecute = true });
-                    }
-                    catch (Exception ex) { OperationStatus.Text = "Falha na atualização: " + ex.Message; _log.Write("ERROR", "Atualização: " + ex.Message); }
-                    finally { OperationProgress.Visibility = Visibility.Collapsed; update.IsEnabled = true; }
-                };
-
-                var banner = new DockPanel();
-                DockPanel.SetDock(update, Dock.Right); banner.Children.Add(update);
-                var chip = IconChip(Glyphs.Download, "Info", 40); DockPanel.SetDock(chip, Dock.Left); banner.Children.Add(chip);
-                var bannerText = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-                var bt = Label($"Nova versão disponível: {info.LatestVersion}", 14); bt.FontWeight = FontWeights.SemiBold; bt.Margin = new Thickness(0);
-                bannerText.Children.Add(bt);
-                var bs = Label(UpdateService.CanAutoInstall(info) ? "O instalador é verificado por SHA256 e o aplicativo reabre sozinho ao terminar." : "Esta versão será baixada pela página de releases.", 12, true); bs.Margin = new Thickness(0, 2, 0, 0);
-                bannerText.Children.Add(bs);
-                banner.Children.Add(bannerText);
-                var bannerCard = Surface(banner); bannerCard.Padding = new Thickness(18, 14, 18, 14);
-                bannerCard.SetResourceReference(Border.BorderBrushProperty, "InfoBrush");
-                if (_currentPage == "dashboard" && _updateSlot != null) _updateSlot.Children.Add(bannerCard);
-                OperationStatus.Text = $"Atualização disponível: {info.LatestVersion}";
-                if (showPrompt)
-                {
-                    var answer = Msg($"A versão {info.LatestVersion} está disponível. Deseja atualizar agora?", "Atualização disponível", MessageBoxButton.YesNo, MessageBoxImage.Information);
-                    if (answer == MessageBoxResult.Yes) update.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                }
-            }
+            if (!info.IsAvailable || (string.IsNullOrWhiteSpace(info.AssetUrl) && string.IsNullOrWhiteSpace(info.DownloadUrl))) return;
+            _pendingUpdate = info;
+            ShowUpdateBanner();
+            if (!_operationRunning) OperationStatus.Text = $"Atualização disponível: {info.LatestVersion}";
+            if (showPrompt && Msg($"A versão {info.LatestVersion} está disponível. Deseja atualizar agora?", "Atualização disponível", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
+                await InstallUpdateAsync(info, null);
         }
         catch (Exception ex)
         {
             // Atualização é opcional e não deve impedir o dashboard
             _log.Write("WARN", "Não foi possível verificar atualizações: " + ex.Message);
         }
+    }
+
+    /// <summary>Mostra o aviso de nova versão no painel (é recriado sempre que o painel é redesenhado).</summary>
+    private void ShowUpdateBanner()
+    {
+        if (_pendingUpdate is not { } info || _currentPage != "dashboard" || _updateSlot is null) return;
+        var update = IconButton(Glyphs.Download, UpdateService.CanAutoInstall(info) ? $"Atualizar para {info.LatestVersion}" : $"Baixar {info.LatestVersion}", primary: true);
+        update.Margin = new Thickness(12, 0, 0, 0); update.VerticalAlignment = VerticalAlignment.Center;
+        update.Click += async (_, _) => await InstallUpdateAsync(info, update);
+
+        var banner = new DockPanel();
+        DockPanel.SetDock(update, Dock.Right); banner.Children.Add(update);
+        var chip = IconChip(Glyphs.Download, "Info", 40); DockPanel.SetDock(chip, Dock.Left); banner.Children.Add(chip);
+        var bannerText = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        var bt = Label($"Nova versão disponível: {info.LatestVersion}", 14); bt.FontWeight = FontWeights.SemiBold; bt.Margin = new Thickness(0);
+        bannerText.Children.Add(bt);
+        var bs = Label(UpdateService.CanAutoInstall(info) ? "O instalador é verificado por SHA256 e o aplicativo reabre sozinho ao terminar." : "Esta versão será baixada pela página de releases.", 12, true); bs.Margin = new Thickness(0, 2, 0, 0);
+        bannerText.Children.Add(bs);
+        banner.Children.Add(bannerText);
+        var bannerCard = Surface(banner); bannerCard.Padding = new Thickness(18, 14, 18, 14);
+        bannerCard.SetResourceReference(Border.BorderBrushProperty, "InfoBrush");
+        _updateSlot.Children.Clear();
+        _updateSlot.Children.Add(bannerCard);
+    }
+
+    private bool _installingUpdate;
+
+    private async Task InstallUpdateAsync(UpdateInfo info, Button? button)
+    {
+        if (_operationRunning) { OperationStatus.Text = "Aguarde a operação em andamento terminar antes de atualizar."; return; }
+        if (!UpdateService.CanAutoInstall(info)) { OpenUrl(info.DownloadUrl); return; }
+        // O aviso ao abrir e o botão do painel podem pedir a mesma atualização
+        if (_installingUpdate) return;
+        _installingUpdate = true;
+        if (button != null) button.IsEnabled = false;
+        OperationProgress.Visibility = Visibility.Visible; OperationStatus.Text = "Baixando instalador...";
+        try
+        {
+            using var installer = await _updates.DownloadAsync(info, new Progress<(long read, long total)>(p => OperationStatus.Text = p.total > 0 ? $"Baixando instalador... {p.read * 100d / p.total:N0}%" : $"Baixando instalador... {p.read / 1048576d:N1} MB"));
+            OperationStatus.Text = "Instalador verificado. Atualizando — o aplicativo será reaberto automaticamente...";
+            _log.Write("INFO", $"Atualização {info.LatestVersion} verificada por SHA256; iniciando instalação silenciosa.");
+            installer.LaunchSilent();
+            await Task.Delay(500);
+            Application.Current.Shutdown();
+        }
+        catch (Exception ex) { OperationStatus.Text = "Falha na atualização: " + ex.Message; _log.Write("ERROR", "Atualização: " + ex.Message); }
+        finally { _installingUpdate = false; OperationProgress.Visibility = Visibility.Collapsed; if (button != null) button.IsEnabled = true; }
     }
 }

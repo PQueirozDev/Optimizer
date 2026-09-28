@@ -85,7 +85,11 @@ public class ConfigService
             }
         }
 
+        // Só grava quando os padrões mudaram algo (ou a cópia ainda não existe no perfil): regravar a
+        // cada abertura disputava o arquivo com outra instância, como o atalho de Limpeza Rápida.
+        var loaded = source == _primaryPath && LastLoadError is null ? JsonSerializer.Serialize(_config, JsonOpts) : null;
         EnsureDefaults();
+        if (loaded != null && JsonSerializer.Serialize(_config, JsonOpts) == loaded) return;
         // Falha ao gravar não deve impedir o app de abrir: as preferências ficam em memória.
         try { Save(); }
         catch (IOException ex) { LastSaveError = ex.InnerException?.Message ?? ex.Message; }
@@ -103,8 +107,10 @@ public class ConfigService
         {
             var json = JsonSerializer.Serialize(_config, JsonOpts);
             Directory.CreateDirectory(Path.GetDirectoryName(_primaryPath)!);
-            File.WriteAllText(_primaryPath + ".tmp", json);
-            File.Move(_primaryPath + ".tmp", _primaryPath, true);
+            // Temporário por processo: duas instâncias salvando ao mesmo tempo não disputam o mesmo arquivo
+            var temp = $"{_primaryPath}.{Environment.ProcessId}.tmp";
+            File.WriteAllText(temp, json);
+            File.Move(temp, _primaryPath, true);
         }
         catch (Exception ex) { throw new IOException("Não foi possível salvar suas preferências.", ex); }
     }
@@ -128,7 +134,7 @@ public class ConfigService
                 // Remove removed optimizations like "inteligente"
                 existing.EnabledOptimizations ??= new();
                 existing.EnabledOptimizations.RemoveAll(id => id.Equals("inteligente", StringComparison.OrdinalIgnoreCase));
-                if (existing.Name.Equals("Padrão", StringComparison.OrdinalIgnoreCase) || existing.Name.Equals("Modo Completo", StringComparison.OrdinalIgnoreCase))
+                if (ShowsEverything(existing.Name))
                 {
                     existing.EnabledOptimizations = AllOptimizations.Select(o => o.Id).ToList();
                 }
@@ -320,17 +326,9 @@ public class ConfigService
         Save();
     }
 
-    public void AddIso(IsoEntry iso)
-    {
-        _config.IsoCatalog.Add(iso);
-        Save();
-    }
-
-    public void RemoveIso(IsoEntry iso)
-    {
-        _config.IsoCatalog.Remove(iso);
-        Save();
-    }
+    /// <summary>Perfis que sempre exibem todas as otimizações: a lista é refeita a cada abertura.</summary>
+    public static bool ShowsEverything(string profileName) =>
+        profileName.Equals("Padrão", StringComparison.OrdinalIgnoreCase) || profileName.Equals("Modo Completo", StringComparison.OrdinalIgnoreCase);
 }
 
 

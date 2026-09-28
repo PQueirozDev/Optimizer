@@ -42,6 +42,7 @@ public static class Glyphs
     public static readonly string Restore = G(0xE923);
     public static readonly string ChevronRight = G(0xE76C);
     public static readonly string Power = G(0xE7E8);
+    public static readonly string Cancel = G(0xE711);
 
     private static string G(int code) => char.ConvertFromUtf32(code);
 }
@@ -52,6 +53,40 @@ public partial class MainWindow
     private static MessageBoxResult Msg(string text, string caption = "PQueiroz Optimizer", MessageBoxButton button = MessageBoxButton.OK,
         MessageBoxImage icon = MessageBoxImage.None, MessageBoxResult defaultResult = MessageBoxResult.None)
         => MessageBox.Show(Services.Translator.Tr(text), Services.Translator.Tr(caption), button, icon, defaultResult);
+
+    /// <summary>
+    /// Abre um endereço no navegador. Só aceita http/https: alguns links vêm do config.json do
+    /// usuário e o aplicativo roda como administrador, então nunca executa um caminho local daqui.
+    /// </summary>
+    private void OpenUrl(string? url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp))
+        {
+            _log.Write("WARN", "Link ignorado (não é um endereço da web): " + url);
+            OperationStatus.Text = "Link inválido: " + url;
+            return;
+        }
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true }); }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            _log.Write("ERROR", "Não foi possível abrir o navegador: " + ex.Message);
+            Msg("Falha ao abrir navegador: " + ex.Message, "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    /// <summary>Copia um texto; outro programa pode estar com a área de transferência aberta.</summary>
+    private void CopyText(string text, string confirmation)
+    {
+        try { Clipboard.SetText(text); OperationStatus.Text = confirmation; }
+        catch (System.Runtime.InteropServices.ExternalException) { OperationStatus.Text = "A área de transferência está em uso por outro programa. Tente novamente."; }
+    }
+
+    /// <summary>Abre o Explorador de Arquivos com o arquivo selecionado.</summary>
+    private void ShowInFolder(string path)
+    {
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") { UseShellExecute = true }); }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException) { _log.Write("WARN", "Não foi possível abrir a pasta: " + ex.Message); }
+    }
 
     private TextBlock Label(string text, double size = 13, bool muted = false)
     {

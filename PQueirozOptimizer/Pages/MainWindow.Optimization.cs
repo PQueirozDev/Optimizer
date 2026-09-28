@@ -17,7 +17,7 @@ public partial class MainWindow
         "quickclean" => (Glyphs.Broom, "Info"),
         "analisar" => (Glyphs.Diagnostic, "Success"),
         "benchmark" => (Glyphs.Lightning, "Success"),
-        "sfc" or "dism" or "chkdsk" => (Glyphs.Repair, "Warning"),
+        "sfc" or "dism" or "chkdsk" or "reparar" => (Glyphs.Repair, "Warning"),
         "update" => (Glyphs.Refresh, "Warning"),
         "reverter" => (Glyphs.Undo, "Danger"),
         _ => (Glyphs.Settings, "Accent"),

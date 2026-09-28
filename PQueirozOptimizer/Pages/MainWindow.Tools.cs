@@ -31,11 +31,7 @@ public partial class MainWindow
         revertAbBtn.Click += async (_, _) => await ApplyAllBlackTaskbarAsync(enable: false);
         var copyAbBtn = IconButton(Glyphs.Document, "Copiar comando");
         copyAbBtn.SetResourceReference(StyleProperty, "GhostButton");
-        copyAbBtn.Click += (_, _) =>
-        {
-            Clipboard.SetText(AllBlackCommand);
-            OperationStatus.Text = "Comando PowerShell copiado para a área de transferência.";
-        };
+        copyAbBtn.Click += (_, _) => CopyText(AllBlackCommand, "Comando PowerShell copiado para a área de transferência.");
         abButtons.Children.Add(applyAbBtn); abButtons.Children.Add(revertAbBtn); abButtons.Children.Add(copyAbBtn);
         DockPanel.SetDock(abButtons, Dock.Bottom); allBlack.Children.Add(abButtons);
         allBlack.Children.Add(FeatureHeader(Glyphs.Monitor, "Accent", "Barra de tarefas All Black",

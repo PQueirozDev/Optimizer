@@ -15,7 +15,7 @@ namespace PQueirozOptimizer;
 public partial class MainWindow : Window
 {
     private readonly SystemInfoService _system = new();
-    private readonly ActivityLog _log = new();
+    private readonly ActivityLog _log = (Application.Current as App)?.Log ?? new();
     private readonly PowerShellBridge _powershell;
     private readonly QuickCleanService _cleaner;
     private readonly ConfigService _configService = new();
@@ -42,12 +42,29 @@ public partial class MainWindow : Window
         _currentPage = startPage;
         _powershell = new PowerShellBridge(_log);
         _cleaner = new QuickCleanService(_log);
-        _log.EntryAdded += line => Dispatcher.BeginInvoke(() => AddLogLine(line));
         foreach (var line in _log.Recent()) AddLogLine(line);
+        // O log é do processo inteiro; a janela recriada na troca de idioma não pode continuar ouvindo
+        Action<string> onEntry = line => Dispatcher.BeginInvoke(() => AddLogLine(line));
+        _log.EntryAdded += onEntry;
+        Closed += (_, _) => _log.EntryAdded -= onEntry;
         if (_configService.LastLoadError is { } loadError) _log.Write("WARN", loadError);
         if (_configService.LastSaveError is { } saveError) _log.Write("WARN", "Preferências não foram salvas: " + saveError);
         VersionLabel.Text = "Versão " + AppVersion;
-        Closing += (_, e) => { if (_operationRunning) { e.Cancel = true; OperationStatus.Text = "Aguarde a operação terminar antes de fechar."; } };
+        Closing += (_, e) =>
+        {
+            if (!_operationRunning) return;
+            e.Cancel = true;
+            if (_closeAfterOperation) return;
+            if (Msg("Há uma operação em andamento. Deseja cancelá-la e fechar o aplicativo? O que já foi aplicado continua registrado no backup e pode ser revertido em Atividade e reversão.",
+                    "Cancelar operação", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes)
+            {
+                OperationStatus.Text = "Aguarde a operação terminar antes de fechar.";
+                return;
+            }
+            _closeAfterOperation = true;
+            if (_operationCts is { } cts) { OperationStatus.Text = "Cancelando..."; cts.Cancel(); }
+            else Dispatcher.BeginInvoke(Close); // terminou enquanto a pergunta estava aberta
+        };
 
         // Load saved theme & language
         _darkTheme = !_configService.Config.Theme.Equals("Light", StringComparison.OrdinalIgnoreCase);
@@ -79,7 +96,8 @@ public partial class MainWindow : Window
         if (_operationRunning) { OperationStatus.Text = "Aguarde a operação em andamento."; return; }
         if (language == _loc.CurrentLanguage) return;
         _loc.SetLanguage(language);
-        _configService.SaveLanguage(language);
+        try { _configService.SaveLanguage(language); }
+        catch (IOException ex) { _log.Write("WARN", "Preferências não foram salvas: " + (ex.InnerException?.Message ?? ex.Message)); }
 
         var replacement = new MainWindow(_currentPage == "admin" ? "dashboard" : _currentPage);
         if (WindowState == WindowState.Normal)
@@ -208,9 +226,22 @@ public partial class MainWindow : Window
     #region Theming
     private void ThemeButton_Click(object sender, RoutedEventArgs e)
     {
-        _darkTheme = !_darkTheme;
-        ApplyTheme(_darkTheme, saveConfig: true);
-        NavigateTo(_currentPage);
+        ApplyTheme(!_darkTheme, saveConfig: true);
+        // Configurações mostra qual tema está ativo; nas outras páginas, redesenhar apagaria o que está
+        // na tela (ex.: a saída de uma operação em andamento ou os ajustes marcados na revisão)
+        if (_currentPage == "settings" && !_operationRunning) ShowSettings();
+        else if (Application.Current.TryFindResource("ShadowColor") is Color shadow) RefreshThemedVisuals(ContentHost, shadow);
+    }
+
+    /// <summary>
+    /// Sombras e as cores das linhas da saída (calculadas por conversor) não acompanham os recursos
+    /// dinâmicos; são as únicas partes da tela que precisam ser atualizadas à mão na troca de tema.
+    /// </summary>
+    private static void RefreshThemedVisuals(DependencyObject node, Color shadow)
+    {
+        if (node is UIElement { Effect: System.Windows.Media.Effects.DropShadowEffect { IsFrozen: false } effect }) effect.Color = shadow;
+        if (node is ListBox list) { list.Items.Refresh(); return; }
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++) RefreshThemedVisuals(VisualTreeHelper.GetChild(node, i), shadow);
     }
 
     private void ApplyTheme(bool isDark, bool saveConfig)
@@ -222,7 +253,8 @@ public partial class MainWindow : Window
 
         if (saveConfig)
         {
-            _configService.SaveTheme(isDark ? "Dark" : "Light");
+            try { _configService.SaveTheme(isDark ? "Dark" : "Light"); }
+            catch (IOException ex) { _log.Write("WARN", "Preferências não foram salvas: " + (ex.InnerException?.Message ?? ex.Message)); }
         }
     }
     #endregion
@@ -241,47 +273,6 @@ public partial class MainWindow : Window
     }
 
     private async void RunOperation_Click(object sender, RoutedEventArgs e) => await PrepareOperationAsync((sender as Button)?.Tag?.ToString() ?? "");
-
-    private Border Card(string title, string value, string colorHex)
-    {
-        var card = new Border
-        {
-            Padding = new Thickness(18),
-            CornerRadius = new CornerRadius(10),
-            BorderThickness = new Thickness(1),
-            Margin = new Thickness(0, 0, 12, 12)
-        };
-        card.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
-        card.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
-
-        var sp = new StackPanel();
-        var t = new TextBlock
-        {
-            Text = title,
-            FontWeight = FontWeights.Bold,
-            FontSize = 12,
-            Foreground = new BrushConverter().ConvertFromString(colorHex) as Brush ?? Brushes.Gray
-        };
-        var v = new TextBlock
-        {
-            Text = value,
-            FontSize = 17,
-            FontWeight = FontWeights.SemiBold,
-            Margin = new Thickness(0, 6, 0, 0),
-            TextWrapping = TextWrapping.Wrap
-        };
-        v.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
-
-        sp.Children.Add(t);
-        sp.Children.Add(v);
-        card.Child = sp;
-        return card;
-    }
-
-    private void AddInfo(Panel panel, string title, string value)
-    {
-        panel.Children.Add(Card(title, value, "#4F75FF"));
-    }
 
     private void AddLogLine(string line) { _activity.Add(line); while (_activity.Count > 150) _activity.RemoveAt(0); }
     #endregion

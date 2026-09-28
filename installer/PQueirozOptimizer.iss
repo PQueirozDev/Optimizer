@@ -39,6 +39,8 @@ VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription={#MyAppName} Installer
 VersionInfoProductName={#MyAppName}
 VersionInfoProductVersion={#MyAppVersion}
+; O desinstalador remove os atalhos de Limpeza Rapida que o aplicativo cria no perfil do usuario
+UsedUserAreasWarning=no
 
 [Languages]
 Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
@@ -53,6 +55,14 @@ Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+
+[UninstallDelete]
+; Atalhos "Limpeza Rapida" criados pelo aplicativo (Ferramentas): sem isso apontariam para um executavel removido.
+; O curinga evita depender da codificacao deste arquivo para o "a" acentuado do nome.
+Type: files; Name: "{userdesktop}\Limpeza R*pida.lnk"
+Type: files; Name: "{userprograms}\Limpeza R*pida.lnk"
+; Instaladores de atualizacao baixados pelo aplicativo
+Type: filesandordirs; Name: "{commonappdata}\PQueirozOptimizer\Updates"
 
 [Run]
 ; O aplicativo exige elevação. ShellExecute com o verbo "runas" solicita o UAC;

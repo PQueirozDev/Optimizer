@@ -69,6 +69,12 @@ public partial class MainWindow
         var right = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         status.HorizontalAlignment = HorizontalAlignment.Right;
         right.Children.Add(status); right.Children.Add(elapsed);
+        // SFC/DISM podem levar muito tempo ou travar: a operação pode ser interrompida
+        var cancel = IconButton(Glyphs.Cancel, "Cancelar");
+        cancel.SetResourceReference(StyleProperty, "GhostButton");
+        cancel.Margin = new Thickness(0, 6, 0, 0); cancel.Padding = new Thickness(10, 4, 10, 4); cancel.HorizontalAlignment = HorizontalAlignment.Right;
+        cancel.Click += (_, _) => { if (ConfirmCancelOperation()) cancel.IsEnabled = false; };
+        right.Children.Add(cancel);
         DockPanel.SetDock(right, Dock.Right); head.Children.Add(right);
         var chip = IconChip(glyph, "Accent", 52); DockPanel.SetDock(chip, Dock.Left); head.Children.Add(chip);
         var headText = new StackPanel { Margin = new Thickness(18, 0, 16, 0), VerticalAlignment = VerticalAlignment.Center };
@@ -102,7 +108,7 @@ public partial class MainWindow
         var outputHead = new DockPanel();
         var copy = IconButton(Glyphs.Document, "Copiar resultado"); copy.Margin = new Thickness(0); copy.VerticalAlignment = VerticalAlignment.Top;
         copy.SetResourceReference(StyleProperty, "GhostButton");
-        copy.Click += (_, _) => { Clipboard.SetText(string.Join(Environment.NewLine, lines.Select(l => l.Text))); OperationStatus.Text = "Resultado copiado para a área de transferência."; };
+        copy.Click += (_, _) => CopyText(string.Join(Environment.NewLine, lines.Select(l => l.Text)), "Resultado copiado para a área de transferência.");
         DockPanel.SetDock(copy, Dock.Right); outputHead.Children.Add(copy);
         outputHead.Children.Add(SectionHeader("Saída da execução"));
         outputPanel.Children.Add(outputHead);
@@ -120,21 +126,27 @@ public partial class MainWindow
         timer.Start();
 
         var failed = false;
-        await ExecuteTrackedAsync(title, async () =>
+        var cancelled = false;
+        await ExecuteTrackedAsync(title, async token =>
         {
             try
             {
                 await _powershell.RunAsync(operation, selectedSteps, new Progress<string>(raw =>
                 {
                     if (ClassifyLine(raw) is not { } line) return;
-                    OperationStatus.Text = line.Text;
+                    if (!cancelled) OperationStatus.Text = line.Text;
                     lines.Add(line);
                     if (line.Tone == "Success") okCount++;
                     else if (line.Tone == "Danger") failCount++;
                     else if (line.Tone == "Warning") warnCount++;
                     UpdateCounters();
                     output.ScrollIntoView(line);
-                }));
+                }), token);
+            }
+            catch (OperationCanceledException)
+            {
+                cancelled = true;
+                throw;
             }
             catch
             {
@@ -143,10 +155,11 @@ public partial class MainWindow
             }
         });
         timer.Stop(); clock.Stop();
+        cancel.Visibility = Visibility.Collapsed;
         elapsed.Text = clock.Elapsed.ToString(@"mm\:ss");
         progress.IsIndeterminate = false; progress.Value = 100;
-        var tone = failed || failCount > 0 ? "Warning" : "Success";
-        ((TextBlock)status.Child).Text = failed || failCount > 0 ? "Concluído com falhas" : "Concluído";
+        var tone = cancelled || failed || failCount > 0 ? "Warning" : "Success";
+        ((TextBlock)status.Child).Text = cancelled ? "Cancelado" : failed || failCount > 0 ? "Concluído com falhas" : "Concluído";
         ((TextBlock)status.Child).SetResourceReference(TextBlock.ForegroundProperty, tone + "Brush");
         status.SetResourceReference(Border.BackgroundProperty, tone + "SoftBrush");
         chip.SetResourceReference(Border.BackgroundProperty, tone + "SoftBrush");

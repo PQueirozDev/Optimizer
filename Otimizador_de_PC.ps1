@@ -222,6 +222,12 @@ function Confirmar($pergunta) {
 
 # Bolinha colorida para linhas de diagnostico (ok / warn / bad / info)
 function Write-Status($nivel, $texto) {
+    if ($UiMode) {
+        # O app colore a linha pela marcacao. "bad" e um resultado da analise, nao uma falha da operacao.
+        $marca = switch ($nivel) { "ok" { "[OK]" } "warn" { "[AVISO]" } "bad" { "[AVISO]" } default { "[INFO]" } }
+        Write-Host "$marca $texto"
+        return
+    }
     switch ($nivel) {
         "ok"   { $cor = "Green" }
         "warn" { $cor = "Yellow" }
@@ -404,10 +410,16 @@ function Capturar-Servico($nomeServico) {
     if (Ja-Capturado "Servico" $nomeServico) { return }
     Try {
         $svc = Get-Service -Name $nomeServico -ErrorAction Stop
+        $tipo = $svc.StartType.ToString()
+        # O PowerShell 5.1 nao distingue "Automatico (atraso na inicializacao)", padrao do Windows Search;
+        # sem isso a reversao devolveria o servico como Automatico comum.
+        if ($tipo -eq "Automatic" -and (Get-ItemProperty -LiteralPath "HKLM:\SYSTEM\CurrentControlSet\Services\$nomeServico" -Name DelayedAutostart -ErrorAction SilentlyContinue).DelayedAutostart -eq 1) {
+            $tipo = "AutomaticDelayedStart"
+        }
         $script:SnapshotAtual += [PSCustomObject]@{
             Tipo                = "Servico"
             Nome                = $nomeServico
-            StartupTypeAnterior = $svc.StartType.ToString()
+            StartupTypeAnterior = $tipo
             StatusAnterior      = $svc.Status.ToString()
         }
     } Catch { throw }
@@ -427,18 +439,20 @@ function Capturar-PlanoEnergia {
     Salvar-Snapshot
 }
 
-# Guarda que uma tarefa agendada foi desativada (para poder reativar depois)
+# Guarda se uma tarefa agendada estava ativa (para poder reativar depois).
+# Retorna $false quando a tarefa nao existe: varias foram removidas em versoes recentes do Windows 11.
 function Capturar-TarefaAgendada($nomeTarefa) {
-    if (Ja-Capturado "TarefaAgendada" $nomeTarefa) { return }
-    $xml = schtasks.exe /Query /TN $nomeTarefa /XML
-    if ($LASTEXITCODE -ne 0) { throw "Nao foi possivel capturar tarefa $nomeTarefa" }
-    $task = [xml]($xml -join "`n")
+    $corte = $nomeTarefa.LastIndexOf('\') + 1
+    $tarefa = Get-ScheduledTask -TaskPath $nomeTarefa.Substring(0, $corte) -TaskName $nomeTarefa.Substring($corte) -ErrorAction SilentlyContinue
+    if (-not $tarefa) { return $false }
+    if (Ja-Capturado "TarefaAgendada" $nomeTarefa) { return $true }
     $script:SnapshotAtual += [PSCustomObject]@{
         Tipo = "TarefaAgendada"
         Nome = $nomeTarefa
-        HabilitadaAnterior = $task.Task.Settings.Enabled -ne 'false'
+        HabilitadaAnterior = "$($tarefa.State)" -ne "Disabled"
     }
     Salvar-Snapshot
+    return $true
 }
 
 # Guarda o caminho do instalador do OneDrive (para poder reinstalar depois)
@@ -570,6 +584,33 @@ function Limpar-Temporarios {
     Executar-Etapas "Limpeza de temporarios" $etapas
 }
 
+# O "cleanmgr /sagerun:N" so limpa as categorias marcadas antes para o perfil N; sem essa marcacao
+# ele termina sem apagar nada. Usa um perfil proprio (o /sageset:1 do usuario fica intacto) e so
+# categorias seguras: nada de Lixeira, Downloads, Windows.old, arquivos de reset, dumps de erro,
+# drivers antigos ou cache de shaders (apagar esse cache causa travadas nos jogos).
+$script:PerfilCleanmgr = 4242
+$script:CategoriasCleanmgr = @(
+    "Active Setup Temp Folders", "BranchCache", "Delivery Optimization Files", "Diagnostic Data Viewer database files",
+    "Downloaded Program Files", "Feedback Hub Archive log files", "Internet Cache Files", "Old ChkDsk Files",
+    "Setup Log Files", "Temporary Files", "Temporary Setup Files", "Thumbnail Cache",
+    "Windows Error Reporting Files", "Windows Upgrade Log Files"
+)
+
+function Executar-Cleanmgr {
+    $base = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches"
+    $marca = "StateFlags{0:D4}" -f $script:PerfilCleanmgr
+    foreach ($categoria in $script:CategoriasCleanmgr) {
+        $chave = Join-Path $base $categoria
+        if (Test-Path -LiteralPath $chave) { Set-ItemProperty -LiteralPath $chave -Name $marca -Value 2 -Type DWord }
+    }
+    $processo = Start-Process cleanmgr.exe -ArgumentList "/sagerun:$($script:PerfilCleanmgr)" -WindowStyle Hidden -PassThru
+    # Se o cleanmgr travar esperando uma janela escondida, a otimizacao segue em frente
+    if (-not $processo.WaitForExit(900000)) {
+        Stop-Process -Id $processo.Id -Force -ErrorAction SilentlyContinue
+        throw "A limpeza de disco passou de 15 minutos e foi interrompida."
+    }
+}
+
 # ---------------------------------------------------------------
 # 3. Otimizacoes basicas (Versao Padrao)
 # ---------------------------------------------------------------
@@ -581,19 +622,29 @@ function Otimizar-Padrao {
     Write-Secao "Aplicando otimizacoes gerais"
     $etapas = @(
         @{ Nome = "Plano de energia 'Alto Desempenho'"; Acao = {
+                # Quem ja usa um plano de desempenho (Desempenho Maximo, plano de outro otimizador) nao e rebaixado
+                $ativo = Obter-PlanoAtivo
+                if ($ativo -and $ativo -notin $script:PlanoEquilibrado, $script:PlanoEconomia) {
+                    Write-Host "[INFO] Ja ha um plano de energia de desempenho ativo; nenhuma mudanca necessaria."
+                    return
+                }
                 Capturar-PlanoEnergia
-                powercfg /setactive SCHEME_MIN
+                if (-not (Ativar-PlanoAltoDesempenho)) { Write-Host "[INFO] Este PC so oferece o plano Equilibrado (comum em notebooks com Modern Standby); plano atual mantido." }
             } }
         @{ Nome = "Limpando fila de impressao";          Acao = {
+                # O Debloat pode ter desativado a impressao; nesse caso nao ha fila e o servico fica como esta
+                $spooler = Get-Service Spooler -ErrorAction SilentlyContinue
+                if (-not $spooler -or $spooler.StartType -eq "Disabled") { Write-Host "[INFO] Servico de impressao desativado ou ausente; nada a limpar."; return }
+                $estavaRodando = $spooler.Status -eq "Running"
                 Stop-Service Spooler -Force
                 Remove-Item "$env:SystemRoot\System32\spool\PRINTERS\*" -Force
-                Start-Service Spooler
+                if ($estavaRodando) { Start-Service Spooler }
             } }
         @{ Nome = "Otimizando/TRIM das unidades de disco"; Acao = {
                 Otimizar-Unidades
             } }
         @{ Nome = "Limpando cache DNS";                  Acao = { ipconfig /flushdns } }
-        @{ Nome = "Executando limpeza de disco (cleanmgr)"; Acao = { Start-Process cleanmgr.exe -ArgumentList "/sagerun:1" -WindowStyle Hidden -Wait } }
+        @{ Nome = "Executando limpeza de disco (cleanmgr)"; Acao = { Executar-Cleanmgr } }
         @{ Nome = "Desativando sugestoes, anuncios e apps instalados automaticamente"; Acao = {
                 # Impede o Windows de instalar jogos/apps promocionais e mostrar anuncios no Iniciar e no Explorer
                 $cdm = "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
@@ -732,24 +783,43 @@ function Aplicar-EfeitosVisuaisDesempenho {
     }
 }
 
-# Reaproveita o plano criado em execucoes anteriores em vez de duplicar um novo a cada vez
-function Ativar-PlanoDesempenhoMaximo {
-    $nomePlano = "PQueiroz Optimizer - Desempenho Avancado"
+# Modelos de plano de energia do Windows
+$script:PlanoEquilibrado      = "381b4222-f694-41f0-9685-ff5bb260df2e"
+$script:PlanoEconomia         = "a1841308-3541-4fab-bc81-f71556f20b4a"
+$script:PlanoAltoDesempenho   = "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"
+$script:PlanoDesempenhoMaximo = "e9a42b02-d5df-448d-aa00-03f14749eb61"
+
+function Obter-PlanoAtivo {
+    if ((powercfg /getactivescheme) -match "([0-9a-fA-F-]{36})") { return $matches[1] }
+    return $null
+}
+
+# Ativa uma copia do plano-modelo com o nome do otimizador, reaproveitando a copia de execucoes
+# anteriores em vez de duplicar um plano novo a cada vez. Retorna $false quando o Windows nao
+# oferece o modelo (ex.: notebooks com Modern Standby so tem o Equilibrado).
+function Ativar-CopiaDoPlano($modelo, $nomePlano) {
     $existente = (powercfg /list) | Where-Object { $_ -match [regex]::Escape($nomePlano) } | Select-Object -First 1
-    if ($existente -match "([0-9a-fA-F-]{36})") {
-        powercfg /setactive $matches[1]
-        return
+    if ($existente -match "([0-9a-fA-F-]{36})") { powercfg /setactive $matches[1] | Out-Null; return $true }
+    $copia = powercfg /duplicatescheme $modelo
+    if ($copia -match "([0-9a-fA-F-]{36})") {
+        $guid = $matches[1]
+        powercfg /changename $guid $nomePlano | Out-Null
+        powercfg /setactive $guid | Out-Null
+        return $true
     }
-    $ultimatePlan = powercfg /duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61
-    if ($ultimatePlan -match "([0-9a-fA-F-]{36})") {
-        $planGuid = $matches[1]
-        powercfg /changename $planGuid $nomePlano | Out-Null
-        powercfg /setactive $planGuid
-    } else {
-        # Notebooks com Modern Standby nao oferecem o Desempenho Maximo
-        $global:LASTEXITCODE = 0
-        powercfg /setactive SCHEME_MIN
-    }
+    $global:LASTEXITCODE = 0
+    return $false
+}
+
+# Alto Desempenho do Windows; se outro otimizador ou uma imagem personalizada o apagou, recria pelo modelo
+function Ativar-PlanoAltoDesempenho {
+    if ((powercfg /list) -match $script:PlanoAltoDesempenho) { powercfg /setactive $script:PlanoAltoDesempenho | Out-Null; return $true }
+    return (Ativar-CopiaDoPlano $script:PlanoAltoDesempenho "PQueiroz Optimizer - Alto Desempenho")
+}
+
+function Ativar-PlanoDesempenhoMaximo {
+    if (Ativar-CopiaDoPlano $script:PlanoDesempenhoMaximo "PQueiroz Optimizer - Desempenho Avancado") { return }
+    if (-not (Ativar-PlanoAltoDesempenho)) { Write-Host "[INFO] Este PC so oferece o plano Equilibrado (comum em notebooks com Modern Standby); plano atual mantido." }
 }
 
 function Aplicar-PoliticasAvancadas {
@@ -872,9 +942,17 @@ function Otimizar-Gamer {
                     Set-ItemProperty $mousePath "MouseThreshold1" "0" -Type String
                     Set-ItemProperty $mousePath "MouseThreshold2" "0" -Type String
                 }
-                powercfg /setacvalueindex SCHEME_CURRENT SUB_USB USBSELECTIVE 0 | Out-Null
-                powercfg /setdcvalueindex SCHEME_CURRENT SUB_USB USBSELECTIVE 0 | Out-Null
-                powercfg /setactive SCHEME_CURRENT | Out-Null
+                # A suspensao seletiva de USB pertence ao plano de energia, que nao tem backup proprio: so muda
+                # quando o plano ativo nao e mais o original, ja que a reversao desfaz isso voltando ao plano original.
+                $original = @($script:SnapshotAtual | Where-Object { $_.Tipo -eq "PlanoEnergia" } | Select-Object -First 1).GuidAnterior
+                $ativo = Obter-PlanoAtivo
+                if ($original -and $ativo -and $ativo -ne $original) {
+                    powercfg /setacvalueindex SCHEME_CURRENT SUB_USB USBSELECTIVE 0 | Out-Null
+                    powercfg /setdcvalueindex SCHEME_CURRENT SUB_USB USBSELECTIVE 0 | Out-Null
+                    powercfg /setactive SCHEME_CURRENT | Out-Null
+                } else {
+                    Write-Host "[INFO] Suspensao seletiva de USB mantida: ela so e alterada junto com o plano de energia do otimizador."
+                }
             } }
         @{ Nome = "Ajustando SysMain e Windows Search";   Acao = {
                 # Em HD o SysMain (Superfetch) acelera a abertura de programas; so mexemos em SSD
@@ -929,6 +1007,36 @@ function Otimizar-Gamer {
 # ---------------------------------------------------------------
 # 5. Debloat (pergunta Sim/Nao para cada etapa, ou tudo de uma vez no modo rapido)
 # ---------------------------------------------------------------
+
+# Localiza o desinstalador do OneDrive. No Windows 10 o instalador fica em System32/SysWOW64; no
+# Windows 11 o OneDrive e instalado por usuario e so o registro (Uninstall) aponta para ele.
+# Retorna $null quando o OneDrive nao esta instalado. Como o caminho do registro do usuario pode ser
+# alterado sem privilegios e este script roda como administrador, so aceita OneDriveSetup.exe
+# assinado pela Microsoft e somente com os argumentos de desinstalacao.
+function Obter-DesinstaladorOneDrive {
+    $registrados = @()
+    foreach ($chave in @("HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\OneDriveSetup.exe",
+                         "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\OneDriveSetup.exe",
+                         "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\OneDriveSetup.exe")) {
+        $comando = "$((Get-ItemProperty -LiteralPath $chave -Name UninstallString -ErrorAction SilentlyContinue).UninstallString)"
+        if ($comando -match '^\s*"?([^"]*\\OneDriveSetup\.exe)"?\s*(.*)$') {
+            $exe = $matches[1]; $todosUsuarios = $matches[2] -match '/allusers'
+            $registrados += [PSCustomObject]@{ Exe = $exe; Argumentos = $(if ($todosUsuarios) { "/uninstall /allusers" } else { "/uninstall" }) }
+        }
+    }
+    $instalado = $registrados.Count -gt 0 -or (Test-Path -LiteralPath "$env:LOCALAPPDATA\Microsoft\OneDrive\OneDrive.exe") -or
+                 (Test-Path -LiteralPath "$env:ProgramFiles\Microsoft OneDrive\OneDrive.exe")
+    if (-not $instalado) { return $null }
+    # O instalador do Windows vem primeiro: ele continua disponivel para a reversao reinstalar
+    $candidatos = @($script:InstaladoresOneDrive | ForEach-Object { [PSCustomObject]@{ Exe = $_; Argumentos = "/uninstall" } }) + $registrados
+    foreach ($candidato in $candidatos) {
+        if (-not (Test-Path -LiteralPath $candidato.Exe)) { continue }
+        $assinatura = Get-AuthenticodeSignature -LiteralPath $candidato.Exe
+        if ($assinatura.Status -eq "Valid" -and "$($assinatura.SignerCertificate.Subject)" -match 'O=Microsoft Corporation') { return $candidato }
+    }
+    throw "Desinstalador do OneDrive nao encontrado ou sem assinatura da Microsoft"
+}
+
 function Otimizar-Debloat {
     Iniciar-Snapshot "Debloat"
     Criar-PontoDeRestauracao
@@ -976,22 +1084,15 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Remover o OneDrive?" `
         "OneDrive removido" `
         {
-            $oneDrivePaths = @(
-                "$env:SystemRoot\System32\OneDriveSetup.exe",
-                "$env:SystemRoot\SysWOW64\OneDriveSetup.exe"
-            )
-            $instaladorEncontrado = $oneDrivePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
-            if ($instaladorEncontrado) {
-                Capturar-OneDrive $instaladorEncontrado
-            } else {
-                Registrar-Irreversivel "OneDrive (instalador nao encontrado para reinstalacao automatica)"
-            }
-            Stop-Process -Name "OneDrive" -Force
-            foreach ($path in $oneDrivePaths) {
-                if (Test-Path $path) {
-                    Start-Process $path -ArgumentList "/uninstall" -Wait
-                }
-            }
+            $desinstalador = Obter-DesinstaladorOneDrive
+            if (-not $desinstalador) { Write-Host "[INFO] OneDrive nao esta instalado; nada a fazer."; return }
+            # O instalador do Windows (System32/SysWOW64) continua no sistema e permite reinstalar pela reversao;
+            # o do Windows 11 fica dentro da pasta do OneDrive e sai junto com ele.
+            if ($script:InstaladoresOneDrive -contains $desinstalador.Exe) { Capturar-OneDrive $desinstalador.Exe }
+            else { Registrar-Irreversivel "OneDrive (reinstale pelo site da Microsoft se precisar)" }
+            Get-Process OneDrive -ErrorAction SilentlyContinue | Stop-Process -Force
+            $processo = Start-Process $desinstalador.Exe -ArgumentList $desinstalador.Argumentos -Wait -PassThru
+            if ($processo.ExitCode -ne 0) { throw "O desinstalador do OneDrive retornou codigo $($processo.ExitCode)" }
         } $modoRapido
 
     # 5. Xbox - mantido por padrao (apenas informativo, sem alteracao)
@@ -1070,7 +1171,8 @@ function Otimizar-Debloat {
                 "\Microsoft\Windows\Feedback\Siuf\DmClientOnScenarioDownload"
             )
             foreach ($task in $tasks) {
-                Capturar-TarefaAgendada $task
+                # Tarefa ausente nao e falha: antes a etapa parava na primeira e nao desativava as seguintes
+                if (-not (Capturar-TarefaAgendada $task)) { Write-Host "[INFO] Tarefa $task nao existe neste Windows; nada a fazer."; continue }
                 schtasks.exe /Change /TN $task /Disable | Out-Null
             }
         } $modoRapido
@@ -1086,9 +1188,12 @@ function Otimizar-Debloat {
                 "*PowerAutomateDesktop*", "*Todos*", "*YourPhone*", "*MicrosoftTeams*",
                 "*SkypeApp*", "*MixedReality*", "*WindowsMaps*"
             )
+            # As listas sao lidas uma vez: cada consulta leva segundos e antes era repetida para cada app
+            $instalados = @(Get-AppxPackage -AllUsers)
+            $provisionados = @(Get-AppxProvisionedPackage -Online)
             foreach ($app in $removeApps) {
-                Get-AppxPackage -AllUsers -Name $app | Remove-AppxPackage -AllUsers
-                Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -like $app } | Remove-AppxProvisionedPackage -Online
+                $instalados | Where-Object { $_.Name -like $app } | Remove-AppxPackage -AllUsers
+                $provisionados | Where-Object { $_.DisplayName -like $app } | Remove-AppxProvisionedPackage -Online
             }
         } $modoRapido
 
@@ -1230,7 +1335,14 @@ function Reverter-UltimaOtimizacao {
                     $revertidos++
                 }
                 "Servico" {
-                    Set-Service -Name $item.Nome -StartupType $item.StartupTypeAnterior -ErrorAction Stop
+                    if ($item.StartupTypeAnterior -eq "AutomaticDelayedStart") {
+                        # Set-Service do PowerShell 5.1 nao aceita inicio atrasado; o sc.exe aplica
+                        Set-Service -Name $item.Nome -StartupType Automatic -ErrorAction Stop
+                        sc.exe config $item.Nome start= delayed-auto | Out-Null
+                        if ($LASTEXITCODE -ne 0) { throw "Falha no sc.exe: $LASTEXITCODE" }
+                    } else {
+                        Set-Service -Name $item.Nome -StartupType $item.StartupTypeAnterior -ErrorAction Stop
+                    }
                     if ($item.StatusAnterior -eq "Running") {
                         Start-Service -Name $item.Nome -ErrorAction Stop
                     } elseif ($item.StatusAnterior -eq 'Stopped') {
@@ -1329,27 +1441,55 @@ function Test-PendingReboot {
 # ---------------------------------------------------------------
 # 8. Gerenciar Inicializacao
 # ---------------------------------------------------------------
+$script:InicializacaoAprovada = "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved"
+
+# Itens desativados pelo Gerenciador de Tarefas (ou pela pagina Inicializacao do app) continuam na
+# chave Run, mas ficam marcados em StartupApproved: primeiro byte impar = desativado.
+function Test-InicializacaoAtiva($aprovado, $nome) {
+    if (-not $aprovado) { return $true }
+    $valor = $aprovado.GetValue($nome)
+    return -not ($valor -is [byte[]] -and $valor.Length -gt 0 -and ($valor[0] -band 1))
+}
+
+# Programas nas chaves Run que ainda abrem com o Windows
 function Obter-ItensInicializacao {
     $locais = @(
-        @{ Caminho = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"; Escopo = "Usuario" },
-        @{ Caminho = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; Escopo = "Maquina" },
-        @{ Caminho = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run"; Escopo = "Maquina (32-bit)" }
+        @{ Caminho = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"; Escopo = "Usuario"; Aprovado = "HKCU:\$script:InicializacaoAprovada\Run" },
+        @{ Caminho = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; Escopo = "Maquina"; Aprovado = "HKLM:\$script:InicializacaoAprovada\Run" },
+        @{ Caminho = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run"; Escopo = "Maquina (32-bit)"; Aprovado = "HKLM:\$script:InicializacaoAprovada\Run32" }
     )
     $itens = @()
     foreach ($local in $locais) {
-        if (Test-Path $local.Caminho) {
-            $props = Get-ItemProperty -Path $local.Caminho
-            $props.PSObject.Properties | Where-Object { $_.Name -notmatch '^PS' } | ForEach-Object {
-                $itens += [PSCustomObject]@{
-                    Nome    = $_.Name
-                    Comando = "$($_.Value)"
-                    Caminho = $local.Caminho
-                    Escopo  = $local.Escopo
-                }
+        if (-not (Test-Path $local.Caminho)) { continue }
+        $chave = Get-Item -LiteralPath $local.Caminho
+        $aprovado = Get-Item -LiteralPath $local.Aprovado -ErrorAction SilentlyContinue
+        foreach ($nome in $chave.GetValueNames() | Where-Object { $_ }) {
+            if (-not (Test-InicializacaoAtiva $aprovado $nome)) { continue }
+            $itens += [PSCustomObject]@{
+                Nome    = $nome
+                Comando = "$($chave.GetValue($nome))"
+                Caminho = $local.Caminho
+                Escopo  = $local.Escopo
             }
         }
     }
     return $itens
+}
+
+# Mesma contagem da pagina Inicializacao do app: chaves Run e pastas Inicializar, sem os desativados
+function Contar-InicializacaoAtiva {
+    $total = @(Obter-ItensInicializacao).Count
+    $pastas = @(
+        @{ Pasta = [Environment]::GetFolderPath("Startup"); Aprovado = "HKCU:\$script:InicializacaoAprovada\StartupFolder" },
+        @{ Pasta = [Environment]::GetFolderPath("CommonStartup"); Aprovado = "HKLM:\$script:InicializacaoAprovada\StartupFolder" }
+    )
+    foreach ($local in $pastas) {
+        if (-not $local.Pasta -or -not (Test-Path -LiteralPath $local.Pasta)) { continue }
+        $aprovado = Get-Item -LiteralPath $local.Aprovado -ErrorAction SilentlyContinue
+        $total += @(Get-ChildItem -LiteralPath $local.Pasta -File -Force -ErrorAction SilentlyContinue |
+                    Where-Object { $_.Name -ne "desktop.ini" -and (Test-InicializacaoAtiva $aprovado $_.Name) }).Count
+    }
+    return $total
 }
 
 
@@ -1568,13 +1708,17 @@ function Gerenciar-Inicializacao {
 # 9. Analisar PC (diagnostico + PC Health Score, nao altera nada)
 # ---------------------------------------------------------------
 
-# Soma o tamanho de pastas de temporarios/cache conhecidas (para o relatorio de "ANALISAR PC")
+# Soma o que a Limpeza rapida do app consegue liberar (mesmo criterio: TEMP do usuario e do Windows,
+# so arquivos com mais de 48 horas), para a recomendacao "libere X" corresponder ao resultado real.
+# O Prefetch fica de fora: o Windows o usa para abrir programas mais rapido.
 function Obter-TamanhoTemporarios {
-    $pastas = @("$env:TEMP", "$env:SystemRoot\Temp", "$env:SystemRoot\Prefetch")
+    $pastas = @("$env:TEMP", "$env:SystemRoot\Temp")
+    $limite = (Get-Date).AddDays(-2)
     $totalBytes = 0
     foreach ($pasta in $pastas) {
         Try {
-            $soma = (Get-ChildItem -Path $pasta -Recurse -Force -ErrorAction SilentlyContinue |
+            $soma = (Get-ChildItem -Path $pasta -Recurse -Force -File -ErrorAction SilentlyContinue |
+                     Where-Object { $_.LastWriteTime -lt $limite } |
                      Measure-Object -Property Length -Sum).Sum
             if ($soma) { $totalBytes += $soma }
         } Catch { }
@@ -1806,8 +1950,7 @@ function Calcular-HealthScore {
     } Catch { }
 
     Try {
-        $qtdInicializacao = @(Obter-ItensInicializacao).Count
-        $resultado.Inicializacao = [Math]::Max(10, 100 - ($qtdInicializacao * 8))
+        $resultado.Inicializacao = [Math]::Max(10, 100 - ((Contar-InicializacaoAtiva) * 8))
     } Catch { }
 
     Try {
@@ -1867,9 +2010,11 @@ function Analisar-PC {
     $ehSSD = Detectar-SSD
     $tipoDisco = if ($ehSSD) { "SSD" } else { "HDD" }
     $tamanhoTemp = Obter-TamanhoTemporarios
-    $itensInicializacao = @(Obter-ItensInicializacao)
+    $qtdInicializacao = Contar-InicializacaoAtiva
     $planoAtivo = (powercfg /getactivescheme) -join " "
     $nomePlano = if ($planoAtivo -match '\((.+)\)') { $matches[1] } else { "Desconhecido" }
+    # Pelo GUID, como na Versao Padrao: o nome do plano muda com o idioma do Windows ("High performance")
+    $planoEconomico = (Obter-PlanoAtivo) -in $script:PlanoEquilibrado, $script:PlanoEconomia
     $searchAtivo = $false
     Try { $searchAtivo = (Get-Service WSearch -ErrorAction Stop).Status -eq "Running" } Catch { }
     $trimAtivo = $true
@@ -1925,9 +2070,9 @@ function Analisar-PC {
 
     $problemas = @()
     if ($tamanhoTemp -gt 500MB) { $problemas += "$(Format-Bytes $tamanhoTemp) de arquivos temporarios acumulados" }
-    if ($itensInicializacao.Count -ge 5) { $problemas += "$($itensInicializacao.Count) programas iniciando junto com o Windows" }
+    if ($qtdInicializacao -ge 5) { $problemas += "$qtdInicializacao programas iniciando junto com o Windows" }
     if ($searchAtivo) { $problemas += "Windows Search ativo (pode consumir recursos em HDs mais lentos)" }
-    if ($nomePlano -notmatch "Alto Desempenho|Ultimate|Desempenho") { $problemas += "Plano de energia atual: $nomePlano" }
+    if ($planoEconomico) { $problemas += "Plano de energia atual: $nomePlano" }
     if (-not $trimAtivo -and $ehSSD) { $problemas += "TRIM parece desativado no SSD" }
     if (Test-PendingReboot) { $problemas += "Ha uma reinicializacao pendente" }
     if ($score.Disco -lt 40) { $problemas += "Pouco espaco livre em disco" }
@@ -1960,8 +2105,8 @@ function Analisar-PC {
         # Recomendacoes apontam para as telas do aplicativo, nao para o menu do console
         $recomendou = $false
         if ($tamanhoTemp -gt 500MB) { Write-Status "info" "Use a Limpeza rapida para liberar $(Format-Bytes $tamanhoTemp)"; $recomendou = $true }
-        if ($itensInicializacao.Count -ge 5) { Write-Status "info" "Desative programas desnecessarios em Ferramentas > Inicializacao do Windows"; $recomendou = $true }
-        if ($nomePlano -notmatch "Alto Desempenho|Ultimate|Desempenho|PQueiroz") { Write-Status "info" "Aplique a Versao Padrao para usar o plano de energia de alto desempenho"; $recomendou = $true }
+        if ($qtdInicializacao -ge 5) { Write-Status "info" "Desative programas desnecessarios na pagina Inicializacao do aplicativo"; $recomendou = $true }
+        if ($planoEconomico) { Write-Status "info" "Aplique a Versao Padrao para usar o plano de energia de alto desempenho"; $recomendou = $true }
         if (Test-PendingReboot) { Write-Status "info" "Reinicie o computador para concluir atualizacoes pendentes"; $recomendou = $true }
         if (@($gpus | Where-Object { -not $_.MSI }).Count -gt 0) { Write-Status "info" "Aplique a Versao Avancada para ativar o modo MSI da placa de video"; $recomendou = $true }
         if ($ramSemXmp) { Write-Status "info" "Ative o perfil XMP/EXPO na BIOS (menu BIOS / UEFI > Reiniciar na BIOS/UEFI)"; $recomendou = $true }
@@ -1971,7 +2116,7 @@ function Analisar-PC {
     } else {
         Write-Host "  [1] Otimizacao Inteligente  - deixa o programa decidir o que aplicar" -ForegroundColor Cyan
         Write-Host "  [2] Versao Padrao           - limpeza e ajustes basicos" -ForegroundColor Cyan
-        if ($itensInicializacao.Count -ge 5) {
+        if ($qtdInicializacao -ge 5) {
             Write-Host "  [8] Gerenciar Inicializacao - reduzir programas no boot" -ForegroundColor Cyan
         }
     }
@@ -2046,7 +2191,7 @@ function Otimizar-Inteligente {
         @{ Nome = "Otimizando/TRIM das unidades de disco"; Acao = {
                 Otimizar-Unidades
             } }
-        @{ Nome = "Limpeza de disco (cleanmgr)"; Acao = { Start-Process cleanmgr.exe -ArgumentList "/sagerun:1" -WindowStyle Hidden -Wait } }
+        @{ Nome = "Limpeza de disco (cleanmgr)"; Acao = { Executar-Cleanmgr } }
     )
     if ($perfil -eq "Jogos" -or $perfil -eq "Misto") {
         $etapas += @{ Nome = "Ativando Modo de Jogo do Windows"; Acao = {
@@ -2297,10 +2442,10 @@ function Executar-Benchmark {
         $discoLivrePercent = [Math]::Round(($vol.SizeRemaining / $vol.Size) * 100)
     } Catch { }
 
-    Write-Host "  CPU" -ForegroundColor Cyan
-    Barra-Score $cpuPercent
-    Write-Host "  RAM" -ForegroundColor Cyan
-    Barra-Score $ramPercent
+    # Uso atual, nao nota: a barra do Health Score pintaria 90% de uso de verde
+    Write-Host "  CPU E MEMORIA" -ForegroundColor Cyan
+    Write-Status "info" "CPU em uso agora: $cpuPercent%"
+    Write-Status "info" "RAM em uso agora: $ramPercent%"
     Write-Host ""
     Write-Host "  DISCO" -ForegroundColor Cyan
     if ($disco.Metodo -ne "winsat") { Write-Status "warn" "winsat indisponivel: leitura estimada (pode estar acima do real por causa do cache)" }

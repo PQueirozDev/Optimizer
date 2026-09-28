@@ -82,19 +82,12 @@ public partial class MainWindow
         profileCombo.SelectedIndex = activeIndex >= 0 ? activeIndex : 0;
         selectorRow.Children.Add(profileCombo);
 
-        var applyBtn = new Button
-        {
-            Content = " Ativar Este Perfil",
-            Margin = new Thickness(0, 0, 8, 8),
-            FontWeight = FontWeights.SemiBold
-        };
+        var applyBtn = IconButton(Glyphs.Check, "Ativar Este Perfil");
+        applyBtn.Margin = new Thickness(0, 0, 8, 8);
         selectorRow.Children.Add(applyBtn);
 
-        var deleteBtn = new Button
-        {
-            Content = " Excluir Perfil",
-            Margin = new Thickness(0, 0, 8, 8)
-        };
+        var deleteBtn = IconButton(Glyphs.Delete, "Excluir Perfil");
+        deleteBtn.Margin = new Thickness(0, 0, 8, 8);
         selectorRow.Children.Add(deleteBtn);
 
         profileStack.Children.Add(selectorRow);
@@ -193,6 +186,16 @@ public partial class MainWindow
         saveRow.Children.Add(saveAsNewBtn);
 
         profileStack.Children.Add(saveRow);
+        // "Padrão" e "Modo Completo" sempre mostram tudo: alterar a lista deles não sobreviveria à próxima abertura
+        var fixedHint = Label("Este modo sempre exibe todas as otimizações. Para personalizar, marque o que quiser e salve como novo modo.", 12, true);
+        fixedHint.Margin = new Thickness(0, 4, 0, 0);
+        profileStack.Children.Add(fixedHint);
+        void RefreshProfileActions(OptimizationProfile prof)
+        {
+            deleteBtn.IsEnabled = !prof.IsBuiltIn;
+            saveCurrentBtn.IsEnabled = !ConfigService.ShowsEverything(prof.Name);
+            fixedHint.Visibility = saveCurrentBtn.IsEnabled ? Visibility.Collapsed : Visibility.Visible;
+        }
 
         // Actions wiring
         profileCombo.SelectionChanged += (_, _) =>
@@ -200,7 +203,7 @@ public partial class MainWindow
             if (profileCombo.SelectedIndex >= 0 && profileCombo.SelectedIndex < _configService.Config.Profiles.Count)
             {
                 var prof = _configService.Config.Profiles[profileCombo.SelectedIndex];
-                deleteBtn.IsEnabled = !prof.IsBuiltIn;
+                RefreshProfileActions(prof);
                 foreach (var kv in checkBoxes)
                 {
                     kv.Value.IsChecked = prof.EnabledOptimizations.Contains(kv.Key, StringComparer.OrdinalIgnoreCase);
@@ -208,7 +211,7 @@ public partial class MainWindow
             }
         };
 
-        deleteBtn.IsEnabled = !selectedProfile.IsBuiltIn;
+        RefreshProfileActions(selectedProfile);
 
         selectAllBtn.Click += (_, _) =>
         {
@@ -220,31 +223,33 @@ public partial class MainWindow
             foreach (var cb in checkBoxes.Values) cb.IsChecked = false;
         };
 
+        OptimizationProfile? SelectedProfile() =>
+            profileCombo.SelectedIndex >= 0 && profileCombo.SelectedIndex < _configService.Config.Profiles.Count ? _configService.Config.Profiles[profileCombo.SelectedIndex] : null;
+        List<string> CheckedIds() => checkBoxes.Where(c => c.Value.IsChecked == true).Select(c => c.Key).ToList();
+        // Grava e mostra a confirmação; se o arquivo estiver bloqueado, avisa em vez de fechar o app
+        void SaveAndConfirm(Action save, string message, string caption)
+        {
+            try { save(); }
+            catch (IOException ex)
+            {
+                Msg("Não foi possível salvar suas preferências: " + (ex.InnerException?.Message ?? ex.Message), "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            UpdateNavBadges();
+            Msg(message, caption, MessageBoxButton.OK, MessageBoxImage.Information);
+            ShowSettings();
+        }
+
         applyBtn.Click += (_, _) =>
         {
-            if (profileCombo.SelectedIndex >= 0 && profileCombo.SelectedIndex < _configService.Config.Profiles.Count)
-            {
-                var prof = _configService.Config.Profiles[profileCombo.SelectedIndex];
-                _configService.SetActiveProfile(prof.Name);
-                UpdateNavBadges();
-        UpdateActiveNavButton(_currentPage);
-                Msg($"Perfil '{prof.Name}' ativado com sucesso!", "Perfil Ativado", MessageBoxButton.OK, MessageBoxImage.Information);
-                ShowSettings();
-            }
+            if (SelectedProfile() is not { } prof) return;
+            SaveAndConfirm(() => _configService.SetActiveProfile(prof.Name), $"Perfil '{prof.Name}' ativado com sucesso!", "Perfil Ativado");
         };
 
         saveCurrentBtn.Click += (_, _) =>
         {
-            if (profileCombo.SelectedIndex >= 0 && profileCombo.SelectedIndex < _configService.Config.Profiles.Count)
-            {
-                var prof = _configService.Config.Profiles[profileCombo.SelectedIndex];
-                var enabled = checkBoxes.Where(c => c.Value.IsChecked == true).Select(c => c.Key).ToList();
-                _configService.SaveProfile(prof.Name, prof.Description, enabled);
-                UpdateNavBadges();
-        UpdateActiveNavButton(_currentPage);
-                Msg($"Perfil '{prof.Name}' atualizado com sucesso!", "Salvo", MessageBoxButton.OK, MessageBoxImage.Information);
-                ShowSettings();
-            }
+            if (SelectedProfile() is not { } prof) return;
+            SaveAndConfirm(() => _configService.SaveProfile(prof.Name, prof.Description, CheckedIds()), $"Perfil '{prof.Name}' atualizado com sucesso!", "Salvo");
         };
 
         saveAsNewBtn.Click += (_, _) =>
@@ -255,34 +260,24 @@ public partial class MainWindow
                 Msg("Por favor, digite um nome para o novo perfil.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-            var enabled = checkBoxes.Where(c => c.Value.IsChecked == true).Select(c => c.Key).ToList();
-            _configService.SaveProfile(name, "Perfil personalizado do usuário", enabled);
-            UpdateNavBadges();
-        UpdateActiveNavButton(_currentPage);
-            Msg($"Novo perfil '{name}' criado e ativado com sucesso!", "Perfil Criado", MessageBoxButton.OK, MessageBoxImage.Information);
-            ShowSettings();
+            if (_configService.Config.Profiles.Any(p => p.IsBuiltIn && p.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+            {
+                Msg("Já existe um modo pronto com esse nome. Escolha outro nome.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            SaveAndConfirm(() => _configService.SaveProfile(name, "Perfil personalizado do usuário", CheckedIds()), $"Novo perfil '{name}' criado e ativado com sucesso!", "Perfil Criado");
         };
 
         deleteBtn.Click += (_, _) =>
         {
-            if (profileCombo.SelectedIndex >= 0 && profileCombo.SelectedIndex < _configService.Config.Profiles.Count)
+            if (SelectedProfile() is not { } prof) return;
+            if (prof.IsBuiltIn)
             {
-                var prof = _configService.Config.Profiles[profileCombo.SelectedIndex];
-                if (prof.IsBuiltIn)
-                {
-                    Msg("Perfis padrão do sistema não podem ser excluídos.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-                var confirm = Msg($"Deseja realmente excluir o perfil '{prof.Name}'?", "Confirmar Exclusão", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                if (confirm == MessageBoxResult.Yes)
-                {
-                    _configService.DeleteProfile(prof.Name);
-                    UpdateNavBadges();
-        UpdateActiveNavButton(_currentPage);
-                    Msg($"Perfil '{prof.Name}' excluído.", "Excluído", MessageBoxButton.OK, MessageBoxImage.Information);
-                    ShowSettings();
-                }
+                Msg("Perfis padrão do sistema não podem ser excluídos.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
             }
+            if (Msg($"Deseja realmente excluir o perfil '{prof.Name}'?", "Confirmar Exclusão", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                SaveAndConfirm(() => _configService.DeleteProfile(prof.Name), $"Perfil '{prof.Name}' excluído.", "Excluído");
         };
 
         profileSection.Child = profileStack;
@@ -314,21 +309,12 @@ public partial class MainWindow
         themeStack.Children.Add(themeTitle);
         themeStack.Children.Add(themeDesc);
 
+        // A opção em uso fica destacada como botão principal
         var themeBtns = new WrapPanel();
-        var darkBtn = new Button
-        {
-            Content = "  Modo Escuro (Dark)",
-            Padding = new Thickness(16, 9, 16, 9),
-            FontWeight = _darkTheme ? FontWeights.Bold : FontWeights.Normal
-        };
+        var darkBtn = IconButton(Glyphs.Moon, "Modo Escuro (Dark)", primary: _darkTheme);
         darkBtn.Click += (_, _) => { ApplyTheme(true, saveConfig: true); ShowSettings(); };
 
-        var lightBtn = new Button
-        {
-            Content = "  Modo Claro (Light)",
-            Padding = new Thickness(16, 9, 16, 9),
-            FontWeight = !_darkTheme ? FontWeights.Bold : FontWeights.Normal
-        };
+        var lightBtn = IconButton(Glyphs.Sun, "Modo Claro (Light)", primary: !_darkTheme);
         lightBtn.Click += (_, _) => { ApplyTheme(false, saveConfig: true); ShowSettings(); };
 
         themeBtns.Children.Add(darkBtn);
@@ -352,7 +338,7 @@ public partial class MainWindow
         var langStack = new StackPanel();
         var langTitle = new TextBlock
         {
-            Text = " Language / Idioma",
+            Text = "Language / Idioma",
             FontSize = 17.5,
             FontWeight = FontWeights.Bold
         };
@@ -373,20 +359,10 @@ public partial class MainWindow
         langStack.Children.Add(langDesc);
 
         var langBtns = new WrapPanel();
-        var ptBtn = new Button
-        {
-            Content = "  Português (PT)",
-            Padding = new Thickness(16, 9, 16, 9),
-            FontWeight = !_loc.IsEnglish ? FontWeights.Bold : FontWeights.Normal
-        };
+        var ptBtn = IconButton(Glyphs.Check, "Português (PT)", primary: !_loc.IsEnglish);
         ptBtn.Click += (_, _) => ChangeLanguage("pt");
 
-        var enBtn = new Button
-        {
-            Content = "  English (EN)",
-            Padding = new Thickness(16, 9, 16, 9),
-            FontWeight = _loc.IsEnglish ? FontWeights.Bold : FontWeights.Normal
-        };
+        var enBtn = IconButton(Glyphs.Check, "English (EN)", primary: _loc.IsEnglish);
         enBtn.Click += (_, _) => ChangeLanguage("en");
 
         langBtns.Children.Add(ptBtn);

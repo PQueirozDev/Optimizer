@@ -41,6 +41,13 @@ internal static class Program
             Assert(LicenseService.ExtractKey("sem chave aqui") is null, "Texto sem chave é ignorado");
             Assert(!new LicenseService().TryActivate(sampleKey, out _, out _), "Chave com assinatura falsa é recusada");
             Assert(bridge.GetSteps("debloat").Count == 19, "Plano debloat contém 19 etapas, limpeza usa análise separada");
+            // O aviso da tela de revisão vem do código da etapa, não de palavras do nome
+            StepEffect Effect(string operation, string step) => bridge.GetSteps(operation).First(s => s.Name == step).Effect;
+            Assert(Effect("debloat", "Pesquisa na web removida do menu Iniciar") == StepEffect.Backup, "Ajuste de registro com backup não é marcado como irreversível pelo nome");
+            Assert(Effect("debloat", "Cortana removida") == StepEffect.Irreversible && Effect("debloat", "OneDrive removido") == StepEffect.Irreversible, "Remoção de apps marcada como não reversível");
+            Assert(Effect("padrao", "Limpando cache DNS") == StepEffect.OneOff && Effect("gamer", "Otimizando unidades de disco") == StepEffect.OneOff, "Cache DNS e TRIM são ações pontuais");
+            Assert(Effect("padrao", "Executando limpeza de disco (cleanmgr)") == StepEffect.Irreversible && Effect("padrao", "Plano de energia 'Alto Desempenho'") == StepEffect.Backup, "Limpeza de disco não reversível e plano de energia com backup");
+            Assert(bridge.GetSteps("gamer").Count(s => s.Effect == StepEffect.Irreversible) == 0, "Versão Avançada não tem etapa irreversível");
             var configPath = Path.Combine(root, "config-test.json");
             File.WriteAllText(configPath, """{"activeProfile":"Modo Gamer","profiles":[{"name":"Modo Gamer","enabledOptimizations":null}]}""");
             var config = new ConfigService(configPath);
@@ -48,8 +55,22 @@ internal static class Program
             Assert(config.GetActiveProfile().EnabledOptimizations.Count > 0, "Lista nula de ajustes recuperada");
             config.Save();
             Assert(new ConfigService(configPath).Config.ActiveProfile == "Modo Gamer", "Perfil persiste após salvar");
+            // Regravar a cada abertura disputava o arquivo com outra instância ("config.json.tmp em uso")
+            File.SetLastWriteTimeUtc(configPath, new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+            _ = new ConfigService(configPath);
+            Assert(File.GetLastWriteTimeUtc(configPath).Year == 2020, "Abrir sem mudanças não regrava as preferências");
+            Assert(ConfigService.ShowsEverything("Padrão") && !ConfigService.ShowsEverything("Modo Avançado"), "Modos que sempre exibem tudo identificados");
             var driver = new DriverService();
-            SystemSnapshot Snapshot(string gpu) => new("Windows", "1", "x64", "CPU", gpu, "16 GB", "100 GB", "50 GB", "1h", false);
+            SystemSnapshot Snapshot(string gpu) => new("Windows", "1", "x64", "CPU", gpu, 16, 100, 50, DateTime.Now.AddHours(-1), false);
+
+            // Painel: números não passam mais por texto formatado ("1.863,0 GB" era lido como 0 GB)
+            var bigDisk = new SystemSnapshot("Windows", "1", "x64", "CPU", "GPU", 16, 1863, 1000, DateTime.Now.AddHours(-5), true);
+            Assert(Math.Abs(bigDisk.FreePercent - 53.68) < 0.1, "Disco de 2 TB calcula o espaço livre (antes aparecia 0% livre)");
+            Assert(bigDisk.Storage.EndsWith(" TB") && bigDisk.Uptime.TotalHours is > 4.9 and < 5.1 && bigDisk.UptimeText == "5h 0m", "Tamanho em TB e tempo ligado pela hora do boot");
+            var health = ((int Score, string Headline, string Tone))typeof(MainWindow).GetMethod("HealthScore", BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, new object[] { bigDisk })!;
+            Assert(health.Score == 100 && health.Tone == "Success", "Disco grande e saudável mantém a nota máxima");
+            var fullDisk = bigDisk with { FreeGb = 90 };
+            Assert(((int Score, string, string))typeof(MainWindow).GetMethod("HealthScore", BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, new object[] { fullDisk })! is { Score: 65 }, "Disco quase cheio reduz a nota");
             Assert(!driver.GetAllDrivers(Snapshot("AMD Radeon"))[0].IsRecommendedForCurrentHardware, "NVIDIA não recomendado para AMD");
             Assert(driver.GetAllDrivers(Snapshot("NVIDIA GeForce"))[0].IsRecommendedForCurrentHardware, "NVIDIA recomendado para GPU compatível");
 
@@ -78,6 +99,10 @@ internal static class Program
             Assert(MainWindow.ClassifyLine("======================") is null, "Moldura decorativa ignorada");
             Assert(Translator.Tr("Cortana removida: acesso negado").StartsWith("Cortana removed: "), "Rótulo antes de dois-pontos traduzido");
             Assert(Translator.Tr("  ● Disponível para download oficial") == "  ● Available for official download", "Símbolo e espaços preservados");
+            Assert(Translator.Tr("Tarefa \\Microsoft\\Windows\\Autochk\\Proxy nao existe neste Windows; nada a fazer.").StartsWith("Task \\Microsoft"), "Tarefa ausente traduzida");
+            Assert(Translator.Tr("Otimização — cancelado. O que já foi aplicado aparece em Atividade e reversão.") == "Optimization — cancelled. What was already applied shows up in Activity & restore.", "Cancelamento traduzido");
+            Assert(Translator.Tr("CPU em uso agora: 12%") == "CPU in use now: 12%", "Uso de CPU do benchmark traduzido");
+            Assert(MainWindow.ClassifyLine("[AVISO] Pouco espaco livre em disco") is { Tone: "Warning" } && MainWindow.ClassifyLine("[OK] TRIM: Ativo") is { Tone: "Success" }, "Linhas do diagnóstico coloridas pela marcação");
             Translator.IsEnglish = false;
             Assert(Translator.Tr("Limpando cache DNS") == "Limpando cache DNS", "Português permanece sem alteração");
 
@@ -120,6 +145,8 @@ internal static class Program
                     Wait(page == "dashboard" ? 4000 : 600);
                     Collect(window); Snap("en-" + page);
                 }
+                typeof(MainWindow).GetMethod("ShowIsos", flags)!.Invoke(window, null);
+                Wait(600); Collect(window); Snap("en-isos");
                 foreach (var op in new[] { "padrao", "gamer", "debloat", "quickclean" })
                 {
                     ((Task)typeof(MainWindow).GetMethod("PrepareOperationAsync", flags)!.Invoke(window, new object[] { op })!).ContinueWith(_ => { });
@@ -163,11 +190,14 @@ internal static class Program
                 Render("review-dark", 1060, 700);
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "history" });
                 Render("history-dark", 1320, 860);
-                foreach (var page in new[] { "drivers", "tools", "settings", "about", "patchnotes", "bios" })
+                foreach (var page in new[] { "drivers", "startup", "tools", "settings", "about", "patchnotes", "bios" })
                 {
                     typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { page });
                     Render(page + "-dark", 1320, 860);
                 }
+                // Página exclusiva de licença admin: chamada direto, sem a checagem da navegação
+                typeof(MainWindow).GetMethod("ShowIsos", flags)!.Invoke(window, null);
+                Render("isos-dark", 1320, 860);
                 typeof(MainWindow).GetMethod("ApplyTheme", flags)!.Invoke(window, new object[] { false, false });
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "dashboard" });
                 Pump((Task)typeof(MainWindow).GetMethod("RenderDashboardAsync", flags)!.Invoke(window, null)!);
