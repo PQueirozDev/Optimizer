@@ -42,7 +42,8 @@ internal static class Program
         const string approvedKey = @"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run";
         const string testName = "PQO-Verificacao";
         var service = new AutorunsService(log);
-        using (var run = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(runKey)) run.SetValue(testName, "\"" + Path.Combine(Environment.SystemDirectory, "notepad.exe") + "\" /teste");
+        // cmd.exe existe em qualquer Windows (inclusive no servidor do CI) e, se o teste fosse interrompido, não abriria nada no logon
+        using (var run = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(runKey)) run.SetValue(testName, "\"" + Path.Combine(Environment.SystemDirectory, "cmd.exe") + "\" /c exit");
         try
         {
             var entries = service.ScanAsync().GetAwaiter().GetResult();
@@ -96,7 +97,8 @@ internal static class Program
         if (!principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator)) { Console.WriteLine("SKIP Serviço de teste exige administrador"); return; }
         const string name = "PQOVerificacao";
         RunTool("sc.exe", "delete", name);
-        Assert(RunTool("sc.exe", "create", name, "binPath=", Path.Combine(Environment.SystemDirectory, "notepad.exe"), "start=", "delayed-auto") == 0, "Serviço de teste criado");
+        // O serviço só é configurado, nunca iniciado; o executável só precisa existir
+        Assert(RunTool("sc.exe", "create", name, "binPath=", Path.Combine(Environment.SystemDirectory, "cmd.exe"), "start=", "delayed-auto") == 0, "Serviço de teste criado");
         try
         {
             AutorunEntry Find() => service.ScanAsync().GetAwaiter().GetResult().Single(e => e.Category == AutorunCategory.Services && e.Key == name);
@@ -276,6 +278,8 @@ internal static class Program
                 Wait(600); Collect(window); Snap("en-isos");
                 var picker = new PowerModeWindow(log, closeAfterChoice: false) { WindowStartupLocation = WindowStartupLocation.Manual, Left = -20000, Top = -20000, ShowActivated = false };
                 picker.Show(); Wait(800); Collect(picker); picker.Close();
+                var activation = new ActivationWindow(new LicenseService()) { WindowStartupLocation = WindowStartupLocation.Manual, Left = -20000, Top = -20000, ShowActivated = false };
+                activation.Show(); Wait(800); Collect(activation); activation.Close();
                 foreach (var op in new[] { "padrao", "gamer", "debloat", "quickclean" })
                 {
                     ((Task)typeof(MainWindow).GetMethod("PrepareOperationAsync", flags)!.Invoke(window, new object[] { op })!).ContinueWith(_ => { });

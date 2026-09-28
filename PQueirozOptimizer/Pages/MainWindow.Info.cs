@@ -24,6 +24,17 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.5.0", "28/09/2026", new[]
+        {
+            "Nova página Inicialização no estilo do Autoruns: itens de logon, tarefas agendadas e serviços, com editor, assinatura digital verificada e liga/desliga reversível.",
+            "Atalho de modo de energia na Área de Trabalho (Ferramentas): troca entre eficiência, equilibrado e desempenho sem pedir administrador — ideal para notebooks.",
+            "Operações longas podem ser canceladas, e erros inesperados não fecham mais o aplicativo.",
+            "Painel: discos grandes não aparecem mais com 0% livre, e a memória mostra o valor instalado (16 GB, não 15,9 GB).",
+            "Debloat: tarefas de telemetria ausentes no Windows 11 não interrompem mais a etapa, e o OneDrive é removido de verdade no Windows 11.",
+            "Versão Padrão: mantém um plano de energia de desempenho já ativo, recria o Alto Desempenho quando apagado e a limpeza de disco agora limpa de fato.",
+            "A revisão de ajustes mostra o que tem backup, o que não é reversível e o que é ação pontual; a análise ficou colorida e mais precisa.",
+            "Ativação mais fácil: \"Copiar pedido\" gera a mensagem com o ID do computador, e a chave copiada é colada sozinha.",
+        }),
         ("v1.4.0", "24/09/2026", new[]
         {
             "Análise do PC mostra placa-mãe, BIOS, memória (XMP/EXPO e dual channel), temperatura e Integridade de Memória.",
