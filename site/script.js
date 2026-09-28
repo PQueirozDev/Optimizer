@@ -20,46 +20,86 @@ if (reduceMotion || !("IntersectionObserver" in window)) {
   reveals.forEach((el) => observer.observe(el));
 }
 
-// Demonstração do app: percorre as etapas em loop enquanto está visível.
-const steps = [...document.querySelectorAll(".steps-list li")];
-const bar = document.querySelector(".progress span");
-const barBox = document.querySelector(".progress");
-const barLabel = document.querySelector(".progress-label");
-const title = document.querySelector(".app-title");
+// Vídeo da demonstração: só carrega perto da tela, pausa fora dela e, para quem prefere
+// menos movimento, mostra a capa e espera o play.
+const demoVideo = document.querySelector(".demo-video");
+if (demoVideo && demoVideo.tagName === "VIDEO") {
+  const demo = demoVideo.closest(".demo");
+  const toggle = demo.querySelector(".demo-toggle");
+  const source = demoVideo.querySelector("source");
+  let userPaused = reduceMotion;
+  let visible = false;
+  let waiting = reduceMotion;
 
-function showStep(index) {
-  steps.forEach((li, i) => {
-    li.classList.toggle("done", i < index);
-    li.classList.toggle("active", i === index);
-  });
-  const percent = Math.min(100, Math.round((index / steps.length) * 100));
-  bar.style.width = `${percent}%`;
-  barBox.setAttribute("aria-valuenow", String(percent));
-  barLabel.textContent = `${percent}%`;
-  title.firstChild.textContent = index >= steps.length ? "Concluído" : "Otimizando";
-  title.querySelector(".dots").hidden = index >= steps.length;
-}
-
-if (steps.length) {
+  demoVideo.muted = true;
   if (reduceMotion) {
-    showStep(3);
-  } else {
-    let current = 0;
-    let timer = null;
-    const tick = () => {
-      showStep(current);
-      current = current > steps.length ? 0 : current + 1;
+    demoVideo.autoplay = false;
+    demoVideo.removeAttribute("autoplay");
+  }
+
+  const showPoster = () => {
+    if (!demoVideo.getAttribute("poster")) demoVideo.setAttribute("poster", demoVideo.dataset.poster);
+  };
+  const load = () => {
+    showPoster();
+    if (source.getAttribute("src")) return;
+    source.setAttribute("src", source.dataset.src);
+    demoVideo.load();
+  };
+  const sync = () => {
+    const paused = demoVideo.paused;
+    demo.classList.toggle("is-paused", paused);
+    demo.classList.toggle("is-idle", paused && waiting && demoVideo.currentTime === 0);
+    toggle.setAttribute("aria-label", paused ? "Reproduzir demonstração" : "Pausar demonstração");
+  };
+  const play = () => {
+    load();
+    const attempt = demoVideo.play();
+    // Economia de energia ou bloqueio do navegador: fica a capa com o botão de play
+    if (attempt) attempt.catch(() => {
+      waiting = true;
+      sync();
+    });
+  };
+
+  toggle.hidden = false;
+  toggle.addEventListener("click", () => {
+    if (demoVideo.paused) {
+      userPaused = false;
+      play();
+    } else {
+      userPaused = true;
+      demoVideo.pause();
+    }
+  });
+  demoVideo.addEventListener("play", sync);
+  demoVideo.addEventListener("pause", sync);
+  sync();
+
+  if ("IntersectionObserver" in window) {
+    // A capa e o vídeo começam a baixar pouco antes da seção aparecer
+    const near = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      if (reduceMotion) showPoster();
+      else load();
+      near.disconnect();
+    }, { rootMargin: "300px 0px" });
+    const onScreen = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      if (visible && !userPaused) play();
+      else if (!visible && !demoVideo.paused) demoVideo.pause();
+    }, { threshold: 0.35 });
+    // Nada do vídeo concorre com o carregamento inicial da página
+    const observe = () => {
+      near.observe(demo);
+      onScreen.observe(demo);
     };
-    const demo = document.querySelector(".app-window");
-    new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !timer) {
-        tick();
-        timer = setInterval(tick, 1300);
-      } else if (!entry.isIntersecting && timer) {
-        clearInterval(timer);
-        timer = null;
-      }
-    }).observe(demo);
+    if (document.readyState === "complete") observe();
+    else window.addEventListener("load", observe, { once: true });
+  } else if (reduceMotion) {
+    showPoster();
+  } else {
+    play();
   }
 }
 
