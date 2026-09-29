@@ -25,6 +25,14 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.6.0", "29/09/2026", new[]
+        {
+            "Licença perto de vencer: o painel avisa nos últimos 7 dias, com \"Copiar pedido de renovação\" e \"Ativar nova chave\".",
+            "Licença vencida ou recusada: a tela de ativação explica o motivo e já gera o pedido de renovação com o titular.",
+            "Chaves revogadas pelo suporte deixam de funcionar ao abrir o aplicativo com internet.",
+            "Atrasar o relógio do Windows não estende mais licenças com validade; a hora da internet corrige relógios adiantados.",
+            "Os campos da chave e do ID na tela de ativação não cortam mais o texto.",
+        }),
         ("v1.5.0", "28/09/2026", new[]
         {
             "Nova página Inicialização no estilo do Autoruns: itens de logon, tarefas agendadas e serviços, com editor, assinatura digital verificada e liga/desliga reversível.",
