@@ -81,7 +81,7 @@ public partial class MainWindow : Window
     {
         var license = (Application.Current as App)?.ActiveLicense;
         NavIsos.Visibility = IsAdminLicense ? Visibility.Visible : Visibility.Collapsed;
-        LicenseLabel.Text = license is null ? "Sem licença ativa" : $"{(license.IsAdmin ? "Admin" : _loc.T("Padrão", "Standard"))} · {license.Licensee}";
+        LicenseLabel.Text = license is null ? "Sem licença ativa" : $"{(license.IsAdmin ? "Admin" : license.PlanName)} · {license.Licensee}";
         LicenseLabel.ToolTip = license?.ExpiresAtUtc is { } expires ? $"Válida até {expires.ToLocalTime():dd/MM/yyyy}" : "Licença sem data de expiração";
     }
 

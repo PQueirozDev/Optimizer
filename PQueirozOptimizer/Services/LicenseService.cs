@@ -6,9 +6,22 @@ using System.Text.RegularExpressions;
 
 namespace PQueirozOptimizer.Services;
 
-public sealed record LicenseInfo(string Licensee, DateTime? ExpiresAtUtc, string MachineId, string Role)
+/// <summary>Planos vendidos. O nome vai dentro da chave assinada (campo Plan); chaves antigas não têm o campo.</summary>
+public static class LicensePlans
+{
+    public const string Monthly = "Mensal";
+    public const string Lifetime = "Vitalício";
+    public const string Custom = "Personalizado";
+    public const string DiscordUrl = "https://discord.gg/pHJ4Waxft";
+    public const string SiteUrl = "https://pqoptimizer.vercel.app/#comprar";
+}
+
+public sealed record LicenseInfo(string Licensee, DateTime? ExpiresAtUtc, string MachineId, string Role, string? Plan = null)
 {
     public bool IsAdmin => string.Equals(Role, "Admin", StringComparison.Ordinal);
+    public bool IsLifetime => ExpiresAtUtc is null;
+    /// <summary>Plano para exibir: o da chave ou, nas chaves antigas, deduzido da validade.</summary>
+    public string PlanName => Plan is LicensePlans.Monthly or LicensePlans.Lifetime or LicensePlans.Custom ? Plan : IsLifetime ? LicensePlans.Lifetime : LicensePlans.Custom;
     /// <summary>Dias de calendário até o vencimento (0 = vence hoje); null para licença vitalícia.</summary>
     public int? DaysLeft => ExpiresAtUtc is { } expires ? (expires.ToLocalTime().Date - DateTime.Today).Days : null;
     /// <summary>Mesma janela de aviso do License Manager ("vencem em 7 dias").</summary>
@@ -55,9 +68,17 @@ public sealed class LicenseService
 
     // Texto pronto para o cliente enviar ao pedir a chave (WhatsApp, e-mail...). O License Manager lê o ID direto dele.
     // Na renovação, o titular vai junto para facilitar achar o cliente no histórico do emissor.
-    public string BuildActivationRequest(string? renewalLicensee = null) => renewalLicensee is null
-        ? $"Pedido de ativação - PQueiroz Optimizer\nID do computador: {DisplayMachineId}\nComputador: {Environment.MachineName}"
-        : $"Pedido de renovação - PQueiroz Optimizer\nTitular: {renewalLicensee}\nID do computador: {DisplayMachineId}\nComputador: {Environment.MachineName}";
+    // Com o plano desejado (ex.: upgrade para o Vitalício), o emissor já abre o formulário com ele escolhido.
+    public string BuildActivationRequest(string? renewalLicensee = null, string? desiredPlan = null)
+    {
+        var title = desiredPlan is not null && renewalLicensee is not null ? "Pedido de upgrade" : renewalLicensee is null ? "Pedido de ativação" : "Pedido de renovação";
+        var lines = new List<string> { $"{title} - PQueiroz Optimizer" };
+        if (renewalLicensee is not null) lines.Add($"Titular: {renewalLicensee}");
+        if (desiredPlan is not null) lines.Add($"Plano desejado: {desiredPlan}");
+        lines.Add($"ID do computador: {DisplayMachineId}");
+        lines.Add($"Computador: {Environment.MachineName}");
+        return string.Join("\n", lines);
+    }
 
     // Localiza a chave dentro de qualquer texto colado, mesmo quebrada em linhas ou junto de uma mensagem.
     public static string? ExtractKey(string? text)
@@ -85,7 +106,7 @@ public sealed class LicenseService
             if (!string.Equals(payload.MachineId, MachineId, StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(payload.MachineId, _legacyMachineId, StringComparison.OrdinalIgnoreCase)) { error = "Esta chave foi emitida para outro computador."; return false; }
             var role = string.Equals(payload.Role, "Admin", StringComparison.Ordinal) ? "Admin" : "Standard";
-            var info = new LicenseInfo(payload.Licensee, payload.ExpiresAtUtc, payload.MachineId, role);
+            var info = new LicenseInfo(payload.Licensee, payload.ExpiresAtUtc, payload.MachineId, role, payload.Plan);
             if (_revocations.IsRevoked(RevocationService.KeyId(data))) { error = "Esta chave foi revogada. Fale com o suporte para mais informações."; return false; }
             // O computador é conferido antes da validade: só a chave deste PC conta como "expirada, renove".
             // Só licenças com validade dependem do relógio; as vitalícias nunca são travadas por ele.
@@ -117,5 +138,5 @@ public sealed class LicenseService
     }
     private static string CreateLegacyMachineId() => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes($"{Environment.MachineName}|{Environment.UserDomainName}|{Environment.UserName}")))[..20];
     internal static byte[] FromBase64Url(string value) { value = value.Replace('-', '+').Replace('_', '/'); return Convert.FromBase64String(value.PadRight(value.Length + (4 - value.Length % 4) % 4, '=')); }
-    private sealed class LicensePayload { public string Product { get; set; } = ""; public string Licensee { get; set; } = ""; public string? MachineId { get; set; } public string? Role { get; set; } public DateTime? ExpiresAtUtc { get; set; } }
+    private sealed class LicensePayload { public string Product { get; set; } = ""; public string Licensee { get; set; } = ""; public string? MachineId { get; set; } public string? Role { get; set; } public DateTime? ExpiresAtUtc { get; set; } public string? Plan { get; set; } }
 }

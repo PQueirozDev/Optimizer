@@ -19,6 +19,7 @@ public partial class MainWindow
         PageTitle.Text = "Configurações";
         PageBadge.Visibility = Visibility.Collapsed;
         var root = new StackPanel { MaxWidth = 980, HorizontalAlignment = HorizontalAlignment.Left };
+        if ((Application.Current as App)?.ActiveLicense is { } license) root.Children.Add(LicenseSection(license));
 
         // 1. Profile Manager Header
         var profileSection = new Border
@@ -374,6 +375,86 @@ public partial class MainWindow
 
         ContentHost.Children.Clear();
         ContentHost.Children.Add(root);
+    }
+
+    /// <summary>
+    /// Minha licença: plano, validade e o que o cliente pode fazer a partir dele (renovar o Mensal,
+    /// pedir o upgrade para o Vitalício, ativar outra chave ou chamar o suporte).
+    /// </summary>
+    private Border LicenseSection(LicenseInfo license)
+    {
+        var tone = license.IsLifetime ? "Success" : license.IsExpiringSoon ? "Warning" : "Info";
+        var stack = new StackPanel();
+
+        var header = new DockPanel { Margin = new Thickness(0, 0, 0, 16) };
+        var plan = Pill(license.IsAdmin ? $"{license.PlanName} · Admin" : license.PlanName, tone);
+        plan.Margin = new Thickness(12, 0, 0, 0);
+        DockPanel.SetDock(plan, Dock.Right); header.Children.Add(plan);
+        var chip = IconChip(Glyphs.Key, "Accent", 40); DockPanel.SetDock(chip, Dock.Left); header.Children.Add(chip);
+        var titles = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        var title = Label("Minha licença", 17.5); title.FontWeight = FontWeights.Bold; title.Margin = new Thickness(0);
+        titles.Children.Add(title);
+        var subtitle = Label(license.IsLifetime
+            ? "Plano Vitalício: sem data de vencimento, com reemissão da chave após formatar e suporte prioritário."
+            : "Plano com validade: renove antes de vencer para não perder o acesso.", 12.5, true);
+        subtitle.Margin = new Thickness(0, 3, 0, 0);
+        titles.Children.Add(subtitle);
+        header.Children.Add(titles);
+        stack.Children.Add(header);
+
+        var info = new Grid { Margin = new Thickness(0, 0, 0, 18) };
+        info.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        info.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        var validity = license.ExpiresAtUtc is { } expires
+            ? license.DaysLeft switch { 0 => $"Até {expires.ToLocalTime():dd/MM/yyyy} (vence hoje)", 1 => $"Até {expires.ToLocalTime():dd/MM/yyyy} (vence amanhã)", var d => $"Até {expires.ToLocalTime():dd/MM/yyyy} ({d} dias)" }
+            : "Vitalícia";
+        var rows = new (string Label, string Value, bool Mono)[]
+        {
+            ("Titular", license.Licensee, false),
+            ("Plano", license.PlanName, false),
+            ("Validade", validity, false),
+            ("Tipo", license.IsAdmin ? "Admin" : "Standard", false),
+            ("ID do computador", new LicenseService().DisplayMachineId, true),
+        };
+        for (var i = 0; i < rows.Length; i++)
+        {
+            info.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            var name = Label(rows[i].Label, 12.5, true); name.Margin = new Thickness(0, 3, 24, 3);
+            var value = Label(rows[i].Value, 12.5); value.FontWeight = FontWeights.SemiBold; value.Margin = new Thickness(0, 3, 0, 3);
+            // Nome e ID vêm da chave, não do app: não passam pelo tradutor
+            if (i is 0 or 4) value.Tag = Translator.SystemDataTag;
+            if (rows[i].Mono) value.SetResourceReference(TextBlock.FontFamilyProperty, "MonoFont");
+            Grid.SetRow(name, i); Grid.SetRow(value, i); Grid.SetColumn(value, 1);
+            info.Children.Add(name); info.Children.Add(value);
+        }
+        stack.Children.Add(info);
+
+        var actions = new WrapPanel();
+        void CopyRequest(string request, string done)
+        {
+            try { Clipboard.SetText(request); OperationStatus.Text = done; }
+            catch (System.Runtime.InteropServices.COMException) { OperationStatus.Text = "A área de transferência está ocupada. Tente novamente."; }
+        }
+        if (!license.IsLifetime)
+        {
+            var renew = IconButton(Glyphs.Copy, "Copiar pedido de renovação", primary: true);
+            renew.Click += (_, _) => CopyRequest(new LicenseService().BuildActivationRequest(license.Licensee), "Pedido de renovação copiado. Envie na conversa em que você comprou a licença.");
+            var upgrade = IconButton(Glyphs.Lightning, "Quero o Vitalício");
+            upgrade.ToolTip = "Copia um pedido de upgrade: pague uma vez e não precisa mais renovar";
+            upgrade.Click += (_, _) => CopyRequest(new LicenseService().BuildActivationRequest(license.Licensee, LicensePlans.Lifetime), "Pedido de upgrade para o Vitalício copiado. Envie no Discord para receber a nova chave.");
+            actions.Children.Add(renew); actions.Children.Add(upgrade);
+        }
+        var activate = IconButton(Glyphs.Key, "Ativar outra chave");
+        activate.Click += (_, _) => ActivateAdminLicense();
+        var support = IconButton(Glyphs.OpenInNew, license.IsLifetime ? "Suporte prioritário (Discord)" : "Suporte (Discord)");
+        support.Click += (_, _) => OpenUrl(LicensePlans.DiscordUrl);
+        actions.Children.Add(activate); actions.Children.Add(support);
+        stack.Children.Add(actions);
+
+        var card = Surface(stack);
+        card.Margin = new Thickness(0, 0, 0, 24);
+        card.SetResourceReference(Border.BorderBrushProperty, tone + "SoftBrush");
+        return card;
     }
     #endregion
 }

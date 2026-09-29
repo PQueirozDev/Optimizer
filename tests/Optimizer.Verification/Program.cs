@@ -252,6 +252,13 @@ internal static class Program
             var requestPc = System.Text.RegularExpressions.Regex.Match(renewal, @"Computador:[ \t]*(.+)");
             Assert(renewal.StartsWith("Pedido de renovação") && renewal.Contains("Titular: Maria Souza") && requestId.Value == licenseService.DisplayMachineId && requestPc.Groups[1].Value.Trim() == Environment.MachineName, "Pedido de renovação legível pelo License Manager");
             Assert(licenseService.BuildActivationRequest().StartsWith("Pedido de ativação") && !licenseService.BuildActivationRequest().Contains("Titular"), "Pedido de ativação continua igual");
+            var upgrade = licenseService.BuildActivationRequest("Maria Souza", LicensePlans.Lifetime);
+            Assert(upgrade.StartsWith("Pedido de upgrade") && upgrade.Contains("Plano desejado: Vitalício") && upgrade.Contains(licenseService.DisplayMachineId), "Pedido de upgrade leva o plano desejado");
+            // Planos: o da chave vale; chaves antigas (sem o campo) são deduzidas pela validade
+            Assert(new LicenseInfo("A", DateTime.UtcNow.AddDays(30), "X", "Standard", "Mensal").PlanName == "Mensal"
+                && new LicenseInfo("A", null, "X", "Standard").PlanName == "Vitalício"
+                && new LicenseInfo("A", DateTime.UtcNow.AddDays(30), "X", "Standard").PlanName == "Personalizado"
+                && new LicenseInfo("A", null, "X", "Standard", "Inventado").PlanName == "Vitalício", "Nome do plano da licença");
             Translator.IsEnglish = true;
             Assert(Translator.Tr("Sua licença expirou em 12/09/2026.") == "Your license expired on 12/09/2026." && Translator.Tr("Sua licença vence em 5 dias") == "Your license expires in 5 days"
                 && Translator.Tr("A chave atual vale até 03/10/2026. Envie o pedido de renovação para receber a nova chave.").StartsWith("The current key is valid until 03/10/2026."), "Avisos de licença traduzidos");
