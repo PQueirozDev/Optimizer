@@ -261,7 +261,7 @@ internal static class Program
                 && new LicenseInfo("A", null, "X", "Standard", "Inventado").PlanName == "Vitalício", "Nome do plano da licença");
             Translator.IsEnglish = true;
             Assert(Translator.Tr("Sua licença expirou em 12/09/2026.") == "Your license expired on 12/09/2026." && Translator.Tr("Sua licença vence em 5 dias") == "Your license expires in 5 days"
-                && Translator.Tr("A chave atual vale até 03/10/2026. Envie o pedido de renovação para receber a nova chave.").StartsWith("The current key is valid until 03/10/2026."), "Avisos de licença traduzidos");
+                && Translator.Tr("A chave atual vale até 03/10/2026. Para renovar, abra um ticket de renovação no Discord e pague via Pix.").StartsWith("The current key is valid until 03/10/2026."), "Avisos de licença traduzidos");
             Translator.IsEnglish = false;
 
             // Revogação: lista assinada (aqui por uma chave só do teste), mais nova que a guardada, cache offline

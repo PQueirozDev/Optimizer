@@ -26,7 +26,7 @@ public partial class ActivationWindow : Window
         Title = "Renovar PQueiroz Optimizer";
         HeadingText.Text = "Renove sua licença";
         ShowProblem($"Sua licença expirou em {expiredAtUtc.ToLocalTime():dd/MM/yyyy}.",
-            "Clique em \"Copiar pedido\" e envie na conversa em que você comprou a licença. Ao copiar a nova chave, ela é colada aqui sozinha.", "WarningBrush", "WarningSoftBrush");
+            "Clique em \"Copiar pedido\", abra um ticket de renovação no Discord e cole o pedido lá. O pagamento é via Pix; ao copiar a nova chave, ela é colada aqui sozinha.", "WarningBrush", "WarningSoftBrush");
     }
 
     private void ShowProblem(string title, string text, string brush, string softBrush)

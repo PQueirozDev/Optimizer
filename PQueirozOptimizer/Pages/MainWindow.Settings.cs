@@ -396,7 +396,7 @@ public partial class MainWindow
         titles.Children.Add(title);
         var subtitle = Label(license.IsLifetime
             ? "Plano Vitalício: sem data de vencimento, com reemissão da chave após formatar e suporte prioritário."
-            : "Plano com validade: renove antes de vencer para não perder o acesso.", 12.5, true);
+            : "Plano com validade: quando estiver perto de vencer, abra um ticket de renovação no Discord e pague via Pix.", 12.5, true);
         subtitle.Margin = new Thickness(0, 3, 0, 0);
         titles.Children.Add(subtitle);
         header.Children.Add(titles);
@@ -437,11 +437,12 @@ public partial class MainWindow
         }
         if (!license.IsLifetime)
         {
-            var renew = IconButton(Glyphs.Copy, "Copiar pedido de renovação", primary: true);
-            renew.Click += (_, _) => CopyRequest(new LicenseService().BuildActivationRequest(license.Licensee), "Pedido de renovação copiado. Envie na conversa em que você comprou a licença.");
+            var renew = IconButton(Glyphs.OpenInNew, "Renovar pelo Discord", primary: true);
+            renew.ToolTip = "Copia o pedido de renovação e abre o Discord: abra um ticket de renovação, cole o pedido e pague via Pix";
+            renew.Click += (_, _) => RenewViaDiscord(license);
             var upgrade = IconButton(Glyphs.Lightning, "Quero o Vitalício");
             upgrade.ToolTip = "Copia um pedido de upgrade: pague uma vez e não precisa mais renovar";
-            upgrade.Click += (_, _) => CopyRequest(new LicenseService().BuildActivationRequest(license.Licensee, LicensePlans.Lifetime), "Pedido de upgrade para o Vitalício copiado. Envie no Discord para receber a nova chave.");
+            upgrade.Click += (_, _) => CopyRequest(new LicenseService().BuildActivationRequest(license.Licensee, LicensePlans.Lifetime), "Pedido de upgrade para o Vitalício copiado. No Discord, abra um ticket, cole o pedido e pague via Pix.");
             actions.Children.Add(renew); actions.Children.Add(upgrade);
         }
         var activate = IconButton(Glyphs.Key, "Ativar outra chave");

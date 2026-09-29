@@ -586,15 +586,23 @@ public partial class MainWindow
         _updateSlot.Children.Add(bannerCard);
     }
 
+    /// <summary>
+    /// A renovação é feita por ticket no Discord, com pagamento via Pix: copia o pedido (titular + ID)
+    /// para o cliente colar no ticket e abre o servidor.
+    /// </summary>
+    private void RenewViaDiscord(LicenseInfo license)
+    {
+        try { Clipboard.SetText(new LicenseService().BuildActivationRequest(license.Licensee)); }
+        catch (System.Runtime.InteropServices.COMException) { OperationStatus.Text = "A área de transferência está ocupada. Tente novamente."; return; }
+        OperationStatus.Text = "Pedido de renovação copiado. No Discord, abra um ticket de renovação, cole o pedido e pague via Pix.";
+        OpenUrl(LicensePlans.DiscordUrl);
+    }
+
     /// <summary>Aviso de vencimento próximo: o cliente já copia o pedido de renovação e ativa a chave nova daqui.</summary>
     private Border LicenseRenewalBanner(LicenseInfo license)
     {
-        var copy = IconButton(Glyphs.Copy, "Copiar pedido de renovação", primary: true);
-        copy.Click += (_, _) =>
-        {
-            try { Clipboard.SetText(new LicenseService().BuildActivationRequest(license.Licensee)); OperationStatus.Text = "Pedido de renovação copiado. Envie na conversa em que você comprou a licença."; }
-            catch (System.Runtime.InteropServices.COMException) { OperationStatus.Text = "A área de transferência está ocupada. Tente novamente."; }
-        };
+        var copy = IconButton(Glyphs.OpenInNew, "Renovar pelo Discord", primary: true);
+        copy.Click += (_, _) => RenewViaDiscord(license);
         var activate = IconButton(Glyphs.Key, "Ativar nova chave");
         activate.Click += (_, _) => ActivateAdminLicense();
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0), Children = { activate, copy } };
@@ -606,7 +614,7 @@ public partial class MainWindow
         var title = Label(license.DaysLeft switch { 0 => "Sua licença vence hoje", 1 => "Sua licença vence amanhã", var d => $"Sua licença vence em {d} dias" }, 14);
         title.FontWeight = FontWeights.SemiBold; title.Margin = new Thickness(0);
         text.Children.Add(title);
-        var sub = Label($"A chave atual vale até {license.ExpiresAtUtc!.Value.ToLocalTime():dd/MM/yyyy}. Envie o pedido de renovação para receber a nova chave.", 12, true);
+        var sub = Label($"A chave atual vale até {license.ExpiresAtUtc!.Value.ToLocalTime():dd/MM/yyyy}. Para renovar, abra um ticket de renovação no Discord e pague via Pix.", 12, true);
         sub.Margin = new Thickness(0, 2, 0, 0);
         text.Children.Add(sub);
         banner.Children.Add(text);
