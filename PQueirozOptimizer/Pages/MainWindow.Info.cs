@@ -25,6 +25,13 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.7.0", "29/09/2026", new[]
+        {
+            "Planos Mensal e Vitalício: o plano vem na chave e aparece no rodapé e em Configurações → Minha licença.",
+            "Minha licença mostra titular, plano, validade e ID do computador, com atalhos para renovar, ativar outra chave e pedir suporte.",
+            "Renovar pelo Discord: copia o pedido de renovação e abre o servidor; é só abrir um ticket e pagar via Pix.",
+            "\"Quero o Vitalício\" gera o pedido de upgrade com o plano desejado.",
+        }),
         ("v1.6.0", "29/09/2026", new[]
         {
             "Licença perto de vencer: o painel avisa nos últimos 7 dias, com \"Copiar pedido de renovação\" e \"Ativar nova chave\".",
