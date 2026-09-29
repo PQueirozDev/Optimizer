@@ -256,6 +256,42 @@ internal static class Program
             Assert(Translator.Tr("Sua licença expirou em 12/09/2026.") == "Your license expired on 12/09/2026." && Translator.Tr("Sua licença vence em 5 dias") == "Your license expires in 5 days"
                 && Translator.Tr("A chave atual vale até 03/10/2026. Envie o pedido de renovação para receber a nova chave.").StartsWith("The current key is valid until 03/10/2026."), "Avisos de licença traduzidos");
             Translator.IsEnglish = false;
+
+            // Revogação: lista assinada (aqui por uma chave só do teste), mais nova que a guardada, cache offline
+            using (var testSigner = new System.Security.Cryptography.RSACryptoServiceProvider(2048))
+            {
+                var testPublic = Convert.ToBase64String(testSigner.ExportCspBlob(false));
+                static string B64Url(byte[] bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+                string SignedList(DateTime issuedAtUtc, string[] ids, string kind = "revocations")
+                {
+                    var payload = JsonSerializer.SerializeToUtf8Bytes(new { Product = "PQueirozOptimizer", Kind = kind, IssuedAtUtc = issuedAtUtc, Revoked = ids });
+                    return JsonSerializer.Serialize(new { Payload = B64Url(payload), Signature = B64Url(testSigner.SignData(payload, System.Security.Cryptography.CryptoConfig.MapNameToOID("SHA256")!)) });
+                }
+                var cache = Path.Combine(root, "revocations.json");
+                File.Delete(cache);
+                var revocations = new RevocationService(cache, testPublic);
+                var revokedId = RevocationService.KeyId("chave-revogada"u8.ToArray());
+                Assert(!revocations.IsRevoked(revokedId), "Sem lista, nada revogado");
+                Assert(revocations.TryApply(SignedList(new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc), [revokedId])) && revocations.IsRevoked(revokedId), "Lista assinada revoga a chave");
+                Assert(!revocations.TryApply(SignedList(new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc), [])) && revocations.IsRevoked(revokedId), "Lista mais antiga não desfaz a revogação");
+                var tampered = SignedList(new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc), []).Replace("\"Signature\":\"", "\"Signature\":\"A");
+                Assert(!revocations.TryApply(tampered) && !revocations.TryApply(SignedList(new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc), [], kind: "license")), "Lista adulterada ou de outro tipo é recusada");
+                Assert(new RevocationService(cache, testPublic).IsRevoked(revokedId), "Revogação vale offline (cache)");
+                Assert(!new RevocationService(cache).IsRevoked(revokedId), "Lista assinada por outra chave não vale para o emissor real");
+            }
+
+            // Trava do relógio: atrasar o Windows não estica a validade; a hora do servidor corrige para baixo
+            File.Delete(Path.Combine(root, "clock.dat"));
+            var clock = new LicenseClock(Path.Combine(root, "clock.dat"));
+            var clockNow = new DateTime(2026, 9, 29, 12, 0, 0, DateTimeKind.Utc);
+            clock.Observe(clockNow);
+            Assert(!clock.IsRolledBack(clockNow.AddHours(-20)), "Pequeno acerto do relógio é tolerado");
+            Assert(clock.IsRolledBack(clockNow.AddDays(-3)), "Relógio atrasado dias é detectado");
+            Assert(clock.EffectiveNowUtc(clockNow.AddHours(-20)) == clockNow, "Validade usa a última data vista");
+            clock.Observe(clockNow.AddDays(-5));
+            Assert(clock.LastSeenUtc == clockNow, "Data mais antiga não substitui a última vista");
+            clock.SetTrusted(clockNow.AddDays(-2));
+            Assert(!clock.IsRolledBack(clockNow.AddDays(-2)), "Hora do servidor corrige relógio que estava adiantado");
             TestStartupPage(log);
             TestPowerMode();
 

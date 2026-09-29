@@ -103,7 +103,11 @@ public partial class App : Application
         catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException) { }
 
         var licenseService = new Services.LicenseService();
-        if (!licenseService.TryGetActiveLicense(out var activeLicense, out var licenseError))
+        var licensed = licenseService.TryGetActiveLicense(out var activeLicense, out var licenseError);
+        // "Relógio atrasado" pode ser só um relógio que estava adiantado antes: a hora da internet decide
+        if (!licensed && licenseService.ClockRolledBack && await RefreshLicenseDataAsync())
+            licensed = licenseService.TryGetActiveLicense(out activeLicense, out licenseError);
+        if (!licensed)
         {
             // Com uma chave salva que não vale mais (expirou, outro PC...), a tela de ativação explica o motivo
             var activation = new ActivationWindow(licenseService, licenseService.HasStoredKey ? licenseError : null);
@@ -145,5 +149,34 @@ public partial class App : Application
         MainWindow = new MainWindow();
         ShutdownMode = ShutdownMode.OnMainWindowClose;
         MainWindow.Show();
+        await WatchLicenseAsync(licenseService);
+    }
+
+    /// <summary>Baixa a lista de revogação e acerta a trava do relógio com a hora do servidor. False sem internet.</summary>
+    private static async Task<bool> RefreshLicenseDataAsync()
+    {
+        try
+        {
+            if (await Services.RevocationService.Default.RefreshAsync() is not { } serverTime) return false;
+            Services.LicenseClock.Default.SetTrusted(serverTime);
+            return true;
+        }
+        catch (Exception ex) when (ex is System.Net.Http.HttpRequestException or TaskCanceledException) { return false; }
+    }
+
+    /// <summary>
+    /// Com o app aberto, confere a licença com os dados da internet (revogação e hora do servidor).
+    /// Uma chave recusada fecha o app; no meio de uma operação, só avisa e vale na próxima abertura.
+    /// </summary>
+    private async Task WatchLicenseAsync(Services.LicenseService licenseService)
+    {
+        if (!await RefreshLicenseDataAsync() || licenseService.TryGetActiveLicense(out _, out var error)) return;
+        Log.Write("WARN", "Licença recusada na verificação online: " + error);
+        var busy = MainWindow is MainWindow { IsOperationRunning: true };
+        MessageBox.Show(Services.Translator.Tr(error) + "\n\n" + Services.Translator.Tr(busy
+                ? "Termine a operação em andamento e feche o Optimizer: na próxima abertura, será preciso ativar uma nova chave."
+                : "O Optimizer será fechado. Ao abrir de novo, você poderá ativar uma nova chave."),
+            "PQueiroz Optimizer", MessageBoxButton.OK, MessageBoxImage.Warning);
+        if (!busy) Shutdown();
     }
 }

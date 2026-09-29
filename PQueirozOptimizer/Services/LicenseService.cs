@@ -18,16 +18,24 @@ public sealed record LicenseInfo(string Licensee, DateTime? ExpiresAtUtc, string
 public sealed class LicenseService
 {
     // Public verification key. The private signing key is kept outside the application.
-    private const string PublicKey = "BgIAAACkAABSU0ExAAgAAAEAAQB9+XduNkAH/W9GiugLLAh4G7CWFx5go0gQbke9prfzxnQXkuzKf4689pZq02aWwUtSwAIt1zel+Pq90cGT2QT8rxXE4mflu8t9Om2DrFZGO1/anX+FzNunbEW/2BOhZFqUY/lpF0ueZL59XS7hUhbksXJyAH4pbgYHKW5RDo4WLtoEjxLpxdX3R8yhDYDo+FrWeVkVZwf8lvYULAQJdUbjaiUOLVVu5VkE3i2WW0NbfS1Mhjq1KkpHbrC7QVgmYHE11RtrsEo75zCAM5ccBN4UUZW4yT04n0iVcX0tUrWdHerhyyMQqpEdcBOmywgkmc4bAp+351KSe6b5OjyEkqrC";
+    // Também confere a lista de revogação, assinada pelo mesmo emissor.
+    internal const string PublicKeyBlob ="BgIAAACkAABSU0ExAAgAAAEAAQB9+XduNkAH/W9GiugLLAh4G7CWFx5go0gQbke9prfzxnQXkuzKf4689pZq02aWwUtSwAIt1zel+Pq90cGT2QT8rxXE4mflu8t9Om2DrFZGO1/anX+FzNunbEW/2BOhZFqUY/lpF0ueZL59XS7hUhbksXJyAH4pbgYHKW5RDo4WLtoEjxLpxdX3R8yhDYDo+FrWeVkVZwf8lvYULAQJdUbjaiUOLVVu5VkE3i2WW0NbfS1Mhjq1KkpHbrC7QVgmYHE11RtrsEo75zCAM5ccBN4UUZW4yT04n0iVcX0tUrWdHerhyyMQqpEdcBOmywgkmc4bAp+351KSe6b5OjyEkqrC";
     private static string LicensePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PQueirozOptimizer", "license.key");
     public string MachineId { get; } = CreateMachineId();
     // Mesmo ID em blocos de 5 (XXXXX-XXXXX-...), mais fácil de ler e ditar. O emissor aceita os dois formatos.
     public string DisplayMachineId => string.Join("-", Enumerable.Range(0, MachineId.Length / 5).Select(i => MachineId.Substring(i * 5, 5)));
     // ID antigo (nome do PC + usuário). Só é aceito para manter válidas as chaves já emitidas.
     private readonly string _legacyMachineId = CreateLegacyMachineId();
+    private readonly LicenseClock _clock;
+    private readonly RevocationService _revocations;
+
+    public LicenseService() : this(LicenseClock.Default, RevocationService.Default) { }
+    public LicenseService(LicenseClock clock, RevocationService revocations) { _clock = clock; _revocations = revocations; }
 
     /// <summary>Chave legítima deste computador que já venceu (última validada), para a tela de ativação pedir a renovação.</summary>
     public LicenseInfo? ExpiredLicense { get; private set; }
+    /// <summary>A última validação recusou a chave porque o relógio do Windows voltou no tempo.</summary>
+    public bool ClockRolledBack { get; private set; }
     public bool HasStoredKey => File.Exists(LicensePath);
 
     public bool TryGetActiveLicense(out LicenseInfo? license, out string error)
@@ -62,13 +70,13 @@ public sealed class LicenseService
 
     private bool TryValidate(string accessKey, out LicenseInfo? license, out string error)
     {
-        license = null; error = "Chave de acesso inválida.";
+        license = null; error = "Chave de acesso inválida."; ClockRolledBack = false;
         var parts = accessKey.Trim().Split('.', 2);
         if (parts.Length != 2 || !parts[0].StartsWith("PQO1-", StringComparison.Ordinal)) return false;
         try
         {
             var data = FromBase64Url(parts[0][5..]);
-            using var rsa = new RSACryptoServiceProvider(); rsa.ImportCspBlob(Convert.FromBase64String(PublicKey));
+            using var rsa = new RSACryptoServiceProvider(); rsa.ImportCspBlob(Convert.FromBase64String(PublicKeyBlob));
             if (!rsa.VerifyData(data, CryptoConfig.MapNameToOID("SHA256")!, FromBase64Url(parts[1]))) { error = "A assinatura da chave não é válida."; return false; }
             var payload = JsonSerializer.Deserialize<LicensePayload>(data);
             if (payload is null || payload.Product != "PQueirozOptimizer") return false;
@@ -78,8 +86,16 @@ public sealed class LicenseService
                 !string.Equals(payload.MachineId, _legacyMachineId, StringComparison.OrdinalIgnoreCase)) { error = "Esta chave foi emitida para outro computador."; return false; }
             var role = string.Equals(payload.Role, "Admin", StringComparison.Ordinal) ? "Admin" : "Standard";
             var info = new LicenseInfo(payload.Licensee, payload.ExpiresAtUtc, payload.MachineId, role);
-            // O computador é conferido antes da validade: só a chave deste PC conta como "expirada, renove"
-            if (payload.ExpiresAtUtc is { } expires && expires < DateTime.UtcNow) { ExpiredLicense = info; error = "Esta chave de acesso expirou."; return false; }
+            if (_revocations.IsRevoked(RevocationService.KeyId(data))) { error = "Esta chave foi revogada. Fale com o suporte para mais informações."; return false; }
+            // O computador é conferido antes da validade: só a chave deste PC conta como "expirada, renove".
+            // Só licenças com validade dependem do relógio; as vitalícias nunca são travadas por ele.
+            var now = DateTime.UtcNow;
+            if (payload.ExpiresAtUtc is { } expires)
+            {
+                if (_clock.IsRolledBack(now)) { ClockRolledBack = true; error = "A data e a hora do Windows estão atrasadas em relação ao último uso do Optimizer. Acerte o relógio para continuar."; return false; }
+                if (expires < _clock.EffectiveNowUtc(now)) { ExpiredLicense = info; error = "Esta chave de acesso expirou."; return false; }
+            }
+            _clock.Observe(now);
             license = info; error = string.Empty; return true;
         }
         catch (Exception ex) when (ex is FormatException or CryptographicException or JsonException) { error = "O formato da chave está inválido."; return false; }
@@ -100,6 +116,6 @@ public sealed class LicenseService
         return CreateLegacyMachineId();
     }
     private static string CreateLegacyMachineId() => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes($"{Environment.MachineName}|{Environment.UserDomainName}|{Environment.UserName}")))[..20];
-    private static byte[] FromBase64Url(string value) { value = value.Replace('-', '+').Replace('_', '/'); return Convert.FromBase64String(value.PadRight(value.Length + (4 - value.Length % 4) % 4, '=')); }
+    internal static byte[] FromBase64Url(string value) { value = value.Replace('-', '+').Replace('_', '/'); return Convert.FromBase64String(value.PadRight(value.Length + (4 - value.Length % 4) % 4, '=')); }
     private sealed class LicensePayload { public string Product { get; set; } = ""; public string Licensee { get; set; } = ""; public string? MachineId { get; set; } public string? Role { get; set; } public DateTime? ExpiresAtUtc { get; set; } }
 }

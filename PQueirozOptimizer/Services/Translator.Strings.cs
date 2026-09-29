@@ -252,6 +252,11 @@ public static partial class Translator
         ["Sua licença vence hoje"] = "Your license expires today", ["Sua licença vence amanhã"] = "Your license expires tomorrow",
         ["Chave ativada. Sua licença foi atualizada."] = "Key activated. Your license has been updated.",
         ["A área de transferência está ocupada. Tente novamente."] = "The clipboard is busy. Try again.",
+        ["Esta chave foi revogada. Fale com o suporte para mais informações."] = "This key has been revoked. Contact support for more information.",
+        ["A data e a hora do Windows estão atrasadas em relação ao último uso do Optimizer. Acerte o relógio para continuar."] = "Windows' date and time are earlier than the last time the Optimizer was used. Fix the clock to continue.",
+        ["Confira a data e a hora do Windows."] = "Check Windows' date and time.",
+        ["O Optimizer será fechado. Ao abrir de novo, você poderá ativar uma nova chave."] = "The Optimizer will close. When you open it again, you can activate a new key.",
+        ["Termine a operação em andamento e feche o Optimizer: na próxima abertura, será preciso ativar uma nova chave."] = "Finish the current operation and close the Optimizer: the next time it opens, a new key will be required.",
 
         // ---------- Configurações e perfis ----------
         ["Modos & Perfis de Visualização"] = "Modes & display profiles",

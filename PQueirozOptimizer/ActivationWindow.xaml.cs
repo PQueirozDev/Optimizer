@@ -14,6 +14,7 @@ public partial class ActivationWindow : Window
         _licenseService = licenseService;
         MachineIdTextBox.Text = _licenseService.DisplayMachineId;
         if (_licenseService.ExpiredLicense is { ExpiresAtUtc: { } expired } license) ShowRenewal(license.Licensee, expired);
+        else if (storedKeyError is not null && _licenseService.ClockRolledBack) ShowProblem("Confira a data e a hora do Windows.", storedKeyError, "WarningBrush", "WarningSoftBrush");
         else if (storedKeyError is not null) ShowProblem("A licença salva neste computador não é mais válida.", storedKeyError, "DangerBrush", "DangerSoftBrush");
         Activated += (_, _) => TryPasteKeyFromClipboard();
         AccessKeyTextBox.Focus();

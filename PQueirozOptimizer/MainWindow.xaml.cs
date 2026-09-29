@@ -29,7 +29,8 @@ public partial class MainWindow : Window
     private string _currentOptCategory = "todas";
     private string _driverCategory = "Todos";
     private string _driverSearch = "";
-    private bool IsAdminLicense => (Application.Current as App)?.ActiveLicense?.IsAdmin == true;
+    internal bool IsOperationRunning => _operationRunning;
+    private bool IsAdminLicense =>(Application.Current as App)?.ActiveLicense?.IsAdmin == true;
 
     public MainWindow() : this("dashboard") { _promptForUpdates = true; }
 
