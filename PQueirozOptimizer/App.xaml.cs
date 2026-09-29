@@ -103,9 +103,10 @@ public partial class App : Application
         catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException) { }
 
         var licenseService = new Services.LicenseService();
-        if (!licenseService.TryGetActiveLicense(out var activeLicense, out _))
+        if (!licenseService.TryGetActiveLicense(out var activeLicense, out var licenseError))
         {
-            var activation = new ActivationWindow(licenseService);
+            // Com uma chave salva que não vale mais (expirou, outro PC...), a tela de ativação explica o motivo
+            var activation = new ActivationWindow(licenseService, licenseService.HasStoredKey ? licenseError : null);
             if (activation.ShowDialog() != true)
             {
                 Shutdown();

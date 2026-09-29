@@ -9,6 +9,10 @@ namespace PQueirozOptimizer.Services;
 public sealed record LicenseInfo(string Licensee, DateTime? ExpiresAtUtc, string MachineId, string Role)
 {
     public bool IsAdmin => string.Equals(Role, "Admin", StringComparison.Ordinal);
+    /// <summary>Dias de calendário até o vencimento (0 = vence hoje); null para licença vitalícia.</summary>
+    public int? DaysLeft => ExpiresAtUtc is { } expires ? (expires.ToLocalTime().Date - DateTime.Today).Days : null;
+    /// <summary>Mesma janela de aviso do License Manager ("vencem em 7 dias").</summary>
+    public bool IsExpiringSoon => DaysLeft is >= 0 and <= 7;
 }
 
 public sealed class LicenseService
@@ -21,6 +25,10 @@ public sealed class LicenseService
     public string DisplayMachineId => string.Join("-", Enumerable.Range(0, MachineId.Length / 5).Select(i => MachineId.Substring(i * 5, 5)));
     // ID antigo (nome do PC + usuário). Só é aceito para manter válidas as chaves já emitidas.
     private readonly string _legacyMachineId = CreateLegacyMachineId();
+
+    /// <summary>Chave legítima deste computador que já venceu (última validada), para a tela de ativação pedir a renovação.</summary>
+    public LicenseInfo? ExpiredLicense { get; private set; }
+    public bool HasStoredKey => File.Exists(LicensePath);
 
     public bool TryGetActiveLicense(out LicenseInfo? license, out string error)
     {
@@ -38,7 +46,10 @@ public sealed class LicenseService
     }
 
     // Texto pronto para o cliente enviar ao pedir a chave (WhatsApp, e-mail...). O License Manager lê o ID direto dele.
-    public string BuildActivationRequest() => $"Pedido de ativação - PQueiroz Optimizer\nID do computador: {DisplayMachineId}\nComputador: {Environment.MachineName}";
+    // Na renovação, o titular vai junto para facilitar achar o cliente no histórico do emissor.
+    public string BuildActivationRequest(string? renewalLicensee = null) => renewalLicensee is null
+        ? $"Pedido de ativação - PQueiroz Optimizer\nID do computador: {DisplayMachineId}\nComputador: {Environment.MachineName}"
+        : $"Pedido de renovação - PQueiroz Optimizer\nTitular: {renewalLicensee}\nID do computador: {DisplayMachineId}\nComputador: {Environment.MachineName}";
 
     // Localiza a chave dentro de qualquer texto colado, mesmo quebrada em linhas ou junto de uma mensagem.
     public static string? ExtractKey(string? text)
@@ -62,12 +73,14 @@ public sealed class LicenseService
             var payload = JsonSerializer.Deserialize<LicensePayload>(data);
             if (payload is null || payload.Product != "PQueirozOptimizer") return false;
             if (string.IsNullOrWhiteSpace(payload.Licensee)) { error = "A chave não informa o titular."; return false; }
-            if (payload.ExpiresAtUtc is { } expires && expires < DateTime.UtcNow) { error = "Esta chave de acesso expirou."; return false; }
             if (string.IsNullOrWhiteSpace(payload.MachineId)) { error = "Esta chave não está vinculada a um computador."; return false; }
             if (!string.Equals(payload.MachineId, MachineId, StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(payload.MachineId, _legacyMachineId, StringComparison.OrdinalIgnoreCase)) { error = "Esta chave foi emitida para outro computador."; return false; }
             var role = string.Equals(payload.Role, "Admin", StringComparison.Ordinal) ? "Admin" : "Standard";
-            license = new LicenseInfo(payload.Licensee, payload.ExpiresAtUtc, payload.MachineId, role); error = string.Empty; return true;
+            var info = new LicenseInfo(payload.Licensee, payload.ExpiresAtUtc, payload.MachineId, role);
+            // O computador é conferido antes da validade: só a chave deste PC conta como "expirada, renove"
+            if (payload.ExpiresAtUtc is { } expires && expires < DateTime.UtcNow) { ExpiredLicense = info; error = "Esta chave de acesso expirou."; return false; }
+            license = info; error = string.Empty; return true;
         }
         catch (Exception ex) when (ex is FormatException or CryptographicException or JsonException) { error = "O formato da chave está inválido."; return false; }
     }

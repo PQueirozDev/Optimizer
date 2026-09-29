@@ -20,6 +20,7 @@ public static class Glyphs
     public static readonly string Document = G(0xE8A5);
     public static readonly string Chip = G(0xE950);
     public static readonly string Key = G(0xE8D7);
+    public static readonly string Copy = G(0xE8C8);
     public static readonly string Diagnostic = G(0xE9D9);
     public static readonly string Broom = G(0xEA99);
     public static readonly string Shield = G(0xEA18);

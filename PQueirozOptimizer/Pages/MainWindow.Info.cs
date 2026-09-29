@@ -17,7 +17,8 @@ public partial class MainWindow
         {
             (Application.Current as App)?.SetActiveLicense(license);
             UpdateLicenseUi();
-            Msg("Chave ativada. Os recursos de administrador já estão disponíveis.", "Ativação concluída", MessageBoxButton.OK, MessageBoxImage.Information);
+            // A mesma tela serve para liberar os recursos de administrador e para renovar a licença
+            Msg(license.IsAdmin ? "Chave ativada. Os recursos de administrador já estão disponíveis." : "Chave ativada. Sua licença foi atualizada.", "Ativação concluída", MessageBoxButton.OK, MessageBoxImage.Information);
             NavigateTo("dashboard");
         }
     }

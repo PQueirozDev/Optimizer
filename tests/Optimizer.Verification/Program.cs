@@ -238,6 +238,24 @@ internal static class Program
             Assert(StartupService.BuildApprovedValue(true, DateTime.UtcNow) is { Length: 12 } on && on[0] == 2, "Ativar grava 02");
             Assert(StartupService.ExecutablePath("\"C:\\Program Files\\App\\a.exe\" --min") == @"C:\Program Files\App\a.exe", "Caminho entre aspas extraído");
             Assert(StartupService.ExecutablePath(@"C:\Tools\b.exe -silent") == @"C:\Tools\b.exe", "Caminho sem aspas extraído");
+
+            // Licença: aviso de vencimento (mesma janela de 7 dias do License Manager) e pedido de renovação
+            var endOfDay = DateTime.Today.AddDays(1).AddSeconds(-1);
+            Assert(new LicenseInfo("A", null, "X", "Standard") is { DaysLeft: null, IsExpiringSoon: false }, "Licença vitalícia não avisa vencimento");
+            Assert(new LicenseInfo("A", endOfDay.ToUniversalTime(), "X", "Standard") is { DaysLeft: 0, IsExpiringSoon: true }, "Vence hoje avisa");
+            Assert(new LicenseInfo("A", endOfDay.AddDays(7).ToUniversalTime(), "X", "Standard") is { DaysLeft: 7, IsExpiringSoon: true }, "Vence em 7 dias avisa");
+            Assert(!new LicenseInfo("A", endOfDay.AddDays(8).ToUniversalTime(), "X", "Standard").IsExpiringSoon, "Vence em 8 dias ainda não avisa");
+            var licenseService = new LicenseService();
+            var renewal = licenseService.BuildActivationRequest("Maria Souza");
+            // Mesmas expressões que o License Manager usa para ler o pedido colado
+            var requestId = System.Text.RegularExpressions.Regex.Match(renewal, @"(?<![0-9A-Fa-f])[0-9A-Fa-f]{5}(?:[\s-]?[0-9A-Fa-f]{5}){3}(?![0-9A-Fa-f])");
+            var requestPc = System.Text.RegularExpressions.Regex.Match(renewal, @"Computador:[ \t]*(.+)");
+            Assert(renewal.StartsWith("Pedido de renovação") && renewal.Contains("Titular: Maria Souza") && requestId.Value == licenseService.DisplayMachineId && requestPc.Groups[1].Value.Trim() == Environment.MachineName, "Pedido de renovação legível pelo License Manager");
+            Assert(licenseService.BuildActivationRequest().StartsWith("Pedido de ativação") && !licenseService.BuildActivationRequest().Contains("Titular"), "Pedido de ativação continua igual");
+            Translator.IsEnglish = true;
+            Assert(Translator.Tr("Sua licença expirou em 12/09/2026.") == "Your license expired on 12/09/2026." && Translator.Tr("Sua licença vence em 5 dias") == "Your license expires in 5 days"
+                && Translator.Tr("A chave atual vale até 03/10/2026. Envie o pedido de renovação para receber a nova chave.").StartsWith("The current key is valid until 03/10/2026."), "Avisos de licença traduzidos");
+            Translator.IsEnglish = false;
             TestStartupPage(log);
             TestPowerMode();
 

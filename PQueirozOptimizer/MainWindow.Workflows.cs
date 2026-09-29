@@ -424,6 +424,7 @@ public partial class MainWindow
             _updateSlot = new StackPanel();
             root.Children.Add(_updateSlot);
             ShowUpdateBanner();
+            if ((Application.Current as App)?.ActiveLicense is { IsExpiringSoon: true } expiring) root.Children.Add(LicenseRenewalBanner(expiring));
 
             // Destaque: pontuação de saúde + ações principais
             var (score, headline, tone) = HealthScore(snapshot);
@@ -583,6 +584,35 @@ public partial class MainWindow
         bannerCard.SetResourceReference(Border.BorderBrushProperty, "InfoBrush");
         _updateSlot.Children.Clear();
         _updateSlot.Children.Add(bannerCard);
+    }
+
+    /// <summary>Aviso de vencimento próximo: o cliente já copia o pedido de renovação e ativa a chave nova daqui.</summary>
+    private Border LicenseRenewalBanner(LicenseInfo license)
+    {
+        var copy = IconButton(Glyphs.Copy, "Copiar pedido de renovação", primary: true);
+        copy.Click += (_, _) =>
+        {
+            try { Clipboard.SetText(new LicenseService().BuildActivationRequest(license.Licensee)); OperationStatus.Text = "Pedido de renovação copiado. Envie na conversa em que você comprou a licença."; }
+            catch (System.Runtime.InteropServices.COMException) { OperationStatus.Text = "A área de transferência está ocupada. Tente novamente."; }
+        };
+        var activate = IconButton(Glyphs.Key, "Ativar nova chave");
+        activate.Click += (_, _) => ActivateAdminLicense();
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0), Children = { activate, copy } };
+
+        var banner = new DockPanel();
+        DockPanel.SetDock(buttons, Dock.Right); banner.Children.Add(buttons);
+        var chip = IconChip(Glyphs.Warning, "Warning", 40); DockPanel.SetDock(chip, Dock.Left); banner.Children.Add(chip);
+        var text = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        var title = Label(license.DaysLeft switch { 0 => "Sua licença vence hoje", 1 => "Sua licença vence amanhã", var d => $"Sua licença vence em {d} dias" }, 14);
+        title.FontWeight = FontWeights.SemiBold; title.Margin = new Thickness(0);
+        text.Children.Add(title);
+        var sub = Label($"A chave atual vale até {license.ExpiresAtUtc!.Value.ToLocalTime():dd/MM/yyyy}. Envie o pedido de renovação para receber a nova chave.", 12, true);
+        sub.Margin = new Thickness(0, 2, 0, 0);
+        text.Children.Add(sub);
+        banner.Children.Add(text);
+        var card = Surface(banner); card.Padding = new Thickness(18, 14, 18, 14);
+        card.SetResourceReference(Border.BorderBrushProperty, "WarningBrush");
+        return card;
     }
 
     private bool _installingUpdate;
