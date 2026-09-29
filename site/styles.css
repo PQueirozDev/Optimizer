@@ -1593,6 +1593,20 @@ h3 {
   transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
 }
 
+.plans-3 {
+  margin-top: 36px;
+  gap: 20px;
+}
+
+.plan-badge-alt {
+  background: #8b5cf6;
+}
+
+.pill-dot.dev {
+  background: #a78bfa;
+  box-shadow: 0 0 10px #a78bfa;
+}
+
 .plan-icon {
   display: grid;
   place-items: center;
