@@ -7,7 +7,7 @@
  Icon="pack://application:,,,/PQueirozOptimizer;component/Assets/app.ico" Loaded="Window_Loaded" StateChanged="Window_StateChanged">
  <WindowChrome.WindowChrome><WindowChrome CaptionHeight="48" ResizeBorderThickness="6" GlassFrameThickness="0" UseAeroCaptionButtons="False" CornerRadius="0"/></WindowChrome.WindowChrome>
  <Border x:Name="MainRootBorder" Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-  <Grid>
+  <Grid x:Name="RootGrid">
    <Grid.ColumnDefinitions><ColumnDefinition Width="248"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
 
    <!-- ============ BARRA LATERAL ============ -->
@@ -146,6 +146,21 @@
       <ProgressBar x:Name="OperationProgress" Height="4" Margin="0,12,0,0" Visibility="Collapsed" IsIndeterminate="True"/>
      </StackPanel>
     </Border>
+   </Grid>
+
+   <!-- Abertura: logo aparece e some revelando a interface (animada em PlayIntroAnimation) -->
+   <Grid x:Name="IntroOverlay" Grid.ColumnSpan="2" Background="{DynamicResource BackgroundBrush}" IsHitTestVisible="False">
+    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+     <Border x:Name="IntroLogo" Width="96" Height="96" CornerRadius="28" Background="{DynamicResource AccentGradientBrush}" RenderTransformOrigin="0.5,0.5" Opacity="0">
+      <Border.RenderTransform><ScaleTransform ScaleX="0.6" ScaleY="0.6"/></Border.RenderTransform>
+      <Image Source="pack://application:,,,/PQueirozOptimizer;component/Assets/app.png" Width="58" Height="58" RenderOptions.BitmapScalingMode="HighQuality"/>
+     </Border>
+     <StackPanel x:Name="IntroTitle" Margin="0,22,0,0" HorizontalAlignment="Center" Opacity="0">
+      <StackPanel.RenderTransform><TranslateTransform Y="10"/></StackPanel.RenderTransform>
+      <TextBlock Text="PQueiroz" FontSize="26" FontWeight="Bold" FontFamily="{StaticResource DisplayFont}" HorizontalAlignment="Center"/>
+      <TextBlock Text="OPTIMIZER" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+     </StackPanel>
+    </StackPanel>
    </Grid>
   </Grid>
  </Border>

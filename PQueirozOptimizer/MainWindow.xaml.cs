@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 using PQueirozOptimizer.Models;
@@ -161,8 +162,52 @@ public partial class MainWindow : Window
         catch (Exception ex) { _log.Write("WARN", "Perfil ativo indisponível: " + ex.Message); }
     }
 
+    /// <summary>
+    /// Abertura: o logo cresce e aparece, some em seguida e a interface sobe no lugar (~1,2 s).
+    /// Respeita a opção do Windows de desativar animações.
+    /// </summary>
+    private void PlayIntroAnimation()
+    {
+        if (!SystemParameters.ClientAreaAnimation)
+        {
+            IntroOverlay.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        static DoubleAnimation Anim(double from, double to, double beginMs, double durationMs, IEasingFunction? ease = null) =>
+            new(from, to, TimeSpan.FromMilliseconds(durationMs))
+            {
+                BeginTime = TimeSpan.FromMilliseconds(beginMs),
+                EasingFunction = ease ?? new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+
+        var logoScale = (ScaleTransform)IntroLogo.RenderTransform;
+        var pop = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.35 };
+        IntroLogo.BeginAnimation(OpacityProperty, Anim(0, 1, 0, 350));
+        logoScale.BeginAnimation(ScaleTransform.ScaleXProperty, Anim(0.6, 1, 0, 550, pop));
+        logoScale.BeginAnimation(ScaleTransform.ScaleYProperty, Anim(0.6, 1, 0, 550, pop));
+        IntroTitle.BeginAnimation(OpacityProperty, Anim(0, 1, 200, 400));
+        ((TranslateTransform)IntroTitle.RenderTransform).BeginAnimation(TranslateTransform.YProperty, Anim(10, 0, 200, 400));
+
+        // A interface entra enquanto a abertura sai
+        const double revealAt = 850;
+        foreach (UIElement part in RootGrid.Children)
+        {
+            if (part == IntroOverlay) continue;
+            var slide = new TranslateTransform(0, 16);
+            part.RenderTransform = slide;
+            part.Opacity = 0;
+            part.BeginAnimation(OpacityProperty, Anim(0, 1, revealAt, 380));
+            slide.BeginAnimation(TranslateTransform.YProperty, Anim(16, 0, revealAt, 450));
+        }
+        var fadeOut = Anim(1, 0, revealAt, 350, new CubicEase { EasingMode = EasingMode.EaseIn });
+        fadeOut.Completed += (_, _) => IntroOverlay.Visibility = Visibility.Collapsed;
+        IntroOverlay.BeginAnimation(OpacityProperty, fadeOut);
+    }
+
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
+        PlayIntroAnimation();
         try
         {
             if (_currentPage == "dashboard") await ShowDashboardAsync();
