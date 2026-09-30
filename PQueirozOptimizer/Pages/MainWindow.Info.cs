@@ -25,6 +25,10 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.7.2", "30/09/2026", new[]
+        {
+            "A animação de abertura agora aparece também em PCs com os efeitos visuais do Windows reduzidos (como após a otimização do próprio app).",
+        }),
         ("v1.7.1", "30/09/2026", new[]
         {
             "Animação de abertura: o logo aparece e a interface entra suavemente.",
