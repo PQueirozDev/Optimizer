@@ -372,9 +372,36 @@ public partial class MainWindow
 
         langSection.Child = langStack;
         root.Children.Add(langSection);
+        root.Children.Add(UpdatesSection());
 
         ContentHost.Children.Clear();
         ContentHost.Children.Add(root);
+    }
+
+    /// <summary>Versão instalada e verificação manual de atualizações (a automática roda ao abrir o app).</summary>
+    private Border UpdatesSection()
+    {
+        var stack = new StackPanel();
+        var title = Label(_loc.T("Atualizações", "Updates"), 17.5);
+        title.FontWeight = FontWeights.Bold; title.Margin = new Thickness(0);
+        stack.Children.Add(title);
+        var desc = Label(_loc.T(
+            $"Versão instalada: {AppVersion}. O aplicativo procura novas versões ao abrir; use o botão para verificar agora.",
+            $"Installed version: {AppVersion}. The app looks for new versions on startup; use the button to check now."), 12.5, true);
+        desc.TextWrapping = TextWrapping.Wrap; desc.Margin = new Thickness(0, 4, 0, 16);
+        stack.Children.Add(desc);
+
+        var check = IconButton(Glyphs.Refresh, _loc.T("Verificar atualizações", "Check for updates"), primary: true);
+        var status = Label("", 12.5, true);
+        status.TextWrapping = TextWrapping.Wrap; status.VerticalAlignment = VerticalAlignment.Center; status.Margin = new Thickness(14, 0, 0, 0);
+        check.Click += async (_, _) => await CheckForUpdateManuallyAsync(check, status);
+        stack.Children.Add(new DockPanel { Children = { check, status } });
+        DockPanel.SetDock(check, Dock.Left);
+
+        var section = new Border { CornerRadius = new CornerRadius(12), Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 24), BorderThickness = new Thickness(1), Child = stack };
+        section.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
+        section.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
+        return section;
     }
 
     /// <summary>

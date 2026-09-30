@@ -563,6 +563,33 @@ public partial class MainWindow
         }
     }
 
+    /// <summary>Verificação pedida pelo usuário: sempre dá uma resposta (nova versão, já atualizado ou falha).</summary>
+    private async Task CheckForUpdateManuallyAsync(Button button, TextBlock status)
+    {
+        button.IsEnabled = false;
+        status.Text = _loc.T("Verificando...", "Checking...");
+        try
+        {
+            var info = await _updates.CheckAsync(AppVersion);
+            if (!info.IsAvailable || (string.IsNullOrWhiteSpace(info.AssetUrl) && string.IsNullOrWhiteSpace(info.DownloadUrl)))
+            {
+                status.Text = _loc.T($"Você já está na versão mais recente ({AppVersion}).", $"You are on the latest version ({AppVersion}).");
+                return;
+            }
+            _pendingUpdate = info;
+            status.Text = _loc.T($"Nova versão disponível: {info.LatestVersion}", $"New version available: {info.LatestVersion}");
+            if (!_operationRunning) OperationStatus.Text = $"Atualização disponível: {info.LatestVersion}";
+            if (Msg($"A versão {info.LatestVersion} está disponível. Deseja atualizar agora?", "Atualização disponível", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
+                await InstallUpdateAsync(info, button);
+        }
+        catch (Exception ex)
+        {
+            status.Text = _loc.T("Não foi possível verificar agora. Confira a conexão com a internet.", "Could not check right now. Check your internet connection.");
+            _log.Write("WARN", "Não foi possível verificar atualizações: " + ex.Message);
+        }
+        finally { button.IsEnabled = true; }
+    }
+
     /// <summary>Mostra o aviso de nova versão no painel (é recriado sempre que o painel é redesenhado).</summary>
     private void ShowUpdateBanner()
     {
