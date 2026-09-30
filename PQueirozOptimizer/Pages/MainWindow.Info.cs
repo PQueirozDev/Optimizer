@@ -25,6 +25,11 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.7.1", "30/09/2026", new[]
+        {
+            "Animação de abertura: o logo aparece e a interface entra suavemente (respeita a opção do Windows de desligar animações).",
+            "Configurações → Atualizações: mostra a versão instalada e verifica novas versões na hora, com instalação em um clique.",
+        }),
         ("v1.7.0", "29/09/2026", new[]
         {
             "Planos Mensal e Vitalício: o plano vem na chave e aparece no rodapé e em Configurações → Minha licença.",
