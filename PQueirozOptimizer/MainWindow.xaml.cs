@@ -164,16 +164,10 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Abertura: o logo cresce e aparece, some em seguida e a interface sobe no lugar (~1,2 s).
-    /// Respeita a opção do Windows de desativar animações.
+    /// Não depende das animações do Windows: a otimização de efeitos visuais do próprio app as desliga.
     /// </summary>
     private void PlayIntroAnimation()
     {
-        if (!SystemParameters.ClientAreaAnimation)
-        {
-            IntroOverlay.Visibility = Visibility.Collapsed;
-            return;
-        }
-
         static DoubleAnimation Anim(double from, double to, double beginMs, double durationMs, IEasingFunction? ease = null) =>
             new(from, to, TimeSpan.FromMilliseconds(durationMs))
             {

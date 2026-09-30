@@ -253,7 +253,7 @@ public static partial class Translator
         ["Minha licença mostra titular, plano, validade e ID do computador, com atalhos para renovar, ativar outra chave e pedir suporte."] = "My license shows the holder, plan, expiry and computer ID, with shortcuts to renew, activate another key and get support.",
         ["Renovar pelo Discord: copia o pedido de renovação e abre o servidor; é só abrir um ticket e pagar via Pix."] = "Renew on Discord: copies the renewal request and opens the server; just open a ticket and pay via Pix.",
         ["\"Quero o Vitalício\" gera o pedido de upgrade com o plano desejado."] = "\"I want Lifetime\" builds the upgrade request with the desired plan.",
-        ["Animação de abertura: o logo aparece e a interface entra suavemente (respeita a opção do Windows de desligar animações)."] = "Opening animation: the logo appears and the interface slides in smoothly (honors the Windows option to turn animations off).",
+        ["Animação de abertura: o logo aparece e a interface entra suavemente."] = "Opening animation: the logo appears and the interface slides in smoothly.",
         ["Configurações → Atualizações: mostra a versão instalada e verifica novas versões na hora, com instalação em um clique."] = "Settings → Updates: shows the installed version and checks for new versions on demand, with one-click install.",
         ["Minha licença"] = "My license", ["Titular"] = "Holder", ["Plano"] = "Plan", ["Validade"] = "Valid until", ["Tipo"] = "Type",
         ["ID do computador"] = "Computer ID", ["Vitalícia"] = "Lifetime", ["Mensal"] = "Monthly", ["Vitalício"] = "Lifetime", ["Personalizado"] = "Custom",
