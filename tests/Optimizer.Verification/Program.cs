@@ -141,7 +141,9 @@ internal static class Program
             foreach (var s in NvidiaProfileService.Settings) Console.WriteLine($"  NVIDIA {s.Title}: {s.Describe(current[s.Id])}");
         }
         else Console.WriteLine("SKIP NVIDIA indisponível neste PC");
-        Assert(DriverCleanService.DetectGpus().Count > 0, "Placa de vídeo detectada pelo registro");
+        // As máquinas do GitHub Actions não têm placa de vídeo
+        if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true" && DriverCleanService.DetectGpus().Count == 0) Console.WriteLine("SKIP Sem placa de vídeo no servidor de testes");
+        else Assert(DriverCleanService.DetectGpus().Count > 0, "Placa de vídeo detectada pelo registro");
 
         Assert(MainWindowRate(12_500_000 / 8) == "12.5 Mbps" || MainWindowRate(12_500_000 / 8) == "12,5 Mbps", "Velocidade de rede formatada em Mbps");
     }
