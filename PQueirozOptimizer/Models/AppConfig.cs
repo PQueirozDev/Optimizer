@@ -24,6 +24,14 @@ public class AppConfig
 
     [JsonPropertyName("isoCatalog")]
     public List<IsoEntry> IsoCatalog { get; set; } = new();
+
+    /// <summary>Aparência (Configurações → Aparência). Ausente no arquivo antigo: usa os padrões.</summary>
+    [JsonPropertyName("appearance")]
+    public AppearanceSettings Appearance { get; set; } = new();
+
+    /// <summary>Tutoriais já vistos ("inicio", "recursos", "modo-jogo"...): cada um aparece só na primeira vez.</summary>
+    [JsonPropertyName("completedTutorials")]
+    public List<string> CompletedTutorials { get; set; } = new();
 }
 
 public class OptimizationProfile

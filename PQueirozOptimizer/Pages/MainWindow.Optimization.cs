@@ -121,7 +121,7 @@ public partial class MainWindow
         else
         {
             // 3. Cartões em duas colunas
-            var grid = new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, -14, 0) };
+            var grid = Responsive(new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, -14, 0) }, 360, 2);
             foreach (var opt in filteredList)
             {
                 var (glyph, tone) = OptimizationVisual(opt);

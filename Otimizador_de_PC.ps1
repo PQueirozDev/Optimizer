@@ -22,7 +22,7 @@
 #>
 
 param(
-    [ValidateSet("", "analisar", "inteligente", "padrao", "gamer", "debloat", "reverter", "sfc", "dism", "chkdsk", "update", "benchmark", "reparar")]
+    [ValidateSet("", "analisar", "inteligente", "padrao", "gamer", "debloat", "reverter", "sfc", "dism", "chkdsk", "update", "benchmark", "reparar", "corrupcao")]
     [string]$Operation = "",
     [switch]$UiMode,
     [string]$SelectedStepsBase64 = ""
@@ -2287,6 +2287,27 @@ function Executar-VerificarDisco {
     Linha "="
 }
 
+# Verificacao completa de corrupcao (como no Resources do Paragon): disco, arquivos do sistema,
+# imagem do Windows e uma verificacao final. Uma etapa que falha nao impede as seguintes.
+function Executar-VerificacaoCorrupcao {
+    $etapas = @(
+        @{ Nome = "[1/4] CHKDSK - verificando o disco"; Arq = "chkdsk.exe"; Args = "$env:SystemDrive /scan"; Cod = "oem" }
+        @{ Nome = "[2/4] SFC - verificando arquivos do sistema"; Arq = "sfc.exe"; Args = "/scannow"; Cod = "unicode" }
+        @{ Nome = "[3/4] DISM - reparando a imagem do Windows"; Arq = "dism.exe"; Args = "/Online /Cleanup-Image /RestoreHealth"; Cod = "oem" }
+        @{ Nome = "[4/4] SFC - verificacao final"; Arq = "sfc.exe"; Args = "/scannow"; Cod = "unicode" }
+    )
+    foreach ($e in $etapas) {
+        Write-Secao $e.Nome
+        Invoke-Nativo $e.Arq $e.Args $e.Cod
+        if ($LASTEXITCODE -eq 0) { Write-Resultado $true $e.Nome; $script:ContAplicados++ }
+        else { Write-Resultado $false "$($e.Nome) (codigo $LASTEXITCODE)"; $script:ContFalhas++ }
+        Write-Host ""
+    }
+    Linha "="
+    Write-Host (Centralizar "Verificacao concluida: $script:ContAplicados etapa(s) ok, $script:ContFalhas com aviso") -ForegroundColor Gray
+    Linha "="
+}
+
 function Executar-VerificarWindowsUpdate {
     Write-Secao "Verificando o Windows Update"
     Try {
@@ -2736,6 +2757,7 @@ try {
             "update" { Executar-VerificarWindowsUpdate }
             "reparar" { Executar-RepararConfiguracoes }
             "benchmark" { Executar-Benchmark }
+            "corrupcao" { Executar-VerificacaoCorrupcao }
         }
         if ($script:ContFalhas -gt 0) { exit 1 }
         exit 0

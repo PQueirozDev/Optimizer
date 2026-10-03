@@ -22,6 +22,38 @@ public partial class MainWindow
             "Lê e grava as configurações da BIOS pelo Windows com o SCEWIN, a ferramenta oficial da AMI. A primeira leitura é guardada como cópia original e só os itens que você alterar são gravados. Funciona em placas com BIOS AMI (ASUS, MSI, Gigabyte, ASRock e a maioria das outras).",
             tool is null ? "SCEWIN não configurado" : _biosSettings is null ? "Pronto para ler" : $"{_biosSettings.Count} configurações", tool is null ? "Warning" : "Success"));
 
+        // Placa-mãe e processador detectados (como no Paragon), aviso de notebook e passos da fabricante
+        var board = BiosService.ReadBoard();
+        var hardware = new System.Windows.Controls.Primitives.UniformGrid { Columns = 3, Margin = new Thickness(0, 16, -10, 0) };
+        foreach (var (label, value) in new[] { ("PLACA-MÃE", $"{board.Manufacturer} {board.Model}".Trim()), ("PROCESSADOR", board.Cpu), ("VERSÃO DA BIOS", board.BiosVersion) })
+        {
+            var cell = new StackPanel();
+            var l = new TextBlock { Text = label, FontSize = 10.5, FontWeight = FontWeights.SemiBold };
+            l.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+            var v = new TextBlock { Text = string.IsNullOrWhiteSpace(value) ? "Não identificado" : value, FontSize = 12.5, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 3, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis, Tag = string.IsNullOrWhiteSpace(value) ? null : Translator.SystemDataTag };
+            v.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+            cell.Children.Add(l); cell.Children.Add(v);
+            var box = ListRow(cell); box.Margin = new Thickness(0, 0, 10, 0);
+            hardware.Children.Add(box);
+        }
+        panel.Children.Add(hardware);
+        if (PowerModeService.GetSource().HasBattery)
+            panel.Children.Add(Notice("Notebook detectado: os ajustes de BIOS são pensados para desktops. Em notebooks a fabricante costuma travar a BIOS, e mudanças de energia podem reduzir a bateria e aumentar a temperatura.", "Warning"));
+        if (BiosService.ManufacturerInstructions(board) is { } instructions)
+        {
+            var steps = new StackPanel();
+            var title = Label(instructions.Title, 13); title.FontWeight = FontWeights.SemiBold; title.Margin = new Thickness(0, 0, 0, 6);
+            steps.Children.Add(title);
+            for (var i = 0; i < instructions.Steps.Length; i++)
+            {
+                var step = Label($"{i + 1}. {instructions.Steps[i]}", 12); step.Margin = new Thickness(0, 0, 0, 3);
+                steps.Children.Add(step);
+            }
+            var box = new Border { Child = steps, Padding = new Thickness(14, 12, 14, 12), CornerRadius = new CornerRadius(12), Margin = new Thickness(0, 12, 0, 0) };
+            box.SetResourceReference(Border.BackgroundProperty, "InfoSoftBrush");
+            panel.Children.Add(box);
+        }
+
         var actions = new WrapPanel { Margin = new Thickness(0, 16, 0, 0) };
         var choose = IconButton(Glyphs.Folder, tool is null ? "Escolher SCEWIN_64.exe" : "Trocar SCEWIN", primary: tool is null);
         choose.Click += (_, _) =>
@@ -63,7 +95,11 @@ public partial class MainWindow
         warning.Child = warningText;
         panel.Children.Add(warning);
 
-        if (_biosSettings != null) panel.Children.Add(BiosSettingsList());
+        if (_biosSettings != null)
+        {
+            panel.Children.Add(Mark(BiosGroupsPanel(), "bios.groups"));
+            panel.Children.Add(BiosSettingsList());
+        }
         return Surface(panel);
     }
 
@@ -179,6 +215,49 @@ public partial class MainWindow
         border.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
         border.SetResourceReference(Border.BorderBrushProperty, s.Changed ? "AccentBrush" : "BorderSubtleBrush");
         return border;
+    }
+
+    private Border Notice(string text, string tone)
+    {
+        var label = Label(text, 12); label.Margin = new Thickness(0); label.SetResourceReference(TextBlock.ForegroundProperty, tone + "Brush");
+        var box = new Border { Child = label, Padding = new Thickness(14, 10, 14, 10), CornerRadius = new CornerRadius(12), Margin = new Thickness(0, 12, 0, 0) };
+        box.SetResourceReference(Border.BackgroundProperty, tone + "SoftBrush");
+        return box;
+    }
+
+    private readonly HashSet<string> _biosGroupsSelected = BiosService.Groups.Where(g => g.Default).Select(g => g.Id).ToHashSet();
+
+    /// <summary>Grupos de BIOS: "Vai modificar / Não vai modificar", com o valor atual e o novo de cada item encontrado.</summary>
+    private StackPanel BiosGroupsPanel()
+    {
+        var settings = _biosSettings!;
+        var host = new StackPanel { Margin = new Thickness(0, 18, 0, 0) };
+        host.Children.Add(SectionHeader("Grupos de ajustes", "Escolha o que o app vai modificar. Grupos que não existem nesta BIOS aparecem desativados."));
+        foreach (var group in BiosService.Groups)
+        {
+            var matches = BiosService.GroupMatches(settings, group);
+            var pending = matches.Count(m => m.Setting.SelectedIndex != m.Target);
+            var check = new CheckBox { IsChecked = matches.Count > 0 && _biosGroupsSelected.Contains(group.Id), IsEnabled = matches.Count > 0 };
+            var detail = group.Description + (matches.Count == 0 ? "\nNão encontrado nesta BIOS." :
+                "\n" + string.Join("\n", matches.Select(m => $"• {m.Setting.Question}: {m.Setting.SelectedLabel} → {m.Setting.Options[m.Target].Label}")));
+            var (pill, tone) = matches.Count == 0 ? ("Indisponível", "Warning") : pending == 0 ? ("Já aplicado", "Success") : check.IsChecked == true ? ("Vai modificar", "Accent") : ("Não vai modificar", "Info");
+            var row = ChoiceRow(check, group.Title, detail, pill, tone);
+            check.Checked += (_, _) => _biosGroupsSelected.Add(group.Id);
+            check.Unchecked += (_, _) => _biosGroupsSelected.Remove(group.Id);
+            host.Children.Add(row);
+        }
+        var apply = IconButton(Glyphs.Check, "Marcar grupos selecionados", primary: true);
+        apply.Click += (_, _) =>
+        {
+            var n = BiosService.ApplyGroups(settings, _biosGroupsSelected);
+            ShowToast("BIOS", n == 0 ? "Os grupos escolhidos já estão aplicados." : $"{n} configuração(ões) marcadas. Revise em Alterados e grave.", n == 0 ? "Info" : "Success");
+            _biosFilter = "alterados";
+            ShowBios();
+        };
+        var summary = Label("Nada é gravado até você clicar em Gravar alterações.", 12, true);
+        summary.Margin = new Thickness(0); summary.VerticalAlignment = VerticalAlignment.Center;
+        host.Children.Add(ActionBar(summary, apply));
+        return host;
     }
 
     private void ShowBiosChangedCount()

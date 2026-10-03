@@ -257,4 +257,99 @@ public sealed class BiosService
 
     public static BiosRecommendation? RecommendationFor(BiosSetting s) =>
         Recommendations.FirstOrDefault(r => Regex.IsMatch(s.Question, r.QuestionPattern, RegexOptions.IgnoreCase));
+
+    // ================= Grupos (como na página BIOS do Paragon) =================
+    /// <summary>Grupo de ajustes de BIOS: cada item procura a configuração pelo nome e escolhe a opção alvo.</summary>
+    public sealed record BiosGroup(string Id, string Title, string Description, bool Default, BiosRecommendation[] Items);
+
+    public static readonly BiosGroup[] Groups =
+    {
+        new("memory", "Perfil de memória (XMP / EXPO / DOCP)", "Faz a memória RAM rodar na velocidade anunciada pelo fabricante em vez do padrão lento. Costuma ser o maior ganho em jogos.", true, new[]
+        {
+            new BiosRecommendation(@"^(Extreme Memory Profile|XMP|EXPO|DOCP|D\.O\.C\.P\.|Memory Profile|Ai Overclock Tuner|A-XMP|Memory Try It)", @"(Profile ?1|XMP ?(I|1)?|EXPO ?(I|1)?|DOCP|Enabled)", "Ativa o primeiro perfil de memória do fabricante."),
+        }),
+        new("rebar", "Resizable BAR", "Permite à placa de vídeo acessar toda a VRAM de uma vez. Só é aplicado com o CSM desligado (senão o Windows pode não iniciar).", true, new[]
+        {
+            Recommendations[0], Recommendations[1],
+        }),
+        new("spread", "Spread Spectrum desligado", "Mantém o clock de referência estável, sem a oscilação proposital usada para reduzir interferência.", true, new[]
+        {
+            Recommendations[2],
+        }),
+        new("pbo", "Precision Boost Overdrive (AMD)", "Deixa processadores Ryzen subirem o clock por mais tempo quando a refrigeração permite. Aumenta temperatura e consumo.", false, new[]
+        {
+            new BiosRecommendation(@"^Precision Boost Overdrive$", @"^(Enabled|Advanced)$", "Ativa o PBO."),
+        }),
+        new("cstates", "Estados de economia da CPU (C-States) desligados", "O processador não entra em modos de economia profundos: resposta mais imediata, mais consumo e calor em repouso. Não use em notebook.", false, new[]
+        {
+            new BiosRecommendation(@"^(Global C-state Control|CPU C States|C-States? Control|Package C State( Limit)?)$", @"^(Disabled|C0/C1|C0)$", "Desliga os C-States profundos."),
+        }),
+        new("virtualization", "Virtualização desligada", "Desliga SVM/VT-x. Pode reduzir latência em alguns sistemas, mas WSL 2, Hyper-V, Docker, emuladores e alguns anti-cheats precisam dela.", false, new[]
+        {
+            new BiosRecommendation(@"^(SVM Mode|Intel\(R\)? Virtualization Technology|Intel Virtualization Technology|VMX|Virtualization Technology)$", @"^Disabled$", "Desliga a virtualização."),
+        }),
+    };
+
+    /// <summary>Configurações que cada item do grupo encontra nesta BIOS, com a opção que seria escolhida.</summary>
+    public static List<(BiosSetting Setting, int Target, string Why)> GroupMatches(List<BiosSetting> settings, BiosGroup group)
+    {
+        var result = new List<(BiosSetting, int, string)>();
+        foreach (var item in group.Items)
+        {
+            if (item.RequiresQuestion != null)
+            {
+                var requirement = settings.FirstOrDefault(s => Regex.IsMatch(s.Question, item.RequiresQuestion, RegexOptions.IgnoreCase));
+                if (requirement is null || !Regex.IsMatch(requirement.SelectedLabel, item.RequiresOption!, RegexOptions.IgnoreCase)) continue;
+            }
+            foreach (var s in settings.Where(s => s.Options.Count > 0 && Regex.IsMatch(s.Question, item.QuestionPattern, RegexOptions.IgnoreCase)))
+            {
+                // Nunca escolhe "Disabled"/"Auto" sem querer quando o alvo é ligar algo
+                var target = s.Options.FindIndex(o => Regex.IsMatch(o.Label, item.OptionPattern, RegexOptions.IgnoreCase) && (item.OptionPattern.Contains("Disabled") || !Regex.IsMatch(o.Label, "^(Disabled|Auto)$", RegexOptions.IgnoreCase)));
+                if (target >= 0) result.Add((s, target, item.Why));
+            }
+        }
+        return result;
+    }
+
+    /// <summary>Marca as opções dos grupos escolhidos (sem gravar). Retorna quantas mudaram.</summary>
+    public static int ApplyGroups(List<BiosSetting> settings, IEnumerable<string> groupIds)
+    {
+        var changed = 0;
+        foreach (var group in Groups.Where(g => groupIds.Contains(g.Id)))
+            foreach (var (setting, target, _) in GroupMatches(settings, group))
+                if (setting.SelectedIndex != target) { setting.SelectedIndex = target; changed++; }
+        return changed;
+    }
+
+    // ================= Hardware =================
+    public sealed record BoardInfo(string Manufacturer, string Model, string BiosVersion, string Cpu);
+
+    public static BoardInfo ReadBoard()
+    {
+        using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"HARDWARE\DESCRIPTION\System\BIOS");
+        string Read(string name) => (key?.GetValue(name) as string ?? "").Trim();
+        return new BoardInfo(Read("BaseBoardManufacturer"), Read("BaseBoardProduct"), Read("BIOSVersion"), GamingService.ProcessorName());
+    }
+
+    /// <summary>Passos que algumas fabricantes exigem antes de o SCEWIN conseguir gravar.</summary>
+    public static (string Title, string[] Steps)? ManufacturerInstructions(BoardInfo board)
+    {
+        if (board.Manufacturer.Contains("ASUS", StringComparison.OrdinalIgnoreCase))
+            return ("Placa-mãe ASUS detectada", new[]
+            {
+                "Clique em \"Reiniciar na BIOS/UEFI\" no topo desta página.",
+                "Na BIOS, abra o modo avançado (F7) e vá até a aba Tool ou Advanced.",
+                "Ative a opção \"Publish HII Resources\".",
+                "Em Advanced → UEFI Variables Protection, desative \"Password protection of Runtime Variables\".",
+                "Salve (F10) e reinicie. Depois leia as configurações de novo por aqui.",
+            });
+        if (board.Manufacturer.Contains("ASRock", StringComparison.OrdinalIgnoreCase))
+            return ("Placa-mãe ASRock detectada", new[]
+            {
+                "Algumas placas ASRock só aceitam gravar pelo Windows com uma senha de supervisor definida.",
+                "Clique em \"Reiniciar na BIOS/UEFI\" e vá até a aba Security.",
+                "Defina uma Supervisor Password e salve. Se o SCEWIN recusar a gravação, use essa senha ou remova-a depois de terminar.",
+            });
+        return null;
+    }
 }

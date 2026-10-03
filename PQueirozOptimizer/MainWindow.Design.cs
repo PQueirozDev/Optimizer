@@ -36,6 +36,7 @@ public partial class MainWindow
             blob.RenderTransform = move;
             _auroraBlobs.Add((blob, key));
             AuroraLayer.Children.Add(blob);
+            if (!AppearanceService.AnimationsEnabled) continue; // fundo estático com as animações desligadas
             var drift = TimeSpan.FromSeconds(seconds);
             var ease = new SineEase { EasingMode = EasingMode.EaseInOut };
             move.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(-60, 80, drift) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = ease });
@@ -62,6 +63,11 @@ public partial class MainWindow
     private static readonly Dictionary<string, (string Eyebrow, string Glyph, string Subtitle)> PageHeaders = new()
     {
         ["dashboard"] = ("MONITORAR", Glyphs.Home, "Saúde, desempenho e atividade do seu PC em tempo real."),
+        ["restore"] = ("MANUTENÇÃO", Glyphs.Restore2, "Crie e restaure pontos de restauração para proteger o sistema."),
+        ["resources"] = ("MANUTENÇÃO", Glyphs.Library, "Automação, atalhos, downloads e testes para preparar qualquer PC."),
+        ["fixes"] = ("MANUTENÇÃO", Glyphs.Repair, "Correções rápidas para problemas comuns do Windows."),
+        ["services"] = ("OTIMIZAÇÕES", Glyphs.Services, "Desligue serviços e tarefas em segundo plano para liberar o sistema."),
+        ["apps"] = ("OTIMIZAÇÕES", Glyphs.Apps, "Ajuste Discord, navegadores e outros apps e remova o que não usa."),
         ["optimization"] = ("OTIMIZAÇÕES", Glyphs.Lightning, "Ajustes revisados item por item, com backup e reversão."),
         ["startup"] = ("OTIMIZAÇÕES", Glyphs.Power, "Programas, tarefas e serviços que iniciam com o Windows."),
         ["drivers"] = ("OTIMIZAÇÕES", Glyphs.Monitor, "Drivers oficiais, instalação limpa com DDU e utilitários."),
@@ -83,6 +89,7 @@ public partial class MainWindow
         PageIcon.Text = header.Glyph;
         PageSubtitle.Text = header.Subtitle;
         // O ícone "pulsa" ao trocar de página
+        if (!AppearanceService.AnimationsEnabled) { PageIconChip.RenderTransform = null; return; }
         var scale = new ScaleTransform(0.85, 0.85);
         PageIconChip.RenderTransformOrigin = new Point(0.5, 0.5);
         PageIconChip.RenderTransform = scale;
@@ -119,8 +126,9 @@ public partial class MainWindow
         while (ToastHost.Children.Count > 4) ToastHost.Children.RemoveAt(0);
 
         var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
-        toast.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(220)));
-        slide.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(40, 0, TimeSpan.FromMilliseconds(320)) { EasingFunction = ease });
+        if (!AppearanceService.AnimationsEnabled) { toast.Opacity = 1; slide.X = 0; }
+        else toast.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(220)));
+        if (AppearanceService.AnimationsEnabled) slide.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(40, 0, TimeSpan.FromMilliseconds(320)) { EasingFunction = ease });
         void Dismiss()
         {
             var fade = new DoubleAnimation(toast.Opacity, 0, TimeSpan.FromMilliseconds(200));
@@ -281,6 +289,7 @@ public partial class MainWindow
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (HandleTutorialKey(e.Key)) { e.Handled = true; return; }
         if (e.Key == Key.K && Keyboard.Modifiers == ModifierKeys.Control) { SearchBox.Focus(); SearchBox.SelectAll(); e.Handled = true; }
     }
 }

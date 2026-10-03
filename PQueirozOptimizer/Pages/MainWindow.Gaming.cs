@@ -20,12 +20,12 @@ public partial class MainWindow
         PageBadgeText.Text = "Modo Jogo ativo";
         UpdateGameModeBadge();
         var root = new StackPanel();
-        root.Children.Add(Tabs(new[] { (Glyphs.Game, "Modo Jogo"), (Glyphs.Settings, "Jogos"), (Glyphs.Monitor, "NVIDIA"), (Glyphs.Lightning, "Sistema") }, _gamingTab, tab =>
+        root.Children.Add(Mark(Tabs(new[] { (Glyphs.Game, "Modo Jogo"), (Glyphs.Settings, "Jogos"), (Glyphs.Monitor, "NVIDIA"), (Glyphs.Lightning, "Sistema") }, _gamingTab, tab =>
         {
             _gamingTab = tab;
             ShowGaming();
             AnimatePageIn();
-        }));
+        }), "gaming.tabs"));
 
         switch (_gamingTab)
         {
@@ -38,6 +38,7 @@ public partial class MainWindow
                 break;
             case 3:
                 root.Children.Add(TwoColumns(QuickBoostsCard(), DefenderCard()));
+                root.Children.Add(Win32PriorityCard());
                 break;
             default:
                 root.Children.Add(session is null ? GameModeSetupCard() : GameModeActiveCard(session));
@@ -72,7 +73,7 @@ public partial class MainWindow
         var appChecks = new List<(CheckBox Check, string Name)>();
         var appsHeader = Label("Programas para fechar", 13); appsHeader.FontWeight = FontWeights.SemiBold; appsHeader.Margin = new Thickness(0, 18, 0, 8);
         panel.Children.Add(appsHeader);
-        var appsGrid = new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, -10, 0) };
+        var appsGrid = Responsive(new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, -10, 0) }, 360, 2);
         // Primeiro os que estão abertos agora: são os que fazem diferença
         foreach (var app in GamingService.BackgroundApps.OrderByDescending(a => running.Contains(a.Name)))
         {
@@ -87,7 +88,7 @@ public partial class MainWindow
 
         var servicesHeader = Label("Serviços para pausar durante a sessão", 13); servicesHeader.FontWeight = FontWeights.SemiBold; servicesHeader.Margin = new Thickness(0, 10, 0, 8);
         panel.Children.Add(servicesHeader);
-        var serviceGrid = new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, -10, 0) };
+        var serviceGrid = Responsive(new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, -10, 0) }, 360, 2);
         var serviceChecks = new List<(CheckBox Check, string Name)>();
         foreach (var service in GamingService.PausableServices)
         {
@@ -106,12 +107,12 @@ public partial class MainWindow
             "Temporário", "Info");
         var standbyCheck = new CheckBox { IsChecked = true };
         var standbyRow = ChoiceRow(standbyCheck, "Liberar memória em espera ao iniciar", "Esvazia o cache de arquivos que o Windows guarda na RAM. Ajuda em jogos com engasgos quando a memória está quase cheia.", "Pontual", "Success");
-        var options = new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, -10, 0) };
+        var options = Responsive(new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, -10, 0) }, 360, 2);
         planRow.Margin = new Thickness(0, 0, 10, 10); standbyRow.Margin = new Thickness(0, 0, 10, 10);
         options.Children.Add(planRow); options.Children.Add(standbyRow);
         panel.Children.Add(options);
 
-        var start = IconButton(Glyphs.Play, "Ativar Modo Jogo", primary: true);
+        var start = Mark(IconButton(Glyphs.Play, "Ativar Modo Jogo", primary: true), "gaming.start");
         start.Click += async (_, _) =>
         {
             var apps = appChecks.Where(c => c.Check.IsChecked == true).Select(c => c.Name).ToList();

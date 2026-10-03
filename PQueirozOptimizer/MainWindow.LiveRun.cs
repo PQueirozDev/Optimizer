@@ -49,9 +49,12 @@ public partial class MainWindow
     {
         var def = ConfigService.AllOptimizations.FirstOrDefault(o => o.Operation == operation);
         var glyph = def is null ? Glyphs.Undo : OptimizationVisual(def).Glyph;
-        return operation == "reverter"
-            ? ("Restaurar configurações", Glyphs.Undo, "Desfazendo as alterações registradas no último backup.")
-            : (def?.Name ?? operation, glyph, def?.Description ?? "");
+        return operation switch
+        {
+            "reverter" => ("Restaurar configurações", Glyphs.Undo, "Desfazendo as alterações registradas no último backup."),
+            "corrupcao" => ("Verificação de corrupção do sistema", Glyphs.Shield, "ChkDsk, SFC, DISM e uma verificação final do SFC. Pode levar mais de 30 minutos."),
+            _ => (def?.Name ?? operation, glyph, def?.Description ?? ""),
+        };
     }
 
     /// <summary>Executa uma operação do script mostrando a saída completa ao vivo.</summary>

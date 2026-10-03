@@ -20,7 +20,11 @@ Aplicativo desktop para Windows, feito em C# + WPF (.NET 8), para otimização, 
 - Perfil NVIDIA gravado direto no driver (NvAPI), instalação limpa de driver com o DDU, presets competitivos para Fortnite, Apex, CS2 e Rocket League e controle do Windows Defender (exclusões e proteção em tempo real).
 - Busca rápida (Ctrl+K) e notificações ao concluir cada ação.
 - Drivers, utilitários do Windows, assistente de BIOS/UEFI e catálogo de ISOs.
-- Temas claro e escuro e interface em português e inglês.
+- Recursos (verificação de corrupção, runtimes, reinstalação limpa do driver, atalhos, downloads e benchmarks), Correções rápidas do Windows, Pontos de restauração, grupos de Serviços e otimizador/desinstalador de Apps.
+- BIOS por grupos (XMP/EXPO, Resizable BAR, Spread Spectrum, PBO, C-States, virtualização), com instruções para ASUS e ASRock, e Win32 Priority no Modo Jogo.
+- Tutorial guiado na primeira abertura e tutoriais curtos por página, que podem ser revistos em Configurações.
+- Aparência personalizável: tema Escuro, OLED ou Automático (segue o Windows), intensidade do roxo, densidade, tamanho dos cards e animações, salvos em `%LocalAppData%\PQueirozOptimizer\config.json`.
+- Interface em português e inglês.
 
 ## Requisitos
 

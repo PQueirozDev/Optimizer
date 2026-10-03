@@ -41,6 +41,13 @@ public partial class MainWindow
             "Windows Defender: exclusão das pastas dos jogos e liga/desliga da proteção em tempo real.",
             "Visual novo: fundo aurora animado, cartões de vidro com borda em gradiente que sobem ao passar o mouse, botões com brilho, interruptores, abas, entrada em cascata e anel de saúde animado.",
             "Busca rápida (Ctrl+K) para abrir qualquer página ou recurso, e notificações no canto da tela ao concluir cada ação.",
+            "Tutorial na primeira abertura: um tour guiado destaca cada área do app, e Recursos, Modo Jogo, Rede, Serviços e BIOS têm um tutorial curto na primeira visita. Reveja em Configurações → Tutoriais.",
+            "Nova página Recursos: verificação de corrupção (ChkDsk, SFC e DISM), runtimes, reinstalação limpa do driver, atalhos do Windows, downloads recomendados e ferramentas de benchmark.",
+            "Nova página Correções: 13 reparos rápidos para Windows Update, Loja, ícones, Explorer, áudio, pesquisa, impressão, relógio, DNS, rede, shaders, planos de energia e WinSxS.",
+            "Novas páginas Pontos de restauração (criar com nome, etiquetas e cor, e restaurar), Serviços (8 grupos com estado original guardado) e Apps (Discord, Spotify e navegadores sem disputar a GPU, e desinstalador).",
+            "BIOS por grupos (memória XMP/EXPO, Resizable BAR, Spread Spectrum, PBO, C-States e virtualização), passo a passo para ASUS e ASRock e aviso em notebooks. Win32 Priority com 6 níveis no Modo Jogo.",
+            "Interface redesenhada: Visão geral com cartão de saúde e ação principal, métricas com gráficos reais, menu organizado por categorias, última atividade na barra inferior e grades que se ajustam a telas menores.",
+            "Aparência em Configurações: tema Escuro, OLED ou Automático, intensidade do roxo, densidade, tamanho dos cards, animações e pré-visualização ao vivo.",
         }),
         ("v1.7.2", "30/09/2026", new[]
         {
@@ -193,7 +200,7 @@ public partial class MainWindow
             (Glyphs.Speed, "Success", "Modo de energia", "Mantenha C-States habilitados em notebooks; em desktops, o perfil padrão da placa já é bom."),
             (Glyphs.Shield, "Warning", "Atualização de BIOS", "Use apenas o atualizador oficial da fabricante e nunca desligue o PC durante o processo."),
         };
-        var grid = new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, -14, 0) };
+        var grid = Responsive(new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, -14, 0) }, 360, 2);
         foreach (var (glyph, tone, title, text) in tips)
         {
             var body = new DockPanel();
@@ -244,7 +251,7 @@ public partial class MainWindow
         var heroCard = Surface(hero); heroCard.Padding = new Thickness(28); heroCard.SetResourceReference(Border.BackgroundProperty, "HeroBrush");
         root.Children.Add(heroCard);
 
-        var grid = new UniformGrid { Columns = 3, Margin = new Thickness(0, 0, -14, 0) };
+        var grid = Responsive(new UniformGrid { Columns = 3, Margin = new Thickness(0, 0, -14, 0) }, 260, 3);
         grid.Children.Add(Card(_loc.T("SEGURANÇA", "SAFETY"), _loc.T("Ponto de restauração e backup antes de cada ajuste", "Restore point and backup before every change"), Glyphs.Shield, "SuccessBrush"));
         grid.Children.Add(Card(_loc.T("TRANSPARÊNCIA", "TRANSPARENCY"), _loc.T("Você escolhe item por item o que aplicar", "You choose exactly what to apply"), Glyphs.Check, "AccentBrush"));
         grid.Children.Add(Card(_loc.T("ATUALIZAÇÕES", "UPDATES"), _loc.T("Instalador verificado por SHA256", "SHA256-verified installer"), Glyphs.Download, "InfoBrush"));

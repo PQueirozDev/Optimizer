@@ -78,7 +78,7 @@ public partial class MainWindow
         head.Children.Add(SectionHeader("Monitor em tempo real", "Uso de CPU, placa de vídeo, memória e rede no último minuto."));
         panel.Children.Add(head);
 
-        var grid = new UniformGrid { Columns = 4, Margin = new Thickness(0, 0, -12, 0) };
+        var grid = Responsive(new UniformGrid { Columns = 4, Margin = new Thickness(0, 0, -12, 0) }, 210, 4);
         grid.Children.Add(LiveTileView("CPU", Glyphs.Chip, "Accent", "Processador", s => s.Cpu, false));
         grid.Children.Add(LiveTileView("GPU", Glyphs.Monitor, "Warning", "Motor 3D da placa de vídeo", s => s.Gpu, false));
         grid.Children.Add(LiveTileView("MEMÓRIA", Glyphs.Memory, "Info", "Memória RAM", s => s.Ram, false));
@@ -94,25 +94,26 @@ public partial class MainWindow
     {
         var stack = new StackPanel();
         var top = new DockPanel();
-        var chip = IconChip(glyph, tone, 28); DockPanel.SetDock(chip, Dock.Right); top.Children.Add(chip);
+        var scale = AppearanceService.CardScale;
+        var chip = IconChip(glyph, tone, 26 * scale); DockPanel.SetDock(chip, Dock.Right); top.Children.Add(chip);
         var label = new TextBlock { Text = title, FontSize = 10.5, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
         label.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         top.Children.Add(label);
         stack.Children.Add(top);
-        var value = new TextBlock { Text = "--", FontSize = 24, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 4, 0, 0), Tag = Translator.SystemDataTag };
+        var value = new TextBlock { Text = "--", FontSize = 26 * scale, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 4, 0, 0), Tag = Translator.SystemDataTag };
         value.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
         value.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
         stack.Children.Add(value);
         var sub = new TextBlock { Text = detail, FontSize = 11, TextTrimming = TextTrimming.CharacterEllipsis };
         sub.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         stack.Children.Add(sub);
-        var chart = new Canvas { Height = 38, Margin = new Thickness(0, 10, 0, 0), ClipToBounds = true, Tag = tone };
+        var chart = new Canvas { Height = 36 * scale, Margin = new Thickness(0, 10, 0, 0), ClipToBounds = true, Tag = tone };
         stack.Children.Add(chart);
         var tile = new LiveTile(value, sub, chart, select, autoScale);
         chart.SizeChanged += (_, _) => DrawSparkline(tile, HardwareMonitorService.Shared.History);
         _liveTiles.Add(tile);
 
-        var card = new Border { Child = stack, Padding = new Thickness(16, 14, 16, 12), CornerRadius = new CornerRadius(14), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 12, 0) };
+        var card = new Border { Child = stack, Padding = new Thickness(AppearanceService.Space(15) * scale, AppearanceService.Space(13) * scale, AppearanceService.Space(15) * scale, AppearanceService.Space(11) * scale), CornerRadius = new CornerRadius(14), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 12, 0) };
         card.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
         card.SetResourceReference(Border.BorderBrushProperty, "BorderSubtleBrush");
         return card;
@@ -152,7 +153,7 @@ public partial class MainWindow
     /// <summary>Os blocos da página entram um após o outro, subindo e aparecendo (efeito cascata).</summary>
     private void AnimatePageIn()
     {
-        if (!IsVisible) return; // janela ainda não exibida (ou renderização de teste): sem animação
+        if (!IsVisible || !AppearanceService.AnimationsEnabled) return; // janela não exibida, teste ou animações desligadas
         if (ContentHost.Children.Count == 0 || ContentHost.Children[0] is not Panel page) return;
         var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
         var index = 0;

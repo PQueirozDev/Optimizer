@@ -412,7 +412,7 @@ internal static class Program
                 if (Application.Current != null) { Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown; Application.Current.MainWindow = window; }
                 foreach (Window extra in (Application.Current?.Windows.Cast<Window>() ?? Enumerable.Empty<Window>()).Where(w => w != window).ToList()) extra.Close();
                 Translator.IsEnglish = true;
-                foreach (var page in new[] { "dashboard", "optimization", "startup", "drivers", "tools", "gaming", "network", "history", "settings", "about", "patchnotes", "bios" })
+                foreach (var page in new[] { "dashboard", "optimization", "startup", "drivers", "tools", "gaming", "network", "restore", "resources", "fixes", "services", "apps", "history", "settings", "about", "patchnotes", "bios" })
                 {
                     typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { page });
                     Wait(page == "dashboard" ? 4000 : page == "startup" ? 8000 : 600);
@@ -475,7 +475,7 @@ internal static class Program
                 Render("review-dark", 1060, 700);
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "history" });
                 Render("history-dark", 1320, 860);
-                foreach (var page in new[] { "drivers", "startup", "tools", "gaming", "network", "settings", "about", "patchnotes", "bios" })
+                foreach (var page in new[] { "drivers", "startup", "tools", "gaming", "network", "restore", "resources", "fixes", "services", "apps", "settings", "about", "patchnotes", "bios" })
                 {
                     typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { page });
                     Render(page + "-dark", 1320, 860);
@@ -490,6 +490,20 @@ internal static class Program
                 // Página exclusiva de licença admin: chamada direto, sem a checagem da navegação
                 typeof(MainWindow).GetMethod("ShowIsos", flags)!.Invoke(window, null);
                 Render("isos-dark", 1320, 860);
+                // Variações de aparência em resoluções menores (aplicadas só na memória, sem salvar)
+                void Variant(string name, PQueirozOptimizer.Models.AppearanceSettings look, int width, int height, params string[] pages)
+                {
+                    PQueirozOptimizer.Services.AppearanceService.Apply(look);
+                    foreach (var page in pages)
+                    {
+                        typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { page });
+                        if (page == "dashboard") Pump((Task)typeof(MainWindow).GetMethod("RenderDashboardAsync", flags)!.Invoke(window, null)!);
+                        Render($"{page}-{name}", width, height);
+                    }
+                }
+                Variant("oled-1366", new() { Theme = PQueirozOptimizer.Models.ThemeMode.Oled, Accent = PQueirozOptimizer.Models.AccentIntensity.Vibrant, Density = PQueirozOptimizer.Models.Density.Compact, CardSize = PQueirozOptimizer.Models.CardSize.Compact }, 1366, 728, "dashboard", "settings", "resources", "services");
+                Variant("comfort-1600", new() { Accent = PQueirozOptimizer.Models.AccentIntensity.Soft, Density = PQueirozOptimizer.Models.Density.Comfortable, CardSize = PQueirozOptimizer.Models.CardSize.Large }, 1600, 860, "dashboard", "fixes");
+                PQueirozOptimizer.Services.AppearanceService.Apply(PQueirozOptimizer.Services.AppearanceService.Defaults());
                 typeof(MainWindow).GetMethod("ApplyTheme", flags)!.Invoke(window, new object[] { false, false });
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "dashboard" });
                 Pump((Task)typeof(MainWindow).GetMethod("RenderDashboardAsync", flags)!.Invoke(window, null)!);

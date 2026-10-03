@@ -90,9 +90,9 @@ public static partial class Translator
 
     private static string? TranslateTrimmed(string core)
     {
-        if (Exact.TryGetValue(core, out var exact) || GamingExact.TryGetValue(core, out exact) || ExtrasExact.TryGetValue(core, out exact)) return exact;
+        if (Exact.TryGetValue(core, out var exact) || GamingExact.TryGetValue(core, out exact) || ExtrasExact.TryGetValue(core, out exact) || ParagonExact.TryGetValue(core, out exact)) return exact;
 
-        foreach (var (regex, build) in Patterns.Concat(GamingPatterns).Concat(ExtrasPatterns))
+        foreach (var (regex, build) in Patterns.Concat(GamingPatterns).Concat(ExtrasPatterns).Concat(ParagonPatterns))
         {
             var m = regex.Match(core);
             if (m.Success) return build(m);
@@ -115,7 +115,7 @@ public static partial class Translator
 
         // "Rótulo: valor" em que só o rótulo é conhecido
         var colon = core.IndexOf(": ", StringComparison.Ordinal);
-        if (colon > 0 && (Exact.TryGetValue(core[..colon], out var label) || GamingExact.TryGetValue(core[..colon], out label) || ExtrasExact.TryGetValue(core[..colon], out label)))
+        if (colon > 0 && (Exact.TryGetValue(core[..colon], out var label) || GamingExact.TryGetValue(core[..colon], out label) || ExtrasExact.TryGetValue(core[..colon], out label) || ParagonExact.TryGetValue(core[..colon], out label)))
             return label + ": " + (TranslateCore(core[(colon + 2)..]) ?? core[(colon + 2)..]);
         if (core.EndsWith(':') && Exact.TryGetValue(core[..^1], out var labelOnly)) return labelOnly + ":";
 

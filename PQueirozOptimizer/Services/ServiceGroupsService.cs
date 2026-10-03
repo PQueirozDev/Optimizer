@@ -1,0 +1,110 @@
+using System.ComponentModel;
+using System.IO;
+using System.ServiceProcess;
+using System.Text.Json;
+using Microsoft.Win32;
+
+namespace PQueirozOptimizer.Services;
+
+/// <summary>Grupo de serviços que a página Serviços liga e desliga de uma vez.</summary>
+public sealed record ServiceGroup(string Id, string Category, string Name, string Description, string[] Services, string? Warning = null);
+
+/// <summary>
+/// Serviços em segundo plano por grupo (Windows Update, telemetria, descoberta de rede, Bluetooth...). Desligar
+/// guarda o tipo de inicialização original de cada serviço; ligar de novo restaura exatamente o que era.
+/// </summary>
+public sealed class ServiceGroupsService
+{
+    private readonly ActivityLog _log;
+    private static readonly string BackupPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "OtimizadorPC", "Tweaks", "servicos.json");
+
+    public ServiceGroupsService(ActivityLog log) => _log = log;
+
+    public static readonly ServiceGroup[] Groups =
+    {
+        new("windows-update", "Sistema e privacidade", "Bloquear o Windows Update", "Para as atualizações automáticas e a Otimização de Entrega. Lembre de ligar de novo de vez em quando para receber correções de segurança.", new[] { "wuauserv", "UsoSvc", "DoSvc" }, "Sem atualizações de segurança enquanto estiver desligado."),
+        new("telemetry", "Sistema e privacidade", "Bloquear a telemetria", "Desliga a coleta e o envio de dados de diagnóstico e relatórios de erro para a Microsoft.", new[] { "DiagTrack", "dmwappushservice", "diagnosticshub.standardcollector.service", "WerSvc" }),
+        new("discovery", "Rede e conexão", "Desligar a descoberta na rede local", "Para o compartilhamento e a descoberta de dispositivos na rede (outros PCs, TVs e impressoras de rede deixam de aparecer).", new[] { "FDResPub", "fdPHost", "SSDPSRV", "upnphost", "lmhosts" }),
+        new("remote", "Rede e conexão", "Desligar o acesso remoto", "Bloqueia a Área de Trabalho Remota, o registro remoto e o roteamento de VPN do Windows.", new[] { "RemoteRegistry", "RemoteAccess", "TermService", "SessionEnv", "UmRdpService" }, "A Área de Trabalho Remota deste PC para de funcionar."),
+        new("print", "Hardware e periféricos", "Desligar a impressão", "Para os serviços de impressora e digitalização. Só desligue se não usa impressora.", new[] { "Spooler", "PrintNotify" }),
+        new("bluetooth", "Hardware e periféricos", "Desligar o Bluetooth", "Para o serviço de suporte ao Bluetooth. Fones, controles e mouses Bluetooth deixam de conectar.", new[] { "bthserv", "BTAGService" }),
+        new("hyperv", "Recursos do Windows", "Desligar o Hyper-V", "Para os serviços de máquinas virtuais. WSL 2, Docker e o Sandbox do Windows precisam deles.", new[] { "HvHost", "vmickvpexchange", "vmicguestinterface", "vmicshutdown", "vmicheartbeat", "vmicvmsession", "vmicrdv", "vmictimesync", "vmicvss" }),
+        new("xbox", "Recursos do Windows", "Desligar os serviços do Xbox", "Para a Xbox Live e o salvamento na nuvem de jogos do app Xbox. Controles continuam funcionando.", new[] { "XblAuthManager", "XblGameSave", "XboxNetApiSvc" }, "Jogos do Game Pass/Xbox app podem não abrir com eles desligados."),
+    };
+
+    private static Dictionary<string, Dictionary<string, string>> LoadBackup()
+    {
+        try { return File.Exists(BackupPath) ? JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(File.ReadAllText(BackupPath)) ?? new() : new(); }
+        catch (Exception ex) when (ex is IOException or JsonException) { return new(); }
+    }
+
+    private static void SaveBackup(Dictionary<string, Dictionary<string, string>> backup)
+    {
+        var dir = Path.GetDirectoryName(BackupPath)!;
+        if (!Directory.Exists(dir)) { Directory.CreateDirectory(dir); RegistryTweakStore.ProtectDirectory(dir); }
+        File.WriteAllText(BackupPath, JsonSerializer.Serialize(backup));
+    }
+
+    public static bool IsDisabled(ServiceGroup group) => LoadBackup().ContainsKey(group.Id);
+
+    /// <summary>Serviços do grupo que existem neste Windows.</summary>
+    public static string[] Existing(ServiceGroup group) =>
+        group.Services.Where(name => { using var k = Registry.LocalMachine.OpenSubKey($@"SYSTEM\CurrentControlSet\Services\{name}"); return k != null; }).ToArray();
+
+    private static string StartType(string service)
+    {
+        using var k = Registry.LocalMachine.OpenSubKey($@"SYSTEM\CurrentControlSet\Services\{service}");
+        var start = k?.GetValue("Start") as int? ?? 3;
+        var delayed = k?.GetValue("DelayedAutostart") as int? == 1;
+        return start switch { 2 when delayed => "delayed-auto", 2 => "auto", 4 => "disabled", 0 => "boot", 1 => "system", _ => "demand" };
+    }
+
+    public async Task<int> DisableAsync(ServiceGroup group)
+    {
+        var backup = LoadBackup();
+        var services = Existing(group);
+        var original = backup.TryGetValue(group.Id, out var saved) ? saved : services.ToDictionary(s => s, StartType);
+        backup[group.Id] = original;
+        SaveBackup(backup); // o "antes" vai para o disco antes de mudar qualquer serviço
+        var changed = 0;
+        await Task.Run(() =>
+        {
+            foreach (var name in services)
+            {
+                if (GamingService.RunTool("sc.exe", "config", name, "start=", "disabled") == 0) changed++;
+                try
+                {
+                    using var controller = new ServiceController(name);
+                    if (controller.Status != ServiceControllerStatus.Stopped) { controller.Stop(); controller.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(15)); }
+                }
+                catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or System.ServiceProcess.TimeoutException) { }
+            }
+        });
+        _log.Write("SUCCESS", $"Serviços desligados: {group.Name} ({changed}/{services.Length})");
+        return changed;
+    }
+
+    public async Task<int> RestoreAsync(ServiceGroup group)
+    {
+        var backup = LoadBackup();
+        if (!backup.TryGetValue(group.Id, out var original)) return 0;
+        // Só restaura serviços que o próprio grupo declara: o arquivo não decide o que roda como administrador
+        var allowed = group.Services.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var validTypes = new HashSet<string> { "auto", "delayed-auto", "demand", "disabled", "boot", "system" };
+        var restored = 0;
+        await Task.Run(() =>
+        {
+            foreach (var (name, type) in original.Where(o => allowed.Contains(o.Key) && validTypes.Contains(o.Value)))
+            {
+                if (GamingService.RunTool("sc.exe", "config", name, "start=", type) == 0) restored++;
+                if (type is "auto" or "delayed-auto")
+                    try { using var c = new ServiceController(name); if (c.Status == ServiceControllerStatus.Stopped) c.Start(); }
+                    catch (Exception ex) when (ex is InvalidOperationException or Win32Exception) { }
+            }
+        });
+        backup.Remove(group.Id);
+        SaveBackup(backup);
+        _log.Write("SUCCESS", $"Serviços restaurados: {group.Name} ({restored}/{original.Count})");
+        return restored;
+    }
+}

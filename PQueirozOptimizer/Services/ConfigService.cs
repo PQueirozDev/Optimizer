@@ -326,6 +326,37 @@ public class ConfigService
         Save();
     }
 
+    /// <summary>Preferências de aparência; quem usava o tema claro antigo passa para "Automático".</summary>
+    public static AppearanceSettings EffectiveAppearance(AppConfig config)
+    {
+        var appearance = config.Appearance ?? new AppearanceSettings();
+        if (string.Equals(config.Theme, "Light", StringComparison.OrdinalIgnoreCase) && appearance.Theme == ThemeMode.Dark) appearance.Theme = ThemeMode.Auto;
+        return appearance;
+    }
+
+    public void SaveAppearance(AppearanceSettings settings)
+    {
+        _config.Appearance = settings.Clone();
+        _config.Theme = "Dark";
+        Save();
+    }
+
+    public bool IsTutorialCompleted(string id) => _config.CompletedTutorials.Contains(id, StringComparer.OrdinalIgnoreCase);
+
+    public void SetTutorialCompleted(string id, bool completed)
+    {
+        _config.CompletedTutorials.RemoveAll(t => t.Equals(id, StringComparison.OrdinalIgnoreCase));
+        if (completed) _config.CompletedTutorials.Add(id);
+        Save();
+    }
+
+    /// <summary>"Rever tutoriais": todos voltam a aparecer.</summary>
+    public void ResetTutorials()
+    {
+        _config.CompletedTutorials.Clear();
+        Save();
+    }
+
     /// <summary>Perfis que sempre exibem todas as otimizações: a lista é refeita a cada abertura.</summary>
     public static bool ShowsEverything(string profileName) =>
         profileName.Equals("Padrão", StringComparison.OrdinalIgnoreCase) || profileName.Equals("Modo Completo", StringComparison.OrdinalIgnoreCase);

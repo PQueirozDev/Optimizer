@@ -19,13 +19,13 @@ public partial class MainWindow
         PageBadge.Visibility = Visibility.Visible;
         PageBadgeText.Text = "DNS: " + NetworkService.CurrentDnsLabel();
         var root = new StackPanel();
-        root.Children.Add(SpeedTestCard());
+        root.Children.Add(Mark(SpeedTestCard(), "network.speed"));
 
         var columns = new Grid();
         columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(16) });
         columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        columns.Children.Add(DnsCard());
+        columns.Children.Add(Mark(DnsCard(), "network.dns"));
         var right = new StackPanel();
         right.Children.Add(LatencyTweakCard());
         right.Children.Add(AdaptersCard());
@@ -33,7 +33,7 @@ public partial class MainWindow
         columns.Children.Add(right);
         root.Children.Add(columns);
 
-        root.Children.Add(NetworkRepairCard());
+        root.Children.Add(Mark(NetworkRepairCard(), "network.repair"));
         ContentHost.Children.Clear();
         ContentHost.Children.Add(root);
     }
@@ -221,7 +221,7 @@ public partial class MainWindow
     {
         var panel = new StackPanel();
         panel.Children.Add(SectionHeader("Reparos de rede", "Resolvem a maioria dos problemas de conexão, DNS e login em jogos."));
-        var grid = new UniformGrid { Columns = 3, Margin = new Thickness(0, 0, -12, 0) };
+        var grid = Responsive(new UniformGrid { Columns = 3, Margin = new Thickness(0, 0, -12, 0) }, 260, 3);
 
         var flush = RepairTile(Glyphs.Broom, "Limpar cache DNS", "Resolve sites e servidores que não abrem depois de mudarem de endereço.", "Limpar");
         ((Button)flush.Tag).Click += async (_, _) => await ExecuteTrackedAsync("Limpando cache DNS", async _ => await Network.FlushDnsAsync());

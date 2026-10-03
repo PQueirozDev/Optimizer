@@ -98,7 +98,8 @@ public partial class App : Application
         {
             var config = new Services.ConfigService().Config;
             Services.Translator.IsEnglish = string.Equals(config.Language, "en", StringComparison.OrdinalIgnoreCase);
-            Services.ThemeService.Apply(Resources, !string.Equals(config.Theme, "Light", StringComparison.OrdinalIgnoreCase));
+            // Aparência aplicada antes de qualquer janela abrir: sem "piscar" o tema padrão
+            Services.AppearanceService.Apply(Services.ConfigService.EffectiveAppearance(config));
         }
         catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException) { }
 

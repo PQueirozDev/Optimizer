@@ -63,7 +63,7 @@ public partial class MainWindow
         filterBar.Children.Add(categoriesPanel);
         root.Children.Add(filterBar);
 
-        var cards = new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, -14, 0) };
+        var cards = Responsive(new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, -14, 0) }, 360, 2);
         var emptyHost = new StackPanel();
         root.Children.Add(cards);
         root.Children.Add(emptyHost);

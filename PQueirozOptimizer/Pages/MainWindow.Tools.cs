@@ -19,7 +19,7 @@ public partial class MainWindow
         PageTitle.Text = "Ferramentas";
         PageBadge.Visibility = Visibility.Collapsed;
         var root = new StackPanel();
-        var featured = new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, -14, 0) };
+        var featured = Responsive(new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, -14, 0) }, 360, 2);
 
         // 1. Barra de tarefas All Black
         var isAbActive = IsAllBlackTaskbarActive();
@@ -125,7 +125,7 @@ public partial class MainWindow
             ("Gerenciamento de Disco", "diskmgmt.msc", Glyphs.Drive),
             ("Visualizador de Eventos", "eventvwr.msc", Glyphs.History),
         };
-        var grid = new UniformGrid { Columns = 4, Margin = new Thickness(0, 0, -12, 0) };
+        var grid = Responsive(new UniformGrid { Columns = 4, Margin = new Thickness(0, 0, -12, 0) }, 210, 4);
         foreach (var (name, target, glyph) in tools)
         {
             var tile = new Button { Tag = target, HorizontalContentAlignment = HorizontalAlignment.Stretch, Padding = new Thickness(14, 12, 14, 12), Margin = new Thickness(0, 0, 12, 12) };

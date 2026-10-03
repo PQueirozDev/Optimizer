@@ -115,12 +115,12 @@
       <Setter Property="BorderBrush" Value="Transparent"/>
       <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}"/>
       <Setter Property="Effect">
-        <Setter.Value><DropShadowEffect BlurRadius="16" ShadowDepth="0" Opacity="0.4" Color="{StaticResource GlowColor}"/></Setter.Value>
+        <Setter.Value><DropShadowEffect BlurRadius="12" ShadowDepth="0" Opacity="0.22" Color="{StaticResource GlowColor}"/></Setter.Value>
       </Setter>
       <Style.Triggers>
         <Trigger Property="IsMouseOver" Value="True">
           <Setter Property="Effect">
-            <Setter.Value><DropShadowEffect BlurRadius="26" ShadowDepth="0" Opacity="0.7" Color="{StaticResource GlowColor}"/></Setter.Value>
+            <Setter.Value><DropShadowEffect BlurRadius="18" ShadowDepth="0" Opacity="0.4" Color="{StaticResource GlowColor}"/></Setter.Value>
           </Setter>
         </Trigger>
         <Trigger Property="IsEnabled" Value="False">

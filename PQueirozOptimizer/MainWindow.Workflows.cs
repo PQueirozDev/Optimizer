@@ -439,32 +439,47 @@ public partial class MainWindow
             hero.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             hero.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             var heroText = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            var status = Pill(tone == "Success" ? "Saudável" : tone == "Warning" ? "Atenção" : "Crítico", tone);
+            // 1. Estado geral: o status não depende só da cor (texto + ícone)
+            var statusText = tone == "Success" ? "Saudável" : tone == "Warning" ? "Atenção" : "Crítico";
+            var status = Pill((tone == "Success" ? "● " : "▲ ") + statusText, tone);
             status.HorizontalAlignment = HorizontalAlignment.Left; status.Margin = new Thickness(0, 0, 0, 10);
             heroText.Children.Add(status);
             var headlineText = new TextBlock { Text = headline, FontSize = 24, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
             headlineText.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
             heroText.Children.Add(headlineText);
-            var heroSub = Label($"{snapshot.OperatingSystem} · Build {snapshot.Build} · ligado há {snapshot.UptimeText}", 12.5, true);
-            heroSub.Margin = new Thickness(0, 6, 0, 18);
-            heroText.Children.Add(heroSub);
+            var facts = new WrapPanel { Margin = new Thickness(0, 10, 0, AppearanceService.Space(18)) };
+            foreach (var (glyph, label, value) in new[] { (Glyphs.Monitor, "Sistema", $"{snapshot.OperatingSystem} · Build {snapshot.Build}"), (Glyphs.Clock, "Tempo ligado", snapshot.UptimeText) })
+            {
+                var fact = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 22, 4) };
+                var icon = GlyphIcon(glyph, 12, "MutedBrush"); icon.Margin = new Thickness(0, 0, 7, 0);
+                fact.Children.Add(icon);
+                var l = new TextBlock { Text = label + ":", FontSize = 12.5, Margin = new Thickness(0, 0, 5, 0) }; l.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+                var v = new TextBlock { Text = value, FontSize = 12.5, FontWeight = FontWeights.SemiBold, Tag = Translator.SystemDataTag }; v.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondaryBrush");
+                fact.Children.Add(l); fact.Children.Add(v);
+                facts.Children.Add(fact);
+            }
+            heroText.Children.Add(facts);
+            // 2. Ação principal em destaque; as outras ficam como secundárias
             var actions = new WrapPanel();
             var clean = IconButton(Glyphs.Broom, "Analisar limpeza", primary: true); clean.Tag = "quickclean"; clean.Click += RunOperation_Click;
+            clean.ToolTip = "Mostra quanto espaço dá para liberar antes de apagar qualquer coisa";
             var tune = IconButton(Glyphs.Lightning, "Revisar ajustes"); tune.Tag = "padrao"; tune.Click += RunOperation_Click;
             var diag = IconButton(Glyphs.Diagnostic, "Diagnóstico"); diag.Tag = "analisar"; diag.Click += RunOperation_Click;
-            actions.Children.Add(clean); actions.Children.Add(tune); actions.Children.Add(diag);
+            foreach (var b in new[] { clean, tune, diag }) { b.IsEnabled = !_operationRunning; actions.Children.Add(b); }
             heroText.Children.Add(actions);
             hero.Children.Add(heroText);
-            var ring = ScoreRing(score, "SAÚDE", 136); ring.Margin = new Thickness(24, 0, 8, 0);
+            var ring = ScoreRing(score, "SAÚDE", 112 * AppearanceService.CardScale); ring.Margin = new Thickness(24, 0, 4, 0);
+            ring.ToolTip = $"Pontuação de saúde: {score:0} de 100";
             Grid.SetColumn(ring, 1); hero.Children.Add(ring);
             var heroCard = Surface(hero);
-            heroCard.Padding = new Thickness(28, 24, 28, 24);
+            heroCard.Padding = new Thickness(AppearanceService.Space(26), AppearanceService.Space(22), AppearanceService.Space(26), AppearanceService.Space(22));
             heroCard.SetResourceReference(Border.BackgroundProperty, "HeroBrush");
-            heroCard.SetResourceReference(Border.BorderBrushProperty, "AccentSoftBrush");
             root.Children.Add(heroCard);
+            // 3. Monitor em tempo real
             root.Children.Add(BuildLivePanel());
 
-            var stats = new UniformGrid { Columns = 4, Margin = new Thickness(0, 0, -14, 2) };
+            // 4. Hardware
+            var stats = Responsive(new UniformGrid { Columns = 4, Margin = new Thickness(0, 0, -14, 2) }, 210, 4);
             stats.Children.Add(Card("PROCESSADOR", snapshot.Processor, Glyphs.Chip, "AccentBrush"));
             stats.Children.Add(Card("MEMÓRIA", snapshot.Memory, Glyphs.Memory, "InfoBrush"));
             stats.Children.Add(Card("ESPAÇO LIVRE", $"{snapshot.FreeSpace} de {snapshot.Storage}", Glyphs.Drive, "SuccessBrush"));
@@ -503,6 +518,8 @@ public partial class MainWindow
             Grid.SetColumn(activityCard, 2);
             columns.Children.Add(activityCard);
             root.Children.Add(columns);
+            // 6. Recursos secundários: o passo a passo completo
+            root.Children.Add(FixAllCard());
 
             var profile = _configService.GetActiveProfile();
             var profileLine = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(4, 0, 0, 8) };

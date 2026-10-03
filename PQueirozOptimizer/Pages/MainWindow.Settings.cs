@@ -284,46 +284,9 @@ public partial class MainWindow
         profileSection.Child = profileStack;
         root.Children.Add(profileSection);
 
-        // 2. Appearance Section (Theme Selector)
-        var themeSection = new Border
-        {
-            CornerRadius = new CornerRadius(12),
-            Padding = new Thickness(22),
-            Margin = new Thickness(0, 0, 0, 24),
-            BorderThickness = new Thickness(1)
-        };
-        themeSection.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
-        themeSection.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
-
-        var themeStack = new StackPanel();
-        var themeTitle = new TextBlock { Text = "Aparência & Tema", FontSize = 17.5, FontWeight = FontWeights.Bold };
-        themeTitle.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
-
-        var themeDesc = new TextBlock
-        {
-            Text = "Escolha o esquema de cores para o aplicativo. Todas as janelas e componentes se adaptam instantaneamente.",
-            FontSize = 12.5,
-            Margin = new Thickness(0, 4, 0, 16)
-        };
-        themeDesc.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
-
-        themeStack.Children.Add(themeTitle);
-        themeStack.Children.Add(themeDesc);
-
-        // A opção em uso fica destacada como botão principal
-        var themeBtns = new WrapPanel();
-        var darkBtn = IconButton(Glyphs.Moon, "Modo Escuro (Dark)", primary: _darkTheme);
-        darkBtn.Click += (_, _) => { ApplyTheme(true, saveConfig: true); ShowSettings(); };
-
-        var lightBtn = IconButton(Glyphs.Sun, "Modo Claro (Light)", primary: !_darkTheme);
-        lightBtn.Click += (_, _) => { ApplyTheme(false, saveConfig: true); ShowSettings(); };
-
-        themeBtns.Children.Add(darkBtn);
-        themeBtns.Children.Add(lightBtn);
-        themeStack.Children.Add(themeBtns);
-
-        themeSection.Child = themeStack;
-        root.Children.Add(themeSection);
+        // 2. Aparência (tema, roxo, densidade, cards, animações) e tutoriais
+        root.Children.Insert(0, AppearanceSection());
+        root.Children.Add(TutorialsSection());
 
         // 3. Language Section (App-wide language switch)
         var langSection = new Border

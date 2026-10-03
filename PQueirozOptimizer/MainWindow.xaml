@@ -19,7 +19,7 @@
      <!-- Logo (faz parte da área de arrastar a janela) -->
      <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="20,18,16,14">
       <Border Width="36" Height="36" CornerRadius="11" Background="{DynamicResource AccentGradientBrush}">
-       <Border.Effect><DropShadowEffect BlurRadius="18" ShadowDepth="0" Opacity="0.6" Color="#8B5CF6"/></Border.Effect>
+       <Border.Effect><DropShadowEffect BlurRadius="14" ShadowDepth="0" Opacity="0.35" Color="#8B5CF6"/></Border.Effect>
        <Image Source="pack://application:,,,/PQueirozOptimizer;component/Assets/app.png" Width="22" Height="22" RenderOptions.BitmapScalingMode="HighQuality"/>
       </Border>
       <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
@@ -29,7 +29,7 @@
      </StackPanel>
 
      <!-- Rodapé: HUD ao vivo (CPU, GPU, RAM e ping), licença e versão -->
-     <Border DockPanel.Dock="Bottom" Margin="14,8,14,16" Padding="14,12" CornerRadius="12" Background="{DynamicResource CardBgBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1">
+     <Border x:Name="HudPanel" DockPanel.Dock="Bottom" Margin="14,8,14,16" Padding="14,12" CornerRadius="12" Background="{DynamicResource CardBgBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1">
       <StackPanel>
        <DockPanel Margin="0,0,0,10">
         <TextBlock x:Name="HudPing" DockPanel.Dock="Right" Text="-- ms" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Tag="dado-do-sistema" ToolTip="Latência até 1.1.1.1"/>
@@ -74,6 +74,12 @@
          <TextBlock x:Name="NavOptText" Text="Otimizações" VerticalAlignment="Center" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
         </DockPanel>
        </RadioButton>
+       <RadioButton x:Name="NavServices" Tag="services" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
+        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE912;" Style="{StaticResource NavIcon}"/><TextBlock Text="Serviços" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+       </RadioButton>
+       <RadioButton x:Name="NavApps" Tag="apps" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
+        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE71D;" Style="{StaticResource NavIcon}"/><TextBlock Text="Apps" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+       </RadioButton>
        <RadioButton x:Name="NavStartup" Tag="startup" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE7E8;" Style="{StaticResource NavIcon}"/><TextBlock Text="Inicialização" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
        </RadioButton>
@@ -88,6 +94,17 @@
        </RadioButton>
        <RadioButton x:Name="NavHistory" Tag="history" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE81C;" Style="{StaticResource NavIcon}"/><TextBlock x:Name="NavHistoryText" Text="Atividade e reversão" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+       </RadioButton>
+
+       <TextBlock x:Name="NavSecMaintenance" Text="MANUTENÇÃO" Style="{StaticResource SectionHeaderStyle}"/>
+       <RadioButton x:Name="NavResources" Tag="resources" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
+        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8F1;" Style="{StaticResource NavIcon}"/><TextBlock Text="Recursos" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+       </RadioButton>
+       <RadioButton x:Name="NavFixes" Tag="fixes" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
+        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE90F;" Style="{StaticResource NavIcon}"/><TextBlock Text="Correções" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+       </RadioButton>
+       <RadioButton x:Name="NavRestore" Tag="restore" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
+        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE777;" Style="{StaticResource NavIcon}"/><TextBlock Text="Pontos de restauração" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
        </RadioButton>
 
        <TextBlock x:Name="NavSecGames" Text="JOGOS E REDE" Style="{StaticResource SectionHeaderStyle}"/>
@@ -179,7 +196,7 @@
       <TextBlock x:Name="PageBadgeText" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
      </Border>
      <Border x:Name="PageIconChip" DockPanel.Dock="Left" Width="54" Height="54" CornerRadius="17" Background="{DynamicResource AccentGradientBrush}" Margin="0,0,18,0" VerticalAlignment="Center">
-      <Border.Effect><DropShadowEffect BlurRadius="24" ShadowDepth="0" Opacity="0.55" Color="#8B5CF6"/></Border.Effect>
+      <Border.Effect><DropShadowEffect BlurRadius="18" ShadowDepth="0" Opacity="0.3" Color="#8B5CF6"/></Border.Effect>
       <TextBlock x:Name="PageIcon" Text="&#xE80F;" Style="{StaticResource IconText}" FontSize="22" Foreground="White"/>
      </Border>
      <StackPanel VerticalAlignment="Center">
@@ -198,6 +215,10 @@
      <StackPanel>
       <DockPanel>
        <Button Content="Ver atividade" DockPanel.Dock="Right" Click="History_Click" Margin="12,0,0,0" Padding="12,5" Style="{StaticResource GhostButton}"/>
+       <StackPanel x:Name="LastActivityPanel" DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0" MaxWidth="460" Visibility="Collapsed">
+        <Ellipse x:Name="LastActivityDot" Width="6" Height="6" Fill="{DynamicResource SuccessBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+        <TextBlock x:Name="LastActivityText" MaxWidth="440" FontSize="11.5" Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Tag="dado-do-sistema"/>
+       </StackPanel>
        <Border Width="28" Height="28" CornerRadius="9" Background="{DynamicResource AccentGradientBrush}" Margin="0,0,12,0">
         <TextBlock Text="&#xE946;" Style="{StaticResource IconText}" FontSize="12" Foreground="White"/>
        </Border>
@@ -210,6 +231,9 @@
     <!-- Notificações (toasts) -->
     <StackPanel x:Name="ToastHost" Grid.Row="1" Grid.RowSpan="3" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,40,84" Width="360" IsHitTestVisible="True"/>
    </Grid>
+
+   <!-- Tutorial: escurece a janela e ilumina um elemento por vez (MainWindow.Tutorial.cs) -->
+   <Grid x:Name="TutorialLayer" Grid.ColumnSpan="2" Visibility="Collapsed" Panel.ZIndex="50"/>
 
    <!-- Abertura: logo aparece e some revelando a interface (animada em PlayIntroAnimation) -->
    <Grid x:Name="IntroOverlay" Grid.ColumnSpan="2" Background="{DynamicResource BackgroundBrush}" IsHitTestVisible="False">

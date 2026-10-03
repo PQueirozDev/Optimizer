@@ -68,9 +68,13 @@ public partial class MainWindow : Window
             else Dispatcher.BeginInvoke(Close); // terminou enquanto a pergunta estava aberta
         };
 
-        // Load saved theme & language
-        _darkTheme = !_configService.Config.Theme.Equals("Light", StringComparison.OrdinalIgnoreCase);
-        ApplyTheme(_darkTheme, saveConfig: false);
+        // Aparência salva (já aplicada pelo App antes da janela abrir; reaplicada aqui para janelas recriadas)
+        AppearanceService.Apply(ConfigService.EffectiveAppearance(_configService.Config));
+        _darkTheme = ThemeService.IsDark;
+        UpdateThemeButton();
+        Action onAppearance = () => Dispatcher.BeginInvoke(OnAppearanceChanged);
+        AppearanceService.Changed += onAppearance;
+        Closed += (_, _) => AppearanceService.Changed -= onAppearance;
         StartAurora();
         UpdatePageHeader(_currentPage);
         _loc.SetLanguage(_configService.Config.Language ?? "pt");
@@ -171,6 +175,8 @@ public partial class MainWindow : Window
     /// </summary>
     private void PlayIntroAnimation()
     {
+        // Animações desligadas em Configurações → Aparência: a interface aparece direto
+        if (!AppearanceService.AnimationsEnabled) { IntroOverlay.Visibility = Visibility.Collapsed; return; }
         static DoubleAnimation Anim(double from, double to, double beginMs, double durationMs, IEasingFunction? ease = null) =>
             new(from, to, TimeSpan.FromMilliseconds(durationMs))
             {
@@ -209,6 +215,7 @@ public partial class MainWindow : Window
         {
             if (_currentPage == "dashboard") await ShowDashboardAsync();
             else NavigateTo(_currentPage);
+            MaybeShowWelcomeTour();
             await CheckForUpdateAsync(showPrompt: _promptForUpdates);
         }
         catch (Exception ex)
@@ -242,6 +249,7 @@ public partial class MainWindow : Window
             return;
         }
         _currentPage = page;
+        _tutorialMarks.Clear();
         UpdateActiveNavButton(page);
         UpdatePageHeader(page);
         ContentScroll.ScrollToTop();
@@ -260,24 +268,58 @@ public partial class MainWindow : Window
             case "startup": ShowStartup(); break;
             case "gaming": ShowGaming(); break;
             case "network": ShowNetwork(); break;
+            case "restore": ShowRestorePoints(); break;
+            case "resources": ShowResources(); break;
+            case "fixes": ShowFixes(); break;
+            case "services": ShowServices(); break;
+            case "apps": ShowApps(); break;
         }
         AnimatePageIn();
+        MaybeShowPageTutorial(page);
     }
 
     private void UpdateActiveNavButton(string page)
     {
-        var buttons = new[] { NavDashboard, NavOpt, NavStartup, NavDrivers, NavIsos, NavTools, NavGaming, NavNetwork, NavSettings, NavAbout, NavHistory, NavPatchNotes, NavBios, NavAdmin };
+        var buttons = new[] { NavDashboard, NavOpt, NavStartup, NavDrivers, NavIsos, NavTools, NavGaming, NavNetwork, NavRestore, NavResources, NavFixes, NavServices, NavApps, NavSettings, NavAbout, NavHistory, NavPatchNotes, NavBios, NavAdmin };
         foreach (var b in buttons) b.IsChecked = b.Tag?.ToString() == page;
     }
 
     #region Theming
+    /// <summary>Botão do topo: alterna Escuro → OLED → Automático (o mesmo de Configurações → Aparência).</summary>
     private void ThemeButton_Click(object sender, RoutedEventArgs e)
     {
-        ApplyTheme(!_darkTheme, saveConfig: true);
-        // Configurações mostra qual tema está ativo; nas outras páginas, redesenhar apagaria o que está
-        // na tela (ex.: a saída de uma operação em andamento ou os ajustes marcados na revisão)
-        if (_currentPage == "settings" && !_operationRunning) ShowSettings();
-        else if (Application.Current.TryFindResource("ShadowColor") is Color shadow) RefreshThemedVisuals(ContentHost, shadow);
+        var next = AppearanceService.Current.Clone();
+        next.Theme = next.Theme switch { Models.ThemeMode.Dark => Models.ThemeMode.Oled, Models.ThemeMode.Oled => Models.ThemeMode.Auto, _ => Models.ThemeMode.Dark };
+        SaveAppearance(next);
+    }
+
+    /// <summary>Aplica e salva novas preferências de aparência.</summary>
+    private void SaveAppearance(Models.AppearanceSettings settings)
+    {
+        AppearanceService.Apply(settings);
+        try { _configService.SaveAppearance(settings); }
+        catch (IOException ex) { _log.Write("WARN", "Preferências não foram salvas: " + (ex.InnerException?.Message ?? ex.Message)); }
+    }
+
+    /// <summary>
+    /// Depois de mudar a aparência: atualiza o que não acompanha os recursos dinâmicos (sombras, aurora,
+    /// ícone do tema) e redesenha a página — exceto durante uma operação, para não apagar a saída na tela.
+    /// </summary>
+    private void OnAppearanceChanged()
+    {
+        _darkTheme = ThemeService.IsDark;
+        StartAurora(); // reinicia (ou para) o movimento do fundo conforme as animações
+        UpdateThemeButton();
+        if (Application.Current.TryFindResource("ShadowColor") is Color shadow) RefreshThemedVisuals(this, shadow);
+        if (!_operationRunning && IsLoaded && _currentPage is not ("dashboard")) NavigateTo(_currentPage);
+        else if (!_operationRunning && IsLoaded) _ = RenderDashboardAsync();
+    }
+
+    private void UpdateThemeButton()
+    {
+        var mode = AppearanceService.Current.Theme;
+        ThemeButton.Content = GlyphIcon(mode switch { Models.ThemeMode.Oled => Glyphs.Moon, Models.ThemeMode.Auto => Glyphs.Refresh, _ => Glyphs.Sun }, 13);
+        ThemeButton.ToolTip = mode switch { Models.ThemeMode.Dark => "Tema: Escuro (clique para OLED)", Models.ThemeMode.Oled => "Tema: OLED (clique para Automático)", _ => "Tema: Automático (clique para Escuro)" };
     }
 
     /// <summary>
@@ -291,19 +333,13 @@ public partial class MainWindow : Window
         for (var i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++) RefreshThemedVisuals(VisualTreeHelper.GetChild(node, i), shadow);
     }
 
+    /// <summary>Usado pela renderização de teste: claro força a paleta clara; escuro volta às preferências salvas.</summary>
     private void ApplyTheme(bool isDark, bool saveConfig)
     {
-        _darkTheme = isDark;
-        ThemeService.Apply(Application.Current.Resources, isDark);
+        ThemeService.Apply(Application.Current.Resources, AppearanceService.Current, forceLight: !isDark);
+        _darkTheme = ThemeService.IsDark;
         RefreshAuroraColors();
-        ThemeButton.Content = GlyphIcon(isDark ? Glyphs.Sun : Glyphs.Moon, 13);
-        ThemeButton.ToolTip = isDark ? "Alternar para tema claro" : "Alternar para tema escuro";
-
-        if (saveConfig)
-        {
-            try { _configService.SaveTheme(isDark ? "Dark" : "Light"); }
-            catch (IOException ex) { _log.Write("WARN", "Preferências não foram salvas: " + (ex.InnerException?.Message ?? ex.Message)); }
-        }
+        UpdateThemeButton();
     }
     #endregion
 
@@ -322,6 +358,23 @@ public partial class MainWindow : Window
 
     private async void RunOperation_Click(object sender, RoutedEventArgs e) => await PrepareOperationAsync((sender as Button)?.Tag?.ToString() ?? "");
 
-    private void AddLogLine(string line) { _activity.Add(line); while (_activity.Count > 150) _activity.RemoveAt(0); }
+    private void AddLogLine(string line)
+    {
+        _activity.Add(line);
+        while (_activity.Count > 150) _activity.RemoveAt(0);
+        ShowLastActivity(line);
+    }
+
+    /// <summary>Barra de status: a última entrada do registro de atividade, com hora e cor do resultado.</summary>
+    private void ShowLastActivity(string line)
+    {
+        var m = System.Text.RegularExpressions.Regex.Match(line, @"^\[(?:\d{4}-\d{2}-\d{2} )?(\d{2}:\d{2})(?::\d{2})?\]\s*\[(\w+)\]\s*(.+)$");
+        if (!m.Success || m.Groups[2].Value == "INFO") return; // só resultados (sucesso, aviso, erro)
+        var tone = m.Groups[2].Value switch { "ERROR" => "DangerBrush", "WARN" => "WarningBrush", _ => "SuccessBrush" };
+        LastActivityDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, tone);
+        LastActivityText.Text = $"{m.Groups[1].Value} · {Translator.Tr(m.Groups[3].Value.Trim())}";
+        LastActivityText.ToolTip = line;
+        LastActivityPanel.Visibility = Visibility.Visible;
+    }
     #endregion
 }

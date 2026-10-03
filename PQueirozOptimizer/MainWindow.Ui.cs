@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
+using PQueirozOptimizer.Services;
 
 namespace PQueirozOptimizer;
 
@@ -57,6 +58,15 @@ public static class Glyphs
     public static readonly string Stop = G(0xE71A);
     public static readonly string Package = G(0xE7B8);
     public static readonly string Add = G(0xE710);
+    public static readonly string Restore2 = G(0xE777);
+    public static readonly string Library = G(0xE8F1);
+    public static readonly string Services = G(0xE912);
+    public static readonly string Apps = G(0xE71D);
+    public static readonly string Speaker = G(0xE767);
+    public static readonly string Print = G(0xE749);
+    public static readonly string Video = G(0xE714);
+    public static readonly string Tag = G(0xE8EC);
+    public static readonly string Rocket2 = G(0xE945);
 
     private static string G(int code) => char.ConvertFromUtf32(code);
 }
@@ -146,7 +156,7 @@ public partial class MainWindow
 
     private Border Surface(UIElement content)
     {
-        var border = new Border { Child = content, Padding = new Thickness(22), CornerRadius = new CornerRadius(18), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 16), Effect = CardShadow() };
+        var border = new Border { Child = content, Padding = AppearanceService.CardPadding, CornerRadius = new CornerRadius(16), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, AppearanceService.Space(16)), Effect = CardShadow() };
         border.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
         border.SetResourceReference(Border.BorderBrushProperty, "CardBorderBrush");
         AddHoverOutline(border);
@@ -165,6 +175,8 @@ public partial class MainWindow
         var ease = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
         void Animate(double y, double blur, double opacity)
         {
+            // Sem animações: só a borda muda, sem subir nem mexer na sombra
+            if (!AppearanceService.AnimationsEnabled) return;
             var time = TimeSpan.FromMilliseconds(180);
             lift.BeginAnimation(TranslateTransform.YProperty, new System.Windows.Media.Animation.DoubleAnimation(y, time) { EasingFunction = ease });
             if (border.Effect is DropShadowEffect { IsFrozen: false } shadow)
@@ -221,20 +233,22 @@ public partial class MainWindow
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        var chip = IconChip(glyph ?? Glyphs.Info, tone, 42);
+        var scale = AppearanceService.CardScale;
+        var chip = IconChip(glyph ?? Glyphs.Info, tone, 36 * scale);
         chip.VerticalAlignment = VerticalAlignment.Top;
         grid.Children.Add(chip);
 
         var text = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
         var t = new TextBlock { Text = title, FontSize = 11, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis };
         t.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
-        var v = new TextBlock { Text = value, FontSize = 16, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 3, 0, 0), TextWrapping = TextWrapping.Wrap };
+        // No máximo duas linhas: nomes longos ("Intel(R) Core(TM)...") terminam em reticências com o nome completo na dica
+        var v = new TextBlock { Text = value, FontSize = 14 * scale, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 3, 0, 0), TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.CharacterEllipsis, MaxHeight = 14 * scale * 2.7, ToolTip = value };
         v.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
         text.Children.Add(t); text.Children.Add(v);
         Grid.SetColumn(text, 1);
         grid.Children.Add(text);
 
-        var card = new Border { Padding = new Thickness(18), CornerRadius = new CornerRadius(18), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 14, 14), Child = grid, Effect = CardShadow() };
+        var card = new Border { Padding = new Thickness(AppearanceService.Space(15) * scale), CornerRadius = new CornerRadius(16), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 14, AppearanceService.Space(14)), Child = grid, Effect = CardShadow() };
         card.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
         card.SetResourceReference(Border.BorderBrushProperty, "CardBorderBrush");
         AddHoverOutline(card);
@@ -266,7 +280,7 @@ public partial class MainWindow
         // O arco "se desenha" ao aparecer: o traço tracejado começa escondido e é revelado
         var dash = radius * angle * Math.PI / 180 / arc.StrokeThickness + 1;
         arc.StrokeDashArray = new DoubleCollection { dash, dash };
-        if (Application.Current?.MainWindow is { IsVisible: true })
+        if (Application.Current?.MainWindow is { IsVisible: true } && AppearanceService.AnimationsEnabled)
             arc.BeginAnimation(Shape.StrokeDashOffsetProperty, new System.Windows.Media.Animation.DoubleAnimation(dash, 0, TimeSpan.FromMilliseconds(1100))
         { EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut } });
         grid.Children.Add(arc);

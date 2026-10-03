@@ -57,7 +57,7 @@ public partial class MainWindow
     {
         var panel = new StackPanel();
         panel.Children.Add(SectionHeader("Configurações dos jogos", "Preset competitivo gravado direto no arquivo de configuração do jogo: menos efeitos pesados, sem V-Sync e sem desfoque. O original é guardado e volta com um clique."));
-        var grid = new System.Windows.Controls.Primitives.UniformGrid { Columns = 2, Margin = new Thickness(0, 0, -12, 0) };
+        var grid = Responsive(new System.Windows.Controls.Primitives.UniformGrid { Columns = 2, Margin = new Thickness(0, 0, -12, 0) }, 360, 2);
         foreach (var preset in GameConfigService.Presets)
         {
             var path = GameConfigService.ConfigPath(preset);
