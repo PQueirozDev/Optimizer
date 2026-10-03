@@ -3,17 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="PQueiroz Optimizer: mais desempenho no Windows com ajustes revisáveis, backup e reversão. Planos Mensal e Vitalício, e edições personalizadas do Windows 11.">
+  <meta name="description" content="PQueiroz Optimizer: Modo Jogo, perfil NVIDIA, plano de energia de baixa latência, editor de BIOS e otimizações do Windows com backup e reversão. Planos Mensal e Vitalício, e edições personalizadas do Windows 11.">
   <meta name="theme-color" content="#060709">
   <meta property="og:title" content="PQueiroz Optimizer · Mais FPS com controle total">
   <meta property="og:description" content="Otimização do Windows com backup e reversão. Plano Mensal a R$ 19,90 ou Vitalício a R$ 50.">
-  <meta property="og:image" content="https://pqoptimizer.vercel.app/assets/optimizer-preview.png">
+  <meta property="og:image" content="https://pqoptimizer.vercel.app/assets/shots/visao-geral.jpg">
   <meta property="og:url" content="https://pqoptimizer.vercel.app/">
   <title>PQueiroz · Optimizer & Windows</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="showcase.css">
   <!-- Mesmo ícone do PQueiroz Optimizer (PQueirozOptimizer/Assets/app.ico e app.png) -->
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
@@ -50,11 +51,13 @@
   <header class="topbar">
     <div class="container topbar-inner">
       <a class="brand" href="#inicio" aria-label="PQueiroz Optimizer, início">
-        <span class="brand-mark" aria-hidden="true">P</span>
+        <span class="brand-mark has-logo" aria-hidden="true"><img src="assets/logo.png" width="30" height="30" alt=""></span>
         <span>PQueiroz</span><small>Optimizer</small>
       </a>
       <nav class="nav" id="nav" aria-label="Navegação principal">
         <a href="#optimizer">Optimizer</a>
+        <a href="#recursos">Recursos</a>
+        <a href="#galeria">Galeria</a>
         <a href="#comprar">Planos</a>
         <a href="#comparativo">Comparativo</a>
         <a href="#windows">Windows</a>
@@ -73,19 +76,29 @@
     <section class="hero">
       <canvas class="particles" aria-hidden="true"></canvas>
       <div class="hero-grid" aria-hidden="true"></div>
-      <div class="container hero-inner">
-        <p class="kicker reveal"><span class="live-dot" aria-hidden="true"></span>Nova versão <span data-version>v1.7.2</span> disponível</p>
-        <h1 class="reveal" style="--d: 60ms">Extraia mais FPS<br>com <span class="accent rotator" data-words="controle total|menos input lag|backup em tudo|um clique por vez">controle total</span>.</h1>
-        <p class="lead reveal" style="--d: 120ms">Um painel direto para deixar seu Windows mais leve, responsivo e pronto para jogar. Você revisa cada ajuste, e tudo o que tem backup pode ser revertido.</p>
-        <div class="hero-actions reveal" style="--d: 180ms">
-          <a class="btn btn-primary btn-lg btn-shine" href="#comprar">Ver planos · a partir de R$ 19,90</a>
-          <a class="btn btn-outline btn-lg" href="#optimizer">Ver como funciona</a>
+      <div class="container hero-inner hero-split">
+        <div class="hero-copy">
+          <p class="kicker reveal"><span class="live-dot" aria-hidden="true"></span>Nova versão <span data-version>v1.8.0</span> · Modo Jogo, NVIDIA e BIOS</p>
+          <h1 class="reveal" style="--d: 60ms">Extraia mais FPS<br>com <span class="accent rotator" data-words="controle total|menos input lag|backup em tudo|um clique por vez">controle total</span>.</h1>
+          <p class="lead reveal" style="--d: 120ms">Modo Jogo, perfil NVIDIA, plano de energia de baixa latência, editor de BIOS e otimizações revisadas item por item — em um painel bonito, com monitor ao vivo e reversão em um clique.</p>
+          <div class="hero-actions reveal" style="--d: 180ms">
+            <a class="btn btn-primary btn-lg btn-shine" href="#comprar">Ver planos · a partir de R$ 19,90</a>
+            <a class="btn btn-outline btn-lg" href="#recursos">Ver os recursos</a>
+          </div>
+          <ul class="trust reveal" style="--d: 240ms" aria-label="Garantias">
+            <li><svg class="icon"><use href="#i-shield"/></svg>Ponto de restauração antes de otimizar</li>
+            <li><svg class="icon"><use href="#i-undo"/></svg>Backup e reversão</li>
+            <li><svg class="icon"><use href="#i-check"/></svg>7 dias para desistir</li>
+          </ul>
         </div>
-        <ul class="trust reveal" style="--d: 240ms" aria-label="Garantias">
-          <li><svg class="icon"><use href="#i-shield"/></svg>Ponto de restauração antes de otimizar</li>
-          <li><svg class="icon"><use href="#i-undo"/></svg>Backup e reversão</li>
-          <li><svg class="icon"><use href="#i-check"/></svg>7 dias para desistir</li>
-        </ul>
+        <div class="hero-visual reveal" style="--d: 160ms" aria-hidden="true">
+          <div class="hero-stage">
+            <img class="hero-shot" src="assets/shots/visao-geral.jpg" width="2160" height="1350" alt="" fetchpriority="high">
+            <div class="float-chip chip-a"><span class="chip-dot ok"></span>Monitor ao vivo · 33 ms</div>
+            <div class="float-chip chip-b"><svg class="icon"><use href="#i-zap"/></svg>Perfil NVIDIA aplicado</div>
+            <div class="float-chip chip-c"><svg class="icon"><use href="#i-cpu"/></svg>Plano Qrz ativo</div>
+          </div>
+        </div>
       </div>
       <div class="hero-glow" aria-hidden="true"></div>
     </section>
@@ -93,8 +106,8 @@
     <!-- Faixa de recursos -->
     <div class="marquee" aria-label="Recursos do Optimizer">
       <div class="marquee-track">
-        <span>Limpeza inteligente</span><span>Latência DPC medida</span><span>Modo MSI na GPU</span><span>Plano de energia de desempenho</span><span>Inicialização estilo Autoruns</span><span>Benchmark antes → depois</span><span>Backup e reversão</span><span>Drivers organizados</span><span>Modo de energia em um atalho</span><span>Atualização verificada por SHA256</span>
-        <span aria-hidden="true">Limpeza inteligente</span><span aria-hidden="true">Latência DPC medida</span><span aria-hidden="true">Modo MSI na GPU</span><span aria-hidden="true">Plano de energia de desempenho</span><span aria-hidden="true">Inicialização estilo Autoruns</span><span aria-hidden="true">Benchmark antes → depois</span><span aria-hidden="true">Backup e reversão</span><span aria-hidden="true">Drivers organizados</span><span aria-hidden="true">Modo de energia em um atalho</span><span aria-hidden="true">Atualização verificada por SHA256</span>
+        <span>Modo Jogo</span><span>Perfil NVIDIA no driver</span><span>Plano de energia Qrz</span><span>Editor de BIOS (SCEWIN)</span><span>Instalação limpa com DDU</span><span>Presets de Fortnite, Apex, CS2 e Rocket League</span><span>Monitor ao vivo</span><span>Teste de velocidade e DNS</span><span>Backup e reversão</span><span>Busca rápida (Ctrl+K)</span>
+        <span aria-hidden="true">Modo Jogo</span><span aria-hidden="true">Perfil NVIDIA no driver</span><span aria-hidden="true">Plano de energia Qrz</span><span aria-hidden="true">Editor de BIOS (SCEWIN)</span><span aria-hidden="true">Instalação limpa com DDU</span><span aria-hidden="true">Presets de Fortnite, Apex, CS2 e Rocket League</span><span aria-hidden="true">Monitor ao vivo</span><span aria-hidden="true">Teste de velocidade e DNS</span><span aria-hidden="true">Backup e reversão</span><span aria-hidden="true">Busca rápida (Ctrl+K)</span>
       </div>
     </div>
 
@@ -116,16 +129,16 @@
 
       <figure class="demo reveal">
         <div class="demo-frame">
-          <video class="demo-video" autoplay muted loop playsinline preload="none" width="1920" height="1080" data-poster="assets/demo-poster.jpg" aria-label="Vídeo sem som do PQueiroz Optimizer: a limpeza rápida analisa os arquivos temporários, a página Inicialização lista o que abre com o Windows e o app volta à visão geral">
-            <source data-src="assets/demo.mp4" type="video/mp4">
+          <video class="demo-video" autoplay muted loop playsinline preload="none" width="1920" height="1080" data-poster="assets/tour.jpg" aria-label="Vídeo sem som apresentando as telas do PQueiroz Optimizer: visão geral, Modo Jogo, configurações dos jogos, perfil NVIDIA, plano Qrz, rede, drivers, BIOS e otimizações">
+            <source data-src="assets/tour.mp4" type="video/mp4">
           </video>
-          <noscript><img class="demo-video" src="assets/demo-poster.jpg" width="1920" height="1080" alt="Visão geral do PQueiroz Optimizer"></noscript>
+          <noscript><img class="demo-video" src="assets/tour.jpg" width="1920" height="1080" alt="Visão geral do PQueiroz Optimizer"></noscript>
           <button class="demo-toggle" type="button" aria-label="Pausar demonstração" hidden>
             <svg class="i-pause" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg>
             <svg class="i-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.6v10.8c0 .8.9 1.3 1.6.8l8.2-5.4c.6-.4.6-1.2 0-1.6L5.6 1.8C4.9 1.3 4 1.8 4 2.6z"/></svg>
           </button>
         </div>
-        <figcaption class="fine">Gravação da interface real do Optimizer v1.5.0 em um PC de verdade, sem excluir nada. As esperas foram encurtadas, o cursor foi adicionado na edição e os dados pessoais aparecem desfocados.</figcaption>
+        <figcaption class="fine">Apresentação feita com telas reais do Optimizer v1.8.0; o movimento de câmera, as transições e as legendas foram adicionados na edição.</figcaption>
       </figure>
 
       <div class="container cards-4">
@@ -135,6 +148,90 @@
         <article class="card spotlight reveal" style="--d: 180ms"><span class="card-icon"><svg class="icon"><use href="#i-chart"/></svg></span><h3>Diagnóstico real</h3><p>Hardware, latência DPC, temperatura e benchmark com comparação antes → depois.</p></article>
       </div>
     </section>
+
+
+    <!-- Recursos: telas reais em linhas alternadas -->
+    <section id="recursos" class="section">
+      <div class="container narrow center">
+        <p class="kicker reveal">Novo na v1.8</p>
+        <h2 class="reveal">Tudo o que você precisa<br>para jogar melhor</h2>
+        <p class="section-lead reveal">Cada tela abaixo é o Optimizer de verdade. Os recursos novos se somam às otimizações revisáveis, à limpeza e à inicialização que você já conhece.</p>
+      </div>
+
+      <div class="container showcase">
+        <article class="show-row reveal">
+          <figure class="show-media"><img src="assets/shots/modo-jogo.jpg" width="2160" height="1350" loading="lazy" alt="Página Modo Jogo do PQueiroz Optimizer com programas para fechar e serviços para pausar"></figure>
+          <div class="show-text">
+            <span class="show-tag"><svg class="icon"><use href="#i-zap"/></svg>Modo Jogo</span>
+            <h3>Feche o que pesa. Jogue. Volte tudo ao normal.</h3>
+            <p>Fecha programas em segundo plano, pausa Windows Update, indexação e telemetria e ativa o plano de desempenho enquanto você joga. Ao desativar, serviços e plano voltam como estavam — mesmo que o PC reinicie no meio.</p>
+            <ul class="checks"><li><svg class="icon"><use href="#i-check"/></svg>Liberação da memória em espera (como o ISLC)</li><li><svg class="icon"><use href="#i-check"/></svg>Aviso inteligente para Ryzen X3D de dois CCDs</li></ul>
+          </div>
+        </article>
+        <article class="show-row flip reveal">
+          <figure class="show-media"><img src="assets/shots/jogos.jpg" width="2160" height="1350" loading="lazy" alt="Presets competitivos para Fortnite, Apex Legends, Counter-Strike 2 e Rocket League"></figure>
+          <div class="show-text">
+            <span class="show-tag"><svg class="icon"><use href="#i-layers"/></svg>Jogos</span>
+            <h3>Presets competitivos direto no arquivo do jogo</h3>
+            <p>Fortnite, Apex Legends, Counter-Strike 2 e Rocket League com sombras e efeitos pesados no mínimo, sem V-Sync e sem desfoque. O arquivo original é guardado e volta com um clique.</p>
+            <ul class="checks"><li><svg class="icon"><use href="#i-check"/></svg>Perfis por jogo: GPU dedicada, prioridade alta e tela cheia</li><li><svg class="icon"><use href="#i-check"/></svg>Runtimes (Visual C++, DirectX, .NET) em um clique</li></ul>
+          </div>
+        </article>
+        <article class="show-row reveal">
+          <figure class="show-media"><img src="assets/shots/nvidia.jpg" width="2160" height="1350" loading="lazy" alt="Perfil NVIDIA para jogos com baixa latência e desempenho máximo"></figure>
+          <div class="show-text">
+            <span class="show-tag"><svg class="icon"><use href="#i-cpu"/></svg>NVIDIA e energia</span>
+            <h3>Perfil NVIDIA e plano de energia Qrz</h3>
+            <p>Gerenciamento de energia no máximo, modo de baixa latência, filtragem de textura de desempenho e cache de sombreador ilimitado, gravados direto no driver. Mais o plano Qrz: processador sem estacionamento de núcleos e PCIe, disco e Wi-Fi sem economia de energia.</p>
+            <ul class="checks"><li><svg class="icon"><use href="#i-check"/></svg>Cada valor anterior é guardado para restaurar</li><li><svg class="icon"><use href="#i-check"/></svg>Sem baixar ferramentas de terceiros</li></ul>
+          </div>
+        </article>
+        <article class="show-row flip reveal">
+          <figure class="show-media"><img src="assets/shots/rede.jpg" width="2160" height="1350" loading="lazy" alt="Página Rede com teste de velocidade, DNS e ajustes de latência"></figure>
+          <div class="show-text">
+            <span class="show-tag"><svg class="icon"><use href="#i-chart"/></svg>Rede</span>
+            <h3>Ping, jitter e DNS sob controle</h3>
+            <p>Teste de velocidade com perda de pacotes, troca de DNS (Cloudflare, Google, Quad9) com medição de qual responde mais rápido, ajuste de latência para jogos reversível e reparos de conexão.</p>
+          </div>
+        </article>
+        <article class="show-row reveal">
+          <figure class="show-media"><img src="assets/shots/bios.jpg" width="2160" height="1350" loading="lazy" alt="Editor de BIOS pelo SCEWIN"></figure>
+          <div class="show-text">
+            <span class="show-tag"><svg class="icon"><use href="#i-key"/></svg>BIOS e drivers</span>
+            <h3>Editor de BIOS e instalação limpa de driver</h3>
+            <p>Leia e ajuste a BIOS pelo Windows com o SCEWIN (placas com BIOS AMI), com recomendações seguras e cópia original. E reinstale o driver de vídeo do zero com o DDU: o novo instalador abre sozinho depois do reinício.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Galeria -->
+    <section id="galeria" class="section">
+      <div class="container narrow center">
+        <p class="kicker reveal">Galeria</p>
+        <h2 class="reveal">Veja cada tela</h2>
+        <p class="section-lead reveal">Clique para ampliar. Use as setas do teclado para navegar.</p>
+      </div>
+      <div class="container gallery reveal">
+        <button class="shot wide" type="button" data-full="assets/shots/visao-geral.jpg" data-caption="Visão geral com monitor ao vivo"><img src="assets/shots/visao-geral.jpg" loading="lazy" width="2160" height="1350" alt="Visão geral"><span>Visão geral</span></button>
+        <button class="shot" type="button" data-full="assets/shots/modo-jogo.jpg" data-caption="Modo Jogo"><img src="assets/shots/modo-jogo.jpg" loading="lazy" width="2160" height="1350" alt="Modo Jogo"><span>Modo Jogo</span></button>
+        <button class="shot" type="button" data-full="assets/shots/jogos.jpg" data-caption="Configurações dos jogos"><img src="assets/shots/jogos.jpg" loading="lazy" width="2160" height="1350" alt="Configurações dos jogos"><span>Jogos</span></button>
+        <button class="shot" type="button" data-full="assets/shots/nvidia.jpg" data-caption="Perfil NVIDIA"><img src="assets/shots/nvidia.jpg" loading="lazy" width="2160" height="1350" alt="Perfil NVIDIA"><span>NVIDIA</span></button>
+        <button class="shot" type="button" data-full="assets/shots/sistema.jpg" data-caption="Plano Qrz e Windows Defender"><img src="assets/shots/sistema.jpg" loading="lazy" width="2160" height="1350" alt="Ajustes de sistema"><span>Sistema</span></button>
+        <button class="shot wide" type="button" data-full="assets/shots/visao-geral-claro.jpg" data-caption="Tema claro"><img src="assets/shots/visao-geral-claro.jpg" loading="lazy" width="2160" height="1350" alt="Tema claro"><span>Tema claro</span></button>
+        <button class="shot" type="button" data-full="assets/shots/rede.jpg" data-caption="Rede"><img src="assets/shots/rede.jpg" loading="lazy" width="2160" height="1350" alt="Rede"><span>Rede</span></button>
+        <button class="shot" type="button" data-full="assets/shots/drivers.jpg" data-caption="Drivers e instalação limpa com DDU"><img src="assets/shots/drivers.jpg" loading="lazy" width="2160" height="1350" alt="Drivers"><span>Drivers</span></button>
+        <button class="shot" type="button" data-full="assets/shots/bios.jpg" data-caption="Editor de BIOS"><img src="assets/shots/bios.jpg" loading="lazy" width="2160" height="1350" alt="BIOS"><span>BIOS</span></button>
+        <button class="shot" type="button" data-full="assets/shots/otimizacoes.jpg" data-caption="Otimizações revisáveis"><img src="assets/shots/otimizacoes.jpg" loading="lazy" width="2160" height="1350" alt="Otimizações"><span>Otimizações</span></button>
+      </div>
+    </section>
+
+    <div class="lightbox" role="dialog" aria-modal="true" aria-label="Imagem ampliada" hidden>
+      <button class="lb-close" type="button" aria-label="Fechar"><svg class="icon"><use href="#i-x"/></svg></button>
+      <button class="lb-prev" type="button" aria-label="Anterior"><svg class="icon"><use href="#i-arrow"/></svg></button>
+      <figure><img alt=""><figcaption></figcaption></figure>
+      <button class="lb-next" type="button" aria-label="Próxima"><svg class="icon"><use href="#i-arrow"/></svg></button>
+    </div>
 
     <!-- Planos -->
     <section id="comprar" class="section">
@@ -369,7 +466,16 @@
       </div>
       <div class="container narrow releases">
         <article class="release current reveal">
-          <div class="release-head"><b>v1.7.2</b><span class="tag">Atual</span></div>
+          <div class="release-head"><b>v1.8.0</b><span class="tag">Atual</span></div>
+          <ul>
+            <li>Modo Jogo: fecha programas, pausa serviços e ativa o plano de desempenho enquanto você joga; tudo volta ao desativar.</li>
+            <li>Perfil NVIDIA gravado no driver, plano de energia Qrz e presets para Fortnite, Apex, CS2 e Rocket League.</li>
+            <li>Editor de BIOS (SCEWIN), instalação limpa de driver com DDU, página Rede e controle do Windows Defender.</li>
+            <li>Visual novo: fundo aurora, monitor ao vivo, busca rápida (Ctrl+K), notificações e animações.</li>
+          </ul>
+        </article>
+        <article class="release reveal" style="--d: 40ms">
+          <div class="release-head"><b>v1.7.2</b><span class="tag muted-tag">Anterior</span></div>
           <ul>
             <li>Animação de abertura com o logo do Optimizer, também em PCs com efeitos visuais reduzidos.</li>
             <li>Configurações → Atualizações: verifique novas versões na hora e instale em um clique.</li>
@@ -443,7 +549,7 @@
         <details><summary>O Optimizer altera o Windows automaticamente?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Não. Os fluxos avançados mostram as etapas e permitem selecionar exatamente o que será aplicado.</p></div></details>
         <details><summary>Posso desfazer as alterações?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Configurações de registro, energia e serviços têm backup. Remoções de arquivos e aplicativos exigem reinstalação ou backup próprio, e o app avisa antes quais etapas não são reversíveis.</p></div></details>
         <details><summary>Qual edição do Windows personalizado escolher?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p><b>Optimized</b> (R$ 100) para o dia a dia: limpo, sem desligar serviços de forma agressiva. <b>Advanced</b> (R$ 150) para jogos e desempenho: menos serviços e atividade em segundo plano. <b>Developer</b> (R$ 175) para programar: o perfil da Advanced com WSL 2, Hyper-V e as ferramentas de desenvolvimento já instaladas. Todas desativam o Defender e fazem instalação limpa; veja <a href="#windows">os detalhes</a>.</p></div></details>
-        <details><summary>Qual versão do Windows é compatível?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Windows 10 e 11 em computadores x64. Algumas políticas dependem da edição e da versão do Windows.</p></div></details>
+        <details><summary>Qual versão do Windows é compatível?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Windows 10 (versão 1809 ou mais nova) e Windows 11 em computadores x64. O editor de BIOS funciona em placas com BIOS AMI, e o perfil NVIDIA exige uma placa NVIDIA com driver instalado.</p></div></details>
         <details><summary>Posso pedir reembolso?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Sim. Você pode desistir da compra em até 7 dias corridos e receber o valor pago integralmente. Além disso, há garantia legal de 90 dias contra defeitos. Veja os detalhes na <a href="#reembolso">Política de reembolso e garantia</a>.</p></div></details>
         <details><summary>O que preciso enviar no suporte?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Informe seu nome, o produto comprado, o comprovante e uma descrição do problema. Nunca envie sua chave publicamente.</p></div></details>
       </div>
@@ -467,7 +573,7 @@
 
   <footer class="footer">
     <div class="container footer-inner">
-      <a class="brand" href="#inicio"><span class="brand-mark sm" aria-hidden="true">P</span><span>PQueiroz</span><small>Optimizer</small></a>
+      <a class="brand" href="#inicio"><span class="brand-mark sm has-logo" aria-hidden="true"><img src="assets/logo.png" width="24" height="24" alt=""></span><span>PQueiroz</span><small>Optimizer</small></a>
       <span class="muted">© <span id="year">2026</span> PQueiroz · Construído para Windows</span>
       <div class="footer-links"><a class="footer-link" href="#comprar">Planos</a><a class="footer-link" href="#recuperar">Perdeu a chave?</a><a class="footer-link" href="#reembolso">Reembolso e garantia</a><a class="footer-link" href="https://github.com/PQueirozDev/Optimizer">GitHub ↗</a></div>
     </div>
@@ -478,5 +584,6 @@
 
   <script src="script.js"></script>
   <script src="effects.js"></script>
+  <script src="showcase.js"></script>
 </body>
 </html>

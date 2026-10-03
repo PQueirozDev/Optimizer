@@ -25,6 +25,23 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.8.0", "03/10/2026", new[]
+        {
+            "Nova página Modo Jogo: fecha programas em segundo plano, pausa serviços (Windows Update, indexação, telemetria) e ativa o plano de desempenho enquanto você joga; ao desativar, tudo volta como estava.",
+            "Plano de energia Qrz: plano de baixa latência instalado e ativado em um clique, com volta ao plano anterior.",
+            "Perfis de jogos: placa de vídeo dedicada, sem otimizações de tela cheia e prioridade de CPU alta sempre que o jogo abrir.",
+            "Liberar memória em espera, menos processos svchost e instalação de runtimes (Visual C++, DirectX, .NET, XNA) pelo winget.",
+            "Nova página Rede: teste de velocidade com ping, jitter e perda de pacotes, troca de DNS com medição, ajustes de latência reversíveis e reparos (DNS, relógio e reset).",
+            "Monitor ao vivo: CPU, GPU, RAM e ping na barra lateral e gráficos em tempo real na visão geral.",
+            "Ryzen X3D com dois CCDs: as otimizações mantêm a Game Bar e o plano Equilibrado, necessários para o jogo usar o 3D V-Cache, e o Modo Jogo mostra o que falta (driver de chipset, Game Bar, plano).",
+            "Editor de BIOS pelo SCEWIN (BIOS AMI): leitura de todas as configurações, busca, recomendações seguras (Above 4G, Resizable BAR, Spread Spectrum), gravação só do que mudou e restauração da cópia original.",
+            "Perfil NVIDIA para jogos gravado direto no driver (gerenciamento de energia, baixa latência, filtragem de textura, otimização segmentada, V-Sync e cache de sombreador), com restauração.",
+            "Instalação limpa de driver com o DDU: ponto de restauração, remoção do driver atual, reinício e o instalador novo abre sozinho no próximo logon.",
+            "Configurações dos jogos: presets competitivos para Fortnite, Apex Legends, Counter-Strike 2 e Rocket League, com cópia do arquivo original.",
+            "Windows Defender: exclusão das pastas dos jogos e liga/desliga da proteção em tempo real.",
+            "Visual novo: fundo aurora animado, cartões de vidro com borda em gradiente que sobem ao passar o mouse, botões com brilho, interruptores, abas, entrada em cascata e anel de saúde animado.",
+            "Busca rápida (Ctrl+K) para abrir qualquer página ou recurso, e notificações no canto da tela ao concluir cada ação.",
+        }),
         ("v1.7.2", "30/09/2026", new[]
         {
             "A animação de abertura agora aparece também em PCs com os efeitos visuais do Windows reduzidos (como após a otimização do próprio app).",
@@ -138,7 +155,7 @@ public partial class MainWindow
     private void ShowBios()
     {
         PageTitle.Text = "BIOS / UEFI"; PageBadge.Visibility = Visibility.Collapsed;
-        var root = new StackPanel { MaxWidth = 1000, HorizontalAlignment = HorizontalAlignment.Left };
+        var root = new StackPanel();
 
         var hero = new DockPanel();
         var open = IconButton(Glyphs.Refresh, "Reiniciar na BIOS/UEFI", primary: true);
@@ -162,11 +179,12 @@ public partial class MainWindow
         var heroText = new StackPanel { Margin = new Thickness(18, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
         var ht = Label("Assistente seguro de BIOS", 20); ht.Margin = new Thickness(0, 0, 0, 4);
         heroText.Children.Add(ht);
-        var hs = Label("O Optimizer não grava firmware. Aqui estão os ajustes que costumam trazer ganho real — faça-os manualmente, conferindo o manual da sua placa-mãe.", 12.5, true); hs.Margin = new Thickness(0);
+        var hs = Label("Ajuste a BIOS pelo Windows com o editor abaixo (SCEWIN) ou reinicie direto na BIOS para fazer à mão. Os ajustes que costumam trazer ganho real estão listados no fim da página.", 12.5, true); hs.Margin = new Thickness(0);
         heroText.Children.Add(hs);
         hero.Children.Add(heroText);
         var heroCard = Surface(hero); heroCard.SetResourceReference(Border.BackgroundProperty, "HeroBrush");
         root.Children.Add(heroCard);
+        root.Children.Add(BiosEditorCard());
 
         var tips = new[]
         {

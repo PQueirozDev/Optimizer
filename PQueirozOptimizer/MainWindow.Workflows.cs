@@ -26,9 +26,10 @@ public partial class MainWindow
     private CancellationTokenSource? _operationCts;
     private bool _closeAfterOperation;
 
-    private async Task ExecuteTrackedAsync(string title, Func<CancellationToken, Task> action)
+    /// <summary>Executa com progresso, cancelamento e notificação. Retorna true só se terminou sem erro.</summary>
+    private async Task<bool> ExecuteTrackedAsync(string title, Func<CancellationToken, Task> action)
     {
-        if (_operationRunning) { OperationStatus.Text = "Aguarde a operação em andamento."; return; }
+        if (_operationRunning) { OperationStatus.Text = "Aguarde a operação em andamento."; return false; }
         _operationRunning = true;
         using var cts = new CancellationTokenSource();
         _operationCts = cts;
@@ -41,18 +42,22 @@ public partial class MainWindow
             _snapshot = null;
             OperationStatus.Text = title + " — concluído. Confira os resultados na atividade.";
             TitleOptChip.Text = "Concluído";
+            ShowToast(title, "Concluído", "Success");
+            return true;
         }
         catch (OperationCanceledException) when (cts.IsCancellationRequested)
         {
             _snapshot = null;
             OperationStatus.Text = title + " — cancelado. O que já foi aplicado aparece em Atividade e reversão.";
             TitleOptChip.Text = "Cancelado";
+            ShowToast(title, "Cancelado", "Warning");
         }
         catch (Exception ex)
         {
             _log.Write("ERROR", ex.Message);
             OperationStatus.Text = ex.Message;
             TitleOptChip.Text = "Verificar resultado";
+            ShowToast(title, ex.Message, "Danger");
         }
         finally
         {
@@ -60,6 +65,7 @@ public partial class MainWindow
             // O usuário pediu para fechar durante a operação: fecha assim que ela termina de ser cancelada
             if (_closeAfterOperation) Close();
         }
+        return false;
     }
 
     /// <summary>Confirma com o usuário e cancela a operação em andamento.</summary>
@@ -95,6 +101,7 @@ public partial class MainWindow
         var badge = Pill(pill, tone); badge.Margin = new Thickness(12, 0, 0, 0);
         Grid.SetColumn(badge, 1); grid.Children.Add(badge);
         check.Content = grid;
+        check.SetResourceReference(StyleProperty, "SwitchCheckBox");
         check.HorizontalContentAlignment = HorizontalAlignment.Stretch;
         check.Margin = new Thickness(0);
 
@@ -455,6 +462,7 @@ public partial class MainWindow
             heroCard.SetResourceReference(Border.BackgroundProperty, "HeroBrush");
             heroCard.SetResourceReference(Border.BorderBrushProperty, "AccentSoftBrush");
             root.Children.Add(heroCard);
+            root.Children.Add(BuildLivePanel());
 
             var stats = new UniformGrid { Columns = 4, Margin = new Thickness(0, 0, -14, 2) };
             stats.Children.Add(Card("PROCESSADOR", snapshot.Processor, Glyphs.Chip, "AccentBrush"));
@@ -502,6 +510,7 @@ public partial class MainWindow
             var pl = Label($"Perfil selecionado: {profile.Name}. Você sempre revisa os ajustes antes de aplicar.", 12, true); pl.Margin = new Thickness(8, 0, 0, 0);
             profileLine.Children.Add(pl);
             root.Children.Add(profileLine);
+            AnimatePageIn();
         }
         catch (Exception ex)
         {

@@ -41,6 +41,11 @@
       <GradientStop Color="#183FA9F5" Offset="1"/>
     </LinearGradientBrush>
 
+    <!-- Substituídos pelo ThemeService ao abrir; ficam aqui para o designer e os testes -->
+    <SolidColorBrush x:Key="CardBorderBrush" Color="#1A1E2B"/>
+    <SolidColorBrush x:Key="CardHoverBorderBrush" Color="#8B5CF6"/>
+    <SolidColorBrush x:Key="NavSelectedBrush" Color="#2B8B5CF6"/>
+    <Color x:Key="GlowColor">#8B5CF6</Color>
     <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
     <FontFamily x:Key="UiFont">Segoe UI Variable Text, Segoe UI</FontFamily>
     <FontFamily x:Key="DisplayFont">Segoe UI Variable Display, Segoe UI</FontFamily>
@@ -76,20 +81,21 @@
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
-            <Grid>
+            <Grid x:Name="btnRoot" RenderTransformOrigin="0.5,0.5">
               <Border x:Name="btnBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                      BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10"/>
-              <Border x:Name="hover" Background="{DynamicResource TextBrush}" CornerRadius="10" Opacity="0" IsHitTestVisible="False"/>
+                      BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12"/>
+              <Border x:Name="hover" Background="{DynamicResource TextBrush}" CornerRadius="12" Opacity="0" IsHitTestVisible="False"/>
               <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                 VerticalAlignment="Center" RecognizesAccessKey="True"/>
             </Grid>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="hover" Property="Opacity" Value="0.06"/>
+                <Setter TargetName="hover" Property="Opacity" Value="0.07"/>
                 <Setter TargetName="btnBorder" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
               </Trigger>
               <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="hover" Property="Opacity" Value="0.12"/>
+                <Setter TargetName="hover" Property="Opacity" Value="0.14"/>
+                <Setter TargetName="btnRoot" Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="0.97" ScaleY="0.97"/></Setter.Value></Setter>
               </Trigger>
               <Trigger Property="IsKeyboardFocused" Value="True">
                 <Setter TargetName="btnBorder" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
@@ -103,10 +109,24 @@
       </Setter>
     </Style>
 
+    <!-- Primário: gradiente com brilho que se intensifica ao passar o mouse -->
     <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
       <Setter Property="Background" Value="{DynamicResource AccentGradientBrush}"/>
       <Setter Property="BorderBrush" Value="Transparent"/>
       <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}"/>
+      <Setter Property="Effect">
+        <Setter.Value><DropShadowEffect BlurRadius="16" ShadowDepth="0" Opacity="0.4" Color="{StaticResource GlowColor}"/></Setter.Value>
+      </Setter>
+      <Style.Triggers>
+        <Trigger Property="IsMouseOver" Value="True">
+          <Setter Property="Effect">
+            <Setter.Value><DropShadowEffect BlurRadius="26" ShadowDepth="0" Opacity="0.7" Color="{StaticResource GlowColor}"/></Setter.Value>
+          </Setter>
+        </Trigger>
+        <Trigger Property="IsEnabled" Value="False">
+          <Setter Property="Effect" Value="{x:Null}"/>
+        </Trigger>
+      </Style.Triggers>
     </Style>
 
     <Style x:Key="GhostButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
@@ -191,7 +211,7 @@
       <Setter Property="FontWeight" Value="Medium"/>
       <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
       <Setter Property="Margin" Value="0,1"/>
-      <Setter Property="Padding" Value="12,9"/>
+      <Setter Property="Padding" Value="12,7"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="GroupName" Value="Navigation"/>
       <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -200,10 +220,12 @@
         <Setter.Value>
           <ControlTemplate TargetType="RadioButton">
             <Grid>
-              <Border x:Name="bg" CornerRadius="10" Background="Transparent"/>
-              <Border x:Name="indicator" Width="3" Height="18" CornerRadius="2" HorizontalAlignment="Left"
-                      Background="{DynamicResource AccentGradientBrush}" Opacity="0"/>
-              <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
+              <Border x:Name="bg" CornerRadius="12" Background="Transparent"/>
+              <Border x:Name="indicator" Width="3" Height="20" CornerRadius="2" HorizontalAlignment="Left"
+                      Background="{DynamicResource AccentGradientBrush}" Opacity="0">
+                <Border.Effect><DropShadowEffect BlurRadius="10" ShadowDepth="0" Opacity="0.9" Color="{StaticResource GlowColor}"/></Border.Effect>
+              </Border>
+              <ContentPresenter x:Name="content" Margin="{TemplateBinding Padding}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
             </Grid>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True">
@@ -211,7 +233,7 @@
                 <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
               </Trigger>
               <Trigger Property="IsChecked" Value="True">
-                <Setter TargetName="bg" Property="Background" Value="{DynamicResource AccentSoftBrush}"/>
+                <Setter TargetName="bg" Property="Background" Value="{DynamicResource NavSelectedBrush}"/>
                 <Setter TargetName="indicator" Property="Opacity" Value="1"/>
                 <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
@@ -232,7 +254,7 @@
       <Setter Property="FontWeight" Value="SemiBold"/>
       <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/>
       <Setter Property="Opacity" Value="0.75"/>
-      <Setter Property="Margin" Value="12,20,0,6"/>
+      <Setter Property="Margin" Value="12,14,0,5"/>
     </Style>
 
     <!-- Barra de rolagem fina -->
@@ -347,6 +369,55 @@
       </Setter>
     </Style>
 
+    <!-- Interruptor (liga/desliga) com bolinha que desliza; usado nas listas de escolha -->
+    <Style x:Key="SwitchCheckBox" TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="CheckBox">
+            <Grid Background="Transparent">
+              <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+              <ContentPresenter Margin="0,0,14,0" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+              <Grid Grid.Column="1" Width="40" Height="22" VerticalAlignment="Center">
+                <Border x:Name="track" CornerRadius="11" Background="{DynamicResource PanelHoverBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"/>
+                <Border x:Name="trackOn" CornerRadius="11" Background="{DynamicResource AccentGradientBrush}" Opacity="0"/>
+                <Ellipse x:Name="knob" Width="16" Height="16" Fill="White" HorizontalAlignment="Left" Margin="3,0,0,0">
+                  <Ellipse.Effect><DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.35"/></Ellipse.Effect>
+                </Ellipse>
+              </Grid>
+            </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="knob" Property="Margin" Value="21,0,0,0"/>
+                <Setter TargetName="trackOn" Property="Opacity" Value="1"/>
+                <Trigger.EnterActions>
+                  <BeginStoryboard>
+                    <Storyboard>
+                      <ThicknessAnimation Storyboard.TargetName="knob" Storyboard.TargetProperty="Margin" To="21,0,0,0" Duration="0:0:0.18"><ThicknessAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></ThicknessAnimation.EasingFunction></ThicknessAnimation>
+                      <DoubleAnimation Storyboard.TargetName="trackOn" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.18"/>
+                    </Storyboard>
+                  </BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                  <BeginStoryboard>
+                    <Storyboard>
+                      <ThicknessAnimation Storyboard.TargetName="knob" Storyboard.TargetProperty="Margin" To="3,0,0,0" Duration="0:0:0.18"><ThicknessAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></ThicknessAnimation.EasingFunction></ThicknessAnimation>
+                      <DoubleAnimation Storyboard.TargetName="trackOn" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.18"/>
+                    </Storyboard>
+                  </BeginStoryboard>
+                </Trigger.ExitActions>
+              </Trigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="track" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.45"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
     <!-- Barra de progresso arredondada; no modo indeterminado um brilho percorre a trilha -->
     <Style TargetType="ProgressBar">
       <Setter Property="Height" Value="6"/>
@@ -363,8 +434,8 @@
                 <Border.Background>
                   <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                     <GradientStop Color="Transparent" Offset="-0.6"/>
-                    <GradientStop Color="#7B61FF" Offset="-0.3"/>
-                    <GradientStop Color="#3FA9F5" Offset="-0.15"/>
+                    <GradientStop Color="#8B5CF6" Offset="-0.3"/>
+                    <GradientStop Color="#22D3EE" Offset="-0.15"/>
                     <GradientStop Color="Transparent" Offset="0"/>
                   </LinearGradientBrush>
                 </Border.Background>

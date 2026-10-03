@@ -190,3 +190,14 @@ Remove-Item $chaveAprovados -Recurse -Force
 
 # Linhas de diagnostico saem marcadas para o app colori-las
 Assert ("$(Write-Status 'warn' 'Pouco espaco' 6>&1)" -eq '[AVISO] Pouco espaco' -and "$(Write-Status 'ok' 'TRIM: Ativo' 6>&1)" -eq '[OK] TRIM: Ativo') 'Diagnostic lines are tagged for the app'
+
+# Ryzen X3D com dois CCDs mantem Game Bar e plano Equilibrado; os de um CCD seguem a otimizacao normal
+& {
+    function Get-ItemProperty { [pscustomobject]@{ ProcessorNameString = $script:cpuTeste } }
+    $script:cpuTeste = 'AMD Ryzen 9 7950X3D 16-Core Processor'
+    $duplo = Test-X3dDuploCcd
+    $script:cpuTeste = 'AMD Ryzen 7 9800X3D 8-Core Processor'
+    $simples = Test-X3dDuploCcd
+    $script:cpuTeste = 'Intel(R) Core(TM) i7-10700F CPU @ 2.90GHz'
+    Assert ($duplo -and -not $simples -and -not (Test-X3dDuploCcd)) 'Dual-CCD X3D detected; single-CCD X3D and other CPUs are not'
+}

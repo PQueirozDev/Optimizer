@@ -14,7 +14,7 @@ internal static class Program
     static void Assert(bool condition, string name) { if (!condition) throw new Exception(name); Console.WriteLine("PASS " + name); }
 
     // App com recursos e estilos, mas sem a inicialização real (licença, idioma salvo, janela principal)
-    static App CreateTestApp()
+    internal static App CreateTestApp()
     {
         var app = new App(); app.InitializeComponent();
         var key = typeof(Application).GetField("EVENT_STARTUP", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!;
@@ -70,6 +70,84 @@ internal static class Program
         TestScheduledTaskToggle(service);
         TestServiceToggle(service);
     }
+
+    // Modo Jogo, Rede e plano Qrz: partes que não dependem de administrador nem alteram o sistema
+    static void TestGamingFeatures(string root)
+    {
+        Assert(GamingService.DetectX3d("AMD Ryzen 9 7950X3D 16-Core Processor") is { DualCcd: true, Model: "7950X3D" }, "Ryzen 7950X3D reconhecido com dois CCDs");
+        Assert(GamingService.DetectX3d("AMD Ryzen 7 9800X3D 8-Core Processor") is { DualCcd: false }, "Ryzen 9800X3D reconhecido com um CCD");
+        Assert(GamingService.DetectX3d("AMD Ryzen 7 7700X 8-Core Processor") is null && GamingService.DetectX3d("Intel(R) Core(TM) i7-10700F CPU @ 2.90GHz") is null, "Processadores sem 3D V-Cache não são X3D");
+        Assert(GamingService.GameProfileId(@"C:\Jogos\Jogo.exe") == GamingService.GameProfileId(@"c:\jogos\JOGO.EXE"), "Perfil de jogo não depende de maiúsculas no caminho");
+
+        var planFile = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "PQueirozOptimizer", "Assets", "Qrz.powerplan.txt");
+        using (var reader = new StreamReader(planFile))
+        {
+            var settings = PowerPlanService.LoadSettings(reader);
+            Assert(settings.Count == 182 && settings.Any(s => s.Setting == new Guid("0cc5b647-c1df-4637-891a-dec35c318583") && s.Ac == 100), "Plano Qrz traz as 182 configurações, com estacionamento de núcleos desligado na tomada");
+        }
+
+        // Ajuste reversível: grava, guarda o original e a reversão só restaura o que o ajuste declarou
+        const string key = @"Software\PQueirozOptimizer-Verificacao";
+        var store = new RegistryTweakStore(Path.Combine(root, "tweaks"));
+        using (var k = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(key)) k.SetValue("Existente", 5, Microsoft.Win32.RegistryValueKind.DWord);
+        try
+        {
+            store.Apply("teste", "Teste", new[]
+            {
+                new RegistryWrite(Microsoft.Win32.RegistryHive.CurrentUser, key, "Existente", Microsoft.Win32.RegistryValueKind.DWord, 9),
+                new RegistryWrite(Microsoft.Win32.RegistryHive.CurrentUser, key, "Novo", Microsoft.Win32.RegistryValueKind.String, "x"),
+            });
+            store.Apply("teste", "Teste", new[] { new RegistryWrite(Microsoft.Win32.RegistryHive.CurrentUser, key, "Existente", Microsoft.Win32.RegistryValueKind.DWord, 11) });
+            using (var k = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(key)) Assert((int)k!.GetValue("Existente")! == 11 && (string)k.GetValue("Novo")! == "x" && store.IsApplied("teste"), "Ajuste aplicado e backup criado");
+            store.Revert("teste", (_, _, name) => name == "Existente");
+            using (var k = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(key)) Assert((int)k!.GetValue("Existente")! == 5 && k.GetValue("Novo") is not null && !store.IsApplied("teste"), "Reverter restaura o valor original e ignora itens fora da lista permitida");
+        }
+        finally { Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(key, false); }
+
+        // BIOS (formato do SCEWIN): mover o "*" só altera o item escolhido e preserva o resto do bloco
+        var nvram = "// AMISCE Utility. Ver 5.05\r\nHIICrc32= 8DE3D5A6\r\n\r\n" +
+            "Setup Question\t= Above 4G Decoding\r\nHelp String\t= Enables 64bit decoding\r\nToken\t=17\t// Do NOT change this line\r\nOffset\t=4A\r\nWidth\t=01\r\nBIOS Default\t=[00]Disabled\r\n" +
+            "Options\t=*[00]Disabled\t// Move \"*\" to the desired Option\r\n         [01]Enabled\r\n\r\n" +
+            "Setup Question\t= CSM Support\r\nToken\t=18\t// Do NOT change this line\r\nOptions\t=*[00]Disabled\t// Move \"*\" to the desired Option\r\n         [01]Enabled\r\n\r\n" +
+            "Setup Question\t= Re-Size BAR Support\r\nToken\t=19\t// Do NOT change this line\r\nOptions\t=[00]Disabled\t// Move \"*\" to the desired Option\r\n        *[01]Auto\r\n\r\n" +
+            "Setup Question\t= PCIe Link Width\r\nToken\t=20\t// Do NOT change this line\r\nValue\t=<16>\r\n";
+        var bios = BiosService.Parse(nvram, out var biosHeader);
+        Assert(bios.Count == 4 && bios[0].Question == "Above 4G Decoding" && bios[0].Options.Count == 2 && bios[0].SelectedIndex == 0 && bios[2].SelectedLabel == "Auto" && bios[3].NumericValue == "16", "Arquivo do SCEWIN lido (opções, selecionada e valor numérico)");
+        Assert(BiosService.ApplyRecommendations(bios) == 1 && bios[0].SelectedLabel == "Enabled" && !bios[2].Changed, "Recomendações de BIOS mudam só o necessário (ReBAR já em Auto fica)");
+        var rendered = BiosService.RenderBlock(bios[0]);
+        Assert(rendered.Contains("Options\t=[00]Disabled\t// Move \"*\" to the desired Option") && rendered.Contains("        *[01]Enabled") && rendered.Contains("Token\t=17\t// Do NOT change this line"), "Bloco da BIOS regravado com o * na opção nova");
+        var written = BiosService.Serialize(biosHeader, bios.Where(s => s.Changed));
+        Assert(written.Contains("Above 4G Decoding") && !written.Contains("CSM Support") && written.StartsWith("// AMISCE"), "Só os itens alterados vão para o arquivo de gravação");
+        Assert(BiosService.Parse(written, out _).Single().SelectedLabel == "Enabled", "Arquivo gravado volta a ser lido com o valor novo");
+        var csmOn = BiosService.Parse(nvram.Replace("Options\t=*[00]Disabled\t// Move \"*\" to the desired Option\r\n         [01]Enabled\r\n\r\nSetup Question\t= Re-Size", "Options\t=[00]Disabled\t// Move \"*\" to the desired Option\r\n        *[01]Enabled\r\n\r\nSetup Question\t= Re-Size").Replace("        *[01]Auto", "         [01]Auto").Replace("Options\t=[00]Disabled\t// Move \"*\" to the desired Option\r\n         [01]Auto", "Options\t=*[00]Disabled\t// Move \"*\" to the desired Option\r\n         [01]Auto"), out _);
+        BiosService.ApplyRecommendations(csmOn);
+        Assert(csmOn[1].SelectedLabel == "Enabled" && csmOn[2].SelectedLabel == "Disabled", "Resizable BAR não é ligado com CSM ativo (evita PC sem iniciar)");
+
+        // Configurações de jogos
+        var (ini, iniChanges) = GameConfigService.SetIniValues("[/Script/FortniteGame.FortGameUserSettings]\nbUseVSync=True\nFrameRateLimit=0.000000\n\n[ScalabilityGroups]\nsg.ShadowQuality=3\n", new[]
+        {
+            new ConfigValue("/Script/FortniteGame.FortGameUserSettings", "bUseVSync", "False"), new ConfigValue("ScalabilityGroups", "sg.ShadowQuality", "0"),
+            new ConfigValue("ScalabilityGroups", "sg.EffectsQuality", "0"), new ConfigValue("Nova", "X", "1"),
+        }, "\n");
+        Assert(iniChanges == 4 && ini.Contains("bUseVSync=False\nFrameRateLimit") && ini.Contains("sg.ShadowQuality=0\nsg.EffectsQuality=0") && ini.EndsWith("[Nova]\nX=1"), "Arquivo .ini alterado por seção, com chaves novas no lugar certo");
+        var (kv, kvChanges) = GameConfigService.SetQuotedValues("\"VideoConfig\"\n{\n\t\"setting.mat_vsync\"\t\t\"1\"\n\t\"setting.other\"\t\t\"5\"\n}\n", new[] { new ConfigValue("", "setting.mat_vsync", "0"), new ConfigValue("", "setting.r_low_latency", "1") }, "\n");
+        Assert(kvChanges == 2 && kv.Contains("\t\"setting.mat_vsync\"\t\t\"0\"") && kv.Contains("\t\"setting.r_low_latency\"\t\t\"1\"\n}") && kv.Contains("\"setting.other\"\t\t\"5\""), "Arquivo \"chave\" \"valor\" alterado sem mexer no resto");
+
+        // NVIDIA: só leitura (gravar exige administrador e mudaria o driver deste PC)
+        if (NvidiaProfileService.IsAvailable())
+        {
+            var current = NvidiaProfileService.ReadCurrent();
+            Assert(current.Count == NvidiaProfileService.Settings.Length, "Configurações NVIDIA lidas do driver");
+            foreach (var s in NvidiaProfileService.Settings) Console.WriteLine($"  NVIDIA {s.Title}: {s.Describe(current[s.Id])}");
+        }
+        else Console.WriteLine("SKIP NVIDIA indisponível neste PC");
+        Assert(DriverCleanService.DetectGpus().Count > 0, "Placa de vídeo detectada pelo registro");
+
+        Assert(MainWindowRate(12_500_000 / 8) == "12.5 Mbps" || MainWindowRate(12_500_000 / 8) == "12,5 Mbps", "Velocidade de rede formatada em Mbps");
+    }
+
+    static string MainWindowRate(double bytesPerSecond) =>
+        (string)typeof(MainWindow).GetMethod("FormatRate", BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, new object[] { bytesPerSecond })!;
 
     static void TestScheduledTaskToggle(AutorunsService service)
     {
@@ -155,6 +233,10 @@ internal static class Program
         {
             var root = Path.GetFullPath(args.FirstOrDefault() ?? "artifacts/verification");
             Directory.CreateDirectory(root);
+            // Fotos e vídeo do site (não rodam os testes)
+            if (args.Contains("--shots")) return Media.Shots(root);
+            if (args.Contains("--tour")) return Media.Tour(root);
+            if (args.Contains("--videoshots")) return Media.VideoShots(root);
             var log = new ActivityLog(Path.Combine(root, "verification.log"));
             var bridge = new PowerShellBridge(log);
             Assert(bridge.GetSteps("padrao").Count == 7, "Plano padrão contém 7 etapas");
@@ -301,6 +383,7 @@ internal static class Program
             Assert(!clock.IsRolledBack(clockNow.AddDays(-2)), "Hora do servidor corrige relógio que estava adiantado");
             TestStartupPage(log);
             TestPowerMode();
+            TestGamingFeatures(root);
 
             if (args.Contains("--i18n"))
             {
@@ -329,11 +412,17 @@ internal static class Program
                 if (Application.Current != null) { Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown; Application.Current.MainWindow = window; }
                 foreach (Window extra in (Application.Current?.Windows.Cast<Window>() ?? Enumerable.Empty<Window>()).Where(w => w != window).ToList()) extra.Close();
                 Translator.IsEnglish = true;
-                foreach (var page in new[] { "dashboard", "optimization", "startup", "drivers", "tools", "history", "settings", "about", "patchnotes", "bios" })
+                foreach (var page in new[] { "dashboard", "optimization", "startup", "drivers", "tools", "gaming", "network", "history", "settings", "about", "patchnotes", "bios" })
                 {
                     typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { page });
                     Wait(page == "dashboard" ? 4000 : page == "startup" ? 8000 : 600);
                     Collect(window); Snap("en-" + page);
+                }
+                foreach (var tab in new[] { 1, 2, 3 })
+                {
+                    typeof(MainWindow).GetField("_gamingTab", flags)!.SetValue(window, tab);
+                    typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "gaming" });
+                    Wait(tab == 3 ? 6000 : 800); Collect(window); Snap($"en-gaming-tab{tab}");
                 }
                 typeof(MainWindow).GetMethod("ShowIsos", flags)!.Invoke(window, null);
                 Wait(600); Collect(window); Snap("en-isos");
@@ -359,6 +448,8 @@ internal static class Program
                 var app = CreateTestApp();
                 SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher)); var window = new MainWindow();
                 var flags = BindingFlags.NonPublic | BindingFlags.Instance;
+                // A janela não é exibida, então a animação de abertura nunca roda e a cobertura dela taparia tudo
+                ((UIElement)typeof(MainWindow).GetField("IntroOverlay", flags)!.GetValue(window)!).Visibility = Visibility.Collapsed;
                 void Pump(Task task)
                 {
                     var frame = new DispatcherFrame();
@@ -384,11 +475,18 @@ internal static class Program
                 Render("review-dark", 1060, 700);
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "history" });
                 Render("history-dark", 1320, 860);
-                foreach (var page in new[] { "drivers", "startup", "tools", "settings", "about", "patchnotes", "bios" })
+                foreach (var page in new[] { "drivers", "startup", "tools", "gaming", "network", "settings", "about", "patchnotes", "bios" })
                 {
                     typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { page });
                     Render(page + "-dark", 1320, 860);
                 }
+                foreach (var tab in new[] { 1, 2, 3 })
+                {
+                    typeof(MainWindow).GetField("_gamingTab", flags)!.SetValue(window, tab);
+                    typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "gaming" });
+                    Render($"gaming-tab{tab}-dark", 1320, 860);
+                }
+                typeof(MainWindow).GetField("_gamingTab", flags)!.SetValue(window, 0);
                 // Página exclusiva de licença admin: chamada direto, sem a checagem da navegação
                 typeof(MainWindow).GetMethod("ShowIsos", flags)!.Invoke(window, null);
                 Render("isos-dark", 1320, 860);

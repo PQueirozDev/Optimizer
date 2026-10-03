@@ -71,11 +71,14 @@ public partial class MainWindow : Window
         // Load saved theme & language
         _darkTheme = !_configService.Config.Theme.Equals("Light", StringComparison.OrdinalIgnoreCase);
         ApplyTheme(_darkTheme, saveConfig: false);
+        StartAurora();
+        UpdatePageHeader(_currentPage);
         _loc.SetLanguage(_configService.Config.Language ?? "pt");
         UpdateLanguageUi();
         UpdateLicenseUi();
         UpdateNavBadges();
         UpdateActiveNavButton(_currentPage);
+        StartHud();
     }
 
     private void UpdateLicenseUi()
@@ -240,6 +243,7 @@ public partial class MainWindow : Window
         }
         _currentPage = page;
         UpdateActiveNavButton(page);
+        UpdatePageHeader(page);
         ContentScroll.ScrollToTop();
 
         switch (page)
@@ -254,12 +258,15 @@ public partial class MainWindow : Window
             case "patchnotes": ShowPatchNotes(); break;
             case "bios": ShowBios(); break;
             case "startup": ShowStartup(); break;
+            case "gaming": ShowGaming(); break;
+            case "network": ShowNetwork(); break;
         }
+        AnimatePageIn();
     }
 
     private void UpdateActiveNavButton(string page)
     {
-        var buttons = new[] { NavDashboard, NavOpt, NavStartup, NavDrivers, NavIsos, NavTools, NavSettings, NavAbout, NavHistory, NavPatchNotes, NavBios, NavAdmin };
+        var buttons = new[] { NavDashboard, NavOpt, NavStartup, NavDrivers, NavIsos, NavTools, NavGaming, NavNetwork, NavSettings, NavAbout, NavHistory, NavPatchNotes, NavBios, NavAdmin };
         foreach (var b in buttons) b.IsChecked = b.Tag?.ToString() == page;
     }
 
@@ -288,6 +295,7 @@ public partial class MainWindow : Window
     {
         _darkTheme = isDark;
         ThemeService.Apply(Application.Current.Resources, isDark);
+        RefreshAuroraColors();
         ThemeButton.Content = GlyphIcon(isDark ? Glyphs.Sun : Glyphs.Moon, 13);
         ThemeButton.ToolTip = isDark ? "Alternar para tema claro" : "Alternar para tema escuro";
 

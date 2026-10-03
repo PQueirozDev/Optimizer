@@ -622,6 +622,7 @@ function Otimizar-Padrao {
     Write-Secao "Aplicando otimizacoes gerais"
     $etapas = @(
         @{ Nome = "Plano de energia 'Alto Desempenho'"; Acao = {
+                if (Test-X3dDuploCcd) { Write-Host "[INFO] Ryzen X3D com dois CCDs: plano Equilibrado mantido para o jogo usar o CCD com 3D V-Cache."; return }
                 # Quem ja usa um plano de desempenho (Desempenho Maximo, plano de outro otimizador) nao e rebaixado
                 $ativo = Obter-PlanoAtivo
                 if ($ativo -and $ativo -notin $script:PlanoEquilibrado, $script:PlanoEconomia) {
@@ -812,6 +813,14 @@ function Ativar-CopiaDoPlano($modelo, $nomePlano) {
 }
 
 # Alto Desempenho do Windows; se outro otimizador ou uma imagem personalizada o apagou, recria pelo modelo
+# Ryzen X3D com dois CCDs (7900X3D, 7950X3D, 9900X3D, 9950X3D): o driver da AMD so manda o jogo para o CCD
+# com 3D V-Cache quando a Game Bar reconhece o jogo e o plano Equilibrado pode estacionar o outro CCD.
+# Planos de desempenho desligam o estacionamento de nucleos e o jogo passa a rodar no CCD sem cache.
+function Test-X3dDuploCcd {
+    $nome = (Get-ItemProperty "HKLM:\HARDWARE\DESCRIPTION\System\CentralProcessor\0" -Name ProcessorNameString -ErrorAction SilentlyContinue).ProcessorNameString
+    return [bool]($nome -match 'Ryzen\s+\d+\s+(7900|7950|9900|9950)X3D')
+}
+
 function Ativar-PlanoAltoDesempenho {
     if ((powercfg /list) -match $script:PlanoAltoDesempenho) { powercfg /setactive $script:PlanoAltoDesempenho | Out-Null; return $true }
     return (Ativar-CopiaDoPlano $script:PlanoAltoDesempenho "PQueiroz Optimizer - Alto Desempenho")
@@ -867,6 +876,7 @@ function Otimizar-Gamer {
     $etapas = @(
         @{ Nome = "Verificando agendador multimidia do Windows (MMCSS)"; Acao = { Reparar-MMCSS } }
         @{ Nome = "Plano de energia 'Desempenho Maximo'"; Acao = {
+                if (Test-X3dDuploCcd) { Write-Host "[INFO] Ryzen X3D com dois CCDs: plano Equilibrado mantido para o jogo usar o CCD com 3D V-Cache."; return }
                 Capturar-PlanoEnergia
                 Ativar-PlanoDesempenhoMaximo
             } }
@@ -898,6 +908,7 @@ function Otimizar-Gamer {
                 Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" "NetworkThrottlingIndex" 0xffffffff -Type DWord
             } }
         @{ Nome = "Desativando Xbox Game Bar / Game DVR"; Acao = {
+                if (Test-X3dDuploCcd) { Write-Host "[INFO] Ryzen X3D com dois CCDs: Game Bar mantida (o Windows usa ela para levar o jogo ao CCD com 3D V-Cache)."; return }
                 Capturar-Registro "HKCU:\System\GameConfigStore" "GameDVR_Enabled"
                 Set-ItemProperty "HKCU:\System\GameConfigStore" "GameDVR_Enabled" 0 -Type DWord
                 Garantir-Chave "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR"
@@ -2178,6 +2189,7 @@ function Otimizar-Inteligente {
     Write-Secao "Aplicando otimizacoes decididas automaticamente"
     $etapas = @(
         @{ Nome = "Ajustando plano de energia"; Acao = {
+                if (Test-X3dDuploCcd) { Write-Host "[INFO] Ryzen X3D com dois CCDs: plano Equilibrado mantido para o jogo usar o CCD com 3D V-Cache."; return }
                 Capturar-PlanoEnergia
                 if ($perfil -eq "Jogos" -or $perfil -eq "Misto") {
                     $ultimatePlan = powercfg /duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61

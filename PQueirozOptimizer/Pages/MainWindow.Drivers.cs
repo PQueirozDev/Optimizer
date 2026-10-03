@@ -29,6 +29,7 @@ public partial class MainWindow
         if (_driverCategory != AllDriversCategory && !categories.Contains(_driverCategory)) _driverCategory = AllDriversCategory;
 
         var root = new StackPanel();
+        root.Children.Add(DriverCleanCard());
         var subHeader = Label(!string.IsNullOrEmpty(_snapshot?.Graphics)
             ? $"Placa de vídeo detectada: {_snapshot.Graphics} • Todos os drivers com links oficiais e opção de download."
             : "Baixe e atualize os drivers essenciais de vídeo, chipset, rede e áudio para máxima taxa de quadros e menor latência.", 12.5, true);

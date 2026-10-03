@@ -20,6 +20,7 @@
   <ItemGroup>
     <Resource Include="Assets\app.ico" />
     <Resource Include="Assets\app.png" />
+    <Resource Include="Assets\Qrz.powerplan.txt" />
     <Content Include="..\Otimizador_de_PC.ps1" Link="Otimizador_de_PC.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -29,5 +30,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="System.Speech" Version="10.0.12" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.1" />
   </ItemGroup>
 </Project>

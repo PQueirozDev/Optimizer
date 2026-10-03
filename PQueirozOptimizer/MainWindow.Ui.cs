@@ -51,6 +51,12 @@ public static class Glyphs
     public static readonly string OpenInNew = G(0xE8A7);
     public static readonly string Search = G(0xE721);
     public static readonly string Person = G(0xE77B);
+    public static readonly string Globe = G(0xE774);
+    public static readonly string Network = G(0xE968);
+    public static readonly string Play = G(0xE768);
+    public static readonly string Stop = G(0xE71A);
+    public static readonly string Package = G(0xE7B8);
+    public static readonly string Add = G(0xE710);
 
     private static string G(int code) => char.ConvertFromUtf32(code);
 }
@@ -124,8 +130,9 @@ public partial class MainWindow
     {
         var label = new TextBlock { Text = text, FontSize = 10.5, FontWeight = FontWeights.SemiBold };
         label.SetResourceReference(TextBlock.ForegroundProperty, tone + "Brush");
-        var pill = new Border { CornerRadius = new CornerRadius(8), Padding = new Thickness(8, 2, 8, 3), Child = label, VerticalAlignment = VerticalAlignment.Center };
+        var pill = new Border { CornerRadius = new CornerRadius(9), Padding = new Thickness(9, 3, 9, 3), Child = label, VerticalAlignment = VerticalAlignment.Center, BorderThickness = new Thickness(1) };
         pill.SetResourceReference(Border.BackgroundProperty, tone + "SoftBrush");
+        pill.SetResourceReference(Border.BorderBrushProperty, tone + "SoftBrush");
         return pill;
     }
 
@@ -139,10 +146,46 @@ public partial class MainWindow
 
     private Border Surface(UIElement content)
     {
-        var border = new Border { Child = content, Padding = new Thickness(22), CornerRadius = new CornerRadius(16), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 16), Effect = CardShadow() };
+        var border = new Border { Child = content, Padding = new Thickness(22), CornerRadius = new CornerRadius(18), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 16), Effect = CardShadow() };
         border.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
-        border.SetResourceReference(Border.BorderBrushProperty, "BorderSubtleBrush");
+        border.SetResourceReference(Border.BorderBrushProperty, "CardBorderBrush");
+        AddHoverOutline(border);
         return border;
+    }
+
+    /// <summary>
+    /// Ao passar o mouse o cartão sobe um pouco, a sombra cresce e a borda ganha o gradiente de destaque;
+    /// ao sair volta à borda que tinha (alguns cartões usam outra cor).
+    /// </summary>
+    private static void AddHoverOutline(Border border)
+    {
+        object? previous = null;
+        var lift = border.RenderTransform as TranslateTransform ?? new TranslateTransform();
+        border.RenderTransform = lift;
+        var ease = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
+        void Animate(double y, double blur, double opacity)
+        {
+            var time = TimeSpan.FromMilliseconds(180);
+            lift.BeginAnimation(TranslateTransform.YProperty, new System.Windows.Media.Animation.DoubleAnimation(y, time) { EasingFunction = ease });
+            if (border.Effect is DropShadowEffect { IsFrozen: false } shadow)
+            {
+                shadow.BeginAnimation(DropShadowEffect.BlurRadiusProperty, new System.Windows.Media.Animation.DoubleAnimation(blur, time));
+                shadow.BeginAnimation(DropShadowEffect.OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(opacity, time));
+            }
+        }
+        border.MouseEnter += (_, _) =>
+        {
+            previous = border.ReadLocalValue(Border.BorderBrushProperty);
+            border.SetResourceReference(Border.BorderBrushProperty, "CardHoverBorderBrush");
+            Animate(-3, 34, 0.28);
+        };
+        border.MouseLeave += (_, _) =>
+        {
+            // ReadLocalValue devolve a expressão do recurso dinâmico; reaplicá-la mantém a troca de tema funcionando
+            if (previous is System.Windows.Expression or Brush) border.SetValue(Border.BorderBrushProperty, previous);
+            else border.SetResourceReference(Border.BorderBrushProperty, "CardBorderBrush");
+            Animate(0, 24, 0.16);
+        };
     }
 
     private void Primary(Button button)
@@ -161,7 +204,8 @@ public partial class MainWindow
         icon.Margin = new Thickness(0, 0, 8, 0);
         content.Children.Add(icon);
         content.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center, Foreground = null });
-        var button = new Button { Content = content };
+        // Centralizado: em linhas com texto de várias linhas o botão não estica na altura
+        var button = new Button { Content = content, VerticalAlignment = VerticalAlignment.Center };
         ((TextBlock)content.Children[1]).SetBinding(TextBlock.ForegroundProperty, new System.Windows.Data.Binding(nameof(Button.Foreground)) { Source = button });
         if (primary)
         {
@@ -190,9 +234,10 @@ public partial class MainWindow
         Grid.SetColumn(text, 1);
         grid.Children.Add(text);
 
-        var card = new Border { Padding = new Thickness(18), CornerRadius = new CornerRadius(16), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 14, 14), Child = grid, Effect = CardShadow() };
+        var card = new Border { Padding = new Thickness(18), CornerRadius = new CornerRadius(18), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 14, 14), Child = grid, Effect = CardShadow() };
         card.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
-        card.SetResourceReference(Border.BorderBrushProperty, "BorderSubtleBrush");
+        card.SetResourceReference(Border.BorderBrushProperty, "CardBorderBrush");
+        AddHoverOutline(card);
         return card;
     }
 
@@ -217,6 +262,13 @@ public partial class MainWindow
         figure.Segments.Add(new ArcSegment(At(angle), new Size(radius, radius), 0, angle > 180, SweepDirection.Clockwise, true));
         var arc = new Path { Data = new PathGeometry(new[] { figure }), StrokeThickness = 10, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round };
         arc.SetResourceReference(Shape.StrokeProperty, "AccentGradientBrush");
+        arc.Effect = new DropShadowEffect { BlurRadius = 18, ShadowDepth = 0, Opacity = 0.55, Color = Color.FromRgb(0x8B, 0x5C, 0xF6) };
+        // O arco "se desenha" ao aparecer: o traço tracejado começa escondido e é revelado
+        var dash = radius * angle * Math.PI / 180 / arc.StrokeThickness + 1;
+        arc.StrokeDashArray = new DoubleCollection { dash, dash };
+        if (Application.Current?.MainWindow is { IsVisible: true })
+            arc.BeginAnimation(Shape.StrokeDashOffsetProperty, new System.Windows.Media.Animation.DoubleAnimation(dash, 0, TimeSpan.FromMilliseconds(1100))
+        { EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut } });
         grid.Children.Add(arc);
 
         var labels = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };

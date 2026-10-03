@@ -1,0 +1,65 @@
+using System.Text.Json;
+
+namespace PQueirozOptimizer.Services;
+
+public sealed record DefenderStatus(bool Available, bool RealTimeOn, bool TamperProtected, string[] Exclusions);
+
+/// <summary>
+/// Windows Defender para jogos: liga/desliga a proteção em tempo real e gerencia exclusões de pastas
+/// (o jeito seguro de evitar que o antivírus escaneie os arquivos do jogo enquanto ele carrega).
+/// </summary>
+public sealed class DefenderService
+{
+    private readonly ActivityLog _log;
+    public DefenderService(ActivityLog log) => _log = log;
+
+    public static async Task<DefenderStatus> ReadStatusAsync()
+    {
+        try
+        {
+            var json = await PowerShellBridge.RunScriptAsync(
+                "$s = Get-MpComputerStatus; $p = Get-MpPreference;" +
+                "[pscustomobject]@{ On = [bool]$s.RealTimeProtectionEnabled; Tamper = [bool]$s.IsTamperProtected; Ex = @($p.ExclusionPath | Where-Object { $_ }) } | ConvertTo-Json -Compress",
+                timeout: TimeSpan.FromSeconds(40));
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            var exclusions = root.GetProperty("Ex") switch
+            {
+                { ValueKind: JsonValueKind.Array } a => a.EnumerateArray().Select(e => e.GetString() ?? "").Where(s => s.Length > 0 && !s.StartsWith("N/A", StringComparison.Ordinal)).ToArray(),
+                { ValueKind: JsonValueKind.String } s => new[] { s.GetString() ?? "" },
+                _ => Array.Empty<string>(),
+            };
+            return new DefenderStatus(true, root.GetProperty("On").GetBoolean(), root.GetProperty("Tamper").GetBoolean(), exclusions);
+        }
+        // Defender desativado por outro antivírus ou ausente: os cmdlets falham
+        catch (Exception ex) when (ex is InvalidOperationException or TimeoutException or JsonException or KeyNotFoundException)
+        {
+            return new DefenderStatus(false, false, false, Array.Empty<string>());
+        }
+    }
+
+    /// <summary>Liga ou desliga a proteção em tempo real. Com a Proteção contra Adulteração ativa, o Windows recusa.</summary>
+    public async Task SetRealTimeAsync(bool on)
+    {
+        await PowerShellBridge.RunScriptAsync("Set-MpPreference -DisableRealtimeMonitoring ([bool]::Parse($env:PQO_OFF))",
+            new Dictionary<string, string> { ["PQO_OFF"] = (!on).ToString() });
+        var status = await ReadStatusAsync();
+        if (status.RealTimeOn != on)
+            throw new InvalidOperationException(status.TamperProtected
+                ? "O Windows recusou a mudança porque a Proteção contra Adulteração está ativa. Desative-a em Segurança do Windows → Proteção contra vírus e ameaças → Gerenciar configurações e tente de novo."
+                : "O Windows não aplicou a mudança na proteção em tempo real.");
+        _log.Write(on ? "SUCCESS" : "WARN", on ? "Proteção em tempo real do Defender ligada" : "Proteção em tempo real do Defender desligada (o Windows a religa sozinho depois de um tempo)");
+    }
+
+    public async Task AddExclusionAsync(string folder)
+    {
+        await PowerShellBridge.RunScriptAsync("Add-MpPreference -ExclusionPath $env:PQO_PATH", new Dictionary<string, string> { ["PQO_PATH"] = folder });
+        _log.Write("SUCCESS", $"Pasta excluída da verificação do Defender: {folder}");
+    }
+
+    public async Task RemoveExclusionAsync(string folder)
+    {
+        await PowerShellBridge.RunScriptAsync("Remove-MpPreference -ExclusionPath $env:PQO_PATH", new Dictionary<string, string> { ["PQO_PATH"] = folder });
+        _log.Write("SUCCESS", $"Exclusão do Defender removida: {folder}");
+    }
+}

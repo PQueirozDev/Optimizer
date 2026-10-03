@@ -12,6 +12,13 @@ Aplicativo desktop para Windows, feito em C# + WPF (.NET 8), para otimização, 
 - Limpeza rápida de arquivos temporários.
 - Inicialização no estilo do Autoruns: itens de logon, tarefas agendadas e serviços automáticos, com editor verificado, filtro dos itens do Windows e liga/desliga reversível.
 - Atalho de modo de energia na Área de Trabalho (recomendado para notebooks): troca entre eficiência, equilibrado, desempenho e os planos instalados sem pedir permissão de administrador.
+- Modo Jogo temporário: fecha programas em segundo plano, pausa serviços e ativa o plano de desempenho enquanto você joga, restaurando tudo ao desativar. Inclui perfis por jogo (GPU dedicada, tela cheia, prioridade), limpeza da memória em espera, runtimes via winget e avisos para Ryzen X3D.
+- Plano de energia Qrz, de baixa latência, com volta ao plano anterior em um clique.
+- Rede: teste de velocidade (ping, jitter, perda), troca de DNS com medição, ajustes de latência reversíveis e reparos.
+- Monitor ao vivo de CPU, GPU, RAM e ping na barra lateral e na visão geral.
+- Editor de BIOS pelo SCEWIN (placas com BIOS AMI; o SCEWIN não acompanha o app e é escolhido pelo usuário), com recomendações seguras e restauração da cópia original.
+- Perfil NVIDIA gravado direto no driver (NvAPI), instalação limpa de driver com o DDU, presets competitivos para Fortnite, Apex, CS2 e Rocket League e controle do Windows Defender (exclusões e proteção em tempo real).
+- Busca rápida (Ctrl+K) e notificações ao concluir cada ação.
 - Drivers, utilitários do Windows, assistente de BIOS/UEFI e catálogo de ISOs.
 - Temas claro e escuro e interface em português e inglês.
 
@@ -115,7 +122,8 @@ O comando imprime a chave a ser enviada ao cliente. Para uma licença com valida
 - `tests/`: verificações do script (`Verify-PowerShell.ps1`) e do aplicativo (`Optimizer.Verification`).
 - `installer/PQueirozOptimizer.iss`: instalador Inno Setup.
 - `scripts/build-installer.ps1`: publicação self-contained e geração do instalador.
-- `tools/`: emissão de chaves de acesso e geração do ícone.
+- `tools/`: emissão de chaves de acesso, geração do ícone, das imagens do instalador (`Create-InstallerArt.ps1`) e do vídeo do site (`Make-SiteVideo.ps1`).
+- Fotos e vídeo do site: `dotnet run --project .\tests\Optimizer.Verification -- <pasta> --shots` gera as capturas da interface real; com `--videoshots` gera as cenas e `.\tools\Make-SiteVideo.ps1 -Scenes <pasta>` monta o `site\assets\tour.mp4` (precisa do ffmpeg: `winget install Gyan.FFmpeg`).
 - `site/`: site do produto.
 - `.github/workflows/release.yml`: testes em pull requests e release automática em tags `vX.Y.Z`.
 
