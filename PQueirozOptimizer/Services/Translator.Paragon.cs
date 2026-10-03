@@ -222,6 +222,14 @@ public static partial class Translator
         ["Clique em \"Reiniciar na BIOS/UEFI\" e vá até a aba Security."] = "Click \"Restart to BIOS/UEFI\" and go to the Security tab.",
         ["Defina uma Supervisor Password e salve. Se o SCEWIN recusar a gravação, use essa senha ou remova-a depois de terminar."] = "Set a Supervisor Password and save. If SCEWIN refuses to write, use that password or remove it when you're done.",
 
+        // ---------- Tela de abertura ----------
+        ["Verificando licença..."] = "Checking license...", ["Montando a interface..."] = "Building the interface...",
+
+        // ---------- Notas da versão 1.8.1 ----------
+        ["Abertura até 5 vezes mais rápida: a Visão geral fica pronta em menos de 1 segundo (antes, cerca de 4). As informações do sistema agora são lidas direto do Windows, sem PowerShell."] = "Up to 5× faster startup: the Overview is ready in under 1 second (previously about 4). System information is now read directly from Windows, without PowerShell.",
+        ["Nova tela de abertura, que acompanha o tema e mostra cada etapa do carregamento, e entrada mais rápida da interface."] = "New splash screen that follows the theme and shows each loading step, plus a faster interface entrance.",
+        ["Corrigido o aviso de erro que aparecia durante o tutorial ao destacar um item da tela."] = "Fixed the error message that appeared during the tutorial when highlighting an item on screen.",
+
         // ---------- Notas da versão 1.8.0 ----------
         ["Tutorial na primeira abertura: um tour guiado destaca cada área do app, e Recursos, Modo Jogo, Rede, Serviços e BIOS têm um tutorial curto na primeira visita. Reveja em Configurações → Tutoriais."] = "First-launch tutorial: a guided tour highlights each area of the app, and Resources, Game Mode, Network, Services and BIOS have a short tutorial on the first visit. Replay it in Settings → Tutorials.",
         ["Nova página Recursos: verificação de corrupção (ChkDsk, SFC e DISM), runtimes, reinstalação limpa do driver, atalhos do Windows, downloads recomendados e ferramentas de benchmark."] = "New Resources page: corruption check (ChkDsk, SFC and DISM), runtimes, clean driver reinstall, Windows shortcuts, recommended downloads and benchmark tools.",
@@ -266,7 +274,7 @@ public static partial class Translator
         P(@"^(\d+)/(\d+) etapas concluídas\. Erro: (.*)$", m => $"{m.Groups[1].Value}/{m.Groups[2].Value} steps completed. Error: {m.Groups[3].Value}"),
         P(@"^Correção ""(.+)"": (\d+)/(\d+) etapas concluídas(.*)$", m => $"Fix \"{Tr(m.Groups[1].Value)}\": {m.Groups[2].Value}/{m.Groups[3].Value} steps completed{m.Groups[4].Value}"),
         P(@"^\[ERRO\] (.+?): (.+)$", m => $"[ERROR] {Tr(m.Groups[1].Value)}: {m.Groups[2].Value}"),
-        P(@"^(.+)\.\.\.$", m => Exact.ContainsKey(m.Groups[1].Value) || ParagonExact.ContainsKey(m.Groups[1].Value) ? Tr(m.Groups[1].Value) + "..." : m.Value),
+        P(@"^(.+)\.\.\.$", m => Tr(m.Groups[1].Value) is var core && core != m.Groups[1].Value ? core + "..." : m.Value),
         P(@"^Serviços (desligados|restaurados): (.+) \((\d+)/(\d+)\)$", m => $"Services {(m.Groups[1].Value == "desligados" ? "turned off" : "restored")}: {Tr(m.Groups[2].Value)} ({m.Groups[3].Value}/{m.Groups[4].Value})"),
         P(@"^(Desligando|Restaurando): (.+)$", m => $"{(m.Groups[1].Value == "Desligando" ? "Turning off" : "Restoring")}: {Tr(m.Groups[2].Value)}"),
         P(@"^App otimizado: (.+) — (.+)$", m => $"App optimized: {m.Groups[1].Value} — {Tr(m.Groups[2].Value)}"),

@@ -25,6 +25,12 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.8.1", "03/10/2026", new[]
+        {
+            "Abertura até 5 vezes mais rápida: a Visão geral fica pronta em menos de 1 segundo (antes, cerca de 4). As informações do sistema agora são lidas direto do Windows, sem PowerShell.",
+            "Nova tela de abertura, que acompanha o tema e mostra cada etapa do carregamento, e entrada mais rápida da interface.",
+            "Corrigido o aviso de erro que aparecia durante o tutorial ao destacar um item da tela.",
+        }),
         ("v1.8.0", "03/10/2026", new[]
         {
             "Nova página Modo Jogo: fecha programas em segundo plano, pausa serviços (Windows Update, indexação, telemetria) e ativa o plano de desempenho enquanto você joga; ao desativar, tudo volta como estava.",

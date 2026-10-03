@@ -235,20 +235,6 @@
    <!-- Tutorial: escurece a janela e ilumina um elemento por vez (MainWindow.Tutorial.cs) -->
    <Grid x:Name="TutorialLayer" Grid.ColumnSpan="2" Visibility="Collapsed" Panel.ZIndex="50"/>
 
-   <!-- Abertura: logo aparece e some revelando a interface (animada em PlayIntroAnimation) -->
-   <Grid x:Name="IntroOverlay" Grid.ColumnSpan="2" Background="{DynamicResource BackgroundBrush}" IsHitTestVisible="False">
-    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-     <Border x:Name="IntroLogo" Width="96" Height="96" CornerRadius="28" Background="{DynamicResource AccentGradientBrush}" RenderTransformOrigin="0.5,0.5" Opacity="0">
-      <Border.RenderTransform><ScaleTransform ScaleX="0.6" ScaleY="0.6"/></Border.RenderTransform>
-      <Image Source="pack://application:,,,/PQueirozOptimizer;component/Assets/app.png" Width="58" Height="58" RenderOptions.BitmapScalingMode="HighQuality"/>
-     </Border>
-     <StackPanel x:Name="IntroTitle" Margin="0,22,0,0" HorizontalAlignment="Center" Opacity="0">
-      <StackPanel.RenderTransform><TranslateTransform Y="10"/></StackPanel.RenderTransform>
-      <TextBlock Text="PQueiroz" FontSize="26" FontWeight="Bold" FontFamily="{StaticResource DisplayFont}" HorizontalAlignment="Center"/>
-      <TextBlock Text="OPTIMIZER" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
-     </StackPanel>
-    </StackPanel>
-   </Grid>
   </Grid>
  </Border>
 </Window>

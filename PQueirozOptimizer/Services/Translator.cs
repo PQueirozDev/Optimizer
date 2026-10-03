@@ -45,7 +45,8 @@ public static partial class Translator
         if (!IsEnglish) return;
         foreach (PresentationSource source in PresentationSource.CurrentSources)
         {
-            if (source.RootVisual is not DependencyObject root) continue;
+            // A tela de abertura roda em outra thread (e já chega traduzida): não pode ser tocada daqui
+            if (!source.CheckAccess() || source.RootVisual is not DependencyObject root) continue;
             if (root is Window window) window.Title = Tr(window.Title);
             Walk(root);
         }

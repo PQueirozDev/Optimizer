@@ -412,15 +412,21 @@ public partial class MainWindow
         ContentHost.Children.Clear(); ContentHost.Children.Add(root);
         try
         {
-            // A leitura leva alguns segundos (PowerShell + WMI): voltar ao painel reaproveita a última
+            // Voltar ao painel reaproveita a última leitura
             var snapshot = FreshSnapshot;
             if (snapshot is null)
             {
-                var loading = new StackPanel();
-                loading.Children.Add(SectionHeader("Consultando seu computador...", "Lendo processador, memória, armazenamento e sistema."));
-                loading.Children.Add(new ProgressBar { IsIndeterminate = true, Height = 5 });
-                root.Children.Add(Surface(loading));
-                snapshot = await ReadSnapshotAsync();
+                // A leitura costuma levar milissegundos: o aviso de carregamento só aparece se ela demorar
+                var read = ReadSnapshotAsync();
+                if (await Task.WhenAny(read, Task.Delay(150)) != read)
+                {
+                    var loading = new StackPanel();
+                    loading.Children.Add(SectionHeader("Consultando seu computador...", "Lendo processador, memória, armazenamento e sistema."));
+                    loading.Children.Add(new ProgressBar { IsIndeterminate = true, Height = 5 });
+                    root.Children.Add(Surface(loading));
+                }
+                snapshot = await read;
+                StartupProfiler.Mark("snapshot-read");
                 // O usuário pode ter trocado de página (ou reaberto o painel) durante a leitura
                 if (_currentPage != "dashboard" || !ContentHost.Children.Contains(root)) return;
             }

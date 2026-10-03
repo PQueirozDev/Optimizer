@@ -55,6 +55,8 @@ Clear-Directory $publishDir
 Clear-Directory $installerDir
 
 dotnet restore $projectPath
+# Sem compactar o executável: descompactar o runtime custava ~0,4 s em toda abertura (o instalador já é comprimido).
+# (ReadyToRun foi medido: ganha ~90 ms por abertura mas deixa a 1ª abertura após instalar ~1 s mais lenta.)
 dotnet publish $projectPath `
     --configuration $Configuration `
     --runtime $Runtime `
@@ -62,7 +64,6 @@ dotnet publish $projectPath `
     --output $publishDir `
     /p:PublishSingleFile=true `
     /p:IncludeNativeLibrariesForSelfExtract=true `
-    /p:EnableCompressionInSingleFile=true `
     /p:DebugType=None `
     /p:DebugSymbols=false `
     /p:Version=$Version `

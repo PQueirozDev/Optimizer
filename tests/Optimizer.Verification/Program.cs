@@ -146,6 +146,17 @@ internal static class Program
         else Assert(DriverCleanService.DetectGpus().Count > 0, "Placa de vídeo detectada pelo registro");
 
         Assert(MainWindowRate(12_500_000 / 8) == "12.5 Mbps" || MainWindowRate(12_500_000 / 8) == "12,5 Mbps", "Velocidade de rede formatada em Mbps");
+
+        // Visão geral: leitura nativa (antes era um PowerShell com WMI de ~3 s a cada abertura)
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        var snap = new SystemInfoService().Read();
+        watch.Stop();
+        Console.WriteLine($"  Sistema: {snap.OperatingSystem} | {snap.Build} | {snap.Architecture} | {snap.Processor} | {snap.Graphics} | {snap.MemoryGb} GB | {snap.StorageGb}/{snap.FreeGb} GB | ligado desde {snap.BootTime:g} | {watch.ElapsedMilliseconds} ms");
+        Assert(snap.OperatingSystem.StartsWith("Microsoft Windows") && snap.Build.All(char.IsDigit), "Nome e build do Windows lidos do registro");
+        Assert(int.Parse(snap.Build) < 22000 || snap.OperatingSystem.Contains("Windows 11"), "Windows 11 não aparece como Windows 10");
+        Assert(snap.Processor != "Não disponível" && snap.MemoryGb > 0 && snap.StorageGb > 0 && snap.FreeGb > 0 && snap.FreeGb <= snap.StorageGb, "Processador, memória e disco lidos sem WMI");
+        Assert(snap.BootTime is { } boot && boot < DateTime.Now && boot > DateTime.Now.AddYears(-1), "Horário de inicialização coerente");
+        Assert(watch.ElapsedMilliseconds < 500, "Leitura do sistema leva menos de meio segundo");
     }
 
     static string MainWindowRate(double bytesPerSecond) =>
@@ -414,6 +425,32 @@ internal static class Program
                 if (Application.Current != null) { Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown; Application.Current.MainWindow = window; }
                 foreach (Window extra in (Application.Current?.Windows.Cast<Window>() ?? Enumerable.Empty<Window>()).Where(w => w != window).ToList()) extra.Close();
                 Translator.IsEnglish = true;
+                // Tutoriais: cada passo desenhado de verdade (o destaque mede o alvo na tela) e traduzido.
+                // Encerra sem chamar EndTutorial, que gravaria o progresso nas preferências deste PC.
+                var tutorialLayer = (System.Windows.Controls.Grid)typeof(MainWindow).GetField("TutorialLayer", flags)!.GetValue(window)!;
+                void WalkTutorial(string id, string? page, System.Collections.IList steps)
+                {
+                    if (page != null) { typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { page }); Wait(900); }
+                    // O tutorial automático da página pode já ter aberto: recomeça do zero
+                    typeof(MainWindow).GetField("_tutorialSteps", flags)!.SetValue(window, null);
+                    var visible = (System.Collections.IList)Activator.CreateInstance(steps.GetType())!;
+                    foreach (var s in steps)
+                        if (page is null || s!.GetType().GetProperty("Target")!.GetValue(s) is Func<FrameworkElement?> t && t() != null) visible.Add(s);
+                    typeof(MainWindow).GetMethod("StartTutorial", flags)!.Invoke(window, new object[] { id, visible });
+                    for (var i = 0; i < visible.Count; i++)
+                    {
+                        typeof(MainWindow).GetField("_tutorialIndex", flags)!.SetValue(window, i);
+                        typeof(MainWindow).GetMethod("ShowTutorialStep", flags)!.Invoke(window, new object[] { false });
+                        Wait(120); Collect(tutorialLayer);
+                        if (page is null && i == 2) Snap("en-tutorial-step");
+                    }
+                    typeof(MainWindow).GetField("_tutorialSteps", flags)!.SetValue(window, null);
+                    tutorialLayer.Visibility = Visibility.Collapsed; tutorialLayer.Children.Clear();
+                    Console.WriteLine($"PASS Tutorial {id}: {visible.Count} passos desenhados sem erro");
+                }
+                WalkTutorial("inicio", null, (System.Collections.IList)typeof(MainWindow).GetMethod("WelcomeTour", flags)!.Invoke(window, null)!);
+                foreach (var page in new[] { "resources", "gaming", "network", "services", "bios" })
+                    if (typeof(MainWindow).GetMethod("PageTutorial", flags)!.Invoke(window, new object[] { page }) is System.Collections.IList pageSteps) WalkTutorial("pagina-" + page, page, pageSteps);
                 foreach (var page in new[] { "dashboard", "optimization", "startup", "drivers", "tools", "gaming", "network", "restore", "resources", "fixes", "services", "apps", "history", "settings", "about", "patchnotes", "bios" })
                 {
                     typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { page });
@@ -450,8 +487,6 @@ internal static class Program
                 var app = CreateTestApp();
                 SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher)); var window = new MainWindow();
                 var flags = BindingFlags.NonPublic | BindingFlags.Instance;
-                // A janela não é exibida, então a animação de abertura nunca roda e a cobertura dela taparia tudo
-                ((UIElement)typeof(MainWindow).GetField("IntroOverlay", flags)!.GetValue(window)!).Visibility = Visibility.Collapsed;
                 void Pump(Task task)
                 {
                     var frame = new DispatcherFrame();
@@ -470,6 +505,24 @@ internal static class Program
                     using var stream = File.Create(Path.Combine(root, name + ".png")); png.Save(stream);
                     Console.WriteLine("RENDER " + name);
                 }
+                // Tela de abertura (montada aqui na thread do teste, sem exibir)
+                void RenderSplash(string name)
+                {
+                    var palette = StartupSplash.CurrentPalette() with { Animations = false };
+                    var splash = (Window)typeof(StartupSplash).GetMethod("Build", BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, new object[] { palette, "1.8.1", "Montando a interface..." })!;
+                    var bar = (FrameworkElement)typeof(StartupSplash).GetField("_bar", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!;
+                    bar.Width = 348 * 0.6;
+                    var content = (FrameworkElement)splash.Content;
+                    var host = new System.Windows.Controls.Grid { Width = 468, Height = 296 };
+                    splash.Content = null; host.Children.Add(content);
+                    host.SetResourceReference(System.Windows.Controls.Panel.BackgroundProperty, "BackgroundBrush");
+                    host.Measure(new Size(468, 296)); host.Arrange(new Rect(0, 0, 468, 296)); host.UpdateLayout();
+                    var bitmap = new RenderTargetBitmap(468, 296, 96, 96, PixelFormats.Pbgra32); bitmap.Render(host);
+                    var png = new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(bitmap));
+                    using var stream = File.Create(Path.Combine(root, name + ".png")); png.Save(stream);
+                    Console.WriteLine("RENDER " + name);
+                }
+                RenderSplash("splash-dark");
                 Render("dashboard-dark", 1320, 860);
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "optimization" });
                 Render("optimizations-dark", 1060, 700);
@@ -510,6 +563,7 @@ internal static class Program
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "dashboard" });
                 Pump((Task)typeof(MainWindow).GetMethod("RenderDashboardAsync", flags)!.Invoke(window, null)!);
                 Render("dashboard-light", 1320, 860);
+                RenderSplash("splash-light");
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "optimization" });
                 Render("optimizations-light", 1320, 860);
             }

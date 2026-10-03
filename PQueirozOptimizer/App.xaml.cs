@@ -74,6 +74,7 @@ public partial class App : Application
 
     private async void Application_Startup(object sender, StartupEventArgs e)
     {
+        Services.StartupProfiler.Mark("app-startup");
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
         RegisterErrorHandlers();
         var quickClean = e.Args.Contains("--quick-clean", StringComparer.OrdinalIgnoreCase);
@@ -102,6 +103,14 @@ public partial class App : Application
             Services.AppearanceService.Apply(Services.ConfigService.EffectiveAppearance(config));
         }
         catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException) { }
+        Services.StartupProfiler.Mark("config");
+        // A tela de abertura só aparece na abertura normal (os atalhos abrem janelas pequenas e rápidas)
+        var showSplash = !quickClean && !powerMode;
+        if (showSplash)
+        {
+            StartupSplash.Show(StartupSplash.CurrentPalette(), System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "", Services.Translator.Tr("Verificando licença..."));
+            StartupSplash.Report(Services.Translator.Tr("Verificando licença..."), 0.3);
+        }
 
         var licenseService = new Services.LicenseService();
         var licensed = licenseService.TryGetActiveLicense(out var activeLicense, out var licenseError);
@@ -110,6 +119,7 @@ public partial class App : Application
             licensed = licenseService.TryGetActiveLicense(out activeLicense, out licenseError);
         if (!licensed)
         {
+            StartupSplash.Close();
             // Com uma chave salva que não vale mais (expirou, outro PC...), a tela de ativação explica o motivo
             var activation = new ActivationWindow(licenseService, licenseService.HasStoredKey ? licenseError : null);
             if (activation.ShowDialog() != true)
@@ -120,10 +130,12 @@ public partial class App : Application
         }
         if (!licenseService.TryGetActiveLicense(out activeLicense, out _) || activeLicense is null)
         {
+            StartupSplash.Close();
             Shutdown();
             return;
         }
         ActiveLicense = activeLicense;
+        Services.StartupProfiler.Mark("license");
 
         if (powerMode)
         {
@@ -147,7 +159,9 @@ public partial class App : Application
             await Services.QuickCleanNotification.ShowAsync(result);
             Shutdown(); return;
         }
+        if (showSplash) StartupSplash.Report(Services.Translator.Tr("Montando a interface..."), 0.6);
         MainWindow = new MainWindow();
+        Services.StartupProfiler.Mark("window-created");
         ShutdownMode = ShutdownMode.OnMainWindowClose;
         MainWindow.Show();
         await WatchLicenseAsync(licenseService);

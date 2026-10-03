@@ -40,8 +40,10 @@ public partial class MainWindow : Window
 
     public MainWindow(string startPage)
     {
+        StartupProfiler.Mark("ctor-start");
         InitializeComponent();
         _currentPage = startPage;
+        StartupProfiler.Mark("xaml-loaded");
         _powershell = new PowerShellBridge(_log);
         _cleaner = new QuickCleanService(_log);
         foreach (var line in _log.Recent()) AddLogLine(line);
@@ -170,51 +172,58 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Abertura: o logo cresce e aparece, some em seguida e a interface sobe no lugar (~1,2 s).
+    /// Entrada da interface quando a tela de abertura sai: barra lateral, cabeçalho e conteúdo sobem em
+    /// cascata (~0,3 s). Nada cobre a janela, então ela já responde a cliques durante a animação.
     /// Não depende das animações do Windows: a otimização de efeitos visuais do próprio app as desliga.
     /// </summary>
     private void PlayIntroAnimation()
     {
         // Animações desligadas em Configurações → Aparência: a interface aparece direto
-        if (!AppearanceService.AnimationsEnabled) { IntroOverlay.Visibility = Visibility.Collapsed; return; }
-        static DoubleAnimation Anim(double from, double to, double beginMs, double durationMs, IEasingFunction? ease = null) =>
-            new(from, to, TimeSpan.FromMilliseconds(durationMs))
-            {
-                BeginTime = TimeSpan.FromMilliseconds(beginMs),
-                EasingFunction = ease ?? new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
-
-        var logoScale = (ScaleTransform)IntroLogo.RenderTransform;
-        var pop = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.35 };
-        IntroLogo.BeginAnimation(OpacityProperty, Anim(0, 1, 0, 350));
-        logoScale.BeginAnimation(ScaleTransform.ScaleXProperty, Anim(0.6, 1, 0, 550, pop));
-        logoScale.BeginAnimation(ScaleTransform.ScaleYProperty, Anim(0.6, 1, 0, 550, pop));
-        IntroTitle.BeginAnimation(OpacityProperty, Anim(0, 1, 200, 400));
-        ((TranslateTransform)IntroTitle.RenderTransform).BeginAnimation(TranslateTransform.YProperty, Anim(10, 0, 200, 400));
-
-        // A interface entra enquanto a abertura sai
-        const double revealAt = 850;
-        foreach (UIElement part in RootGrid.Children)
+        if (!AppearanceService.AnimationsEnabled) return;
+        var delay = 0.0;
+        foreach (UIElement part in IntroParts())
         {
-            if (part == IntroOverlay) continue;
-            var slide = new TranslateTransform(0, 16);
-            part.RenderTransform = slide;
-            part.Opacity = 0;
-            part.BeginAnimation(OpacityProperty, Anim(0, 1, revealAt, 380));
-            slide.BeginAnimation(TranslateTransform.YProperty, Anim(16, 0, revealAt, 450));
+            if (part.RenderTransform is not TranslateTransform slide) continue;
+            var begin = TimeSpan.FromMilliseconds(delay);
+            var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+            part.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(240)) { BeginTime = begin, EasingFunction = ease });
+            slide.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(12, 0, TimeSpan.FromMilliseconds(300)) { BeginTime = begin, EasingFunction = ease });
+            delay += 40;
         }
-        var fadeOut = Anim(1, 0, revealAt, 350, new CubicEase { EasingMode = EasingMode.EaseIn });
-        fadeOut.Completed += (_, _) => IntroOverlay.Visibility = Visibility.Collapsed;
-        IntroOverlay.BeginAnimation(OpacityProperty, fadeOut);
+    }
+
+    private IEnumerable<UIElement> IntroParts() => RootGrid.Children.OfType<UIElement>().Where(part => part != TutorialLayer);
+
+    /// <summary>Deixa a interface no ponto de partida da entrada antes do primeiro quadro (sem piscar).</summary>
+    private void PrepareIntroAnimation()
+    {
+        if (!AppearanceService.AnimationsEnabled) return;
+        foreach (var part in IntroParts()) { part.Opacity = 0; part.RenderTransform = new TranslateTransform(0, 12); }
     }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
-        PlayIntroAnimation();
+        StartupProfiler.Mark("window-loaded");
+        PrepareIntroAnimation();
+        var firstFrame = new TaskCompletionSource();
+        ContentRendered += (_, _) =>
+        {
+            StartupProfiler.Mark("window-visible");
+            // A janela já desenhou: a tela de abertura sai enquanto a interface entra
+            StartupSplash.Close();
+            PlayIntroAnimation();
+            firstFrame.TrySetResult();
+        };
         try
         {
             if (_currentPage == "dashboard") await ShowDashboardAsync();
             else NavigateTo(_currentPage);
+            StartupProfiler.Mark("dashboard-rendered");
+            // Utilizável = a Visão geral com os dados já desenhada na tela
+            await firstFrame.Task;
+            await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+            StartupProfiler.Mark("usable");
+            if (StartupProfiler.Finish()) { Close(); return; }
             MaybeShowWelcomeTour();
             await CheckForUpdateAsync(showPrompt: _promptForUpdates);
         }

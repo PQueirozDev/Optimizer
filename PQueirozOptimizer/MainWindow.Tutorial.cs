@@ -147,9 +147,11 @@ public partial class MainWindow
 
         var w = TutorialLayer.ActualWidth; var h = TutorialLayer.ActualHeight;
         Rect? hole = null;
-        if (target != null && target.IsVisible && target.ActualWidth > 0)
+        // O alvo pode ter saído da tela (página trocada ou redesenhada): sem ele, o passo aparece sem destaque
+        if (target != null && target.IsVisible && target.ActualWidth > 0 && target.IsDescendantOf(RootGrid))
         {
-            var origin = target.TransformToAncestor(TutorialLayer).Transform(new Point(0, 0));
+            // A camada do tutorial fica por cima da página (irmã, não ancestral do alvo)
+            var origin = target.TransformToVisual(TutorialLayer).Transform(new Point(0, 0));
             hole = new Rect(origin.X - 6, origin.Y - 6, target.ActualWidth + 12, target.ActualHeight + 12);
         }
 
