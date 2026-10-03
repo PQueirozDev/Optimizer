@@ -30,6 +30,7 @@ internal static class Program
     static int Switches()
     {
         var app = CreateTestApp();
+        SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
         var panel = new System.Windows.Controls.StackPanel();
         var window = new Window { Content = panel, Width = 400, Height = 600, Left = -20000, Top = -20000, ShowActivated = false, ShowInTaskbar = false, WindowStartupLocation = WindowStartupLocation.Manual };
         window.Show();
@@ -84,6 +85,31 @@ internal static class Program
             // Página redesenhada com o mesmo estado (troca de tema, voltar à página)
             var g = Make(isSwitch, true); Wait(30); panel.Children.Remove(g); panel.Children.Add(g); Wait(500); Check($"{kind} recolocado na tela", g);
         }
+        // Serviços: a ação falha na hora (outra operação em andamento). Antes, a volta disparava a ação oposta,
+        // que também falhava e voltava... até o app fechar com estouro de pilha.
+        var main = new MainWindow();
+        var bind = typeof(MainWindow).GetMethod("BindActionToggle", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var calls = 0;
+        var failing = Make(true, false);
+        bind.Invoke(main, new object?[] { failing, new Func<bool, Task<bool>>(_ => { calls++; return Task.FromResult(false); }), null });
+        failing.IsChecked = true; Wait(400);
+        if (failing.IsChecked != false || calls != 1) { failures++; Console.WriteLine($"FAIL Ação que falha na hora: estado={failing.IsChecked}, chamadas={calls}"); }
+        else Console.WriteLine("PASS Ação que falha na hora roda uma vez e o interruptor volta, sem repetir");
+        Check("Interruptor depois da falha", failing);
+        var later = Make(true, true); var laterCalls = 0;
+        bind.Invoke(main, new object?[] { later, new Func<bool, Task<bool>>(async _ => { laterCalls++; await Task.Delay(900); return false; }), null });
+        later.IsChecked = false; Wait(100);
+        var lockedWhileRunning = !later.IsEnabled;
+        Wait(1200);
+        if (later.IsChecked != true || laterCalls != 1 || !lockedWhileRunning || !later.IsEnabled) { failures++; Console.WriteLine($"FAIL Ação que falha depois: estado={later.IsChecked}, chamadas={laterCalls}, bloqueado durante={lockedWhileRunning}"); }
+        else Console.WriteLine("PASS Ação demorada bloqueia o interruptor e, ao falhar, ele volta ligado");
+        var success = Make(true, false); var okCalls = 0;
+        bind.Invoke(main, new object?[] { success, new Func<bool, Task<bool>>(async _ => { okCalls++; await Task.Delay(50); return true; }), null });
+        success.IsChecked = true; Wait(400);
+        if (success.IsChecked != true || okCalls != 1) { failures++; Console.WriteLine($"FAIL Ação que dá certo: estado={success.IsChecked}, chamadas={okCalls}"); }
+        else Console.WriteLine("PASS Ação que dá certo mantém o interruptor ligado");
+        main.Close();
+
         // Tira de quadros da animação (interruptor e caixa ligando), para conferir o movimento
         PQueirozOptimizer.Services.AppearanceService.Apply(new PQueirozOptimizer.Models.AppearanceSettings());
         panel.Children.Clear();
@@ -340,6 +366,11 @@ internal static class Program
             var bridge = new PowerShellBridge(log);
             Assert(bridge.GetSteps("padrao").Count == 7, "Plano padrão contém 7 etapas");
             Assert(bridge.GetSteps("gamer").Count == 17, "Plano avançado contém 17 etapas");
+            var keepServices = bridge.GetSteps("gamerservicos");
+            var gamerNames = bridge.GetSteps("gamer").Select(s => s.Name).ToHashSet();
+            Console.WriteLine($"  Sem parar serviços: {keepServices.Count} de {gamerNames.Count} etapas (sem: {string.Join(", ", gamerNames.Except(keepServices.Select(s => s.Name)))})");
+            Assert(keepServices.Count > 0 && keepServices.Count < gamerNames.Count && keepServices.All(s => gamerNames.Contains(s.Name)), "Plano sem parar serviços tira só as etapas de serviço do plano avançado");
+            Assert(UpdateService.ReleaseNotes("## Novidades\n\n- Um\n* Dois\nTexto solto\n**Full Changelog**: x\n- Full Changelog: y").SequenceEqual(new[] { "Um", "Dois" }), "Novidades da release lidas só dos itens de lista");
             Assert(!UpdateService.CanAutoInstall(new UpdateInfo(true, "1.0.0", "1.1.0", null, "https://github.com/PQueirozDev/Optimizer/releases/download/v1.1.0/Setup.exe", "Setup.exe", null)), "Atualização sem hash publicado não é instalada automaticamente");
             Assert(new LicenseService().MachineId.Length == 20, "ID do computador gerado");
             Assert(new LicenseService().DisplayMachineId.Replace("-", "") == new LicenseService().MachineId, "ID exibido em blocos equivale ao ID real");
@@ -543,6 +574,10 @@ internal static class Program
                     Wait(page == "dashboard" ? 4000 : page == "startup" ? 8000 : 600);
                     Collect(window); Snap("en-" + page);
                 }
+                typeof(MainWindow).GetField("_servicesTab", flags)!.SetValue(window, 1);
+                typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "services" });
+                Wait(800); Collect(window); Snap("en-services-status");
+                typeof(MainWindow).GetField("_servicesTab", flags)!.SetValue(window, 0);
                 foreach (var tab in new[] { 1, 2, 3 })
                 {
                     typeof(MainWindow).GetField("_gamingTab", flags)!.SetValue(window, tab);
@@ -610,6 +645,12 @@ internal static class Program
                 }
                 RenderSplash("splash-dark");
                 Render("dashboard-dark", 1320, 860);
+                // Janela de atualização com uma versão simulada (notas iguais às da release)
+                var fakeUpdate = new UpdateInfo(true, "1.8.2", "1.8.3", "https://github.com/PQueirozDev/Optimizer/releases", "https://x/setup.exe", "setup.exe", "https://x/SHA256SUMS.txt",
+                    UpdateService.ReleaseNotes("## Novidades\n\n- Corrigido o fechamento do app ao ligar grupos em Serviços.\n- Nova aba Estado dos serviços.\n- 4 temas novos e cores personalizadas.\n\n**Full Changelog**: x"));
+                typeof(MainWindow).GetMethod("ShowUpdateDialog", flags)!.Invoke(window, new object[] { fakeUpdate });
+                Render("update-dialog-dark", 1320, 860);
+                typeof(MainWindow).GetMethod("CloseUpdateDialog", flags)!.Invoke(window, null);
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "optimization" });
                 Render("optimizations-dark", 1060, 700);
                 Pump((Task)typeof(MainWindow).GetMethod("PrepareOperationAsync", flags)!.Invoke(window, new object[] { "gamer" })!);
@@ -621,6 +662,10 @@ internal static class Program
                     typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { page });
                     Render(page + "-dark", 1320, 860);
                 }
+                typeof(MainWindow).GetField("_servicesTab", flags)!.SetValue(window, 1);
+                typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "services" });
+                Render("services-status-dark", 1320, 860);
+                typeof(MainWindow).GetField("_servicesTab", flags)!.SetValue(window, 0);
                 foreach (var tab in new[] { 1, 2, 3 })
                 {
                     typeof(MainWindow).GetField("_gamingTab", flags)!.SetValue(window, tab);
@@ -644,6 +689,10 @@ internal static class Program
                 }
                 Variant("oled-1366", new() { Theme = PQueirozOptimizer.Models.ThemeMode.Oled, Accent = PQueirozOptimizer.Models.AccentIntensity.Vibrant, Density = PQueirozOptimizer.Models.Density.Compact, CardSize = PQueirozOptimizer.Models.CardSize.Compact }, 1366, 728, "dashboard", "settings", "resources", "services");
                 Variant("comfort-1600", new() { Accent = PQueirozOptimizer.Models.AccentIntensity.Soft, Density = PQueirozOptimizer.Models.Density.Comfortable, CardSize = PQueirozOptimizer.Models.CardSize.Large }, 1600, 860, "dashboard", "fixes");
+                Variant("ocean-orange", new() { Theme = PQueirozOptimizer.Models.ThemeMode.Ocean, AccentColor = "#F97316", SecondaryColor = "#FACC15" }, 1320, 860, "settings", "dashboard");
+                Variant("graphite-green", new() { Theme = PQueirozOptimizer.Models.ThemeMode.Graphite, AccentColor = "#10B981" }, 1320, 860, "dashboard");
+                Variant("light-blue", new() { Theme = PQueirozOptimizer.Models.ThemeMode.Light, AccentColor = "#3B82F6" }, 1320, 860, "dashboard");
+                Variant("forest", new() { Theme = PQueirozOptimizer.Models.ThemeMode.Forest }, 1320, 860, "dashboard");
                 PQueirozOptimizer.Services.AppearanceService.Apply(PQueirozOptimizer.Services.AppearanceService.Defaults());
                 typeof(MainWindow).GetMethod("ApplyTheme", flags)!.Invoke(window, new object[] { false, false });
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "dashboard" });

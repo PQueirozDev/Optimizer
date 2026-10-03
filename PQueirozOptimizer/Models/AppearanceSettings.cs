@@ -2,7 +2,8 @@ using System.Text.Json.Serialization;
 
 namespace PQueirozOptimizer.Models;
 
-public enum ThemeMode { Dark, Oled, Auto }
+/// <summary>Temas (gravados pelo nome, então a lista pode crescer sem quebrar preferências salvas).</summary>
+public enum ThemeMode { Dark, Oled, Auto, Light, Graphite, Ocean, Forest }
 public enum AccentIntensity { Soft, Default, Vibrant }
 public enum Density { Compact, Default, Comfortable }
 public enum CardSize { Compact, Medium, Large }
@@ -15,6 +16,10 @@ public sealed class AppearanceSettings
     [JsonPropertyName("density"), JsonConverter(typeof(JsonStringEnumConverter))] public Density Density { get; set; } = Density.Default;
     [JsonPropertyName("cardSize"), JsonConverter(typeof(JsonStringEnumConverter))] public CardSize CardSize { get; set; } = CardSize.Medium;
     [JsonPropertyName("animations")] public bool Animations { get; set; } = true;
+    /// <summary>Cor principal (#RRGGBB); vazio = roxo padrão do app.</summary>
+    [JsonPropertyName("accentColor")] public string? AccentColor { get; set; }
+    /// <summary>Cor secundária, usada nos gradientes e indicadores (#RRGGBB); vazio = ciano padrão.</summary>
+    [JsonPropertyName("secondaryColor")] public string? SecondaryColor { get; set; }
 
     public AppearanceSettings Clone() => (AppearanceSettings)MemberwiseClone();
 }

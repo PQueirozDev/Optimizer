@@ -26,6 +26,45 @@ public partial class MainWindow
     private CancellationTokenSource? _operationCts;
     private bool _closeAfterOperation;
 
+    /// <summary>
+    /// Liga um interruptor a uma ação (true = ligou, false = desligou). A ação roda uma vez por clique e o
+    /// interruptor fica bloqueado enquanto ela roda. Se falhar (ou outra operação estiver em andamento), ele
+    /// volta ao estado anterior SEM disparar a ação de novo — antes, a volta disparava a ação oposta, que
+    /// também falhava e voltava de novo, até o app fechar com estouro de pilha.
+    /// </summary>
+    private void BindActionToggle(CheckBox check, Func<bool, Task<bool>> apply, Action? after = null)
+    {
+        var busy = false;
+        async void Changed(bool value)
+        {
+            if (busy) return; // a própria volta abaixo: ignora
+            busy = true;
+            var wasEnabled = check.IsEnabled;
+            check.IsEnabled = false;
+            var ok = false;
+            try { ok = await apply(value); }
+            catch (Exception ex) { _log.Write("ERROR", "Não foi possível concluir a ação: " + ex.Message); }
+            finally
+            {
+                if (!ok) check.IsChecked = !value;
+                busy = false;
+                check.IsEnabled = wasEnabled;
+            }
+            if (after != null) AfterToggleAnimation(after);
+        }
+        check.Checked += (_, _) => Changed(true);
+        check.Unchecked += (_, _) => Changed(false);
+    }
+
+    /// <summary>Redesenha a página só depois da animação do interruptor; antes, ele era trocado por um novo sem animar.</summary>
+    private void AfterToggleAnimation(Action action)
+    {
+        if (!AppearanceService.AnimationsEnabled) { action(); return; }
+        var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(420) };
+        timer.Tick += (_, _) => { timer.Stop(); action(); };
+        timer.Start();
+    }
+
     /// <summary>Executa com progresso, cancelamento e notificação. Retorna true só se terminou sem erro.</summary>
     private async Task<bool> ExecuteTrackedAsync(string title, Func<CancellationToken, Task> action)
     {
@@ -585,8 +624,12 @@ public partial class MainWindow
             _pendingUpdate = info;
             ShowUpdateBanner();
             if (!_operationRunning) OperationStatus.Text = $"Atualização disponível: {info.LatestVersion}";
-            if (showPrompt && Msg($"A versão {info.LatestVersion} está disponível. Deseja atualizar agora?", "Atualização disponível", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
-                await InstallUpdateAsync(info, null);
+            // Ao abrir o app: janela com as novidades (depois do tutorial, se ele estiver na tela)
+            if (showPrompt)
+            {
+                while (_tutorialSteps != null) await Task.Delay(500);
+                ShowUpdateDialog(info);
+            }
         }
         catch (Exception ex)
         {
@@ -632,6 +675,10 @@ public partial class MainWindow
 
         var banner = new DockPanel();
         DockPanel.SetDock(update, Dock.Right); banner.Children.Add(update);
+        var details = IconButton(Glyphs.Info, "Ver novidades");
+        details.Margin = new Thickness(12, 0, 0, 0); details.VerticalAlignment = VerticalAlignment.Center;
+        details.Click += (_, _) => ShowUpdateDialog(info);
+        DockPanel.SetDock(details, Dock.Right); banner.Children.Add(details);
         var chip = IconChip(Glyphs.Download, "Info", 40); DockPanel.SetDock(chip, Dock.Left); banner.Children.Add(chip);
         var bannerText = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
         var bt = Label($"Nova versão disponível: {info.LatestVersion}", 14); bt.FontWeight = FontWeights.SemiBold; bt.Margin = new Thickness(0);
@@ -640,6 +687,7 @@ public partial class MainWindow
         bannerText.Children.Add(bs);
         banner.Children.Add(bannerText);
         var bannerCard = Surface(banner); bannerCard.Padding = new Thickness(18, 14, 18, 14);
+        bannerCard.SetResourceReference(Border.BackgroundProperty, "HeroBrush");
         bannerCard.SetResourceReference(Border.BorderBrushProperty, "InfoBrush");
         _updateSlot.Children.Clear();
         _updateSlot.Children.Add(bannerCard);
@@ -692,17 +740,20 @@ public partial class MainWindow
         if (_installingUpdate) return;
         _installingUpdate = true;
         if (button != null) button.IsEnabled = false;
-        OperationProgress.Visibility = Visibility.Visible; OperationStatus.Text = "Baixando instalador...";
+        OperationProgress.Visibility = Visibility.Visible;
+        ReportUpdateProgress("Baixando instalador...", null);
         try
         {
-            using var installer = await _updates.DownloadAsync(info, new Progress<(long read, long total)>(p => OperationStatus.Text = p.total > 0 ? $"Baixando instalador... {p.read * 100d / p.total:N0}%" : $"Baixando instalador... {p.read / 1048576d:N1} MB"));
-            OperationStatus.Text = "Instalador verificado. Atualizando — o aplicativo será reaberto automaticamente...";
+            using var installer = await _updates.DownloadAsync(info, new Progress<(long read, long total)>(p => ReportUpdateProgress(
+                p.total > 0 ? $"Baixando instalador... {p.read * 100d / p.total:N0}% ({p.read / 1048576d:N1} de {p.total / 1048576d:N1} MB)" : $"Baixando instalador... {p.read / 1048576d:N1} MB",
+                p.total > 0 ? p.read * 100d / p.total : null)));
+            ReportUpdateProgress("Instalador verificado por SHA256. Instalando — o app reabre sozinho em instantes...", 100);
             _log.Write("INFO", $"Atualização {info.LatestVersion} verificada por SHA256; iniciando instalação silenciosa.");
             installer.LaunchSilent();
             await Task.Delay(500);
             Application.Current.Shutdown();
         }
-        catch (Exception ex) { OperationStatus.Text = "Falha na atualização: " + ex.Message; _log.Write("ERROR", "Atualização: " + ex.Message); }
-        finally { _installingUpdate = false; OperationProgress.Visibility = Visibility.Collapsed; if (button != null) button.IsEnabled = true; }
+        catch (Exception ex) { ReportUpdateProgress("Falha na atualização: " + ex.Message, 0); _log.Write("ERROR", "Atualização: " + ex.Message); }
+        finally { _installingUpdate = false; OperationProgress.Visibility = Visibility.Collapsed; if (button != null) button.IsEnabled = true; if (_updateLater != null) _updateLater.IsEnabled = true; }
     }
 }

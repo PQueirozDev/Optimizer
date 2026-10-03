@@ -25,6 +25,16 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.8.3", "03/10/2026", new[]
+        {
+            "Corrigido o fechamento do app ao ligar ou desligar grupos em Serviços enquanto outra ação estava em andamento.",
+            "As etiquetas ao lado dos interruptores agora dizem o estado do próprio ajuste (Aplicado ou Padrão), sem contradizer o interruptor.",
+            "Nova otimização \"Avançada sem parar serviços\" e nova aba Serviços → Estado dos serviços, com a verificação da 2ª etapa (PcaSvc, DPS, DiagTrack, SysMain e EventLog) e botões para iniciar ou parar.",
+            "Aparência: 4 temas novos (Claro, Grafite, Oceano e Floresta) e escolha da cor principal e secundária, com amostras ou um código de cor próprio.",
+            "Se o app abrir sem permissão de administrador, ele se reabre pedindo o UAC; itens de inicialização protegidos pelo Windows agora explicam o motivo e abrem a tela certa.",
+            "As animações dos interruptores aparecem de verdade (a página não é mais redesenhada no meio delas), com um pulso de brilho ao ligar.",
+            "Nova janela de atualização com as novidades da versão, o progresso do download e os botões Atualizar agora e Depois.",
+        }),
         ("v1.8.2", "03/10/2026", new[]
         {
             "Corrigido o interruptor que aparecia desligado quando estava ligado (acontecia quando uma ação falhava e o interruptor voltava ao estado anterior, como em Serviços).",

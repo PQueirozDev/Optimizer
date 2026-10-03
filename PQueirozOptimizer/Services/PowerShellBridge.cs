@@ -56,7 +56,7 @@ public sealed class PowerShellBridge
 
     public IReadOnlyList<OperationStep> GetSteps(string operation)
     {
-        var function = operation switch { "padrao" => "Otimizar-Padrao", "gamer" => "Otimizar-Gamer", "debloat" => "Otimizar-Debloat", _ => "" };
+        var function = operation switch { "padrao" => "Otimizar-Padrao", "gamer" or "gamerservicos" => "Otimizar-Gamer", "debloat" => "Otimizar-Debloat", _ => "" };
         if (function.Length == 0) return Array.Empty<OperationStep>();
         var script = File.ReadAllText(_scriptPath);
         var start = script.IndexOf("function " + function + " {", StringComparison.Ordinal);
@@ -72,10 +72,14 @@ public sealed class PowerShellBridge
             if (name == "Arquivos temporarios removidos" || steps.Any(s => s.Name == name)) continue;
             // O efeito vem do código da própria etapa (do nome dela até o início da próxima)
             var code = body[matches[i].Index..(i + 1 < matches.Count ? matches[i + 1].Index : body.Length)];
+            if (operation == "gamerservicos" && ChangesServices(code)) continue; // sem parar serviços: etapa de serviço não aparece (o script também bloqueia)
             steps.Add(new OperationStep(name, ClassifyStep(code)));
         }
         return steps;
     }
+
+    /// <summary>Etapa que para, desativa ou muda o tipo de início de algum serviço.</summary>
+    public static bool ChangesServices(string code) => Regex.IsMatch(code, @"\b(Stop-Service|Set-Service|Suspend-Service|Desativar-Servico)\b", RegexOptions.IgnoreCase);
 
     public static StepEffect ClassifyStep(string code) =>
         Regex.IsMatch(code, @"Registrar-Irreversivel|Remove-Item|Remove-Appx|cleanmgr", RegexOptions.IgnoreCase) ? StepEffect.Irreversible

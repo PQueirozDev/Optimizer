@@ -109,6 +109,15 @@ public static class Motion
             stretch.KeyFrames.Add(new EasingDoubleKeyFrame(1.3, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(110)), EaseOut));
             stretch.KeyFrames.Add(new EasingDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(300)), EaseOut));
             scale.BeginAnimation(ScaleTransform.ScaleXProperty, stretch);
+            // Ao ligar: um anel da cor principal se expande e some em volta da trilha
+            if (on && Part<UIElement>(toggle, "pulse") is { } pulse)
+            {
+                if (pulse.RenderTransform is not ScaleTransform grow) pulse.RenderTransform = grow = new ScaleTransform(1, 1);
+                var expand = new DoubleAnimation(1, 1.55, TimeSpan.FromMilliseconds(520)) { EasingFunction = EaseOut };
+                grow.BeginAnimation(ScaleTransform.ScaleXProperty, expand);
+                grow.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(1, 1.9, TimeSpan.FromMilliseconds(520)) { EasingFunction = EaseOut });
+                pulse.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0.55, 0, TimeSpan.FromMilliseconds(520)) { EasingFunction = EaseOut });
+            }
         }
         else
         {

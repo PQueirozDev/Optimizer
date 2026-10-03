@@ -100,8 +100,10 @@ jobs:
         run: |
           $tag = "${{ github.ref_name }}"
           $version = "${{ steps.version.outputs.version }}"
+          # As notas da release sao as mesmas do app; a janela de atualizacao do app mostra esta lista
+          ./scripts/release-notes.ps1 -Version $version -Output release-notes.md
           gh release create $tag `
             "artifacts/installer/PQueirozOptimizer-Setup-v$version.exe" `
             "artifacts/installer/SHA256SUMS.txt" `
             --title "PQueiroz Optimizer $tag" `
-            --generate-notes
+            --notes-file release-notes.md

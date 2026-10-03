@@ -12,7 +12,7 @@ public partial class MainWindow
     private static (string Glyph, string Tone) OptimizationVisual(OptimizationDef opt) => opt.Id switch
     {
         "padrao" => (Glyphs.Speed, "Accent"),
-        "gamer" => (Glyphs.Game, "Accent"),
+        "gamer" or "gamerservicos" => (Glyphs.Game, "Accent"),
         "debloat" => (Glyphs.Shield, "Info"),
         "quickclean" => (Glyphs.Broom, "Info"),
         "analisar" => (Glyphs.Diagnostic, "Success"),
@@ -38,6 +38,8 @@ public partial class MainWindow
         PageTitle.Text = "Otimização";
         var activeProfile = _configService.GetActiveProfile();
         var allowedIds = new HashSet<string>(activeProfile.EnabledOptimizations, StringComparer.OrdinalIgnoreCase);
+        // Perfis salvos antes da otimização sem parar serviços: ela aparece junto com a Versão Avançada
+        if (allowedIds.Contains("gamer")) allowedIds.Add("gamerservicos");
 
         var visibleOptimizations = ConfigService.AllOptimizations
             .Where(o => allowedIds.Contains(o.Id))

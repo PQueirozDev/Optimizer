@@ -10,7 +10,7 @@ using System.Text.Json;
 
 namespace PQueirozOptimizer.Services;
 
-public sealed record UpdateInfo(bool IsAvailable, string CurrentVersion, string LatestVersion, string? DownloadUrl, string? AssetUrl, string? AssetName, string? ChecksumUrl);
+public sealed record UpdateInfo(bool IsAvailable, string CurrentVersion, string LatestVersion, string? DownloadUrl, string? AssetUrl, string? AssetName, string? ChecksumUrl, IReadOnlyList<string>? Notes = null);
 
 /// <summary>Instalador baixado, validado e travado contra escrita até ser executado.</summary>
 public sealed class VerifiedInstaller : IDisposable
@@ -72,8 +72,19 @@ public sealed class UpdateService
                 else if (string.Equals(name, ChecksumAssetName, StringComparison.OrdinalIgnoreCase)) checksumUrl = download;
             }
         }
-        return new(Compare(latest, current) > 0, current, latest, url, assetUrl, assetName, checksumUrl);
+        var body = json.RootElement.TryGetProperty("body", out var bodyElement) ? bodyElement.GetString() : null;
+        return new(Compare(latest, current) > 0, current, latest, url, assetUrl, assetName, checksumUrl, ReleaseNotes(body));
     }
+
+    /// <summary>Novidades da release: os itens de lista do texto dela (as mesmas notas mostradas no app).</summary>
+    public static IReadOnlyList<string> ReleaseNotes(string? body) =>
+        (body ?? "").Split('\n')
+            .Select(line => line.Trim())
+            .Where(line => line.StartsWith("- ", StringComparison.Ordinal) || line.StartsWith("* ", StringComparison.Ordinal))
+            .Select(line => line[2..].Trim())
+            .Where(line => line.Length > 0 && !line.Contains("Full Changelog", StringComparison.OrdinalIgnoreCase))
+            .Take(12)
+            .ToList();
 
     /// <summary>Indica se a release permite instalação automática (instalador + hash publicado).</summary>
     public static bool CanAutoInstall(UpdateInfo update) => !string.IsNullOrWhiteSpace(update.AssetUrl) && !string.IsNullOrWhiteSpace(update.ChecksumUrl);

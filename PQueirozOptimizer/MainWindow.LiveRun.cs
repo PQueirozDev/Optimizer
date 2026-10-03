@@ -168,7 +168,7 @@ public partial class MainWindow
         chip.SetResourceReference(Border.BackgroundProperty, tone + "SoftBrush");
         ((TextBlock)chip.Child).SetResourceReference(TextBlock.ForegroundProperty, tone + "Brush");
 
-        if (operation is "padrao" or "gamer" or "debloat" or "reverter")
+        if (operation is "padrao" or "gamer" or "gamerservicos" or "debloat" or "reverter")
         {
             var history = IconButton(Glyphs.History, "Ver backup e reversão"); history.Click += History_Click;
             actions.Children.Add(history);

@@ -22,7 +22,7 @@
 #>
 
 param(
-    [ValidateSet("", "analisar", "inteligente", "padrao", "gamer", "debloat", "reverter", "sfc", "dism", "chkdsk", "update", "benchmark", "reparar", "corrupcao")]
+    [ValidateSet("", "analisar", "inteligente", "padrao", "gamer", "gamerservicos", "debloat", "reverter", "sfc", "dism", "chkdsk", "update", "benchmark", "reparar", "corrupcao")]
     [string]$Operation = "",
     [switch]$UiMode,
     [string]$SelectedStepsBase64 = ""
@@ -735,6 +735,20 @@ function Set-PoliticaDword($caminho, $nome, $valor) {
 
 # Muitos PCs ja tiveram servicos removidos por outras ferramentas; isso nao e uma falha.
 function Servico-Existe($nome) { return [bool](Get-Service -Name $nome -ErrorAction SilentlyContinue) }
+
+# Otimizacao "sem parar servicos": nenhum servico e parado, desativado ou tem o tipo de inicio mudado
+# (PcaSvc, DPS, DiagTrack, SysMain, EventLog e os demais continuam como estao). Funcoes globais com o
+# nome dos cmdlets tem prioridade sobre eles, entao toda etapa que mexeria em servico so registra.
+function Ativar-ModoSemServicos {
+    $script:ModoSemServicos = $true
+    Write-Host "[INFO] Otimizacao sem parar servicos: nenhum servico do Windows sera parado ou desativado."
+    function global:Stop-Service { param([Parameter(Position = 0)]$Name, [switch]$Force)
+        Write-Host "[INFO] Servico mantido em execucao: $Name" }
+    function global:Set-Service { param([Parameter(Position = 0)]$Name, $StartupType)
+        Write-Host "[INFO] Tipo de inicio mantido: $Name" }
+    function global:Suspend-Service { param([Parameter(Position = 0)]$Name)
+        Write-Host "[INFO] Servico mantido em execucao: $Name" }
+}
 
 function Desativar-Servico($nome) {
     if (-not (Servico-Existe $nome)) { Write-Host "[INFO] Servico $nome nao existe neste Windows; nada a fazer."; return }
@@ -2749,6 +2763,7 @@ try {
             "inteligente" { Otimizar-Inteligente }
             "padrao" { Otimizar-Padrao }
             "gamer" { Otimizar-Gamer }
+            "gamerservicos" { Ativar-ModoSemServicos; Otimizar-Gamer }
             "debloat" { Otimizar-Debloat }
             "reverter" { Reverter-UltimaOtimizacao }
             "sfc" { Executar-VerificarSFC }

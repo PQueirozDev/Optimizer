@@ -378,6 +378,8 @@
               <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
               <ContentPresenter Margin="0,0,14,0" VerticalAlignment="Center" RecognizesAccessKey="True"/>
               <Grid x:Name="trackArea" Grid.Column="1" Width="40" Height="22" VerticalAlignment="Center">
+                <!-- Pulso de brilho ao ligar (animado em Motion.cs) -->
+                <Border x:Name="pulse" CornerRadius="11" Background="{DynamicResource AccentBrush}" Opacity="0" IsHitTestVisible="False" RenderTransformOrigin="0.5,0.5"/>
                 <Border x:Name="track" CornerRadius="11" Background="{DynamicResource PanelHoverBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"/>
                 <Border x:Name="trackOn" CornerRadius="11" Background="{DynamicResource AccentGradientBrush}" Opacity="0"/>
                 <Ellipse x:Name="knob" Width="16" Height="16" Fill="White" HorizontalAlignment="Left" Margin="3,0,0,0">

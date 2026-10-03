@@ -309,7 +309,13 @@ public partial class MainWindow
         {
             check.IsChecked = !enable;
             _log.Write("ERROR", $"Inicialização: {entry.Name}: {ex.Message}");
-            Msg("Não foi possível alterar este item: " + ex.Message, "Inicialização do Windows", MessageBoxButton.OK, MessageBoxImage.Warning);
+            // Acesso negado mesmo como administrador: o item é protegido pelo Windows ou pelo próprio programa
+            var denied = ex is UnauthorizedAccessException || ex.HResult == unchecked((int)0x80070005) || ex is Win32Exception { NativeErrorCode: 5 };
+            if (denied && Msg($"O Windows protege \"{entry.Name}\": ele pertence ao sistema ou a um programa que trava as próprias permissões, então nem o administrador pode alterá-lo por aqui.\n\nDá para desligar pelas configurações do próprio programa ou em Configurações do Windows → Aplicativos → Inicialização. Abrir essa tela agora?",
+                    "Inicialização do Windows", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
+                OpenUrl("ms-settings:startupapps");
+            else if (!denied)
+                Msg("Não foi possível alterar este item: " + ex.Message, "Inicialização do Windows", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         finally
         {

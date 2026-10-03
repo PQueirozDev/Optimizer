@@ -235,6 +235,9 @@
    <!-- Tutorial: escurece a janela e ilumina um elemento por vez (MainWindow.Tutorial.cs) -->
    <Grid x:Name="TutorialLayer" Grid.ColumnSpan="2" Visibility="Collapsed" Panel.ZIndex="50"/>
 
+   <!-- Janela de atualização (MainWindow.UpdateDialog.cs) -->
+   <Grid x:Name="UpdateLayer" Grid.ColumnSpan="2" Visibility="Collapsed" Panel.ZIndex="60"/>
+
   </Grid>
  </Border>
 </Window>

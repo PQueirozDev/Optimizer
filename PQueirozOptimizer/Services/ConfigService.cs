@@ -18,6 +18,7 @@ public class ConfigService
     {
         new() { Id = "padrao", Name = "Versão Padrão", Description = "Revise ajustes de energia, fila de impressão, cache DNS e armazenamento.", Category = "Desempenho", Icon = "⚡", Operation = "padrao" },
         new() { Id = "gamer", Name = "Versão Avançada", Description = "Desempenho, latência de periféricos, modo MSI da GPU, políticas do Editor de Política de Grupo, privacidade e desativação de componentes em segundo plano.", Category = "Desempenho", Icon = "🎮", Operation = "gamer" },
+        new() { Id = "gamerservicos", Name = "Avançada sem parar serviços", Description = "Os mesmos ajustes da Versão Avançada, mas nenhum serviço do Windows é parado ou desativado (PcaSvc, DPS, DiagTrack, SysMain e EventLog continuam rodando). Use se o seu jogo ou campeonato faz verificação desses serviços.", Category = "Desempenho", Icon = "🎮", Operation = "gamerservicos" },
         new() { Id = "debloat", Name = "Debloat & Privacidade", Description = "Remove bloatware do Windows, aplicativos desnecessários e reduz telemetria.", Category = "Limpeza", Icon = "🛡️", Operation = "debloat" },
         new() { Id = "quickclean", Name = "Limpeza Rápida", Description = "Analisa temporários do usuário e do Windows, preservando arquivos recentes.", Category = "Limpeza", Icon = "🧹", Operation = "quickclean" },
         new() { Id = "analisar", Name = "Diagnóstico / Análise", Description = "Analisa a integridade de CPU, memória, armazenamento e saúde geral do sistema.", Category = "Diagnóstico", Icon = "🔍", Operation = "analisar" },
@@ -219,7 +220,7 @@ public class ConfigService
                 Name = "Modo Avançado",
                 Description = "Foco em jogos: latência reduzida, Game Mode, energia de alto desempenho e limpeza rápida.",
                 IsBuiltIn = true,
-                EnabledOptimizations = new() { "gamer", "padrao", "quickclean", "benchmark", "reverter" }
+                EnabledOptimizations = new() { "gamer", "gamerservicos", "padrao", "quickclean", "benchmark", "reverter" }
             },
             new()
             {

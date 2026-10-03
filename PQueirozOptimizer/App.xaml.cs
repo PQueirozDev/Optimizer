@@ -72,6 +72,32 @@ public partial class App : Application
         AppDomain.CurrentDomain.UnhandledException += (_, args) => { if (args.ExceptionObject is Exception ex) Log.Write("ERROR", "Erro fatal: " + Describe(ex)); };
     }
 
+    private static bool IsElevated()
+    {
+        using var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+        return new System.Security.Principal.WindowsPrincipal(identity).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+    }
+
+    /// <summary>Abre outra cópia como administrador. False se o UAC foi recusado (o app segue aberto sem elevação).</summary>
+    private bool RelaunchElevated(string[] args)
+    {
+        try
+        {
+            // Sem isso, a cópia nova herdaria o "rodar como quem chamou" e abriria sem elevação de novo
+            Environment.SetEnvironmentVariable("__COMPAT_LAYER", null);
+            var exe = Environment.ProcessPath ?? System.Diagnostics.Process.GetCurrentProcess().MainModule!.FileName;
+            var psi = new System.Diagnostics.ProcessStartInfo(exe) { UseShellExecute = true, Verb = "runas" };
+            foreach (var arg in args) psi.ArgumentList.Add(arg);
+            System.Diagnostics.Process.Start(psi);
+            return true;
+        }
+        catch (System.ComponentModel.Win32Exception ex)
+        {
+            Log.Write("WARN", "O app abriu sem permissão de administrador e o pedido de elevação foi recusado: otimizações, serviços e atualizações podem ser bloqueados pelo Windows. (" + ex.Message + ")");
+            return false;
+        }
+    }
+
     private async void Application_Startup(object sender, StartupEventArgs e)
     {
         Services.StartupProfiler.Mark("app-startup");
@@ -79,6 +105,13 @@ public partial class App : Application
         RegisterErrorHandlers();
         var quickClean = e.Args.Contains("--quick-clean", StringComparer.OrdinalIgnoreCase);
         var powerMode = e.Args.Contains("--power-mode", StringComparer.OrdinalIgnoreCase);
+        // O app pede administrador no manifesto, mas um atalho com modo de compatibilidade (ou outro programa)
+        // pode abri-lo sem: aí o Windows bloqueia otimizações, serviços e a atualização. Reabre pedindo o UAC.
+        if (!powerMode && !Services.StartupProfiler.Enabled && !IsElevated() && RelaunchElevated(e.Args))
+        {
+            Shutdown();
+            return;
+        }
         // Os atalhos de Limpeza Rápida e de modo de energia rodam à parte e podem ser usados com o app aberto
         if (!quickClean && !powerMode && !AcquireSingleInstance())
         {

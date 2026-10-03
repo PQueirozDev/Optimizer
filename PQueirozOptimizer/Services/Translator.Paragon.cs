@@ -225,6 +225,44 @@ public static partial class Translator
         // ---------- Tela de abertura ----------
         ["Verificando licença..."] = "Checking license...", ["Montando a interface..."] = "Building the interface...",
 
+        // ---------- Temas e cores ----------
+        ["Claro"] = "Light", ["Grafite"] = "Graphite", ["Oceano"] = "Ocean", ["Floresta"] = "Forest",
+        ["Cor principal"] = "Main color", ["Botões, seleção da barra lateral, gráficos e brilhos."] = "Buttons, sidebar selection, charts and glows.",
+        ["Cor secundária"] = "Secondary color", ["Segunda cor dos gradientes, do anel de saúde e dos indicadores."] = "Second color of gradients, the health ring and indicators.",
+        ["Intensidade da cor"] = "Color intensity", ["Suave deixa as cores mais discretas; Vibrante, mais vivas."] = "Soft makes colors more subtle; Vibrant, more vivid.",
+        ["Roxo (padrão)"] = "Purple (default)", ["Azul"] = "Blue", ["Ciano"] = "Cyan", ["Verde"] = "Green", ["Laranja"] = "Orange", ["Rosa"] = "Pink",
+        ["Vermelho"] = "Red", ["Dourado"] = "Gold", ["Ciano (padrão)"] = "Cyan (default)", ["Lilás"] = "Lilac", ["Amarelo"] = "Yellow",
+        ["Código da cor, por exemplo #FF6A00"] = "Color code, for example #FF6A00", ["Usar"] = "Use", ["Cor personalizada"] = "Custom color",
+        ["Use o formato #RRGGBB, por exemplo #FF6A00."] = "Use the #RRGGBB format, for example #FF6A00.",
+        ["Padrão restaurado: tema Escuro, cores originais, densidade Padrão, cards Médios e animações ligadas."] = "Defaults restored: Dark theme, original colors, Default density, Medium cards and animations on.",
+
+        // ---------- Serviços: estado e otimização sem parar serviços ----------
+        ["Grupos"] = "Groups", ["Estado dos serviços"] = "Service status", ["Verificação de serviços (2ª etapa)"] = "Service check (stage 2)",
+        ["Todos os serviços da verificação estão rodando."] = "All checked services are running.", ["Iniciar o serviço parado"] = "Start the stopped service",
+        ["Iniciando serviços da verificação"] = "Starting checked services", ["Outros serviços que o app pode parar"] = "Other services the app may stop",
+        ["Grupos de Serviços, otimizações e Modo Jogo. Parar aqui vale até o Windows precisar do serviço ou reiniciar; para desligar de vez, use a aba Grupos."] = "Service groups, optimizations and Game Mode. Stopping here lasts until Windows needs the service or restarts; to turn it off for good, use the Groups tab.",
+        ["Ausente"] = "Missing", ["Rodando"] = "Running", ["Parado"] = "Stopped", ["Desativado"] = "Disabled", ["Manual"] = "Manual", ["Automático (atrasado)"] = "Automatic (delayed)",
+        ["Parar"] = "Stop", ["Iniciar"] = "Start", ["O Windows não permite parar este serviço."] = "Windows doesn't allow stopping this service.",
+        ["Não está aberto"] = "Not running",
+        ["Avançada sem parar serviços"] = "Advanced without stopping services",
+        ["Os mesmos ajustes da Versão Avançada, mas nenhum serviço do Windows é parado ou desativado (PcaSvc, DPS, DiagTrack, SysMain e EventLog continuam rodando). Use se o seu jogo ou campeonato faz verificação desses serviços."] = "The same tweaks as the Advanced Version, but no Windows service is stopped or disabled (PcaSvc, DPS, DiagTrack, SysMain and EventLog keep running). Use it if your game or tournament checks these services.",
+
+        // ---------- Janela de atualização ----------
+        ["Nova versão disponível"] = "New version available", ["O que há de novo"] = "What's new", ["Atualizar agora"] = "Update now", ["Abrir download"] = "Open download",
+        ["Depois"] = "Later", ["Ver no GitHub"] = "View on GitHub", ["Ver novidades"] = "See what's new", ["Baixando instalador..."] = "Downloading installer...",
+        ["O instalador é verificado por SHA256 antes de rodar e o app reabre sozinho ao terminar. Suas configurações e backups são mantidos."] = "The installer is verified by SHA256 before running and the app reopens by itself when done. Your settings and backups are kept.",
+        ["Esta versão é baixada pela página de releases."] = "This version is downloaded from the releases page.",
+        ["Instalador verificado por SHA256. Instalando — o app reabre sozinho em instantes..."] = "Installer verified by SHA256. Installing — the app reopens by itself in a moment...",
+        ["As animações dos interruptores aparecem de verdade (a página não é mais redesenhada no meio delas), com um pulso de brilho ao ligar."] = "Switch animations now actually show (the page is no longer redrawn in the middle of them), with a glow pulse when turning on.",
+        ["Nova janela de atualização com as novidades da versão, o progresso do download e os botões Atualizar agora e Depois."] = "New update window with the version's changes, download progress and Update now / Later buttons.",
+
+        // ---------- Notas da versão 1.8.3 ----------
+        ["Corrigido o fechamento do app ao ligar ou desligar grupos em Serviços enquanto outra ação estava em andamento."] = "Fixed the app closing when turning Services groups on or off while another action was running.",
+        ["As etiquetas ao lado dos interruptores agora dizem o estado do próprio ajuste (Aplicado ou Padrão), sem contradizer o interruptor."] = "Labels next to switches now show the tweak's own state (Applied or Default), without contradicting the switch.",
+        ["Nova otimização \"Avançada sem parar serviços\" e nova aba Serviços → Estado dos serviços, com a verificação da 2ª etapa (PcaSvc, DPS, DiagTrack, SysMain e EventLog) e botões para iniciar ou parar."] = "New \"Advanced without stopping services\" optimization and new Services → Service status tab, with the stage 2 check (PcaSvc, DPS, DiagTrack, SysMain and EventLog) and buttons to start or stop.",
+        ["Aparência: 4 temas novos (Claro, Grafite, Oceano e Floresta) e escolha da cor principal e secundária, com amostras ou um código de cor próprio."] = "Appearance: 4 new themes (Light, Graphite, Ocean and Forest) and a choice of main and secondary color, from swatches or your own color code.",
+        ["Se o app abrir sem permissão de administrador, ele se reabre pedindo o UAC; itens de inicialização protegidos pelo Windows agora explicam o motivo e abrem a tela certa."] = "If the app opens without administrator rights, it reopens asking for UAC; startup items protected by Windows now explain why and open the right screen.",
+
         // ---------- Notas da versão 1.8.2 ----------
         ["Corrigido o interruptor que aparecia desligado quando estava ligado (acontecia quando uma ação falhava e o interruptor voltava ao estado anterior, como em Serviços)."] = "Fixed switches that looked off while on (it happened when an action failed and the switch went back to its previous state, as in Services).",
         ["Animações novas nos controles: o interruptor desliza com um leve quique, a caixa de seleção desenha o ✓ e os botões afundam e voltam suavemente ao clicar."] = "New control animations: switches slide with a slight bounce, check boxes draw the ✓ and buttons press in and spring back smoothly when clicked.",
@@ -295,5 +333,22 @@ public static partial class Translator
         P(@"^""(.+)"" precisa reiniciar o PC para terminar\. Executar agora\?$", m => $"\"{Tr(m.Groups[1].Value)}\" needs to restart the PC to finish. Run it now?"),
         P(@"^(\d+) configuração\(ões\) marcadas\. Revise em Alterados e grave\.$", m => $"{m.Groups[1].Value} setting(s) marked. Review them in Changed and write."),
         P(@"^Pontuação de saúde: (\d+) de 100$", m => $"Health score: {m.Groups[1].Value} of 100"),
+        P(@"^Tema: (.+) \(clique para (.+)\)$", m => $"Theme: {Tr(m.Groups[1].Value)} (click for {Tr(m.Groups[2].Value)})"),
+        P(@"^Personalizada (#[0-9A-F]{6})$", m => $"Custom {m.Groups[1].Value}"),
+        P(@"^(\d+) de (\d+) rodando\. Verificações de anti-cheat e de campeonatos conferem se estes serviços estão ativos; parados, a verificação pode reprovar o PC\.$", m => $"{m.Groups[1].Value} of {m.Groups[2].Value} running. Anti-cheat and tournament checks verify these services are active; if they're stopped, the check may fail the PC."),
+        P(@"^Parados: (.+)\. Use ""Iniciar"" antes da verificação\. Para não pará-los de novo, use a otimização ""Avançada sem parar serviços"" e desmarque SysMain e Telemetria no Modo Jogo\.$", m => $"Stopped: {m.Groups[1].Value}. Use \"Start\" before the check. To keep them from stopping again, use the \"Advanced without stopping services\" optimization and uncheck SysMain and Telemetry in Game Mode."),
+        P(@"^Iniciar os (\d+) parados$", m => $"Start the {m.Groups[1].Value} stopped"),
+        P(@"^(\S+) · Início: (.+)$", m => $"{m.Groups[1].Value} · Startup: {Tr(m.Groups[2].Value)}"),
+        P(@"^(\S+) · Não existe neste Windows$", m => $"{m.Groups[1].Value} · Doesn't exist on this Windows"),
+        P(@"^(Parando|Iniciando): (.+)$", m => $"{(m.Groups[1].Value == "Parando" ? "Stopping" : "Starting")}: {m.Groups[2].Value}"),
+        P(@"^Serviço (iniciado|parado): (.+?)( — volta a iniciar sozinho.*)?$", m => $"Service {(m.Groups[1].Value == "iniciado" ? "started" : "stopped")}: {m.Groups[2].Value}" + (m.Groups[3].Success ? " — starts again by itself when Windows needs it or after a restart" : "")),
+        P(@"^Serviço (\S+): tipo de início voltou ao padrão \((.+)\)$", m => $"Service {m.Groups[1].Value}: startup type restored to default ({m.Groups[2].Value})"),
+        P(@"^O Windows não deixou reativar (\S+) \(código (\d+)\)\.$", m => $"Windows didn't allow re-enabling {m.Groups[1].Value} (code {m.Groups[2].Value})."),
+        P(@"^O Windows protege ""(.+)"": ele pertence ao sistema ou a um programa que trava as próprias permissões, então nem o administrador pode alterá-lo por aqui\.\n\nDá para desligar pelas configurações do próprio programa ou em Configurações do Windows → Aplicativos → Inicialização\. Abrir essa tela agora\?$", m => $"Windows protects \"{m.Groups[1].Value}\": it belongs to the system or to a program that locks its own permissions, so not even the administrator can change it here.\n\nYou can turn it off in the program's own settings or in Windows Settings → Apps → Startup. Open that screen now?"),
+        P(@"^Não foi possível concluir a ação: (.+)$", m => $"Could not complete the action: {m.Groups[1].Value}"),
+        P(@"^Baixando instalador\.\.\. (\d+)% \((.+) de (.+) MB\)$", m => $"Downloading installer... {m.Groups[1].Value}% ({m.Groups[2].Value} of {m.Groups[3].Value} MB)"),
+        P(@"^Baixando instalador\.\.\. (.+) MB$", m => $"Downloading installer... {m.Groups[1].Value} MB"),
+        P(@"^Falha na atualização: (.+)$", m => $"Update failed: {m.Groups[1].Value}"),
+        P(@"^O app abriu sem permissão de administrador e o pedido de elevação foi recusado: (.+)$", m => $"The app opened without administrator rights and the elevation request was declined: optimizations, services and updates may be blocked by Windows."),
     };
 }

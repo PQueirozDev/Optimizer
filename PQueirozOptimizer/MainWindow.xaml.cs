@@ -192,7 +192,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private IEnumerable<UIElement> IntroParts() => RootGrid.Children.OfType<UIElement>().Where(part => part != TutorialLayer);
+    private IEnumerable<UIElement> IntroParts() => RootGrid.Children.OfType<UIElement>().Where(part => part != TutorialLayer && part != UpdateLayer);
 
     /// <summary>Deixa a interface no ponto de partida da entrada antes do primeiro quadro (sem piscar).</summary>
     private void PrepareIntroAnimation()
@@ -294,12 +294,18 @@ public partial class MainWindow : Window
     }
 
     #region Theming
-    /// <summary>Botão do topo: alterna Escuro → OLED → Automático (o mesmo de Configurações → Aparência).</summary>
+    /// <summary>Botão do topo: passa para o próximo tema da galeria de Configurações → Aparência.</summary>
     private void ThemeButton_Click(object sender, RoutedEventArgs e)
     {
         var next = AppearanceService.Current.Clone();
-        next.Theme = next.Theme switch { Models.ThemeMode.Dark => Models.ThemeMode.Oled, Models.ThemeMode.Oled => Models.ThemeMode.Auto, _ => Models.ThemeMode.Dark };
+        next.Theme = NextTheme(next.Theme).Mode;
         SaveAppearance(next);
+    }
+
+    private static (Models.ThemeMode Mode, string Name) NextTheme(Models.ThemeMode mode)
+    {
+        var index = Array.FindIndex(Themes, t => t.Mode == mode);
+        return Themes[(index + 1) % Themes.Length];
     }
 
     /// <summary>Aplica e salva novas preferências de aparência.</summary>
@@ -327,8 +333,8 @@ public partial class MainWindow : Window
     private void UpdateThemeButton()
     {
         var mode = AppearanceService.Current.Theme;
-        ThemeButton.Content = GlyphIcon(mode switch { Models.ThemeMode.Oled => Glyphs.Moon, Models.ThemeMode.Auto => Glyphs.Refresh, _ => Glyphs.Sun }, 13);
-        ThemeButton.ToolTip = mode switch { Models.ThemeMode.Dark => "Tema: Escuro (clique para OLED)", Models.ThemeMode.Oled => "Tema: OLED (clique para Automático)", _ => "Tema: Automático (clique para Escuro)" };
+        ThemeButton.Content = GlyphIcon(mode switch { Models.ThemeMode.Light => Glyphs.Sun, Models.ThemeMode.Auto => Glyphs.Refresh, _ => Glyphs.Moon }, 13);
+        ThemeButton.ToolTip = $"Tema: {Themes.First(t => t.Mode == mode).Name} (clique para {NextTheme(mode).Name})";
     }
 
     /// <summary>

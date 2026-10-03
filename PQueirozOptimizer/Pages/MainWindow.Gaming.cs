@@ -79,7 +79,7 @@ public partial class MainWindow
         {
             var isRunning = running.Contains(app.Name);
             var check = new CheckBox { IsChecked = isRunning && !app.Description.StartsWith("Feche só", StringComparison.Ordinal) };
-            var row = ChoiceRow(check, app.Name, app.Description, isRunning ? "Aberto" : "Fechado", isRunning ? "Warning" : "Success");
+            var row = ChoiceRow(check, app.Name, app.Description, isRunning ? "Em execução" : "Não está aberto", isRunning ? "Warning" : "Info");
             row.Margin = new Thickness(0, 0, 10, 10);
             appsGrid.Children.Add(row);
             appChecks.Add((check, app.Name));

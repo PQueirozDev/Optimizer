@@ -55,6 +55,7 @@ public static class Glyphs
     public static readonly string Globe = G(0xE774);
     public static readonly string Network = G(0xE968);
     public static readonly string Play = G(0xE768);
+    public static readonly string Pause = G(0xE769);
     public static readonly string Stop = G(0xE71A);
     public static readonly string Package = G(0xE7B8);
     public static readonly string Add = G(0xE710);
