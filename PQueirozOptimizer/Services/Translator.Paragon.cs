@@ -225,6 +225,10 @@ public static partial class Translator
         // ---------- Tela de abertura ----------
         ["Verificando licença..."] = "Checking license...", ["Montando a interface..."] = "Building the interface...",
 
+        // ---------- Notas da versão 1.8.2 ----------
+        ["Corrigido o interruptor que aparecia desligado quando estava ligado (acontecia quando uma ação falhava e o interruptor voltava ao estado anterior, como em Serviços)."] = "Fixed switches that looked off while on (it happened when an action failed and the switch went back to its previous state, as in Services).",
+        ["Animações novas nos controles: o interruptor desliza com um leve quique, a caixa de seleção desenha o ✓ e os botões afundam e voltam suavemente ao clicar."] = "New control animations: switches slide with a slight bounce, check boxes draw the ✓ and buttons press in and spring back smoothly when clicked.",
+
         // ---------- Notas da versão 1.8.1 ----------
         ["Abertura até 5 vezes mais rápida: a Visão geral fica pronta em menos de 1 segundo (antes, cerca de 4). As informações do sistema agora são lidas direto do Windows, sem PowerShell."] = "Up to 5× faster startup: the Overview is ready in under 1 second (previously about 4). System information is now read directly from Windows, without PowerShell.",
         ["Nova tela de abertura, que acompanha o tema e mostra cada etapa do carregamento, e entrada mais rápida da interface."] = "New splash screen that follows the theme and shows each loading step, plus a faster interface entrance.",

@@ -1,6 +1,6 @@
 ﻿#define MyAppName "PQueiroz Optimizer"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.8.1"
+  #define MyAppVersion "1.8.2"
 #endif
 #ifndef MyAppPublisher
   #define MyAppPublisher "Pedro Queiroz"

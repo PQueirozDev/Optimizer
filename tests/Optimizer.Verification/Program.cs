@@ -23,6 +23,91 @@ internal static class Program
         return app;
     }
 
+    /// <summary>
+    /// Interruptores e caixas de seleção numa janela de verdade: depois de cada sequência (criar já ligado,
+    /// ligar, desligar e religar rápido, reverter dentro do evento), o desenho tem que bater com o estado.
+    /// </summary>
+    static int Switches()
+    {
+        var app = CreateTestApp();
+        var panel = new System.Windows.Controls.StackPanel();
+        var window = new Window { Content = panel, Width = 400, Height = 600, Left = -20000, Top = -20000, ShowActivated = false, ShowInTaskbar = false, WindowStartupLocation = WindowStartupLocation.Manual };
+        window.Show();
+        void Wait(int ms) { var frame = new DispatcherFrame(); var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(ms) }; timer.Tick += (_, _) => { timer.Stop(); frame.Continue = false; }; timer.Start(); Dispatcher.PushFrame(frame); }
+        System.Windows.Controls.CheckBox Make(bool isSwitch, bool initial)
+        {
+            var check = new System.Windows.Controls.CheckBox { IsChecked = initial, Content = "x" };
+            if (isSwitch) check.SetResourceReference(FrameworkElement.StyleProperty, "SwitchCheckBox");
+            panel.Children.Add(check);
+            return check;
+        }
+        var failures = 0;
+        void Check(string name, System.Windows.Controls.CheckBox check)
+        {
+            check.ApplyTemplate();
+            var on = check.IsChecked == true;
+            string drawn;
+            if (check.Template.FindName("knob", check) is FrameworkElement knob)
+            {
+                var x = knob.TranslatePoint(new Point(0, 0), (UIElement)VisualTreeHelper.GetParent(knob)).X;
+                var trackOn = ((UIElement)check.Template.FindName("trackOn", check)).Opacity;
+                var knobOn = x > 12; var colorOn = trackOn > 0.5;
+                drawn = $"bolinha x={x:0} cor={trackOn:0.##}";
+                if (knobOn != on || colorOn != on) { failures++; Console.WriteLine($"FAIL {name}: estado={(on ? "ligado" : "desligado")} mas {drawn}"); return; }
+            }
+            else
+            {
+                var fill = ((UIElement)check.Template.FindName("fill", check)).Opacity;
+                drawn = $"preenchimento={fill:0.##}";
+                if ((fill > 0.5) != on) { failures++; Console.WriteLine($"FAIL {name}: estado={(on ? "marcado" : "desmarcado")} mas {drawn}"); return; }
+            }
+            Console.WriteLine($"PASS {name} ({(on ? "ligado" : "desligado")}, {drawn})");
+        }
+        foreach (var animations in new[] { true, false })
+        foreach (var isSwitch in new[] { true, false })
+        {
+            PQueirozOptimizer.Services.AppearanceService.Apply(new PQueirozOptimizer.Models.AppearanceSettings { Animations = animations });
+            var kind = (isSwitch ? "Interruptor" : "Caixa") + (animations ? "" : " sem animação");
+            var a = Make(isSwitch, true); var b = Make(isSwitch, false); var c = Make(isSwitch, false);
+            var d = Make(isSwitch, false); var e = Make(isSwitch, true); var f = Make(isSwitch, true);
+            Wait(500);
+            Check($"{kind} criado ligado", a);
+            Check($"{kind} criado desligado", b);
+            c.IsChecked = true; Wait(500); Check($"{kind} ligado depois", c);
+            d.IsChecked = true; d.IsChecked = false; d.IsChecked = true; Wait(500); Check($"{kind} liga/desliga/liga no mesmo quadro", d);
+            e.IsChecked = false; Wait(60); e.IsChecked = true; Wait(500); Check($"{kind} desliga e religa no meio da animação", e);
+            // Página Serviços: a ação falhou e o evento volta o interruptor
+            f.Unchecked += (_, _) => f.IsChecked = true;
+            f.IsChecked = false; Wait(500); Check($"{kind} revertido dentro do evento", f);
+            var h = Make(isSwitch, false); h.Checked += (_, _) => h.IsChecked = false;
+            h.IsChecked = true; Wait(500); Check($"{kind} ligado e revertido para desligado", h);
+            // Página redesenhada com o mesmo estado (troca de tema, voltar à página)
+            var g = Make(isSwitch, true); Wait(30); panel.Children.Remove(g); panel.Children.Add(g); Wait(500); Check($"{kind} recolocado na tela", g);
+        }
+        // Tira de quadros da animação (interruptor e caixa ligando), para conferir o movimento
+        PQueirozOptimizer.Services.AppearanceService.Apply(new PQueirozOptimizer.Models.AppearanceSettings());
+        panel.Children.Clear();
+        panel.SetResourceReference(System.Windows.Controls.Panel.BackgroundProperty, "BackgroundBrush");
+        var sw = Make(true, false); sw.Width = 90; sw.HorizontalAlignment = HorizontalAlignment.Left; sw.Margin = new Thickness(10); var cb = Make(false, false); cb.Margin = new Thickness(10);
+        Wait(300);
+        var strip = new RenderTargetBitmap(110 * 9, 90, 96, 96, PixelFormats.Pbgra32);
+        var frames = new DrawingVisual();
+        sw.IsChecked = true; cb.IsChecked = true;
+        using (var dc = frames.RenderOpen())
+            for (var i = 0; i < 9; i++)
+            {
+                var shot = new RenderTargetBitmap(110, 90, 96, 96, PixelFormats.Pbgra32); shot.Render(panel);
+                dc.DrawImage(shot, new Rect(i * 110, 0, 110, 90));
+                Wait(40);
+            }
+        strip.Render(frames);
+        var pngStrip = new PngBitmapEncoder(); pngStrip.Frames.Add(BitmapFrame.Create(strip));
+        using (var fs = File.Create(Path.Combine(Path.GetTempPath(), "switch-frames.png"))) pngStrip.Save(fs);
+        window.Close();
+        Console.WriteLine(failures == 0 ? "SWITCHES ok" : $"SWITCHES {failures} falha(s)");
+        return failures == 0 ? 0 : 1;
+    }
+
     // Inicialização no estilo Autoruns: leitura real deste PC e liga/desliga de itens criados só para o teste
     static void TestStartupPage(ActivityLog log)
     {
@@ -249,6 +334,7 @@ internal static class Program
             // Fotos e vídeo do site (não rodam os testes)
             if (args.Contains("--shots")) return Media.Shots(root);
             if (args.Contains("--tour")) return Media.Tour(root);
+            if (args.Contains("--switches")) return Switches();
             if (args.Contains("--videoshots")) return Media.VideoShots(root);
             var log = new ActivityLog(Path.Combine(root, "verification.log"));
             var bridge = new PowerShellBridge(log);

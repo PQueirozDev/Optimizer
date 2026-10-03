@@ -25,6 +25,11 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.8.2", "03/10/2026", new[]
+        {
+            "Corrigido o interruptor que aparecia desligado quando estava ligado (acontecia quando uma ação falhava e o interruptor voltava ao estado anterior, como em Serviços).",
+            "Animações novas nos controles: o interruptor desliza com um leve quique, a caixa de seleção desenha o ✓ e os botões afundam e voltam suavemente ao clicar.",
+        }),
         ("v1.8.1", "03/10/2026", new[]
         {
             "Abertura até 5 vezes mais rápida: a Visão geral fica pronta em menos de 1 segundo (antes, cerca de 4). As informações do sistema agora são lidas direto do Windows, sem PowerShell.",
