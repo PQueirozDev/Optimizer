@@ -56,6 +56,13 @@ public static class GameArtService
             if (EpicInstallLocation("Fortnite") is { } dir)
                 return ExecutableIcon(Path.Combine(dir, "FortniteGame", "Binaries", "Win64", "FortniteClient-Win64-Shipping.exe"));
         }
+        if (presetId == "valorant")
+        {
+            // O VALORANT também está na Epic Games Store; sem internet, o ícone que o Riot Client instala
+            if (await EpicStoreBannerAsync("valorant") is { } art) return art;
+            var icon = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Riot Games", "Metadata", "valorant.live", "valorant.live.ico");
+            if (File.Exists(icon)) return Load(icon);
+        }
         return null;
     }
 

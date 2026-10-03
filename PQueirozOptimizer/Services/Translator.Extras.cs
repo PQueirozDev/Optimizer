@@ -148,7 +148,7 @@ public static partial class Translator
         P(@"^Atual: (.+)  →  Novo: (.+)$", m => $"Current: {Tr(m.Groups[1].Value)}  →  New: {Tr(m.Groups[2].Value)}"),
         P(@"^(\d+) ajustes$", m => $"{m.Groups[1].Value} tweaks"),
         P(@"^Preset aplicado: (\d+) ajustes\.$", m => $"Preset applied: {m.Groups[1].Value} tweaks."),
-        P(@"^Preset competitivo aplicado: (.+) \((\d+) valores\)$", m => $"Competitive preset applied: {m.Groups[1].Value} ({m.Groups[2].Value} values)"),
+        P(@"^Preset competitivo aplicado: ([^—]+) \((\d+) valores\)$", m => $"Competitive preset applied: {m.Groups[1].Value} ({m.Groups[2].Value} values)"),
         P(@"^Configurações originais restauradas: (.+)$", m => $"Original settings restored: {m.Groups[1].Value}"),
         P(@"^Arquivo de configuração do (.+) não encontrado\.(.*)$", m => $"{m.Groups[1].Value} config file not found." + (m.Groups[2].Value.Length > 0 ? " Open the game once and close it so it creates the file." : "")),
         P(@"^Feche o (.+) antes de aplicar: ele regrava as configurações ao fechar\.$", m => $"Close {m.Groups[1].Value} before applying: it rewrites its settings when it closes."),

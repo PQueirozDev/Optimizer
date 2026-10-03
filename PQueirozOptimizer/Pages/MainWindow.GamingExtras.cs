@@ -10,6 +10,7 @@ public partial class MainWindow
 {
     private int _gamingTab;
     private GameConfigService? _gameConfigs;
+    private readonly Dictionary<string, string> _gameProfileChoice = new();
     private GameConfigService GameConfigs => _gameConfigs ??= new GameConfigService(_log);
 
     // ================= Capas dos jogos =================
@@ -62,17 +63,23 @@ public partial class MainWindow
         {
             var path = GameConfigService.ConfigPath(preset);
             var applied = path != null && GameConfigService.HasBackup(preset);
+            var appliedProfile = GameConfigService.AppliedProfile(preset);
+            // Jogos com perfis (VALORANT: Otimizado ou Qrz): o escolhido aqui, senão o aplicado, senão o primeiro
+            var profile = preset.Profile(_gameProfileChoice.TryGetValue(preset.Id, out var chosen) ? chosen : appliedProfile);
             var body = new DockPanel();
 
             var actions = new WrapPanel { Margin = new Thickness(0, 14, 0, 0) };
-            var apply = IconButton(Glyphs.Lightning, applied ? "Reaplicar" : "Aplicar preset", primary: path != null && !applied);
+            var isApplied = applied && (profile is null || profile.Id == appliedProfile);
+            var applyText = profile is null ? (applied ? "Reaplicar" : "Aplicar preset") : isApplied ? $"Reaplicar perfil {profile.Name}" : $"Aplicar perfil {profile.Name}";
+            var apply = IconButton(Glyphs.Lightning, applyText, primary: path != null && !isApplied);
             apply.IsEnabled = path != null;
             apply.Click += (_, _) =>
             {
                 try
                 {
-                    var changes = GameConfigs.Apply(preset);
-                    ShowToast(preset.Name, changes == 0 ? "O arquivo já estava com o preset." : $"Preset aplicado: {changes} ajustes.", "Success");
+                    var changes = GameConfigs.Apply(preset, profile?.Id);
+                    var what = profile is null ? "Preset" : $"Perfil {profile.Name}";
+                    ShowToast(preset.Name, changes == 0 ? $"{what}: o arquivo já estava assim." : $"{what} aplicado: {changes} ajustes.", "Success");
                     ShowGaming();
                 }
                 catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException) { ShowToast(preset.Name, ex.Message, "Danger"); }
@@ -91,13 +98,14 @@ public partial class MainWindow
             DockPanel.SetDock(actions, Dock.Bottom); body.Children.Add(actions);
 
             var head = new DockPanel { Margin = new Thickness(0, 0, 0, 10) };
-            var (status, tone) = path is null ? ("Não encontrado", "Warning") : applied ? ("Preset ativo", "Success") : ("Pronto", "Info");
+            var appliedName = preset.Profiles?.FirstOrDefault(p => p.Id == appliedProfile)?.Name;
+            var (status, tone) = path is null ? ("Não encontrado", "Warning") : applied ? (appliedName is null ? "Preset ativo" : $"Perfil {appliedName} ativo", "Success") : ("Pronto", "Info");
             var pill = Pill(status, tone); DockPanel.SetDock(pill, Dock.Right); pill.VerticalAlignment = VerticalAlignment.Top; head.Children.Add(pill);
             var chip = IconChip(Glyphs.Game, applied ? "Success" : "Accent", 40); DockPanel.SetDock(chip, Dock.Left); head.Children.Add(chip);
             var titles = new StackPanel { Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
             var name = Label(preset.Name, 15); name.FontWeight = FontWeights.SemiBold; name.Margin = new Thickness(0);
             titles.Children.Add(name);
-            var count = Label($"{preset.Values.Length} ajustes", 11.5, true); count.Margin = new Thickness(0, 1, 0, 0);
+            var count = Label($"{preset.ValuesFor(profile?.Id).Length} ajustes", 11.5, true); count.Margin = new Thickness(0, 1, 0, 0);
             titles.Children.Add(count);
             head.Children.Add(titles);
             var art = GameBanner(preset.Name, 104, 12, () => GameArtService.PresetArtAsync(preset.Id));
@@ -106,7 +114,13 @@ public partial class MainWindow
             DockPanel.SetDock(head, Dock.Top); body.Children.Add(head);
 
             var text = new StackPanel();
-            var description = Label(preset.Description, 12, true); description.Margin = new Thickness(0, 0, 0, 6);
+            if (preset.Profiles is { } profiles && profile != null)
+            {
+                var choice = Segmented(profiles.Select(p => p.Name).ToArray(), Array.IndexOf(profiles, profile), i => { _gameProfileChoice[preset.Id] = profiles[i].Id; ShowGaming(); });
+                choice.HorizontalAlignment = HorizontalAlignment.Left; choice.Margin = new Thickness(0, 0, 0, 10);
+                text.Children.Add(choice);
+            }
+            var description = Label(profile?.Description ?? preset.Description, 12, true); description.Margin = new Thickness(0, 0, 0, 6);
             text.Children.Add(description);
             var note = Label(path is null ? "Abra o jogo uma vez e feche para ele criar o arquivo de configuração." : preset.Notes[0], 11.5, true);
             note.Margin = new Thickness(0); note.SetResourceReference(TextBlock.ForegroundProperty, path is null ? "WarningBrush" : "MutedBrush");

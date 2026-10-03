@@ -145,7 +145,7 @@ public partial class MainWindow
         UpdateLayer.PreviewKeyDown -= UpdateLayerKey;
         void Hide() { UpdateLayer.Visibility = Visibility.Collapsed; UpdateLayer.Children.Clear(); UpdateLayer.BeginAnimation(OpacityProperty, null); UpdateLayer.Opacity = 1; }
         _updateProgress = null; _updateStatus = null; _updateNow = null; _updateLater = null;
-        if (!AppearanceService.AnimationsEnabled) { Hide(); return; }
+        if (!AppearanceService.AnimationsEnabled || !IsVisible) { Hide(); return; }
         var fade = new DoubleAnimation(0, TimeSpan.FromMilliseconds(160));
         fade.Completed += (_, _) => Hide();
         UpdateLayer.BeginAnimation(OpacityProperty, fade);

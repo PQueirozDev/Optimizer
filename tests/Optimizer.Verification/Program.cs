@@ -134,6 +134,63 @@ internal static class Program
         return failures == 0 ? 0 : 1;
     }
 
+    /// <summary>
+    /// VALORANT com os perfis Otimizado e Qrz, numa cópia da pasta de configuração (os arquivos reais deste PC
+    /// quando existem; senão, arquivos de exemplo no mesmo formato). Nada é gravado na pasta do jogo.
+    /// </summary>
+    static void TestValorantProfiles(string root)
+    {
+        var flags = BindingFlags.NonPublic | BindingFlags.Static;
+        var rootProp = typeof(GameConfigService).GetProperty("ValorantConfigRoot", flags)!;
+        var backupProp = typeof(GameConfigService).GetProperty("BackupRoot", flags)!;
+        var realRoot = (string)rootProp.GetValue(null)!;
+        var oldBackup = (string)backupProp.GetValue(null)!;
+        var fake = Path.Combine(root, "valorant-config");
+        if (Directory.Exists(fake)) Directory.Delete(fake, true);
+        var account = Path.Combine(fake, "0ee800ee-7997-595b-a5ce-fb77c3a6648e-br", "Windows");
+        Directory.CreateDirectory(account); Directory.CreateDirectory(Path.Combine(fake, "WindowsClient"));
+        var realGame = Path.Combine(realRoot, "WindowsClient", "GameUserSettings.ini");
+        var gameFile = Path.Combine(fake, "WindowsClient", "GameUserSettings.ini");
+        var accountFile = Path.Combine(account, "RiotUserSettings.ini");
+        File.WriteAllText(Path.Combine(fake, "WindowsClient", "RiotLocalMachine.ini"), "[UserInfo]\r\nLastKnownUser=0ee800ee-7997-595b-a5ce-fb77c3a6648e\r\n");
+        if (File.Exists(realGame)) File.Copy(realGame, gameFile);
+        else File.WriteAllText(gameFile, "[/Script/ShooterGame.ShooterGameUserSettings]\r\nbUseVSync=True\r\nFrameRateLimit=144.000000\r\nPreferredFullscreenMode=1\r\n");
+        var realAccount = Directory.Exists(realRoot) ? Directory.EnumerateFiles(realRoot, "RiotUserSettings.ini", SearchOption.AllDirectories).OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault() : null;
+        if (realAccount != null) File.Copy(realAccount, accountFile);
+        else File.WriteAllText(accountFile, "[Settings]\r\nEAresFloatSettingName::MouseSensitivity=0.4\r\nEAresIntSettingName::MaterialQuality=2\r\n");
+        // Outra conta mais nova no disco: o arquivo certo é o da última conta que entrou (RiotLocalMachine.ini)
+        var other = Path.Combine(fake, "1f43e3c8-2cb6-5ad9-97d7-bf7f8f056538-br", "Windows");
+        Directory.CreateDirectory(other); File.WriteAllText(Path.Combine(other, "RiotUserSettings.ini"), "[Settings]\r\n");
+        var originalGame = File.ReadAllBytes(gameFile); var originalAccount = File.ReadAllBytes(accountFile);
+        var sensitivity = File.ReadAllLines(accountFile).FirstOrDefault(l => l.StartsWith("EAresFloatSettingName::MouseSensitivity="));
+        try
+        {
+            rootProp.SetValue(null, fake);
+            backupProp.SetValue(null, Path.Combine(root, "valorant-backup"));
+            var valorant = GameConfigService.Presets.Single(p => p.Id == "valorant");
+            Assert(GameConfigService.ConfigPath(valorant) == accountFile, "VALORANT: arquivo da última conta que entrou (RiotLocalMachine.ini)");
+            var service = new GameConfigService(new ActivityLog(Path.Combine(root, "valorant.log")));
+            service.Apply(valorant, "qrz");
+            string Value(string file, string key) => File.ReadAllLines(file).FirstOrDefault(l => l.StartsWith(key + "="))?[(key.Length + 1)..] ?? "";
+            Assert(Value(accountFile, "EAresIntSettingName::UIQuality") == "2" && Value(accountFile, "EAresIntSettingName::AnisotropicFiltering") == "16"
+                && Value(accountFile, "EAresBoolSettingName::ShowBulletTracers") == "False" && Value(gameFile, "bUseVSync") == "False" && Value(gameFile, "PreferredFullscreenMode") == "0",
+                "VALORANT: perfil Qrz grava a configuração do Qrz nos dois arquivos");
+            Assert(GameConfigService.AppliedProfile(valorant) == "qrz", "VALORANT: perfil aplicado lembrado");
+            Assert(sensitivity is null || File.ReadAllLines(accountFile).Contains(sensitivity), "VALORANT: sensibilidade do jogador não é alterada");
+            service.Apply(valorant, "otimizado");
+            Assert(Value(accountFile, "EAresIntSettingName::UIQuality") == "0" && Value(accountFile, "EAresIntSettingName::AnisotropicFiltering") == "4" && GameConfigService.AppliedProfile(valorant) == "otimizado",
+                "VALORANT: troca para o perfil Otimizado");
+            service.Restore(valorant);
+            Assert(File.ReadAllBytes(gameFile).SequenceEqual(originalGame) && File.ReadAllBytes(accountFile).SequenceEqual(originalAccount) && GameConfigService.AppliedProfile(valorant) is null,
+                "VALORANT: restaurar devolve os dois arquivos originais, byte a byte");
+        }
+        finally
+        {
+            rootProp.SetValue(null, realRoot);
+            backupProp.SetValue(null, oldBackup);
+        }
+    }
+
     // Inicialização no estilo Autoruns: leitura real deste PC e liga/desliga de itens criados só para o teste
     static void TestStartupPage(ActivityLog log)
     {
@@ -243,6 +300,7 @@ internal static class Program
         Assert(iniChanges == 4 && ini.Contains("bUseVSync=False\nFrameRateLimit") && ini.Contains("sg.ShadowQuality=0\nsg.EffectsQuality=0") && ini.EndsWith("[Nova]\nX=1"), "Arquivo .ini alterado por seção, com chaves novas no lugar certo");
         var (kv, kvChanges) = GameConfigService.SetQuotedValues("\"VideoConfig\"\n{\n\t\"setting.mat_vsync\"\t\t\"1\"\n\t\"setting.other\"\t\t\"5\"\n}\n", new[] { new ConfigValue("", "setting.mat_vsync", "0"), new ConfigValue("", "setting.r_low_latency", "1") }, "\n");
         Assert(kvChanges == 2 && kv.Contains("\t\"setting.mat_vsync\"\t\t\"0\"") && kv.Contains("\t\"setting.r_low_latency\"\t\t\"1\"\n}") && kv.Contains("\"setting.other\"\t\t\"5\""), "Arquivo \"chave\" \"valor\" alterado sem mexer no resto");
+        TestValorantProfiles(root);
 
         // NVIDIA: só leitura (gravar exige administrador e mudaria o driver deste PC)
         if (NvidiaProfileService.IsAvailable())
@@ -672,6 +730,9 @@ internal static class Program
                     typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "gaming" });
                     Render($"gaming-tab{tab}-dark", 1320, 860);
                 }
+                typeof(MainWindow).GetField("_gamingTab", flags)!.SetValue(window, 1);
+                typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "gaming" });
+                Render("gaming-games-tall", 1320, 2000);
                 typeof(MainWindow).GetField("_gamingTab", flags)!.SetValue(window, 0);
                 // Página exclusiva de licença admin: chamada direto, sem a checagem da navegação
                 typeof(MainWindow).GetMethod("ShowIsos", flags)!.Invoke(window, null);

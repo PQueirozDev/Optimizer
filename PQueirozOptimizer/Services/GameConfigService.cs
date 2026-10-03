@@ -8,11 +8,23 @@ namespace PQueirozOptimizer.Services;
 
 public enum ConfigFormat { Ini, QuotedKeyValue }
 
-/// <summary>Um valor do arquivo de configuração do jogo (seção vazia no formato "chave" "valor").</summary>
-public sealed record ConfigValue(string Section, string Key, string Value);
+/// <summary>
+/// Um valor do arquivo de configuração do jogo (seção vazia no formato "chave" "valor"). <paramref name="File"/>
+/// escolhe o arquivo quando o jogo usa mais de um (vazio = o arquivo principal).
+/// </summary>
+public sealed record ConfigValue(string Section, string Key, string Value, string File = "");
 
-/// <summary>Preset competitivo de um jogo: onde fica o arquivo e quais valores muda.</summary>
-public sealed record GamePreset(string Id, string Name, string[] Processes, ConfigFormat Format, string Description, ConfigValue[] Values, string[] Notes);
+/// <summary>Uma das opções de configuração de um jogo (ex.: Otimizado ou Qrz).</summary>
+public sealed record GameProfile(string Id, string Name, string Description, ConfigValue[] Values);
+
+/// <summary>Preset competitivo de um jogo: onde fica o arquivo e quais valores muda (ou os perfis para escolher).</summary>
+public sealed record GamePreset(string Id, string Name, string[] Processes, ConfigFormat Format, string Description, ConfigValue[] Values, string[] Notes, GameProfile[]? Profiles = null)
+{
+    public GameProfile? Profile(string? id) => Profiles?.FirstOrDefault(p => p.Id == id) ?? Profiles?.FirstOrDefault();
+    public ConfigValue[] ValuesFor(string? profileId) => Profile(profileId)?.Values ?? Values;
+    /// <summary>Todos os arquivos que o preset pode alterar (de qualquer perfil).</summary>
+    public IEnumerable<string> Files => Values.Concat(Profiles?.SelectMany(p => p.Values) ?? Enumerable.Empty<ConfigValue>()).Select(v => v.File).Distinct();
+}
 
 /// <summary>
 /// Presets de configuração de jogos (menos efeitos pesados, sem V-Sync, sem desfoque de movimento) gravados
@@ -27,6 +39,22 @@ public sealed class GameConfigService
 
     private const string FortniteUser = "/Script/FortniteGame.FortGameUserSettings";
     private const string RocketSystem = "SystemSettings";
+    private const string ValorantMachine = "/Script/ShooterGame.ShooterGameUserSettings";
+
+    // VALORANT: o arquivo da máquina (tela, V-Sync, limite de FPS) e o da conta Riot (qualidade e opções de jogo).
+    // Só chaves que o próprio jogo grava; tela cheia = modo 0 do Unreal.
+    private static ConfigValue[] ValorantValues(int ui, int anisotropic, bool hideTracers) => new[]
+    {
+        new ConfigValue(ValorantMachine, "PreferredFullscreenMode", "0", "game"), new ConfigValue(ValorantMachine, "LastConfirmedFullscreenMode", "0", "game"),
+        new ConfigValue(ValorantMachine, "bUseVSync", "False", "game"), new ConfigValue(ValorantMachine, "bUseDynamicResolution", "False", "game"),
+        new ConfigValue(ValorantMachine, "FrameRateLimit", "0.000000", "game"),
+        new ConfigValue("Settings", "EAresIntSettingName::MaterialQuality", "0", "account"), new ConfigValue("Settings", "EAresIntSettingName::TextureQuality", "0", "account"),
+        new ConfigValue("Settings", "EAresIntSettingName::DetailQuality", "0", "account"), new ConfigValue("Settings", "EAresIntSettingName::UIQuality", ui.ToString(), "account"),
+        new ConfigValue("Settings", "EAresIntSettingName::AnisotropicFiltering", anisotropic.ToString(), "account"),
+        new ConfigValue("Settings", "EAresBoolSettingName::DisableDistortion", "True", "account"),
+        new ConfigValue("Settings", "EAresIntSettingName::NvidiaReflexLowLatencySetting", "2", "account"),
+        new ConfigValue("Settings", "EAresBoolSettingName::ShowBlood", "False", "account"), new ConfigValue("Settings", "EAresBoolSettingName::ShowCorpses", "False", "account"),
+    }.Concat(hideTracers ? new[] { new ConfigValue("Settings", "EAresBoolSettingName::ShowBulletTracers", "False", "account") } : Array.Empty<ConfigValue>()).ToArray();
 
     public static readonly GamePreset[] Presets =
     {
@@ -70,6 +98,17 @@ public sealed class GameConfigService
                 new(RocketSystem, "AmbientOcclusion", "False"), new(RocketSystem, "UseVsync", "False"),
             },
             new[] { "Feche o Rocket League antes de aplicar." }),
+        new("valorant", "VALORANT", new[] { "VALORANT-Win64-Shipping", "VALORANT" }, ConfigFormat.Ini,
+            "Escolha o perfil: Otimizado (o máximo de FPS) ou Qrz (a configuração usada pelo Qrz). Sensibilidade, mira, teclas e volume continuam os seus.",
+            Array.Empty<ConfigValue>(),
+            new[] { "Feche o VALORANT antes de aplicar. Ao entrar, confira em Configurações → Vídeo: o jogo sincroniza parte das opções com a conta Riot." },
+            new GameProfile[]
+            {
+                new("otimizado", "Otimizado", "Material, textura, detalhes e interface no baixo, filtragem anisotrópica 4x, sem distorção, NVIDIA Reflex com Boost, tela cheia sem V-Sync e sem limite de FPS; sangue e corpos desligados.",
+                    ValorantValues(ui: 0, anisotropic: 4, hideTracers: false)),
+                new("qrz", "Qrz", "A configuração do Qrz: material, textura e detalhes no baixo, interface no alto, filtragem anisotrópica 16x, sem distorção, NVIDIA Reflex com Boost, tela cheia sem V-Sync e sem limite de FPS; sangue, corpos e rastros de bala desligados.",
+                    ValorantValues(ui: 2, anisotropic: 16, hideTracers: true)),
+            }),
     };
 
     // ---------- Localização dos arquivos ----------
@@ -84,9 +123,41 @@ public sealed class GameConfigService
             "apex" => Path.Combine(profile, "Saved Games", "Respawn", "Apex", "local", "videoconfig.txt"),
             "rocketleague" => Path.Combine(documents, "My Games", "Rocket League", "TAGame", "Config", "TASystemSettings.ini"),
             "cs2" => Cs2VideoConfig(),
+            "valorant" => ValorantAccountConfig(),
             _ => null,
         };
         return path != null && File.Exists(path) ? path : null;
+    }
+
+    /// <summary>Arquivo de configuração pelo nome usado nos valores ("" = o principal; VALORANT: "game" e "account").</summary>
+    public static string? FilePath(GamePreset preset, string file)
+    {
+        if (file.Length == 0 || (preset.Id == "valorant" && file == "account")) return ConfigPath(preset);
+        if (preset.Id == "valorant" && file == "game")
+        {
+            var path = Path.Combine(ValorantConfigRoot, "WindowsClient", "GameUserSettings.ini");
+            return File.Exists(path) ? path : null;
+        }
+        return null;
+    }
+
+    /// <summary>Pasta de configuração do VALORANT (o teste aponta para uma cópia).</summary>
+    internal static string ValorantConfigRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VALORANT", "Saved", "Config");
+
+    /// <summary>Configurações da última conta Riot que entrou neste PC (o próprio jogo grava qual foi).</summary>
+    private static string? ValorantAccountConfig()
+    {
+        if (!Directory.Exists(ValorantConfigRoot)) return null;
+        string? lastUser = null;
+        var machine = Path.Combine(ValorantConfigRoot, "WindowsClient", "RiotLocalMachine.ini");
+        if (File.Exists(machine))
+            lastUser = File.ReadLines(machine).Select(l => l.Trim()).FirstOrDefault(l => l.StartsWith("LastKnownUser=", StringComparison.OrdinalIgnoreCase))?["LastKnownUser=".Length..];
+        var accounts = Directory.EnumerateDirectories(ValorantConfigRoot)
+            .Select(d => Path.Combine(d, "Windows", "RiotUserSettings.ini"))
+            .Where(File.Exists)
+            .ToList();
+        return accounts.FirstOrDefault(p => !string.IsNullOrEmpty(lastUser) && Path.GetFileName(Path.GetDirectoryName(Path.GetDirectoryName(p))!)!.StartsWith(lastUser, StringComparison.OrdinalIgnoreCase))
+            ?? accounts.OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault();
     }
 
     private static string? Cs2VideoConfig()
@@ -106,37 +177,68 @@ public sealed class GameConfigService
     public static bool IsRunning(GamePreset preset) =>
         preset.Processes.Any(name => { var list = Process.GetProcessesByName(name); foreach (var p in list) p.Dispose(); return list.Length > 0; });
 
-    private static string BackupPath(GamePreset preset, string configPath) => Path.Combine(BackupDirectory, preset.Id, "original" + Path.GetExtension(configPath));
-    public static bool HasBackup(GamePreset preset) => ConfigPath(preset) is { } path && File.Exists(BackupPath(preset, path));
+    /// <summary>Pasta das cópias originais (o teste aponta para uma pasta temporária).</summary>
+    internal static string BackupRoot { get; set; } = BackupDirectory;
+
+    // O arquivo principal mantém o nome antigo ("original.ext"), para backups feitos por versões anteriores valerem
+    private static string BackupPath(GamePreset preset, string configPath, string file = "") =>
+        Path.Combine(BackupRoot, preset.Id, (file.Length == 0 ? "original" : "original-" + file) + Path.GetExtension(configPath));
+    private static string ProfileMarker(GamePreset preset) => Path.Combine(BackupRoot, preset.Id, "perfil.txt");
+
+    public static bool HasBackup(GamePreset preset) =>
+        ConfigPath(preset) != null && preset.Files.Any(file => FilePath(preset, file) is { } path && File.Exists(BackupPath(preset, path, file)));
+
+    /// <summary>Perfil aplicado por último (Otimizado, Qrz...), ou null.</summary>
+    public static string? AppliedProfile(GamePreset preset)
+    {
+        var marker = ProfileMarker(preset);
+        return preset.Profiles != null && HasBackup(preset) && File.Exists(marker) ? File.ReadAllText(marker).Trim() : null;
+    }
 
     // ---------- Aplicar e restaurar ----------
-    public int Apply(GamePreset preset)
+    public int Apply(GamePreset preset, string? profileId = null)
     {
-        var path = ConfigPath(preset) ?? throw new FileNotFoundException($"Arquivo de configuração do {preset.Name} não encontrado. Abra o jogo uma vez e feche para ele criar o arquivo.");
+        if (ConfigPath(preset) is null) throw new FileNotFoundException($"Arquivo de configuração do {preset.Name} não encontrado. Abra o jogo uma vez e feche para ele criar o arquivo.");
         if (IsRunning(preset)) throw new InvalidOperationException($"Feche o {preset.Name} antes de aplicar: ele regrava as configurações ao fechar.");
-        var backup = BackupPath(preset, path);
-        Directory.CreateDirectory(Path.GetDirectoryName(backup)!);
-        if (!File.Exists(backup)) File.Copy(path, backup);
+        var profile = preset.Profile(profileId);
+        var changes = 0;
+        foreach (var group in preset.ValuesFor(profileId).GroupBy(v => v.File))
+        {
+            var path = FilePath(preset, group.Key) ?? throw new FileNotFoundException($"Um dos arquivos de configuração do {preset.Name} não foi encontrado. Abra o jogo uma vez e feche para ele criar os arquivos.");
+            var backup = BackupPath(preset, path, group.Key);
+            Directory.CreateDirectory(Path.GetDirectoryName(backup)!);
+            if (!File.Exists(backup)) File.Copy(path, backup);
 
-        var text = File.ReadAllText(path);
-        var newline = text.Contains("\r\n") ? "\r\n" : "\n";
-        var (updated, changes) = preset.Format == ConfigFormat.Ini ? SetIniValues(text, preset.Values, newline) : SetQuotedValues(text, preset.Values, newline);
-        // O arquivo pode estar como somente leitura (truque comum de guias); o preset precisa gravar
-        var attributes = File.GetAttributes(path);
-        if (attributes.HasFlag(FileAttributes.ReadOnly)) File.SetAttributes(path, attributes & ~FileAttributes.ReadOnly);
-        File.WriteAllText(path, updated, new UTF8Encoding(false));
-        _log.Write("SUCCESS", $"Preset competitivo aplicado: {preset.Name} ({changes} valores)");
+            var text = File.ReadAllText(path);
+            var newline = text.Contains("\r\n") ? "\r\n" : "\n";
+            var (updated, count) = preset.Format == ConfigFormat.Ini ? SetIniValues(text, group, newline) : SetQuotedValues(text, group, newline);
+            // O arquivo pode estar como somente leitura (truque comum de guias); o preset precisa gravar
+            var attributes = File.GetAttributes(path);
+            if (attributes.HasFlag(FileAttributes.ReadOnly)) File.SetAttributes(path, attributes & ~FileAttributes.ReadOnly);
+            File.WriteAllText(path, updated, new UTF8Encoding(false));
+            changes += count;
+        }
+        if (profile != null) File.WriteAllText(ProfileMarker(preset), profile.Id);
+        _log.Write("SUCCESS", $"Preset competitivo aplicado: {preset.Name}{(profile != null ? " — perfil " + profile.Name : "")} ({changes} valores)");
         return changes;
     }
 
     public void Restore(GamePreset preset)
     {
-        var path = ConfigPath(preset) ?? throw new FileNotFoundException($"Arquivo de configuração do {preset.Name} não encontrado.");
+        if (ConfigPath(preset) is null) throw new FileNotFoundException($"Arquivo de configuração do {preset.Name} não encontrado.");
         if (IsRunning(preset)) throw new InvalidOperationException($"Feche o {preset.Name} antes de restaurar.");
-        var backup = BackupPath(preset, path);
-        if (!File.Exists(backup)) throw new FileNotFoundException("Não há cópia original deste jogo.");
-        File.Copy(backup, path, overwrite: true);
-        File.Delete(backup);
+        var restored = 0;
+        foreach (var file in preset.Files)
+        {
+            if (FilePath(preset, file) is not { } path) continue;
+            var backup = BackupPath(preset, path, file);
+            if (!File.Exists(backup)) continue;
+            File.Copy(backup, path, overwrite: true);
+            File.Delete(backup);
+            restored++;
+        }
+        if (restored == 0) throw new FileNotFoundException("Não há cópia original deste jogo.");
+        if (File.Exists(ProfileMarker(preset))) File.Delete(ProfileMarker(preset));
         _log.Write("SUCCESS", $"Configurações originais restauradas: {preset.Name}");
     }
 

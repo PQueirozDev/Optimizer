@@ -225,6 +225,15 @@ public static partial class Translator
         // ---------- Tela de abertura ----------
         ["Verificando licença..."] = "Checking license...", ["Montando a interface..."] = "Building the interface...",
 
+        // ---------- VALORANT: perfis Otimizado e Qrz ----------
+        ["VALORANT nas configurações dos jogos, com dois perfis: Otimizado (o máximo de FPS) e Qrz (a configuração usada pelo Qrz). Sensibilidade, mira, teclas e volume continuam os seus, e o original volta com um clique."] = "VALORANT in game settings, with two profiles: Optimized (maximum FPS) and Qrz (the settings Qrz uses). Sensitivity, crosshair, keybinds and volume stay yours, and the original comes back with one click.",
+        ["Otimizado"] = "Optimized", ["Qrz"] = "Qrz",
+        ["Escolha o perfil: Otimizado (o máximo de FPS) ou Qrz (a configuração usada pelo Qrz). Sensibilidade, mira, teclas e volume continuam os seus."] = "Choose the profile: Optimized (maximum FPS) or Qrz (the settings Qrz uses). Sensitivity, crosshair, keybinds and volume stay yours.",
+        ["Feche o VALORANT antes de aplicar. Ao entrar, confira em Configurações → Vídeo: o jogo sincroniza parte das opções com a conta Riot."] = "Close VALORANT before applying. Once in, check Settings → Video: the game syncs some options with your Riot account.",
+        ["Material, textura, detalhes e interface no baixo, filtragem anisotrópica 4x, sem distorção, NVIDIA Reflex com Boost, tela cheia sem V-Sync e sem limite de FPS; sangue e corpos desligados."] = "Material, texture, detail and UI on low, 4x anisotropic filtering, no distortion, NVIDIA Reflex with Boost, fullscreen without V-Sync and no FPS limit; blood and corpses off.",
+        ["A configuração do Qrz: material, textura e detalhes no baixo, interface no alto, filtragem anisotrópica 16x, sem distorção, NVIDIA Reflex com Boost, tela cheia sem V-Sync e sem limite de FPS; sangue, corpos e rastros de bala desligados."] = "Qrz's settings: material, texture and detail on low, UI on high, 16x anisotropic filtering, no distortion, NVIDIA Reflex with Boost, fullscreen without V-Sync and no FPS limit; blood, corpses and bullet tracers off.",
+        ["Um dos arquivos de configuração do VALORANT não foi encontrado. Abra o jogo uma vez e feche para ele criar os arquivos."] = "One of VALORANT's config files was not found. Open the game once and close it so it creates the files.",
+
         // ---------- Temas e cores ----------
         ["Claro"] = "Light", ["Grafite"] = "Graphite", ["Oceano"] = "Ocean", ["Floresta"] = "Forest",
         ["Cor principal"] = "Main color", ["Botões, seleção da barra lateral, gráficos e brilhos."] = "Buttons, sidebar selection, charts and glows.",
@@ -349,6 +358,13 @@ public static partial class Translator
         P(@"^Baixando instalador\.\.\. (\d+)% \((.+) de (.+) MB\)$", m => $"Downloading installer... {m.Groups[1].Value}% ({m.Groups[2].Value} of {m.Groups[3].Value} MB)"),
         P(@"^Baixando instalador\.\.\. (.+) MB$", m => $"Downloading installer... {m.Groups[1].Value} MB"),
         P(@"^Falha na atualização: (.+)$", m => $"Update failed: {m.Groups[1].Value}"),
+        P(@"^(Aplicar|Reaplicar) perfil (.+)$", m => $"{(m.Groups[1].Value == "Aplicar" ? "Apply" : "Reapply")} {Tr(m.Groups[2].Value)} profile"),
+        P(@"^Perfil (.+) ativo$", m => $"{Tr(m.Groups[1].Value)} profile active"),
+        P(@"^Perfil (.+) aplicado: (\d+) ajustes\.$", m => $"{Tr(m.Groups[1].Value)} profile applied: {m.Groups[2].Value} tweaks."),
+        P(@"^Perfil (.+): o arquivo já estava assim\.$", m => $"{Tr(m.Groups[1].Value)} profile: the file was already like this."),
+        P(@"^Preset: o arquivo já estava assim\.$", _ => "Preset: the file was already like this."),
+        P(@"^Preset aplicado: (\d+) ajustes\.$", m => $"Preset applied: {m.Groups[1].Value} tweaks."),
+        P(@"^Preset competitivo aplicado: (.+?)( — perfil (.+))? \((\d+) valores\)$", m => $"Competitive preset applied: {m.Groups[1].Value}{(m.Groups[2].Success ? " — " + Tr(m.Groups[3].Value) + " profile" : "")} ({m.Groups[4].Value} values)"),
         P(@"^O app abriu sem permissão de administrador e o pedido de elevação foi recusado: (.+)$", m => $"The app opened without administrator rights and the elevation request was declined: optimizations, services and updates may be blocked by Windows."),
     };
 }

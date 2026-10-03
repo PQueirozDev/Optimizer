@@ -25,6 +25,10 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.8.4", "03/10/2026", new[]
+        {
+            "VALORANT nas configurações dos jogos, com dois perfis: Otimizado (o máximo de FPS) e Qrz (a configuração usada pelo Qrz). Sensibilidade, mira, teclas e volume continuam os seus, e o original volta com um clique.",
+        }),
         ("v1.8.3", "03/10/2026", new[]
         {
             "Corrigido o fechamento do app ao ligar ou desligar grupos em Serviços enquanto outra ação estava em andamento.",
