@@ -153,7 +153,7 @@ internal static class Program
         watch.Stop();
         Console.WriteLine($"  Sistema: {snap.OperatingSystem} | {snap.Build} | {snap.Architecture} | {snap.Processor} | {snap.Graphics} | {snap.MemoryGb} GB | {snap.StorageGb}/{snap.FreeGb} GB | ligado desde {snap.BootTime:g} | {watch.ElapsedMilliseconds} ms");
         Assert(snap.OperatingSystem.StartsWith("Microsoft Windows") && snap.Build.All(char.IsDigit), "Nome e build do Windows lidos do registro");
-        Assert(int.Parse(snap.Build) < 22000 || snap.OperatingSystem.Contains("Windows 11"), "Windows 11 não aparece como Windows 10");
+        Assert(int.Parse(snap.Build) < 22000 || !snap.OperatingSystem.Contains("Windows 10"), "Windows 11 (e Server 2022+) não aparece como Windows 10");
         Assert(snap.Processor != "Não disponível" && snap.MemoryGb > 0 && snap.StorageGb > 0 && snap.FreeGb > 0 && snap.FreeGb <= snap.StorageGb, "Processador, memória e disco lidos sem WMI");
         Assert(snap.BootTime is { } boot && boot < DateTime.Now && boot > DateTime.Now.AddYears(-1), "Horário de inicialização coerente");
         Assert(watch.ElapsedMilliseconds < 500, "Leitura do sistema leva menos de meio segundo");
