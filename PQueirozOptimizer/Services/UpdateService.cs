@@ -7,6 +7,7 @@ using System.Security.AccessControl;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text.Json;
+using System.Xml.Linq;
 
 namespace PQueirozOptimizer.Services;
 
@@ -54,7 +55,8 @@ public sealed class UpdateService
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
         timeout.CancelAfter(TimeSpan.FromSeconds(8));
         using var response = await Client.GetAsync("https://api.github.com/repos/PQueirozDev/Optimizer/releases/latest", timeout.Token);
-        if (!response.IsSuccessStatusCode) return new(false, current, current, null, null, null, null);
+        if (!response.IsSuccessStatusCode)
+            return await CheckFeedAsync(current, timeout.Token);
         await using var stream = await response.Content.ReadAsStreamAsync(timeout.Token);
         using var json = await JsonDocument.ParseAsync(stream, cancellationToken: timeout.Token);
         var tag = json.RootElement.TryGetProperty("tag_name", out var tagElement) ? tagElement.GetString() : null;
@@ -74,6 +76,34 @@ public sealed class UpdateService
         }
         var body = json.RootElement.TryGetProperty("body", out var bodyElement) ? bodyElement.GetString() : null;
         return new(Compare(latest, current) > 0, current, latest, url, assetUrl, assetName, checksumUrl, ReleaseNotes(body));
+    }
+
+    /// <summary>
+    /// Fallback sem API REST: o feed Atom continua acessível quando o limite anônimo
+    /// do GitHub foi atingido. Os nomes dos assets são definidos pelo workflow do projeto.
+    /// </summary>
+    private static async Task<UpdateInfo> CheckFeedAsync(string current, CancellationToken token)
+    {
+        using var response = await Client.GetAsync("https://github.com/PQueirozDev/Optimizer/releases.atom", token);
+        response.EnsureSuccessStatusCode();
+        var xml = XDocument.Parse(await response.Content.ReadAsStringAsync(token));
+        var entry = xml.Root?.Elements().FirstOrDefault(e => e.Name.LocalName == "entry");
+        var title = entry?.Elements().FirstOrDefault(e => e.Name.LocalName == "title")?.Value?.Trim();
+        var tag = title?.Split(' ', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+        if (string.IsNullOrWhiteSpace(tag)) return new(false, current, current, null, null, null, null);
+        var latest = Normalize(tag);
+        var releaseTag = "v" + latest;
+        var baseUrl = $"https://github.com/PQueirozDev/Optimizer/releases/download/{releaseTag}";
+        var assetName = $"PQueirozOptimizer-Setup-{releaseTag}.exe";
+        return new(
+            Compare(latest, current) > 0,
+            current,
+            latest,
+            $"https://github.com/PQueirozDev/Optimizer/releases/tag/{releaseTag}",
+            $"{baseUrl}/{assetName}",
+            assetName,
+            $"{baseUrl}/{ChecksumAssetName}",
+            Array.Empty<string>());
     }
 
     /// <summary>Novidades da release: os itens de lista do texto dela (as mesmas notas mostradas no app).</summary>

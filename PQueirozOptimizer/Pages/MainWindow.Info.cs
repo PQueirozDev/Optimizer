@@ -25,6 +25,10 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.8.10", "03/10/2026", new[]
+        {
+            "O atualizador agora usa um feed público de releases como fallback quando a API do GitHub atinge o limite de requisições, evitando que novas versões deixem de aparecer.",
+        }),
         ("v1.8.9", "03/10/2026", new[]
         {
             "Versão do aplicativo sincronizada com o instalador e com o mecanismo de atualizações para garantir que a nova build seja reconhecida corretamente.",
