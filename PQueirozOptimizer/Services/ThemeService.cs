@@ -150,6 +150,26 @@ public static class ThemeService
         }
     }
 
+    [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private static extern IntPtr SendMessageTimeout(IntPtr hwnd, uint msg, UIntPtr wParam, string lParam, uint flags, uint timeout, out UIntPtr result);
+
+    /// <summary>
+    /// Liga os efeitos de transparência do Windows (a mesma chave da tela Personalização → Cores) e avisa
+    /// os programas abertos, como o próprio Windows faz; o DWM passa a desenhar o Acrylic na hora.
+    /// </summary>
+    public static bool EnableSystemTransparency()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+            key.SetValue("EnableTransparency", 1, RegistryValueKind.DWord);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException) { return false; }
+        // HWND_BROADCAST + WM_SETTINGCHANGE "ImmersiveColorSet"; SMTO_ABORTIFHUNG para não travar num programa parado
+        SendMessageTimeout((IntPtr)0xFFFF, 0x001A, UIntPtr.Zero, "ImmersiveColorSet", 0x0002, 1000, out _);
+        return true;
+    }
+
     /// <summary>Tema efetivo: Automático segue a configuração "modo de aplicativo" do Windows.</summary>
     public static bool ResolveDark(ThemeMode mode)
     {

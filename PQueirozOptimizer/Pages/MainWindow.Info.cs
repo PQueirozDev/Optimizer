@@ -25,6 +25,10 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.8.13", "04/10/2026", new[]
+        {
+            "Ao ligar a janela translúcida, o app agora liga também os efeitos de transparência do Windows, avisando antes que a mudança vale para o sistema todo.",
+        }),
         ("v1.8.12", "04/10/2026", new[]
         {
             "Dois temas novos: Areia, claro e com tom quente, menos ofuscante que o Claro; e Ameixa, escuro com tom vinho.",

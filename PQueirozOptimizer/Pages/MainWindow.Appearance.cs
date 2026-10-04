@@ -48,22 +48,28 @@ public partial class MainWindow
 
         var translucent = new CheckBox { IsChecked = current.Translucent && ThemeService.TranslucencySupported, Content = "", IsEnabled = ThemeService.TranslucencySupported };
         translucent.SetResourceReference(StyleProperty, "SwitchCheckBox");
-        translucent.Checked += (_, _) => Update(s => s.Translucent = true);
-        translucent.Unchecked += (_, _) => Update(s => s.Translucent = false);
+        var reverting = false;
+        translucent.Checked += (_, _) =>
+        {
+            if (reverting) return;
+            if (!ConfirmSystemTransparency()) { reverting = true; translucent.IsChecked = false; reverting = false; return; }
+            Update(s => s.Translucent = true);
+        };
+        translucent.Unchecked += (_, _) => { if (!reverting) Update(s => s.Translucent = false); };
         panel.Children.Add(SettingRow("Janela translúcida", ThemeService.TranslucencySupported
-            ? "O fundo da janela fica desfocado e deixa ver o que está atrás, como nos apps do Windows 11."
+            ? "O fundo da janela fica desfocado e deixa ver o que está atrás, como nos apps do Windows 11. Se precisar, liga também os efeitos de transparência do Windows (o app avisa antes)."
             : "Disponível só no Windows 11 (versão 22H2 ou mais nova).", translucent));
         if (ThemeService.TranslucencySupported && current.Translucent && !ThemeService.SystemTransparencyEnabled)
         {
-            // Sem os efeitos de transparência do Windows o Acrylic vira cor sólida: explica e leva direto à opção
+            // Os efeitos foram desligados depois (no Windows ou por outro programa): explica e oferece religar
             var warning = new DockPanel { Margin = new Thickness(0, -4, 0, AppearanceService.Space(14)) };
-            var open = IconButton(Glyphs.OpenInNew, "Abrir Cores do Windows");
-            open.Margin = new Thickness(12, 0, 0, 0);
-            open.Click += (_, _) => Launch("ms-settings:colors");
-            DockPanel.SetDock(open, Dock.Right); warning.Children.Add(open);
+            var enable = IconButton(Glyphs.Check, "Ligar efeitos de transparência");
+            enable.Margin = new Thickness(12, 0, 0, 0);
+            enable.Click += (_, _) => ConfirmSystemTransparency();
+            DockPanel.SetDock(enable, Dock.Right); warning.Children.Add(enable);
             var icon = GlyphIcon(Glyphs.Warning, 14, "WarningBrush"); icon.Margin = new Thickness(0, 0, 10, 0); icon.VerticalAlignment = VerticalAlignment.Top;
             DockPanel.SetDock(icon, Dock.Left); warning.Children.Add(icon);
-            var text = Label("Os efeitos de transparência estão desligados no Windows, então a janela continua sólida. Ligue \"Efeitos de transparência\" em Personalização → Cores; o app atualiza sozinho.", 12, true);
+            var text = Label("Os efeitos de transparência estão desligados no Windows, então a janela continua sólida.", 12, true);
             text.Margin = new Thickness(0);
             warning.Children.Add(text);
             panel.Children.Add(warning);
@@ -84,6 +90,23 @@ public partial class MainWindow
         var card = Surface(panel);
         card.Margin = new Thickness(0, 0, 0, 24);
         return card;
+    }
+
+    /// <summary>
+    /// O translúcido depende dos efeitos de transparência do Windows. Se estiverem desligados, avisa que
+    /// a opção vale para o sistema todo e só liga com a confirmação. Devolve se pode seguir.
+    /// </summary>
+    private bool ConfirmSystemTransparency()
+    {
+        if (ThemeService.SystemTransparencyEnabled) return true;
+        var answer = Msg("Para a janela ficar translúcida, o app vai ligar os \"Efeitos de transparência\" do Windows (Personalização → Cores).\n\n"
+            + "Isso vale para o Windows todo: a barra de tarefas, o menu Iniciar e outros apps também ficam translúcidos. Dá para desligar depois em Personalização → Cores.\n\nLigar agora?",
+            "Efeitos de transparência", MessageBoxButton.YesNo, MessageBoxImage.Information, MessageBoxResult.No);
+        if (answer != MessageBoxResult.Yes) return false;
+        if (ThemeService.EnableSystemTransparency()) return true;
+        Msg("Não foi possível ligar os efeitos de transparência. Ligue manualmente em Configurações do Windows → Personalização → Cores.",
+            "Efeitos de transparência", MessageBoxButton.OK, MessageBoxImage.Warning);
+        return false;
     }
 
     private static bool IsDefaultAppearance(AppearanceSettings s) =>
