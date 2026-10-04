@@ -56,6 +56,8 @@ Capturar-Servico 'Fax'
 Assert (@($script:SnapshotAtual | Where-Object { $_.Nome -eq 'Fax' }).Count -eq 1) 'First capture wins so revert restores the original state'
 Assert ($script:SnapshotNome -eq 'Fixture + Next fixture') 'Merged backup keeps both run names'
 
+# Reversão completa: sem ajustes escolhidos (com eles, só os itens desses ajustes voltam)
+$script:SelectedSteps = $null
 function Set-Service($Name, $StartupType) { if ($Name -eq 'Fax') { throw 'Expected service restore failure' } }
 function Stop-Service($Name, [switch]$Force) { }
 $script:startedProcesses = @()
@@ -78,6 +80,31 @@ function Set-Service($Name, $StartupType) { }
 $script:ContFalhas = 0
 Reverter-UltimaOtimizacao
 Assert (-not (Test-Path -LiteralPath $script:SnapshotPath)) 'Successful retry archives pending backup'
+
+# Desfazer um ajuste só: os itens dos outros ajustes continuam no backup
+$script:SnapshotNome = 'Per-step fixture'
+$script:SnapshotAtual = @(
+    [pscustomobject]@{ Tipo='Servico'; Etapa='Ajuste A'; Nome='Fax'; StartupTypeAnterior='Manual'; StatusAnterior='Stopped' },
+    [pscustomobject]@{ Tipo='Servico'; Etapa='Ajuste B'; Nome='Spooler'; StartupTypeAnterior='Manual'; StatusAnterior='Stopped' }
+)
+Salvar-Snapshot
+$script:SelectedSteps = @('Ajuste A')
+$script:ContFalhas = 0
+Reverter-UltimaOtimizacao
+$restante = Get-Content -Raw -LiteralPath $script:SnapshotPath | ConvertFrom-Json
+Assert ($script:ContFalhas -eq 0 -and @($restante.Itens).Count -eq 1 -and $restante.Itens[0].Etapa -eq 'Ajuste B') 'Per-step revert keeps the other steps in the backup'
+$script:SelectedSteps = @('Ajuste B')
+Reverter-UltimaOtimizacao
+Assert (-not (Test-Path -LiteralPath $script:SnapshotPath)) 'Reverting the last step archives the backup'
+$script:SelectedSteps = $null
+
+# Itens novos guardam de qual ajuste vieram
+$script:SnapshotAtual = @()
+$script:EtapaAtual = 'Ajuste C'
+Capturar-Hibernacao
+Assert ($script:SnapshotAtual[0].Tipo -eq 'Hibernacao' -and $script:SnapshotAtual[0].Etapa -eq 'Ajuste C') 'Captured items record their step'
+$script:SnapshotAtual = @(); $script:EtapaAtual = $null
+Remove-Item -LiteralPath $script:SnapshotPath -Force -ErrorAction SilentlyContinue
 
 1..($script:LimiteHistorico + 5) | ForEach-Object { '{}' | Out-File -LiteralPath (Join-Path $script:SnapshotDir "historico_extra$_.json") }
 Limpar-HistoricoAntigo
