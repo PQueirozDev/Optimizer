@@ -25,6 +25,13 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.8.11", "04/10/2026", new[]
+        {
+            "Visual mais limpo: saíram os gradientes, os brilhos e o fundo animado, e os cartões ficaram planos, sem sombra e sem subir ao passar o mouse.",
+            "Ícones novos e exclusivos para cada otimização; SFC, DISM, CHKDSK e Reparar agora têm cada um o seu.",
+            "Tamanhos de texto padronizados e cabeçalho das páginas mais compacto, deixando mais espaço para o conteúdo.",
+            "Nova opção em Configurações → Aparência: janela translúcida, com o fundo desfocado do Windows 11 (requer a versão 22H2 ou mais nova).",
+        }),
         ("v1.8.10", "03/10/2026", new[]
         {
             "O atualizador agora usa um feed público de releases como fallback quando a API do GitHub atinge o limite de requisições, evitando que novas versões deixem de aparecer.",

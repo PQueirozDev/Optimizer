@@ -23,7 +23,7 @@ Aplicativo desktop para Windows, feito em C# + WPF (.NET 8), para otimização, 
 - Recursos (verificação de corrupção, runtimes, reinstalação limpa do driver, atalhos, downloads e benchmarks), Correções rápidas do Windows, Pontos de restauração, grupos de Serviços e otimizador/desinstalador de Apps.
 - BIOS por grupos (XMP/EXPO, Resizable BAR, Spread Spectrum, PBO, C-States, virtualização), com instruções para ASUS e ASRock, e Win32 Priority no Modo Jogo.
 - Tutorial guiado na primeira abertura e tutoriais curtos por página, que podem ser revistos em Configurações.
-- Aparência personalizável: tema Escuro, OLED ou Automático (segue o Windows), intensidade do roxo, densidade, tamanho dos cards e animações, salvos em `%LocalAppData%\PQueirozOptimizer\config.json`.
+- Aparência personalizável: tema Escuro, OLED ou Automático (segue o Windows), intensidade do roxo, densidade, tamanho dos cards, animações e janela translúcida (Windows 11), salvos em `%LocalAppData%\PQueirozOptimizer\config.json`.
 - Interface em português e inglês.
 
 ## Requisitos
