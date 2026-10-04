@@ -25,6 +25,13 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.8.7", "03/10/2026", new[]
+        {
+            "Nova Central de diagnóstico com verificações de sistema, drivers, serviços, rede, Bluetooth e integridade do Windows.",
+            "Saúde do PC com atalhos clicáveis para abrir diretamente os componentes e reparos relacionados.",
+            "Histórico de atividade com busca, filtros por resultado, cores e mensagens técnicas disponíveis ao passar o mouse.",
+            "Correções com categorias fixas, ordenação por uso ou segurança, descrições recolhíveis e cartões mais compactos.",
+        }),
         ("v1.8.6", "03/10/2026", new[]
         {
             "Aviso de atualização redesenhado: versão atual e nova, novidades em cartões, selo de download seguro e ações mais claras para atualizar ou continuar depois.",

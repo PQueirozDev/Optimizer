@@ -30,6 +30,7 @@ public partial class MainWindow : Window
     private string _currentOptCategory = "todas";
     private string _driverCategory = "Todos";
     private string _driverSearch = "";
+    private readonly Dictionary<string, int> _fixUse = new(StringComparer.OrdinalIgnoreCase);
     internal bool IsOperationRunning => _operationRunning;
     private bool IsAdminLicense =>(Application.Current as App)?.ActiveLicense?.IsAdmin == true;
 
@@ -280,6 +281,7 @@ public partial class MainWindow : Window
             case "restore": ShowRestorePoints(); break;
             case "resources": ShowResources(); break;
             case "fixes": ShowFixes(); break;
+            case "diagnostics": ShowDiagnostics(); break;
             case "services": ShowServices(); break;
             case "apps": ShowApps(); break;
         }
@@ -289,7 +291,7 @@ public partial class MainWindow : Window
 
     private void UpdateActiveNavButton(string page)
     {
-        var buttons = new[] { NavDashboard, NavOpt, NavStartup, NavDrivers, NavIsos, NavTools, NavGaming, NavNetwork, NavRestore, NavResources, NavFixes, NavServices, NavApps, NavSettings, NavAbout, NavHistory, NavPatchNotes, NavBios, NavAdmin };
+        var buttons = new[] { NavDashboard, NavOpt, NavStartup, NavDrivers, NavIsos, NavTools, NavGaming, NavNetwork, NavRestore, NavResources, NavFixes, NavDiagnostics, NavServices, NavApps, NavSettings, NavAbout, NavHistory, NavPatchNotes, NavBios, NavAdmin };
         foreach (var b in buttons) b.IsChecked = b.Tag?.ToString() == page;
     }
 

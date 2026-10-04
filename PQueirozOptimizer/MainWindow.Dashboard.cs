@@ -195,7 +195,25 @@ public partial class MainWindow
         AddMeter(panel, Glyphs.Clock, "Tempo desde o último reinício", Math.Min(100, hours / 168d * 100), hours < 72 ? "Recente" : "Reinicie em breve", hours < 72 ? "Success" : "Warning");
         var memory = snapshot.MemoryGb;
         AddMeter(panel, Glyphs.Memory, "Memória instalada", Math.Min(100, memory / 32d * 100), memory >= 16 ? "Ideal para jogos" : memory >= 8 ? "Suficiente" : "Limitada", memory >= 16 ? "Success" : memory >= 8 ? "Warning" : "Danger");
+        panel.Children.Add(Label("Acesso rápido", 12, true));
+        AddHealthLink(panel, "Drivers", Glyphs.Monitor, "drivers", "Verificar dispositivos e drivers");
+        AddHealthLink(panel, "Serviços", Glyphs.Services, "services", "Abrir grupos de serviços");
+        AddHealthLink(panel, "Windows Update", Glyphs.Refresh, "fixes", "Reparar o Windows Update", "windows-update");
+        AddHealthLink(panel, "Bluetooth", Glyphs.Bluetooth, "fixes", "Reparar o Bluetooth", "bluetooth");
         return Surface(panel);
+    }
+
+    private void AddHealthLink(Panel panel, string title, string glyph, string page, string hint, string? fixId = null)
+    {
+        var button = new Button { HorizontalContentAlignment = HorizontalAlignment.Stretch, Padding = new Thickness(7), Margin = new Thickness(0, 3, 0, 0), ToolTip = hint };
+        button.SetResourceReference(StyleProperty, "GhostButton");
+        var row = new DockPanel();
+        row.Children.Add(IconChip(glyph, "Info", 26));
+        var text = Label(title, 11.5); text.Margin = new Thickness(8, 0, 0, 0); row.Children.Add(text);
+        var arrow = Label("›", 18, true); DockPanel.SetDock(arrow, Dock.Right); row.Children.Add(arrow);
+        button.Content = row;
+        button.Click += (_, _) => { if (fixId != null) OpenFixById(fixId); else NavigateTo(page); };
+        panel.Children.Add(button);
     }
 
     private void AddMeter(Panel panel, string glyph, string title, double value, string status, string tone)

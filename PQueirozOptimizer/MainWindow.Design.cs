@@ -74,6 +74,7 @@ public partial class MainWindow
         ["isos"] = ("OTIMIZAÇÕES", Glyphs.Disc, "Imagens personalizadas do Windows."),
         ["tools"] = ("OTIMIZAÇÕES", Glyphs.Repair, "Atalhos e utilitários do dia a dia."),
         ["history"] = ("OTIMIZAÇÕES", Glyphs.History, "Tudo o que foi feito e como desfazer."),
+        ["diagnostics"] = ("MANUTENÇÃO", Glyphs.Diagnostic, "Uma leitura guiada dos principais componentes do Windows."),
         ["gaming"] = ("JOGOS E REDE", Glyphs.Game, "Sessão de jogo, perfis, NVIDIA, configurações dos jogos e Defender."),
         ["network"] = ("JOGOS E REDE", Glyphs.Network, "Velocidade, DNS, latência e reparos de conexão."),
         ["settings"] = ("SISTEMA", Glyphs.Settings, "Perfis, tema, idioma, licença e atualizações."),

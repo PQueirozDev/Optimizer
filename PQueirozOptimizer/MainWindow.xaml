@@ -103,6 +103,9 @@
        <RadioButton x:Name="NavFixes" Tag="fixes" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE90F;" Style="{StaticResource NavIcon}"/><TextBlock Text="Correções" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
        </RadioButton>
+       <RadioButton x:Name="NavDiagnostics" Tag="diagnostics" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
+        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE9D9;" Style="{StaticResource NavIcon}"/><TextBlock Text="Central de diagnóstico" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+       </RadioButton>
        <RadioButton x:Name="NavRestore" Tag="restore" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE777;" Style="{StaticResource NavIcon}"/><TextBlock Text="Pontos de restauração" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
        </RadioButton>

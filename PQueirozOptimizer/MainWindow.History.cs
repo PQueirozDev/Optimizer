@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Text.RegularExpressions;
 using System.Windows.Media;
 using PQueirozOptimizer.Services;
 using PQueirozOptimizer.Models;
@@ -122,8 +123,46 @@ public partial class MainWindow
         DockPanel.SetDock(export, Dock.Right); activityHead.Children.Add(export);
         activityHead.Children.Add(SectionHeader("Atividade recente", "Tudo o que o aplicativo executou, incluindo falhas."));
         activityPanel.Children.Add(activityHead);
-        var list = new ListBox { ItemsSource = _activity, Height = 320, FontFamily = new FontFamily("Cascadia Mono, Consolas"), FontSize = 11.5 };
-        activityPanel.Children.Add(list);
+        var logTools = new DockPanel { Margin = new Thickness(0, 8, 0, 10) };
+        var logSearch = new TextBox { Width = 240, Height = 32, Padding = new Thickness(10, 6, 10, 6), ToolTip = "Buscar na atividade" };
+        logSearch.SetResourceReference(Control.BackgroundProperty, "CardBgBrush");
+        logSearch.SetResourceReference(Control.ForegroundProperty, "TextBrush");
+        var logFilter = new ComboBox { Width = 130, Height = 32, Margin = new Thickness(8, 0, 0, 0) };
+        foreach (var option in new[] { "Todos", "Sucesso", "Avisos", "Erros", "Informações" }) logFilter.Items.Add(option);
+        logFilter.SelectedIndex = 0;
+        logTools.Children.Add(logSearch); logTools.Children.Add(logFilter);
+        activityPanel.Children.Add(logTools);
+        var logRows = new StackPanel();
+        activityPanel.Children.Add(new ScrollViewer { Height = 320, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = logRows });
+        void RenderLogs()
+        {
+            logRows.Children.Clear();
+            var query = logSearch.Text.Trim();
+            var filter = logFilter.SelectedItem?.ToString() ?? "Todos";
+            foreach (var line in _activity.Reverse().Where(line => MatchesLog(line, query, filter)))
+            {
+                var match = Regex.Match(line, @"^\[(?<time>[^\]]+)\]\s*\[(?<level>[^\]]+)\]\s*(?<message>.*)$");
+                var level = match.Success ? match.Groups["level"].Value : "INFO";
+                var message = match.Success ? match.Groups["message"].Value : line;
+                var tone = level == "ERROR" ? "Danger" : level == "WARN" ? "Warning" : level == "SUCCESS" ? "Success" : "Info";
+                var row = new DockPanel { Margin = new Thickness(0, 0, 0, 6), ToolTip = line };
+                row.Children.Add(IconChip(level switch { "ERROR" => Glyphs.Error, "WARN" => Glyphs.Warning, "SUCCESS" => Glyphs.Check, _ => Glyphs.Info }, tone, 28));
+                var text = new StackPanel { Margin = new Thickness(10, 0, 0, 0) };
+                text.Children.Add(Label(match.Success ? match.Groups["time"].Value : "Agora", 10.5, true));
+                var friendly = Label(Translator.Tr(message), 12); friendly.TextWrapping = TextWrapping.Wrap;
+                text.Children.Add(friendly); row.Children.Add(text); logRows.Children.Add(row);
+            }
+            if (logRows.Children.Count == 0) logRows.Children.Add(Label("Nenhum registro corresponde aos filtros.", 12, true));
+        }
+        bool MatchesLog(string line, string query, string filter)
+        {
+            var level = Regex.Match(line, @"\[(ERROR|WARN|SUCCESS|INFO)\]").Groups[1].Value;
+            var category = filter switch { "Erros" => "ERROR", "Avisos" => "WARN", "Sucesso" => "SUCCESS", "Informações" => "INFO", _ => "" };
+            return (category.Length == 0 || level == category) && (query.Length == 0 || line.Contains(query, StringComparison.OrdinalIgnoreCase));
+        }
+        logSearch.TextChanged += (_, _) => RenderLogs();
+        logFilter.SelectionChanged += (_, _) => RenderLogs();
+        RenderLogs();
         root.Children.Add(Surface(activityPanel));
         ContentHost.Children.Clear(); ContentHost.Children.Add(root);
     }
