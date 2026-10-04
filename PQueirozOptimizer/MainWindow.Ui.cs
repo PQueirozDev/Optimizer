@@ -69,6 +69,7 @@ public static class Glyphs
     public static readonly string Video = G(0xE714);
     public static readonly string Tag = G(0xE8EC);
     public static readonly string Rocket2 = G(0xE945);
+    public static readonly string Personalize = G(0xE771);
 
     private static string G(int code) => char.ConvertFromUtf32(code);
 }

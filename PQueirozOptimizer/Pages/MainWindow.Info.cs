@@ -25,6 +25,17 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.8.14", "04/10/2026", new[]
+        {
+            "Nova página Personalizar Windows: 24 preferências com liga/desliga aplicadas na hora, como barra de tarefas à esquerda, botão Finalizar tarefa, extensões de arquivo, menu de contexto clássico, Num Lock e aceleração do mouse.",
+            "Cada ajuste da revisão mostra o risco (Seguro, Moderado ou Arriscado), e os que não se aplicam a este PC (placa de vídeo, Windows 11, desktop) ficam ocultos.",
+            "Atividade e reversão: agora dá para desfazer um ajuste de cada vez, sem reverter os outros.",
+            "Novos ajustes: desligar o Recall e o Click To Do, a hibernação, a inicialização rápida, os apps da Store em segundo plano e o ULPS de placas AMD.",
+            "Limpeza ampliada: sobras do Windows Update, cache de entrega, relatórios de erro, despejos de travamento e lixeira, com o tamanho de cada um antes de limpar.",
+            "Tarefas agendadas: executar, parar e excluir (só as de programas) direto na página Inicialização.",
+            "Novo idioma: espanhol.",
+            "Abertura nova, com logo animado, nome letra a letra e anel de progresso.",
+        }),
         ("v1.8.13", "04/10/2026", new[]
         {
             "Ao ligar a janela translúcida, o app agora liga também os efeitos de transparência do Windows, avisando antes que a mudança vale para o sistema todo.",

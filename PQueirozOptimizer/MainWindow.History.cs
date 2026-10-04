@@ -18,6 +18,49 @@ public partial class MainWindow
 {
     private void History_Click(object sender, RoutedEventArgs e) => NavigateTo("history");
 
+    /// <summary>Linha de um ajuste no backup pendente: nome, itens alterados e o botão Desfazer.</summary>
+    private Border BackupStepRow(string? step, JsonElement[] items)
+    {
+        var row = new DockPanel();
+        var reversible = items.Any(i => i.GetProperty("Tipo").GetString() != "Irreversivel");
+        if (step != null && reversible)
+        {
+            var undo = IconButton(Glyphs.Undo, "Desfazer");
+            undo.Margin = new Thickness(12, 0, 0, 0); undo.VerticalAlignment = VerticalAlignment.Top;
+            undo.Click += async (_, _) => await RunLiveAsync("reverter", new[] { step });
+            DockPanel.SetDock(undo, Dock.Right); row.Children.Add(undo);
+        }
+        var text = new StackPanel();
+        var title = Label(step ?? "Ajustes de versões anteriores", 13.5); title.FontWeight = FontWeights.SemiBold; title.Margin = new Thickness(0);
+        text.Children.Add(title);
+        if (step is null)
+        {
+            var hint = Label("Feitos antes do backup por ajuste; voltam todos juntos com \"Restaurar configurações\".", 12, true); hint.Margin = new Thickness(0, 2, 0, 0);
+            text.Children.Add(hint);
+        }
+        var pills = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
+        foreach (var item in items)
+        {
+            var type = item.GetProperty("Tipo").GetString();
+            var detail = item.TryGetProperty("Nome", out var n) ? n.ToString() : item.TryGetProperty("Descricao", out var d) ? d.ToString() : type ?? "";
+            // Tarefas agendadas: mostra só o nome final (\Microsoft\Windows\...\Nome)
+            if (type == "TarefaAgendada") detail = detail.Split('\\', StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? detail;
+            // Irreversíveis: mostra só o resumo antes do parêntese
+            if (type == "Irreversivel" && detail.IndexOf('(') is > 0 and var cut) detail = detail[..cut].Trim();
+            if (type == "PlanoEnergia") detail = "Plano de energia";
+            var pill = Pill((type == "Irreversivel" ? "Não reversível · " : "") + detail, type == "Irreversivel" ? "Warning" : "Accent");
+            pill.Margin = new Thickness(0, 0, 6, 6);
+            ((TextBlock)pill.Child).FontSize = 11;
+            pills.Children.Add(pill);
+        }
+        text.Children.Add(pills);
+        row.Children.Add(text);
+        var border = new Border { Child = row, Padding = new Thickness(16, 12, 16, 8), CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 8) };
+        border.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
+        border.SetResourceReference(Border.BorderBrushProperty, "BorderSubtleBrush");
+        return border;
+    }
+
     private void ShowHistory()
     {
         PageTitle.Text = "Atividade e reversão";
@@ -50,21 +93,10 @@ public partial class MainWindow
                 head.Children.Add(headText);
                 backupPanel.Children.Add(head);
 
-                var pills = new WrapPanel();
-                foreach (var item in items)
-                {
-                    var type = item.GetProperty("Tipo").GetString();
-                    var detail = item.TryGetProperty("Nome", out var n) ? n.ToString() : item.TryGetProperty("Descricao", out var d) ? d.ToString() : type ?? "";
-                    // Tarefas agendadas: mostra só o nome final (\Microsoft\Windows\...\Nome)
-                    if (type == "TarefaAgendada") detail = detail.Split('\\', StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? detail;
-                    // Irreversíveis: mostra só o resumo antes do parêntese
-                    if (type == "Irreversivel" && detail.IndexOf('(') is > 0 and var cut) detail = detail[..cut].Trim();
-                    var pill = Pill((type == "Irreversivel" ? "Não reversível · " : "") + detail, type == "Irreversivel" ? "Warning" : "Accent");
-                    pill.Margin = new Thickness(0, 0, 6, 6);
-                    ((TextBlock)pill.Child).FontSize = 11;
-                    pills.Children.Add(pill);
-                }
-                backupPanel.Children.Add(pills);
+                // Um bloco por ajuste: o que ele mudou e um botão para desfazer só ele.
+                // Backups de versões antigas não sabem de qual ajuste veio cada item e só voltam juntos.
+                foreach (var group in items.GroupBy(i => i.TryGetProperty("Etapa", out var e) && e.ValueKind == JsonValueKind.String ? e.GetString() : null))
+                    backupPanel.Children.Add(BackupStepRow(group.Key, group.ToArray()));
             }
             else
             {

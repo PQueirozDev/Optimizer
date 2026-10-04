@@ -82,7 +82,9 @@ public partial class MainWindow
         var headText = new StackPanel { Margin = new Thickness(18, 0, 16, 0), VerticalAlignment = VerticalAlignment.Center };
         var t = Label(title, 18); t.Margin = new Thickness(0, 0, 0, 4);
         headText.Children.Add(t);
-        var d = Label(selectedSteps is null ? description : $"{selectedSteps.Count} ajustes selecionados. Um ponto de restauração é criado antes de qualquer alteração.", 12.5, true); d.Margin = new Thickness(0);
+        var d = Label(selectedSteps is null ? description
+            : operation == "reverter" ? "Desfazendo só este ajuste: " + string.Join(", ", selectedSteps) + ". O restante do backup continua guardado."
+            : $"{selectedSteps.Count} ajustes selecionados. Um ponto de restauração é criado antes de qualquer alteração.", 12.5, true); d.Margin = new Thickness(0);
         headText.Children.Add(d);
         head.Children.Add(headText);
         var progress = new ProgressBar { IsIndeterminate = true, Height = 5, Margin = new Thickness(0, 18, 0, 0) };

@@ -131,7 +131,7 @@ public partial class App : Application
         try
         {
             var config = new Services.ConfigService().Config;
-            Services.Translator.IsEnglish = string.Equals(config.Language, "en", StringComparison.OrdinalIgnoreCase);
+            Services.Translator.Language = Services.LocalizationService.Normalize(config.Language);
             // Aparência aplicada antes de qualquer janela abrir: sem "piscar" o tema padrão
             Services.AppearanceService.Apply(Services.ConfigService.EffectiveAppearance(config));
         }
@@ -152,7 +152,7 @@ public partial class App : Application
             licensed = licenseService.TryGetActiveLicense(out activeLicense, out licenseError);
         if (!licensed)
         {
-            StartupSplash.Close();
+            _ = StartupSplash.Close(immediate: true);
             // Com uma chave salva que não vale mais (expirou, outro PC...), a tela de ativação explica o motivo
             var activation = new ActivationWindow(licenseService, licenseService.HasStoredKey ? licenseError : null);
             if (activation.ShowDialog() != true)
@@ -163,7 +163,7 @@ public partial class App : Application
         }
         if (!licenseService.TryGetActiveLicense(out activeLicense, out _) || activeLicense is null)
         {
-            StartupSplash.Close();
+            _ = StartupSplash.Close(immediate: true);
             Shutdown();
             return;
         }

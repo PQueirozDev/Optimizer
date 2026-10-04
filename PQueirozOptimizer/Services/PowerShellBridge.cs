@@ -9,7 +9,10 @@ namespace PQueirozOptimizer.Services;
 /// <summary>O que uma etapa faz com o sistema, para a tela de revisão avisar antes de aplicar.</summary>
 public enum StepEffect { Backup, Irreversible, OneOff }
 
-public sealed record OperationStep(string Name, StepEffect Effect);
+/// <summary>Quanto o ajuste pode atrapalhar algo que o usuário usa (marcado no script com Risco = "..." ou "# risco: ...").</summary>
+public enum StepRisk { Safe, Moderate, High }
+
+public sealed record OperationStep(string Name, StepEffect Effect, StepRisk Risk = StepRisk.Safe);
 
 public sealed class PowerShellBridge
 {
@@ -73,13 +76,28 @@ public sealed class PowerShellBridge
             // O efeito vem do código da própria etapa (do nome dela até o início da próxima)
             var code = body[matches[i].Index..(i + 1 < matches.Count ? matches[i + 1].Index : body.Length)];
             if (operation == "gamerservicos" && ChangesServices(code)) continue; // sem parar serviços: etapa de serviço não aparece (o script também bloqueia)
-            steps.Add(new OperationStep(name, ClassifyStep(code)));
+            if (!SystemConditions.Satisfies(Marker(code, "requer"))) continue; // não se aplica a este PC (Windows, GPU, desktop...)
+            steps.Add(new OperationStep(name, ClassifyStep(code), ClassifyRisk(code)));
         }
         return steps;
     }
 
     /// <summary>Etapa que para, desativa ou muda o tipo de início de algum serviço.</summary>
     public static bool ChangesServices(string code) => Regex.IsMatch(code, @"\b(Stop-Service|Set-Service|Suspend-Service|Desativar-Servico)\b", RegexOptions.IgnoreCase);
+
+    /// <summary>Valor de um marcador da etapa: <c>Nome = "valor"</c> na tabela ou <c># nome: valor</c> no bloco.</summary>
+    public static string? Marker(string code, string name)
+    {
+        var match = Regex.Match(code, $@"(?:\b{name}\s*=\s*""([^""]+)""|#\s*{name}:\s*([^\r\n]+))", RegexOptions.IgnoreCase);
+        return !match.Success ? null : (match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value).Trim();
+    }
+
+    public static StepRisk ClassifyRisk(string code) => Marker(code, "risco")?.ToLowerInvariant() switch
+    {
+        "alto" => StepRisk.High,
+        "moderado" => StepRisk.Moderate,
+        _ => StepRisk.Safe,
+    };
 
     public static StepEffect ClassifyStep(string code) =>
         Regex.IsMatch(code, @"Registrar-Irreversivel|Remove-Item|Remove-Appx|cleanmgr", RegexOptions.IgnoreCase) ? StepEffect.Irreversible

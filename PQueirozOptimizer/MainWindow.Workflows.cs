@@ -117,7 +117,7 @@ public partial class MainWindow
     }
 
     /// <summary>Linha selecionável (checkbox) com título, descrição e etiqueta de impacto.</summary>
-    private Border ChoiceRow(CheckBox check, string title, string detail, string pill, string tone)
+    private Border ChoiceRow(CheckBox check, string title, string detail, string pill, string tone, string? riskPill = null, string riskTone = "Success")
     {
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -133,8 +133,10 @@ public partial class MainWindow
             text.Children.Add(d);
         }
         grid.Children.Add(text);
-        var badge = Pill(pill, tone); badge.Margin = new Thickness(12, 0, 0, 0);
-        Grid.SetColumn(badge, 1); grid.Children.Add(badge);
+        var badges = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
+        if (riskPill != null) { var risk = Pill(riskPill, riskTone); risk.Margin = new Thickness(0, 0, 6, 0); badges.Children.Add(risk); }
+        badges.Children.Add(Pill(pill, tone));
+        Grid.SetColumn(badges, 1); grid.Children.Add(badges);
         check.Content = grid;
         check.SetResourceReference(StyleProperty, "SwitchCheckBox");
         check.HorizontalContentAlignment = HorizontalAlignment.Stretch;
@@ -189,7 +191,7 @@ public partial class MainWindow
                 "Um ponto de restauração é criado antes dos ajustes; se ele falhar, nada é alterado. Alterações de energia, registro e serviços têm backup e podem ser revertidas em “Atividade e reversão”."));
             var notice = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
             notice.Children.Add(GlyphIcon(Glyphs.Warning, 13, "WarningBrush"));
-            var noticeText = Label("Remoções de apps e arquivos não são desfeitas pelo backup. Alguns ajustes só valem depois de reiniciar o Windows.", 12, true);
+            var noticeText = Label("Remoções de apps e arquivos não são desfeitas pelo backup. Alguns ajustes só valem depois de reiniciar o Windows. Cada ajuste mostra o risco: Seguro, Moderado ou Arriscado. Ajustes que não se aplicam a este PC ficam ocultos.", 12, true);
             noticeText.Margin = new Thickness(8, 0, 0, 0);
             notice.Children.Add(noticeText);
             intro.Children.Add(notice);
@@ -204,9 +206,15 @@ public partial class MainWindow
                     StepEffect.OneOff => ("Ação pontual", "Info", "Não altera configurações, então não precisa de backup."),
                     _ => ("Com backup", "Success", ""),
                 };
+                var (riskPill, riskTone, riskDetail) = step.Risk switch
+                {
+                    StepRisk.High => ("Arriscado", "Danger", "Pode desligar algo que você usa; aplique só se souber que não precisa."),
+                    StepRisk.Moderate => ("Moderado", "Warning", "Pode mudar algum comportamento do Windows; revise antes."),
+                    _ => ("Seguro", "Success", ""),
+                };
                 var check = new CheckBox { Tag = step.Name, IsChecked = false };
                 checks.Add(check);
-                root.Children.Add(ChoiceRow(check, step.Name, detail, pill, tone));
+                root.Children.Add(ChoiceRow(check, step.Name, string.Join(" ", new[] { riskDetail, detail }.Where(s => s.Length > 0)), pill, tone, riskPill, riskTone));
             }
 
             var selectedLabel = Label("Nenhum ajuste selecionado", 13, true);
@@ -265,8 +273,9 @@ public partial class MainWindow
             var choices = new List<(CheckBox Check, CleanCategory Category)>();
             foreach (var category in categories)
             {
-                var check = new CheckBox { IsChecked = category.Files.Count > 0, IsEnabled = category.Files.Count > 0 };
-                root.Children.Add(ChoiceRow(check, category.Name, $"{category.Files.Count} arquivos · {category.Root}", $"{category.Bytes / 1048576d:N1} MB", category.Files.Count > 0 ? "Accent" : "Success"));
+                var check = new CheckBox { IsChecked = category.Count > 0 && !category.OptIn, IsEnabled = category.Count > 0 };
+                var detail = category.IsRecycleBin ? $"{category.Count} itens · esvaziada de uma vez, em todas as unidades" : $"{category.Count} arquivos · {category.Root}";
+                root.Children.Add(ChoiceRow(check, category.Name, detail, $"{category.Bytes / 1048576d:N1} MB", category.Count > 0 ? "Accent" : "Success"));
                 choices.Add((check, category));
             }
             var total = Label("", 13, true);
@@ -276,7 +285,7 @@ public partial class MainWindow
             {
                 var selected = choices.Where(c => c.Check.IsChecked == true).ToList();
                 total.Text = $"Selecionado: {selected.Sum(c => c.Category.Bytes) / 1048576d:N1} MB";
-                clean.IsEnabled = selected.Any(c => c.Category.Files.Count > 0);
+                clean.IsEnabled = selected.Any(c => c.Category.Count > 0);
             }
             foreach (var (check, _) in choices) { check.Checked += (_, _) => Refresh(); check.Unchecked += (_, _) => Refresh(); }
             Refresh();

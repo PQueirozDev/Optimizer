@@ -167,6 +167,13 @@ public sealed class AutorunsService
 
     private void SetTaskEnabled(AutorunEntry entry, bool enabled)
     {
+        WithTask(entry, (_, task, _) => task.Enabled = enabled);
+        _log.Write("SUCCESS", $"Inicialização: {entry.Name} {(enabled ? "ativado" : "desativado")}");
+    }
+
+    /// <summary>Abre a tarefa no Agendador (pasta, tarefa e nome) e roda a ação, liberando o COM no fim.</summary>
+    private static void WithTask(AutorunEntry entry, Action<dynamic, dynamic, string> action)
+    {
         var type = Type.GetTypeFromProgID("Schedule.Service") ?? throw new InvalidOperationException("O Agendador de Tarefas não está disponível.");
         dynamic service = Activator.CreateInstance(type)!;
         try
@@ -174,12 +181,33 @@ public sealed class AutorunsService
             service.Connect();
             var cut = entry.Key.LastIndexOf('\\');
             var folder = service.GetFolder(cut <= 0 ? "\\" : entry.Key[..cut]);
-            var task = folder.GetTask(entry.Key[(cut + 1)..]);
-            task.Enabled = enabled;
+            var name = entry.Key[(cut + 1)..];
+            action(folder, folder.GetTask(name), name);
         }
         finally { Marshal.FinalReleaseComObject(service); }
-        _log.Write("SUCCESS", $"Inicialização: {entry.Name} {(enabled ? "ativado" : "desativado")}");
     }
+
+    /// <summary>Executa a tarefa agora, como o "Executar" do Agendador de Tarefas.</summary>
+    public Task RunTaskAsync(AutorunEntry entry) => Task.Run(() =>
+    {
+        WithTask(entry, (_, task, _) => task.Run(null));
+        _log.Write("SUCCESS", $"Tarefa executada: {entry.Key}");
+    });
+
+    /// <summary>Encerra as execuções em andamento da tarefa.</summary>
+    public Task StopTaskAsync(AutorunEntry entry) => Task.Run(() =>
+    {
+        WithTask(entry, (_, task, _) => task.Stop(0));
+        _log.Write("SUCCESS", $"Tarefa parada: {entry.Key}");
+    });
+
+    /// <summary>Exclui a tarefa. Só para tarefas de programas: as do Windows não podem ser excluídas por aqui.</summary>
+    public Task DeleteTaskAsync(AutorunEntry entry) => Task.Run(() =>
+    {
+        if (entry.Category != AutorunCategory.Tasks || IsWindowsEntry(entry)) throw new InvalidOperationException("Tarefas do Windows não podem ser excluídas; desative-as em vez disso.");
+        WithTask(entry, (folder, _, name) => folder.DeleteTask(name, 0));
+        _log.Write("SUCCESS", $"Tarefa excluída: {entry.Key}");
+    });
     #endregion
 
     #region Serviços

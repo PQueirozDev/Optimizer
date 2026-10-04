@@ -97,12 +97,17 @@ $script:RegistroPermitido = @(
     "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search",
     "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System",
     "HKCU:\Software\Policies\Microsoft\Windows\WindowsCopilot",
-    "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot"
+    "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot",
+    "HKCU:\Software\Policies\Microsoft\Windows\WindowsAI",
+    "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy",
+    "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power"
 )
 # Chaves que dependem do hardware (ID do dispositivo PCI) e por isso nao cabem numa lista fixa.
 # Cada padrao so libera os valores listados para ele.
 $script:RegistroPermitidoPadroes = @(
-    @{ Padrao = '^HKLM:\\SYSTEM\\CurrentControlSet\\Enum\\PCI\\VEN_[0-9A-Fa-f]{4}&DEV_[0-9A-Fa-f]{4}[^\\]*\\[^\\]+\\Device Parameters\\Interrupt Management\\MessageSignaledInterruptProperties$'; Nomes = @("MSISupported") }
+    @{ Padrao = '^HKLM:\\SYSTEM\\CurrentControlSet\\Enum\\PCI\\VEN_[0-9A-Fa-f]{4}&DEV_[0-9A-Fa-f]{4}[^\\]*\\[^\\]+\\Device Parameters\\Interrupt Management\\MessageSignaledInterruptProperties$'; Nomes = @("MSISupported") },
+    # Adaptadores de video (classe Display): so o ULPS das placas AMD
+    @{ Padrao = '^HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Class\\\{4d36e968-e325-11ce-bfc1-08002be10318\}\\\d{4}$'; Nomes = @("EnableUlps") }
 )
 $script:ServicosPermitidos = @(
     "PushToInstall", "SysMain", "WSearch", "DiagTrack", "dmwappushservice",
@@ -122,6 +127,8 @@ $script:RunKeysPermitidas = @(
 )
 $script:SnapshotAtual = @()
 $script:SnapshotNome  = ""
+# Ajuste em execucao: cada item do backup guarda de qual ajuste veio, para poder ser desfeito sozinho
+$script:EtapaAtual    = $null
 $script:ContAplicados = 0
 $script:ContPulados   = 0
 $script:ContFalhas    = 0
@@ -356,6 +363,7 @@ function Test-ItemPermitido($item) {
         "PlanoEnergia"   { return "$($item.GuidAnterior)" -match '^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$' }
         "TarefaAgendada" { return "$($item.Nome)" -match '^\\Microsoft\\Windows\\[A-Za-z0-9 .\\-]+$' }
         "OneDrive"       { return $script:InstaladoresOneDrive -contains $item.Caminho }
+        "Hibernacao"     { return $true }
         "Irreversivel"   { return $true }
         default          { return $false }
     }
@@ -395,6 +403,7 @@ function Capturar-Registro($caminho, $nome) {
     }
     $script:SnapshotAtual += [PSCustomObject]@{
         Tipo          = "Registro"
+        Etapa         = $script:EtapaAtual
         Caminho       = $caminho
         Nome          = $nome
         Existia       = $existia
@@ -418,6 +427,7 @@ function Capturar-Servico($nomeServico) {
         }
         $script:SnapshotAtual += [PSCustomObject]@{
             Tipo                = "Servico"
+            Etapa               = $script:EtapaAtual
             Nome                = $nomeServico
             StartupTypeAnterior = $tipo
             StatusAnterior      = $svc.Status.ToString()
@@ -433,6 +443,7 @@ function Capturar-PlanoEnergia {
     if ($atual -match "([0-9a-fA-F-]{36})") {
         $script:SnapshotAtual += [PSCustomObject]@{
             Tipo         = "PlanoEnergia"
+            Etapa        = $script:EtapaAtual
             GuidAnterior = $matches[1]
         }
     } else { throw 'Nao foi possivel capturar o plano de energia atual.' }
@@ -448,6 +459,7 @@ function Capturar-TarefaAgendada($nomeTarefa) {
     if (Ja-Capturado "TarefaAgendada" $nomeTarefa) { return $true }
     $script:SnapshotAtual += [PSCustomObject]@{
         Tipo = "TarefaAgendada"
+        Etapa = $script:EtapaAtual
         Nome = $nomeTarefa
         HabilitadaAnterior = "$($tarefa.State)" -ne "Disabled"
     }
@@ -461,7 +473,19 @@ function Capturar-OneDrive($caminhoInstalador) {
     if (Ja-Capturado "OneDrive" $caminhoInstalador) { return }
     $script:SnapshotAtual += [PSCustomObject]@{
         Tipo    = "OneDrive"
+        Etapa   = $script:EtapaAtual
         Caminho = $caminhoInstalador
+    }
+    Salvar-Snapshot
+}
+
+# Guarda que a hibernacao estava ligada: a reversao a religa com "powercfg /h on", que recria o hiberfil.sys
+function Capturar-Hibernacao {
+    if (Ja-Capturado "Hibernacao" "Hibernacao") { return }
+    $script:SnapshotAtual += [PSCustomObject]@{
+        Tipo  = "Hibernacao"
+        Etapa = $script:EtapaAtual
+        Nome  = "Hibernacao"
     }
     Salvar-Snapshot
 }
@@ -471,6 +495,7 @@ function Registrar-Irreversivel($descricao) {
     if (@($script:SnapshotAtual | Where-Object { $_.Tipo -eq "Irreversivel" -and $_.Descricao -eq $descricao }).Count -gt 0) { return }
     $script:SnapshotAtual += [PSCustomObject]@{
         Tipo      = "Irreversivel"
+        Etapa     = $script:EtapaAtual
         Descricao = $descricao
     }
     Salvar-Snapshot
@@ -485,6 +510,7 @@ function Executar-Etapas($atividade, $etapas) {
         if ($UiMode -and $atividade -ne 'Ponto de restauracao' -and $null -ne $script:SelectedSteps -and $etapa.Nome -notin $script:SelectedSteps) {
             $script:ContPulados++; Write-Host "[IGNORADA] $($etapa.Nome)"; continue
         }
+        $script:EtapaAtual = $etapa.Nome
         $percent = [Math]::Round(($i / $total) * 100)
         Write-Progress -Activity $atividade -Status "[$i/$total] $($etapa.Nome)" -PercentComplete $percent
         $sucesso = $true
@@ -514,6 +540,7 @@ function Executar-Se-Confirmado($pergunta, $nomeEtapa, $acao, $modoRapido = $fal
         $aplicar = Confirmar $pergunta
     }
     if ($aplicar) {
+        $script:EtapaAtual = $nomeEtapa
         $sucesso = $true
         Try {
             $ErrorActionPreference = 'Stop'
@@ -659,6 +686,17 @@ function Otimizar-Padrao {
         @{ Nome = "Limitando o upload de atualizacoes a rede local (Delivery Optimization)"; Acao = {
                 # 1 = compartilha atualizacoes somente com PCs da mesma rede, nunca com a internet
                 Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization" "DODownloadMode" 1
+            } }
+        @{ Nome = "Desativando a inicializacao rapida (Fast Startup)"; Acao = {
+                # Com ela ligada o "Desligar" so hiberna o kernel: drivers e atualizacoes nao reiniciam de verdade
+                Set-PoliticaDword "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" "HiberbootEnabled" 0
+            } }
+        @{ Nome = "Desativando a hibernacao (libera o espaco do hiberfil.sys)"; Risco = "moderado"; Requer = "desktop"; Acao = {
+                # Em desktop a hibernacao quase nao e usada e o hiberfil.sys ocupa ate 40% da RAM no disco
+                $ligada = (Get-ItemProperty -LiteralPath "HKLM:\SYSTEM\CurrentControlSet\Control\Power" -Name HibernateEnabled -ErrorAction SilentlyContinue).HibernateEnabled
+                if ($ligada -eq 0) { Write-Host "[INFO] A hibernacao ja esta desativada; nada a fazer."; return }
+                Capturar-Hibernacao
+                powercfg /h off
             } }
     )
     Executar-Etapas "Otimizacao Padrao" $etapas
@@ -902,7 +940,7 @@ function Otimizar-Gamer {
                 Capturar-Registro "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" "Win32PrioritySeparation"
                 Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" "Win32PrioritySeparation" 38 -Type DWord
             } }
-        @{ Nome = "Reduzindo latencia de rede/multimidia"; Acao = {
+        @{ Nome = "Reduzindo latencia de rede/multimidia"; Risco = "moderado"; Acao = {
                 $multimediaPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile"
                 Garantir-Chave $multimediaPath
                 Capturar-Registro $multimediaPath "SystemResponsiveness"
@@ -917,7 +955,7 @@ function Otimizar-Gamer {
                 Capturar-Registro $gamesPath "Scheduling Category"
                 Set-ItemProperty $gamesPath "Scheduling Category" "High" -Type String
             } }
-        @{ Nome = "Desativando limitacao de rede (Throttling)"; Acao = {
+        @{ Nome = "Desativando limitacao de rede (Throttling)"; Risco = "moderado"; Acao = {
                 Capturar-Registro "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" "NetworkThrottlingIndex"
                 Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" "NetworkThrottlingIndex" 0xffffffff -Type DWord
             } }
@@ -934,7 +972,7 @@ function Otimizar-Gamer {
                 Capturar-Registro "HKCU:\Software\Microsoft\GameBar" "AutoGameModeEnabled"
                 Set-ItemProperty "HKCU:\Software\Microsoft\GameBar" "AutoGameModeEnabled" 1 -Type DWord
             } }
-        @{ Nome = "Habilitando GPU Scheduling por hardware"; Acao = {
+        @{ Nome = "Habilitando GPU Scheduling por hardware"; Risco = "moderado"; Acao = {
                 if (-not (Suporta-GpuScheduling)) {
                     Write-Host "[INFO] GPU/driver sem suporte a agendamento por hardware (HAGS); ajuste ignorado."
                     return
@@ -942,7 +980,7 @@ function Otimizar-Gamer {
                 Capturar-Registro "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" "HwSchMode"
                 Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" "HwSchMode" 2 -Type DWord
             } }
-        @{ Nome = "Ativando modo MSI (interrupcoes por mensagem) na placa de video"; Acao = {
+        @{ Nome = "Ativando modo MSI (interrupcoes por mensagem) na placa de video"; Risco = "alto"; Acao = {
                 # Interrupcoes por mensagem (MSI) evitam o compartilhamento de linhas IRQ e reduzem a latencia DPC da GPU
                 $gpus = @(Obter-GpusPCI)
                 if ($gpus.Count -eq 0) { Write-Host "[INFO] Nenhuma placa de video PCI encontrada; ajuste ignorado."; return }
@@ -955,7 +993,7 @@ function Otimizar-Gamer {
                 }
             } }
         @{ Nome = "Ajustando efeitos visuais p/ desempenho"; Acao = { Aplicar-EfeitosVisuaisDesempenho } }
-        @{ Nome = "Reduzindo latencia de mouse, teclado e USB"; Acao = {
+        @{ Nome = "Reduzindo latencia de mouse, teclado e USB"; Risco = "moderado"; Acao = {
                 $mousePath = "HKCU:\Control Panel\Mouse"
                 Capturar-Registro $mousePath "MouseSpeed"
                 Capturar-Registro $mousePath "MouseThreshold1"
@@ -979,7 +1017,7 @@ function Otimizar-Gamer {
                     Write-Host "[INFO] Suspensao seletiva de USB mantida: ela so e alterada junto com o plano de energia do otimizador."
                 }
             } }
-        @{ Nome = "Ajustando SysMain e Windows Search";   Acao = {
+        @{ Nome = "Ajustando SysMain e Windows Search"; Risco = "moderado";   Acao = {
                 # Em HD o SysMain (Superfetch) acelera a abertura de programas; so mexemos em SSD
                 if ((Obter-TipoMidia $env:SystemDrive.TrimEnd(":")) -ne "SSD") {
                     Write-Host "[INFO] Disco do sistema nao e SSD; SysMain mantido."
@@ -999,7 +1037,7 @@ function Otimizar-Gamer {
         @{ Nome = "Otimizando unidades de disco";         Acao = {
                 Otimizar-Unidades
             } }
-        @{ Nome = "Aplicando politicas do Editor de Politica de Grupo (diagnostico, nuvem, IA e Push)"; Acao = { Aplicar-PoliticasAvancadas } }
+        @{ Nome = "Aplicando politicas do Editor de Politica de Grupo (diagnostico, nuvem, IA e Push)"; Risco = "moderado"; Acao = { Aplicar-PoliticasAvancadas } }
         @{ Nome = "Ativando otimizacoes para jogos em janela"; Acao = {
                 # Recurso do Windows 11 que reduz a latencia de jogos DirectX 10/11 em janela/borderless
                 if ([Environment]::OSVersion.Version.Build -lt 22000) { Write-Host "[INFO] Recurso disponivel apenas no Windows 11; ajuste ignorado."; return }
@@ -1011,10 +1049,24 @@ function Otimizar-Gamer {
                 $novo = (($partes + "SwapEffectUpgradeEnable=1") -join ';') + ';'
                 Set-ItemProperty -LiteralPath $caminho -Name "DirectXUserGlobalSettings" -Value $novo -Type String
             } }
-        @{ Nome = "Desativando limitacao de energia de processos (Power Throttling)"; Acao = {
+        @{ Nome = "Desativando limitacao de energia de processos (Power Throttling)"; Risco = "moderado"; Requer = "desktop"; Acao = {
                 # Em notebooks isso reduz a bateria; so aplicamos em desktops
                 if (Get-CimInstance Win32_Battery -ErrorAction SilentlyContinue) { Write-Host "[INFO] Notebook detectado; Power Throttling mantido para preservar a bateria."; return }
                 Set-PoliticaDword "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling" "PowerThrottlingOff" 1
+            } }
+        @{ Nome = "Desativando o ULPS da placa de video AMD"; Risco = "moderado"; Requer = "amd"; Acao = {
+                # ULPS desliga a GPU em repouso profundo; acordar dela causa engasgos e telas pretas em alguns PCs
+                $classe = "HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}"
+                $ajustados = 0
+                foreach ($chave in Get-ChildItem -LiteralPath $classe -ErrorAction SilentlyContinue | Where-Object { $_.PSChildName -match '^\d{4}$' }) {
+                    $props = Get-ItemProperty -LiteralPath $chave.PSPath -ErrorAction SilentlyContinue
+                    if ("$($props.ProviderName)" -notmatch 'AMD|ATI|Advanced Micro Devices' -or $null -eq $props.EnableUlps) { continue }
+                    $caminho = "$classe\$($chave.PSChildName)"
+                    Capturar-Registro $caminho "EnableUlps"
+                    Set-ItemProperty -LiteralPath $caminho -Name "EnableUlps" -Value 0 -Type DWord -Force -ErrorAction Stop
+                    $ajustados++
+                }
+                if ($ajustados -eq 0) { Write-Host "[INFO] Nenhuma placa AMD com ULPS encontrada; nada a fazer." }
             } }
     )
     Executar-Etapas "Otimizacao Avancada" $etapas
@@ -1081,6 +1133,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Desativar servicos de telemetria e diagnostico (DiagTrack, WerSvc, PcaSvc, etc)?" `
         "Telemetria e diagnostico desativados" `
         {
+            # risco: moderado
             $services = @("DiagTrack", "dmwappushservice", "diagnosticshub.standardcollector.service", "WerSvc", "PcaSvc")
             foreach ($service in $services) {
                 Desativar-Servico $service
@@ -1099,6 +1152,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Remover Widgets / Windows Web Experience?" `
         "Widgets removidos" `
         {
+            # requer: win11
             Registrar-Irreversivel "Widgets/Web Experience (app removido - reinstale pela Microsoft Store se precisar)"
             Get-AppxPackage -AllUsers | Where-Object {
                 $_.Name -like "*WebExperience*" -or $_.Name -like "*WindowsWidgets*"
@@ -1109,6 +1163,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Remover o OneDrive?" `
         "OneDrive removido" `
         {
+            # risco: moderado
             $desinstalador = Obter-DesinstaladorOneDrive
             if (-not $desinstalador) { Write-Host "[INFO] OneDrive nao esta instalado; nada a fazer."; return }
             # O instalador do Windows (System32/SysWOW64) continua no sistema e permite reinstalar pela reversao;
@@ -1128,6 +1183,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Desativar o servico de Impressao (Spooler)? So faca isso se NAO usa impressora." `
         "Servico de impressao desativado" `
         {
+            # risco: alto
             Desativar-Servico "Spooler"
         } $modoRapido
 
@@ -1135,6 +1191,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Desativar o servico de Bluetooth? So faca isso se NAO usa Bluetooth." `
         "Bluetooth desativado" `
         {
+            # risco: alto
             Desativar-Servico "bthserv"
         } $modoRapido
 
@@ -1173,6 +1230,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Desativar servicos adicionais de diagnostico (WdiServiceHost, WdiSystemHost)?" `
         "Servicos adicionais de diagnostico desativados" `
         {
+            # risco: moderado
             $diagnosticServices = @("WdiServiceHost", "WdiSystemHost")
             foreach ($service in $diagnosticServices) {
                 Desativar-Servico $service
@@ -1206,6 +1264,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Remover apps pre-instalados desnecessarios (Bing News/Weather, Solitaire, Teams, Skype, YourPhone, etc)?" `
         "Apps desnecessarios removidos" `
         {
+            # risco: moderado
             Registrar-Irreversivel "Apps pre-instalados removidos (Bing News/Weather, Solitaire, Teams, Skype, YourPhone, etc - reinstale pela Microsoft Store se precisar)"
             $removeApps = @(
                 "*BingNews*", "*BingWeather*", "*GetHelp*", "*Getstarted*",
@@ -1254,6 +1313,34 @@ function Otimizar-Debloat {
             Set-PoliticaDword "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "ShowCopilotButton" 0
         } $modoRapido
 
+    # 14b. Recall (capturas periodicas da tela para a busca com IA)
+    Executar-Se-Confirmado "Desativar o Recall (capturas da tela para a IA)?" `
+        "Recall desativado" `
+        {
+            # requer: win11-24h2
+            Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI" "DisableAIDataAnalysis" 1
+            Set-PoliticaDword "HKCU:\Software\Policies\Microsoft\Windows\WindowsAI" "DisableAIDataAnalysis" 1
+            Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI" "AllowRecallEnablement" 0
+        } $modoRapido
+
+    # 14c. Click To Do (sobreposicao de IA que analisa o que esta na tela)
+    Executar-Se-Confirmado "Desativar o Click To Do?" `
+        "Click To Do desativado" `
+        {
+            # requer: win11-24h2
+            Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI" "DisableClickToDo" 1
+            Set-PoliticaDword "HKCU:\Software\Policies\Microsoft\Windows\WindowsAI" "DisableClickToDo" 1
+        } $modoRapido
+
+    # 14d. Apps da Microsoft Store rodando em segundo plano
+    Executar-Se-Confirmado "Impedir que apps da Microsoft Store rodem em segundo plano?" `
+        "Apps em segundo plano bloqueados" `
+        {
+            # risco: moderado
+            # 2 = negar para todos os apps (apps como WhatsApp da Store deixam de notificar com a janela fechada)
+            Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsRunInBackground" 2
+        } $modoRapido
+
     # 15. Efeitos visuais
     Executar-Se-Confirmado "Ajustar efeitos visuais para melhor desempenho?" `
         "Efeitos visuais ajustados" `
@@ -1265,6 +1352,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Desativar a indexacao do Windows Search?" `
         "Indexacao do Windows Search desativada" `
         {
+            # risco: moderado
             Desativar-Servico "WSearch"
         } $modoRapido
 
@@ -1331,12 +1419,16 @@ function Reverter-UltimaOtimizacao {
     Write-Host ""
     $revertidos = 0
     $pendentes = @()
+    # Com ajustes escolhidos na tela (SelectedSteps), so os itens deles sao revertidos; o resto continua no backup
+    $parcial = $UiMode -and $null -ne $script:SelectedSteps
+    $mantidos = @()
     $falhas = 0
     $naoReversiveis = @()
 
     # Percorre de tras para frente (ordem inversa a de aplicacao)
     for ($i = $itensArray.Count - 1; $i -ge 0; $i--) {
         $item = $itensArray[$i]
+        if ($parcial -and $item.Etapa -notin $script:SelectedSteps) { $mantidos = @($item) + $mantidos; continue }
         if (-not (Test-ItemPermitido $item)) {
             Write-Host "[IGNORADO] Item de backup nao reconhecido ou fora da lista permitida: $($item.Tipo) $($item.Caminho) $($item.Nome)"
             continue
@@ -1399,6 +1491,12 @@ function Reverter-UltimaOtimizacao {
                         throw 'OneDrive: instalador nao encontrado'
                     }
                 }
+                "Hibernacao" {
+                    powercfg /h on
+                    if ($LASTEXITCODE -ne 0) { throw "Falha no powercfg: $LASTEXITCODE" }
+                    Write-Resultado $true "Hibernacao religada"
+                    $revertidos++
+                }
                 "Irreversivel" {
                     $naoReversiveis += $item.Descricao
                 }
@@ -1428,16 +1526,18 @@ function Reverter-UltimaOtimizacao {
     }
 
     $script:ContFalhas += $falhas
-    if ($falhas -gt 0) {
-        $script:SnapshotNome = $snapshot.Nome
-        $script:SnapshotAtual = @($pendentes)
-        Salvar-Snapshot
-    }
+    # O que nao foi revertido (falhou ou nao foi escolhido) continua no backup, na ordem original
+    $restantes = @($itensArray | Where-Object { $mantidos -contains $_ -or $pendentes -contains $_ })
 
-    # Arquiva o snapshot para nao tentar reverter a mesma acao duas vezes
+    # Arquiva o backup como estava antes desta reversao, para nao reverter a mesma acao duas vezes
     Try {
         $arquivoRevertido = Join-Path $script:SnapshotDir "revertido_$(Get-Date -Format 'yyyyMMdd_HHmmss').json"
-        if ($falhas -eq 0) { Move-Item -LiteralPath $script:SnapshotPath -Destination $arquivoRevertido -Force -ErrorAction Stop }
+        Copy-Item -LiteralPath $script:SnapshotPath -Destination $arquivoRevertido -Force -ErrorAction Stop
+        if ($restantes.Count -gt 0) {
+            $script:SnapshotNome = $snapshot.Nome
+            $script:SnapshotAtual = $restantes
+            Salvar-Snapshot
+        } else { Remove-Item -LiteralPath $script:SnapshotPath -Force -ErrorAction Stop }
         Limpar-HistoricoAntigo
     } Catch {
         Write-Host "[AVISO] Nao foi possivel arquivar o backup revertido: $($_.Exception.Message)"

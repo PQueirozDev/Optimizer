@@ -323,14 +323,14 @@ public partial class MainWindow
         langStack.Children.Add(langDesc);
 
         var langBtns = new WrapPanel();
-        var ptBtn = IconButton(Glyphs.Check, "Português (PT)", primary: !_loc.IsEnglish);
-        ptBtn.Click += (_, _) => ChangeLanguage("pt");
-
-        var enBtn = IconButton(Glyphs.Check, "English (EN)", primary: _loc.IsEnglish);
-        enBtn.Click += (_, _) => ChangeLanguage("en");
-
-        langBtns.Children.Add(ptBtn);
-        langBtns.Children.Add(enBtn);
+        foreach (var (code, name) in new[] { ("pt", "Português (PT)"), ("en", "English (EN)"), ("es", "Español (ES)") })
+        {
+            var button = IconButton(Glyphs.Check, name, primary: _loc.CurrentLanguage == code);
+            // Nome do idioma sempre na própria língua, nunca traduzido
+            if (button.Content is StackPanel { Children.Count: > 1 } content && content.Children[1] is TextBlock label) label.Tag = Translator.SystemDataTag;
+            button.Click += (_, _) => ChangeLanguage(code);
+            langBtns.Children.Add(button);
+        }
         langStack.Children.Add(langBtns);
 
         langSection.Child = langStack;

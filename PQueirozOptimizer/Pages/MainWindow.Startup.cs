@@ -276,6 +276,26 @@ public partial class MainWindow
         };
         var web = SmallAction(Glyphs.Search, "Pesquisar na internet");
         web.Click += (_, _) => OpenUrl("https://www.google.com/search?q=" + Uri.EscapeDataString($"{entry.Name} {Path.GetFileName(entry.ImagePath ?? "")}".Trim()));
+        if (entry.Category == AutorunCategory.Tasks)
+        {
+            // Tarefas agendadas: executar e parar como no Agendador; excluir só as de programas
+            var run = SmallAction(Glyphs.Play, "Executar agora");
+            run.Click += async (_, _) => await TaskActionAsync(entry, Autoruns.RunTaskAsync, "executada");
+            var stop = SmallAction(Glyphs.Stop, "Parar");
+            stop.Click += async (_, _) => await TaskActionAsync(entry, Autoruns.StopTaskAsync, "parada");
+            actions.Children.Add(run); actions.Children.Add(stop);
+            if (!entry.IsWindows)
+            {
+                var delete = SmallAction(Glyphs.Delete, "Excluir tarefa");
+                delete.Click += async (_, _) =>
+                {
+                    if (Msg($"Excluir a tarefa \"{entry.Name}\"?\n\nEla é apagada do Agendador de Tarefas e não volta pela reversão. Se só quer que ela pare de rodar, desligue o interruptor.",
+                            "Excluir tarefa agendada", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+                    if (await TaskActionAsync(entry, Autoruns.DeleteTaskAsync, "excluída")) { _autoruns?.Remove(entry); RefreshAutorunsList(); }
+                };
+                actions.Children.Add(delete);
+            }
+        }
         actions.Children.Add(folder); actions.Children.Add(jump); actions.Children.Add(web);
         Grid.SetColumn(actions, 5); grid.Children.Add(actions);
 
@@ -285,6 +305,23 @@ public partial class MainWindow
         else if (entry.Signature is SignatureStatus.NotSigned or SignatureStatus.NotVerified) row.SetResourceReference(Border.BackgroundProperty, "DangerSoftBrush");
         if (!entry.Enabled) foreach (UIElement part in new UIElement[] { icon, names, publisher, path }) part.Opacity = 0.5;
         return row;
+    }
+
+    /// <summary>Executa uma ação numa tarefa agendada e mostra o resultado; devolve se deu certo.</summary>
+    private async Task<bool> TaskActionAsync(AutorunEntry entry, Func<AutorunEntry, Task> action, string done)
+    {
+        try
+        {
+            await action(entry);
+            ShowToast("Tarefa agendada", $"{entry.Name}: {done}.");
+            return true;
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or COMException or InvalidOperationException or Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
+        {
+            _log.Write("ERROR", $"Tarefa agendada {entry.Key}: {ex.Message}");
+            ShowToast("Não foi possível", $"{entry.Name}: {ex.Message}", "Danger");
+            return false;
+        }
     }
 
     private static Button SmallAction(string glyph, string tip)

@@ -9,7 +9,8 @@ Aplicativo desktop para Windows, feito em C# + WPF (.NET 8), para otimização, 
 - Visão geral com as informações do sistema e uma nota de saúde do PC.
 - Otimizações revisadas item por item antes de aplicar: Versão Padrão, Versão Avançada (jogos), Debloat & Privacidade e manutenção do Windows (SFC, DISM, CHKDSK).
 - Ponto de restauração e backup antes dos ajustes, com reversão em um clique; operações longas podem ser canceladas.
-- Limpeza rápida de arquivos temporários.
+- Limpeza de arquivos temporários, sobras do Windows Update, despejos de travamento e lixeira, com o tamanho de cada categoria antes de limpar.
+- Personalizar Windows: barra de tarefas, Explorador, área de trabalho, teclado e mouse com liga/desliga aplicados na hora.
 - Inicialização no estilo do Autoruns: itens de logon, tarefas agendadas e serviços automáticos, com editor verificado, filtro dos itens do Windows e liga/desliga reversível.
 - Atalho de modo de energia na Área de Trabalho (recomendado para notebooks): troca entre eficiência, equilibrado, desempenho e os planos instalados sem pedir permissão de administrador.
 - Modo Jogo temporário: fecha programas em segundo plano, pausa serviços e ativa o plano de desempenho enquanto você joga, restaurando tudo ao desativar. Inclui perfis por jogo (GPU dedicada, tela cheia, prioridade), limpeza da memória em espera, runtimes via winget e avisos para Ryzen X3D.
@@ -24,7 +25,7 @@ Aplicativo desktop para Windows, feito em C# + WPF (.NET 8), para otimização, 
 - BIOS por grupos (XMP/EXPO, Resizable BAR, Spread Spectrum, PBO, C-States, virtualização), com instruções para ASUS e ASRock, e Win32 Priority no Modo Jogo.
 - Tutorial guiado na primeira abertura e tutoriais curtos por página, que podem ser revistos em Configurações.
 - Aparência personalizável: 9 temas (Escuro, OLED, Claro, Grafite, Oceano, Floresta, Ameixa, Areia e Automático, que segue o Windows), intensidade do roxo, densidade, tamanho dos cards, animações e janela translúcida (Windows 11), salvos em `%LocalAppData%\PQueirozOptimizer\config.json`.
-- Interface em português e inglês.
+- Interface em português, inglês e espanhol.
 
 ## Requisitos
 

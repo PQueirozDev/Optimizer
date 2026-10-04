@@ -89,6 +89,9 @@
        <RadioButton x:Name="NavTools" Tag="tools" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE90F;" Style="{StaticResource NavIcon}"/><TextBlock x:Name="NavToolsText" Text="Ferramentas" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
        </RadioButton>
+       <RadioButton x:Name="NavCustomize" Tag="customize" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
+        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE771;" Style="{StaticResource NavIcon}"/><TextBlock x:Name="NavCustomizeText" Text="Personalizar Windows" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+       </RadioButton>
        <RadioButton x:Name="NavHistory" Tag="history" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE81C;" Style="{StaticResource NavIcon}"/><TextBlock x:Name="NavHistoryText" Text="Atividade e reversão" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
        </RadioButton>

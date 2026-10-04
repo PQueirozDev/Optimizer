@@ -6,13 +6,19 @@ using System.Windows.Controls;
 namespace PQueirozOptimizer.Services;
 
 /// <summary>
-/// Tradução central português → inglês. O app é escrito em português; quando o idioma é
-/// inglês, todo TextBlock que aparece na tela (páginas, botões, dicas, listas e a saída do
+/// Tradução central do português para inglês ou espanhol. O app é escrito em português; com outro
+/// idioma ativo, todo TextBlock que aparece na tela (páginas, botões, dicas, listas e a saída do
 /// script) passa por aqui, inclusive quando o texto muda depois de exibido.
 /// </summary>
 public static partial class Translator
 {
-    public static bool IsEnglish { get; set; }
+    /// <summary>Idioma da tela: "pt" (original, sem tradução), "en" ou "es".</summary>
+    public static string Language { get; set; } = "pt";
+
+    public static bool IsEnglish { get => Language == "en"; set => Language = value ? "en" : "pt"; }
+
+    /// <summary>Há tradução a fazer (qualquer idioma que não o português).</summary>
+    private static bool Active => Language != "pt";
 
     /// <summary>Marca (Tag) de textos que vêm do sistema, como nomes de programas e caminhos: não são traduzidos.</summary>
     public const string SystemDataTag = "dado-do-sistema";
@@ -33,7 +39,7 @@ public static partial class Translator
 
     private static void OnLayoutUpdated(object? sender, EventArgs e)
     {
-        if (!IsEnglish || _scheduled) return;
+        if (!Active || _scheduled) return;
         _scheduled = true;
         Application.Current?.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Render, TranslateAllWindows);
     }
@@ -42,7 +48,7 @@ public static partial class Translator
     public static void TranslateAllWindows()
     {
         _scheduled = false;
-        if (!IsEnglish) return;
+        if (!Active) return;
         foreach (PresentationSource source in PresentationSource.CurrentSources)
         {
             // A tela de abertura roda em outra thread (e já chega traduzida): não pode ser tocada daqui
@@ -70,10 +76,10 @@ public static partial class Translator
         tb.SetValue(ProcessedProperty, translated);
     }
 
-    /// <summary>Traduz um texto do português para o inglês quando o idioma ativo é inglês.</summary>
+    /// <summary>Traduz um texto do português para o idioma ativo (inglês ou espanhol).</summary>
     public static string Tr(string? text)
     {
-        if (!IsEnglish || string.IsNullOrWhiteSpace(text)) return text ?? "";
+        if (!Active || string.IsNullOrWhiteSpace(text)) return text ?? "";
         return TranslateCore(text) ?? text;
     }
 
@@ -89,15 +95,25 @@ public static partial class Translator
 
     private static readonly Regex SymbolPrefix = new(@"^([^\p{L}\p{N}'""(\[]+)(.+)$", RegexOptions.Compiled);
 
+    /// <summary>Texto exato no dicionário do idioma ativo.</summary>
+    private static bool Lookup(string text, out string translated)
+    {
+        if (Language == "es") return SpanishExact.TryGetValue(text, out translated!);
+        return Exact.TryGetValue(text, out translated!) || GamingExact.TryGetValue(text, out translated!) || ExtrasExact.TryGetValue(text, out translated!)
+            || ParagonExact.TryGetValue(text, out translated!) || CustomizeExact.TryGetValue(text, out translated!);
+    }
+
     private static string? TranslateTrimmed(string core)
     {
-        if (Exact.TryGetValue(core, out var exact) || GamingExact.TryGetValue(core, out exact) || ExtrasExact.TryGetValue(core, out exact) || ParagonExact.TryGetValue(core, out exact)) return exact;
+        if (Lookup(core, out var exact)) return exact;
 
-        foreach (var (regex, build) in Patterns.Concat(GamingPatterns).Concat(ExtrasPatterns).Concat(ParagonPatterns))
-        {
-            var m = regex.Match(core);
-            if (m.Success) return build(m);
-        }
+        // Os padrões montam frases em inglês; em espanhol, texto dinâmico sem tradução exata fica em português
+        if (IsEnglish)
+            foreach (var (regex, build) in Patterns.Concat(GamingPatterns).Concat(ExtrasPatterns).Concat(ParagonPatterns).Concat(CustomizePatterns))
+            {
+                var m = regex.Match(core);
+                if (m.Success) return build(m);
+            }
 
         // Texto com vários trechos: "A · B", várias linhas, "A + B"
         foreach (var separator in new[] { "\n", " · ", " • ", " + ", " — " })
@@ -116,9 +132,9 @@ public static partial class Translator
 
         // "Rótulo: valor" em que só o rótulo é conhecido
         var colon = core.IndexOf(": ", StringComparison.Ordinal);
-        if (colon > 0 && (Exact.TryGetValue(core[..colon], out var label) || GamingExact.TryGetValue(core[..colon], out label) || ExtrasExact.TryGetValue(core[..colon], out label) || ParagonExact.TryGetValue(core[..colon], out label)))
+        if (colon > 0 && Lookup(core[..colon], out var label))
             return label + ": " + (TranslateCore(core[(colon + 2)..]) ?? core[(colon + 2)..]);
-        if (core.EndsWith(':') && Exact.TryGetValue(core[..^1], out var labelOnly)) return labelOnly + ":";
+        if (core.EndsWith(':') && Lookup(core[..^1], out var labelOnly)) return labelOnly + ":";
 
         return null;
     }

@@ -422,8 +422,13 @@ internal static class Program
             if (args.Contains("--videoshots")) return Media.VideoShots(root);
             var log = new ActivityLog(Path.Combine(root, "verification.log"));
             var bridge = new PowerShellBridge(log);
-            Assert(bridge.GetSteps("padrao").Count == 7, "Plano padrão contém 7 etapas");
-            Assert(bridge.GetSteps("gamer").Count == 17, "Plano avançado contém 17 etapas");
+            // Algumas etapas só aparecem quando se aplicam ao PC (desktop, GPU AMD, Windows 11 24H2...)
+            int If(string requirement) => SystemConditions.Satisfies(requirement) ? 1 : 0;
+            Assert(bridge.GetSteps("padrao").Count == 8 + If("desktop"), "Plano padrão contém 8 etapas (+ hibernação em desktop)");
+            Assert(bridge.GetSteps("gamer").Count == 16 + If("desktop") + If("amd"), "Plano avançado contém 16 etapas (+ Power Throttling em desktop e ULPS em AMD)");
+            Assert(PowerShellBridge.ClassifyRisk("@{ Nome = \"X\"; Risco = \"alto\"; Acao = {") == StepRisk.High && PowerShellBridge.ClassifyRisk("{\n    # risco: moderado\n") == StepRisk.Moderate && PowerShellBridge.ClassifyRisk("{ ipconfig /flushdns }") == StepRisk.Safe, "Risco lido da tabela, do comentário ou seguro por padrão");
+            Assert(bridge.GetSteps("gamer").First(s => s.Name.StartsWith("Ativando modo MSI")).Risk == StepRisk.High, "Modo MSI marcado como arriscado");
+            Assert(SystemConditions.Satisfies(null) && SystemConditions.Satisfies("desconhecida") && SystemConditions.Satisfies("win10") != SystemConditions.Satisfies("win11"), "Condições: vazia e desconhecida liberam; Windows 10 e 11 se excluem");
             var keepServices = bridge.GetSteps("gamerservicos");
             var gamerNames = bridge.GetSteps("gamer").Select(s => s.Name).ToHashSet();
             Console.WriteLine($"  Sem parar serviços: {keepServices.Count} de {gamerNames.Count} etapas (sem: {string.Join(", ", gamerNames.Except(keepServices.Select(s => s.Name)))})");
@@ -436,7 +441,7 @@ internal static class Program
             Assert(LicenseService.ExtractKey($"Sua chave:\n{sampleKey[..60]}\n{sampleKey[60..]}\nObrigado!") == sampleKey, "Chave extraída de mensagem com quebras de linha");
             Assert(LicenseService.ExtractKey("sem chave aqui") is null, "Texto sem chave é ignorado");
             Assert(!new LicenseService().TryActivate(sampleKey, out _, out _), "Chave com assinatura falsa é recusada");
-            Assert(bridge.GetSteps("debloat").Count == 19, "Plano debloat contém 19 etapas, limpeza usa análise separada");
+            Assert(bridge.GetSteps("debloat").Count == 19 + If("win11") + 2 * If("win11-24h2"), "Plano debloat contém 19 etapas (+ Widgets no Windows 11, Recall e Click To Do no 24H2), limpeza usa análise separada");
             // O aviso da tela de revisão vem do código da etapa, não de palavras do nome
             StepEffect Effect(string operation, string step) => bridge.GetSteps(operation).First(s => s.Name == step).Effect;
             Assert(Effect("debloat", "Pesquisa na web removida do menu Iniciar") == StepEffect.Backup, "Ajuste de registro com backup não é marcado como irreversível pelo nome");
@@ -689,14 +694,13 @@ internal static class Program
                 {
                     var palette = StartupSplash.CurrentPalette() with { Animations = false };
                     var splash = (Window)typeof(StartupSplash).GetMethod("Build", BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, new object[] { palette, "1.8.1", "Montando a interface..." })!;
-                    var bar = (FrameworkElement)typeof(StartupSplash).GetField("_bar", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!;
-                    bar.Width = 348 * 0.6;
+                    typeof(StartupSplash).GetMethod("SetRing", BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, new object[] { 0.6 });
                     var content = (FrameworkElement)splash.Content;
-                    var host = new System.Windows.Controls.Grid { Width = 468, Height = 296 };
+                    var host = new System.Windows.Controls.Grid { Width = 540, Height = 360 };
                     splash.Content = null; host.Children.Add(content);
                     host.SetResourceReference(System.Windows.Controls.Panel.BackgroundProperty, "BackgroundBrush");
-                    host.Measure(new Size(468, 296)); host.Arrange(new Rect(0, 0, 468, 296)); host.UpdateLayout();
-                    var bitmap = new RenderTargetBitmap(468, 296, 96, 96, PixelFormats.Pbgra32); bitmap.Render(host);
+                    host.Measure(new Size(540, 360)); host.Arrange(new Rect(0, 0, 540, 360)); host.UpdateLayout();
+                    var bitmap = new RenderTargetBitmap(540, 360, 96, 96, PixelFormats.Pbgra32); bitmap.Render(host);
                     var png = new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(bitmap));
                     using var stream = File.Create(Path.Combine(root, name + ".png")); png.Save(stream);
                     Console.WriteLine("RENDER " + name);

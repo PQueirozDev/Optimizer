@@ -97,7 +97,7 @@ public partial class MainWindow : Window
     }
 
     #region Window & Language Controls
-    private void LangButton_Click(object sender, RoutedEventArgs e) => ChangeLanguage(_loc.IsEnglish ? "pt" : "en");
+    private void LangButton_Click(object sender, RoutedEventArgs e) => ChangeLanguage(_loc.NextLanguage);
 
     /// <summary>
     /// Troca o idioma recriando a janela na mesma posição e página: assim todos os textos,
@@ -126,8 +126,8 @@ public partial class MainWindow : Window
     private void UpdateLanguageUi()
     {
         // Os demais textos fixos do layout são traduzidos pelo Translator ao serem exibidos
-        LangButton.Content = _loc.IsEnglish ? "EN" : "PT";
-        LangButton.ToolTip = _loc.T("Alternar idioma para inglês (EN)", "Switch language to Portuguese (PT)");
+        LangButton.Content = _loc.CurrentLanguage.ToUpperInvariant();
+        LangButton.ToolTip = _loc.NextLanguage switch { "en" => "Alternar idioma para inglês (EN)", "es" => "Switch language to Spanish (ES)", _ => "Cambiar el idioma a portugués (PT)" };
     }
 
     private void BtnMinimize_Click(object sender, RoutedEventArgs e)
@@ -207,13 +207,13 @@ public partial class MainWindow : Window
         StartupProfiler.Mark("window-loaded");
         PrepareIntroAnimation();
         var firstFrame = new TaskCompletionSource();
-        ContentRendered += (_, _) =>
+        ContentRendered += async (_, _) =>
         {
             StartupProfiler.Mark("window-visible");
-            // A janela já desenhou: a tela de abertura sai enquanto a interface entra
-            StartupSplash.Close();
-            PlayIntroAnimation();
             firstFrame.TrySetResult();
+            // A janela já desenhou: a tela de abertura termina a sequência e só então a interface entra
+            await StartupSplash.Close();
+            PlayIntroAnimation();
         };
         try
         {
@@ -225,6 +225,8 @@ public partial class MainWindow : Window
             await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
             StartupProfiler.Mark("usable");
             if (StartupProfiler.Finish()) { Close(); return; }
+            // Tutorial e aviso de atualização só depois que a tela de abertura saiu (senão ficam atrás dela)
+            await StartupSplash.Close();
             MaybeShowWelcomeTour();
             await CheckForUpdateAsync(showPrompt: _promptForUpdates);
         }
@@ -271,6 +273,7 @@ public partial class MainWindow : Window
             case "drivers": ShowDrivers(); break;
             case "isos": ShowIsos(); break;
             case "tools": ShowTools(); break;
+            case "customize": ShowCustomize(); break;
             case "settings": ShowSettings(); break;
             case "about": ShowAbout(); break; case "history": ShowHistory(); break;
             case "patchnotes": ShowPatchNotes(); break;
@@ -291,7 +294,7 @@ public partial class MainWindow : Window
 
     private void UpdateActiveNavButton(string page)
     {
-        var buttons = new[] { NavDashboard, NavOpt, NavStartup, NavDrivers, NavIsos, NavTools, NavGaming, NavNetwork, NavRestore, NavResources, NavFixes, NavDiagnostics, NavServices, NavApps, NavSettings, NavAbout, NavHistory, NavPatchNotes, NavBios, NavAdmin };
+        var buttons = new[] { NavDashboard, NavOpt, NavStartup, NavDrivers, NavIsos, NavTools, NavCustomize, NavGaming, NavNetwork, NavRestore, NavResources, NavFixes, NavDiagnostics, NavServices, NavApps, NavSettings, NavAbout, NavHistory, NavPatchNotes, NavBios, NavAdmin };
         foreach (var b in buttons) b.IsChecked = b.Tag?.ToString() == page;
     }
 

@@ -75,7 +75,7 @@ internal static class Media
         {
             ("visao-geral", "dashboard", null, true), ("modo-jogo", "gaming", 0, true), ("jogos", "gaming", 1, true),
             ("nvidia", "gaming", 2, true), ("sistema", "gaming", 3, true), ("rede", "network", null, true),
-            ("drivers", "drivers", null, true), ("bios", "bios", null, true), ("otimizacoes", "optimization", null, true),
+            ("drivers", "drivers", null, true), ("bios", "bios", null, true), ("otimizacoes", "optimization", null, true), ("personalizar", "customize", null, true),
             ("visao-geral-claro", "dashboard", null, false),
         };
         foreach (var (name, page, tab, dark) in pages)
