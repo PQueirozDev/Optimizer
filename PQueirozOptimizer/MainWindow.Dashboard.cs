@@ -112,8 +112,7 @@ public partial class MainWindow
             var clean = IconButton(Glyphs.Broom, "Analisar limpeza", primary: true); clean.Tag = "quickclean"; clean.Click += RunOperation_Click;
             clean.ToolTip = "Mostra quanto espaço dá para liberar antes de apagar qualquer coisa";
             var tune = IconButton(Glyphs.Lightning, "Revisar ajustes"); tune.Tag = "padrao"; tune.Click += RunOperation_Click;
-            var diag = IconButton(Glyphs.Diagnostic, "Diagnóstico"); diag.Tag = "analisar"; diag.Click += RunOperation_Click;
-            foreach (var b in new[] { clean, tune, diag }) { b.IsEnabled = !_operationRunning; actions.Children.Add(b); }
+            foreach (var b in new[] { clean, tune }) { b.IsEnabled = !_operationRunning; actions.Children.Add(b); }
             heroText.Children.Add(actions);
             hero.Children.Add(heroText);
             var ring = ScoreRing(score, "SAÚDE", 112 * AppearanceService.CardScale); ring.Margin = new Thickness(24, 0, 4, 0);

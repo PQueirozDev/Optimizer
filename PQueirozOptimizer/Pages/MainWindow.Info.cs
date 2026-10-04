@@ -25,6 +25,10 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.8.8", "03/10/2026", new[]
+        {
+            "A Central de diagnóstico agora é o único acesso principal aos diagnósticos, evitando duas funções com o mesmo nome e mantendo todas as verificações em um só lugar.",
+        }),
         ("v1.8.7", "03/10/2026", new[]
         {
             "Nova Central de diagnóstico com verificações de sistema, drivers, serviços, rede, Bluetooth e integridade do Windows.",
