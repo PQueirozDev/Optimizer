@@ -39,6 +39,57 @@ public sealed class FixesService
         {
             ("Reiniciando os serviços de áudio", "Restart-Service -Name AudioEndpointBuilder -Force; Restart-Service -Name Audiosrv -Force"),
         }),
+        new("bluetooth", "Reparar o Bluetooth", "Restaura o rádio Bluetooth do Windows, corrige os serviços de descoberta, instala o driver oficial do TP-Link UB500 quando detectado e recarrega o adaptador.", Glyphs.Bluetooth, "Hardware", true, new[]
+        {
+            ("Restaurando o rádio Bluetooth", @"
+$radioPath = 'HKLM:\SYSTEM\CurrentControlSet\Control\RadioManagement\{afd198ac-5f30-4e89-a789-5ddf60a69366}'
+if (Test-Path $radioPath) {
+    New-ItemProperty -Path $radioPath -Name BluetoothRadioState -PropertyType DWord -Value 1 -Force | Out-Null
+}
+Set-Service -Name bthserv -StartupType Automatic
+if (Get-Service -Name BTAGService -ErrorAction SilentlyContinue) { Set-Service -Name BTAGService -StartupType Manual }
+Start-Service -Name bthserv -ErrorAction SilentlyContinue
+Start-Service -Name BTAGService -ErrorAction SilentlyContinue
+Restart-Service -Name DeviceAssociationService -Force
+Get-Service -Name 'BluetoothUserService*' -ErrorAction SilentlyContinue | Restart-Service -Force
+"),
+            ("Atualizando o driver oficial do adaptador", @"
+$adapter = Get-PnpDevice -Class Bluetooth -ErrorAction SilentlyContinue |
+    Where-Object { $_.InstanceId -like 'USB\VID_2357&PID_0604*' } |
+    Select-Object -First 1
+if ($adapter) {
+    $work = Join-Path $env:TEMP 'PQueirozOptimizer-UB500'
+    $zip = Join-Path $work 'UB500_V3_Win10_Win11.zip'
+    $extract = Join-Path $work 'package'
+    New-Item -ItemType Directory -Path $work -Force | Out-Null
+    Invoke-WebRequest -Uri 'https://static.tp-link.com/upload/driver/2025/202503/20250314/UB500_V3_Win10_Win11.zip' -OutFile $zip -UseBasicParsing
+    Expand-Archive -Path $zip -DestinationPath $extract -Force
+    $arch = if ([Environment]::OSVersion.Version.Build -ge 22000) { 'Windows_11_64bit' } else { 'Windows_10_64bit' }
+    $inf = Join-Path $extract ('UB500V3\BT\plugins\Driver Files\Driver\' + $arch + '\Rtkfilter.inf')
+    if (-not (Test-Path $inf)) { throw 'O pacote oficial não contém o driver compatível com este Windows.' }
+    & pnputil.exe /add-driver $inf /install | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw ""A instalação do driver terminou com código $LASTEXITCODE."" }
+} elseif ($adapter) {
+    Write-Output ('Adaptador identificado: ' + $adapter.FriendlyName + '. Driver específico não alterado.')
+} else {
+    throw 'Nenhum adaptador Bluetooth físico foi detectado.'
+}
+"),
+            ("Recarregando o adaptador Bluetooth", @"
+$adapter = Get-PnpDevice -Class Bluetooth -ErrorAction SilentlyContinue |
+    Where-Object { $_.InstanceId -match '^(USB|PCI|ACPI)\\' } |
+    Select-Object -First 1
+if ($adapter -and $adapter.InstanceId -like 'USB\VID_2357&PID_0604*') {
+    Disable-PnpDevice -InstanceId $adapter.InstanceId -Confirm:$false
+    Start-Sleep -Seconds 3
+    Enable-PnpDevice -InstanceId $adapter.InstanceId -Confirm:$false
+}
+& pnputil.exe /scan-devices | Out-Null
+Start-Sleep -Seconds 2
+Restart-Service -Name bthserv -Force
+Get-Service -Name 'BluetoothUserService*' -ErrorAction SilentlyContinue | Restart-Service -Force
+"),
+        }),
         new("search", "Reparar a pesquisa do Windows", "Reinicia o serviço de pesquisa e reconstrói o índice. Resolve a pesquisa do menu Iniciar que não encontra arquivos ou programas.", Glyphs.Search, "Windows", false, new[]
         {
             ("Parando a pesquisa", "Stop-Service -Name WSearch -Force -ErrorAction SilentlyContinue"),

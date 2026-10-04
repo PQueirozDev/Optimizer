@@ -64,6 +64,7 @@ public static class Glyphs
     public static readonly string Services = G(0xE912);
     public static readonly string Apps = G(0xE71D);
     public static readonly string Speaker = G(0xE767);
+    public static readonly string Bluetooth = G(0xE702);
     public static readonly string Print = G(0xE749);
     public static readonly string Video = G(0xE714);
     public static readonly string Tag = G(0xE8EC);
