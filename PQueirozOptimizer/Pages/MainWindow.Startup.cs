@@ -357,7 +357,8 @@ public partial class MainWindow
         finally
         {
             check.IsEnabled = entry.CanToggle;
-            RefreshAutorunsList();
+            // Redesenha a lista depois da animação do interruptor e sem perder a posição da rolagem
+            AfterToggleAnimation(() => KeepScroll(RefreshAutorunsList));
         }
     }
 

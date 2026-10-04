@@ -39,18 +39,30 @@ public partial class MainWindow
             var applied = installed && service.IsApplied(tweak);
             var check = new CheckBox { IsChecked = applied, IsEnabled = installed };
             var row = ChoiceRow(check, $"{tweak.App} — {tweak.Title}", tweak.Description, !installed ? "Não instalado" : applied ? "Aplicado" : "Padrão", !installed ? "Warning" : applied ? "Success" : "Info");
-            void Run(bool apply)
+            var reverting = false;
+            // Fora da thread da tela (arquivos, registro, processos) e sem redesenhar a página:
+            // antes o interruptor travava, pulava a animação e a rolagem voltava ao topo
+            async void Run(bool apply)
             {
+                if (reverting) return;
+                check.IsHitTestVisible = false; // bloqueia cliques sem apagar o interruptor
+                var ok = false;
+                await _systemTweakGate.WaitAsync();
                 try
                 {
-                    if (apply) service.Apply(tweak); else service.Revert(tweak);
+                    await Task.Run(() => { if (apply) service.Apply(tweak); else service.Revert(tweak); });
+                    ok = true;
                     ShowToast(tweak.App, apply ? "Ajuste aplicado. Reabra o app para valer." : "Configuração original restaurada.", "Success");
                 }
                 catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or System.Text.Json.JsonException)
                 {
                     ShowToast(tweak.App, ex.Message, "Danger");
                 }
-                AfterToggleAnimation(() => { if (_currentPage == "apps") ShowApps(); });
+                finally { _systemTweakGate.Release(); }
+                if (!ok) { reverting = true; check.IsChecked = !apply; reverting = false; }
+                var now = service.IsApplied(tweak);
+                SetChoiceRowPill(check, now ? "Aplicado" : "Padrão", now ? "Success" : "Info");
+                check.IsHitTestVisible = true;
             }
             check.Checked += (_, _) => Run(true);
             check.Unchecked += (_, _) => Run(false);

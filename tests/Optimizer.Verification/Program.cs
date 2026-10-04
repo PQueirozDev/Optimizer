@@ -504,6 +504,11 @@ internal static class Program
             Assert(Translator.Tr("Otimização — cancelado. O que já foi aplicado aparece em Atividade e reversão.") == "Optimization — cancelled. What was already applied shows up in Activity & restore.", "Cancelamento traduzido");
             Assert(Translator.Tr("CPU em uso agora: 12%") == "CPU in use now: 12%", "Uso de CPU do benchmark traduzido");
             Assert(MainWindow.ClassifyLine("[AVISO] Pouco espaco livre em disco") is { Tone: "Warning" } && MainWindow.ClassifyLine("[OK] TRIM: Ativo") is { Tone: "Success" }, "Linhas do diagnóstico coloridas pela marcação");
+            Assert(MainWindow.ParseLiveMarker("[PLANO] {\"Etapas\":[\"A\",\"B\"],\"Atividade\":\"Otimizacao Padrao\"}") is { Kind: "plan", Activity: "Otimizacao Padrao", Steps: ["A", "B"] }, "Plano de etapas lido");
+            Assert(MainWindow.ParseLiveMarker("[PLANO] {\"Etapas\":\"Só uma\",\"Atividade\":\"X\"}") is { Steps: ["Só uma"] }, "Plano com uma etapa (PowerShell desembrulha a lista)");
+            Assert(MainWindow.ParseLiveMarker("[ETAPA] Limpando cache DNS") is { Kind: "step", Steps: ["Limpando cache DNS"] }, "Início de etapa lido");
+            Assert(MainWindow.ParseLiveMarker("[OK] Limpando cache DNS") is null && MainWindow.ParseLiveMarker("[PLANO] {quebrado") is null, "Linhas comuns e plano inválido ignorados");
+            Assert(Translator.Tr("3 de 12 etapas · faltam 9") == "3 of 12 steps · 9 left", "Progresso das etapas traduzido");
             Translator.IsEnglish = false;
             Assert(Translator.Tr("Limpando cache DNS") == "Limpando cache DNS", "Português permanece sem alteração");
 

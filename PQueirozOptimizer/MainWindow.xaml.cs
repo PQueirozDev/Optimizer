@@ -261,11 +261,18 @@ public partial class MainWindow : Window
             return;
         }
         _currentPage = page;
-        _tutorialMarks.Clear();
         UpdateActiveNavButton(page);
         UpdatePageHeader(page);
         ContentScroll.ScrollToTop();
+        RenderPage(page);
+        AnimatePageIn();
+        MaybeShowPageTutorial(page);
+    }
 
+    /// <summary>Monta o conteúdo de uma página, sem rolar ao topo nem animar a entrada.</summary>
+    private void RenderPage(string page)
+    {
+        _tutorialMarks.Clear();
         switch (page)
         {
             case "dashboard": _ = ShowDashboardAsync(); break;
@@ -288,8 +295,6 @@ public partial class MainWindow : Window
             case "services": ShowServices(); break;
             case "apps": ShowApps(); break;
         }
-        AnimatePageIn();
-        MaybeShowPageTutorial(page);
     }
 
     private void UpdateActiveNavButton(string page)
@@ -331,8 +336,12 @@ public partial class MainWindow : Window
         ApplyBackdrop(); // liga ou desliga o fundo translúcido
         UpdateThemeButton();
         if (Application.Current.TryFindResource("ShadowColor") is Color shadow) RefreshThemedVisuals(this, shadow);
-        if (!_operationRunning && IsLoaded && _currentPage is not ("dashboard")) NavigateTo(_currentPage);
-        else if (!_operationRunning && IsLoaded) _ = RenderDashboardAsync();
+        if (_operationRunning || !IsLoaded) return;
+        if (_currentPage == "dashboard") { _ = RenderDashboardAsync(); return; }
+        // Redesenha no lugar, depois da animação do interruptor que causou a mudança e sem voltar a rolagem ao topo
+        // (antes: NavigateTo recriava a página na hora, o interruptor só "pulava" e a tela subia)
+        var page = _currentPage;
+        AfterToggleAnimation(() => { if (_currentPage == page && !_operationRunning) KeepScroll(() => RenderPage(page)); });
     }
 
     private void UpdateThemeButton()

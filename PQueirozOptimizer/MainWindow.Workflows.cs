@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -20,6 +20,11 @@ public partial class MainWindow
     private static readonly string SnapshotDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "OtimizadorPC", "Snapshots");
 
     private CancellationTokenSource? _operationCts;
+    /// <summary>
+    /// Uma alteração de sistema por vez (Personalizar, Apps), compartilhada entre redesenhos da página:
+    /// uma página recriada não pode gravar o mesmo ajuste enquanto a gravação anterior ainda roda.
+    /// </summary>
+    private readonly SemaphoreSlim _systemTweakGate = new(1, 1);
     private bool _closeAfterOperation;
 
     /// <summary>
@@ -59,6 +64,35 @@ public partial class MainWindow
         var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(420) };
         timer.Tick += (_, _) => { timer.Stop(); action(); };
         timer.Start();
+    }
+
+    /// <summary>Mostra um elemento sem empurrar o que está na tela: a rolagem compensa a altura que ele passa a ocupar.</summary>
+    private void ShowKeepingScroll(FrameworkElement element)
+    {
+        var offset = ContentScroll.VerticalOffset;
+        element.Visibility = Visibility.Visible;
+        if (offset <= 0) return;
+        ContentScroll.UpdateLayout();
+        ContentScroll.ScrollToVerticalOffset(offset + element.ActualHeight + element.Margin.Top + element.Margin.Bottom);
+    }
+
+    /// <summary>Redesenha parte da página mantendo a posição da rolagem (sem isso ela volta ao topo).</summary>
+    private void KeepScroll(Action rebuild)
+    {
+        var offset = ContentScroll.VerticalOffset;
+        rebuild();
+        ContentScroll.UpdateLayout();
+        ContentScroll.ScrollToVerticalOffset(offset);
+    }
+
+    /// <summary>Troca a etiqueta de estado de uma linha do <see cref="ChoiceRow"/> no lugar, sem redesenhar a página.</summary>
+    private static void SetChoiceRowPill(CheckBox check, string text, string tone)
+    {
+        if (check.Content is not Grid grid || grid.Children.OfType<StackPanel>().FirstOrDefault(p => Grid.GetColumn(p) == 1) is not { Children.Count: > 0 } badges) return;
+        var last = badges.Children.Count - 1;
+        var pill = Pill(text, tone);
+        pill.Margin = ((FrameworkElement)badges.Children[last]).Margin;
+        badges.Children[last] = pill;
     }
 
     /// <summary>Executa com progresso, cancelamento e notificação. Retorna true só se terminou sem erro.</summary>

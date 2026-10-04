@@ -25,6 +25,13 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.8.16", "04/10/2026", new[]
+        {
+            "Interruptores: a animação aparece sempre, e a página não trava nem volta ao topo ao ligar/desligar em Aparência, Personalizar Windows, Serviços, Apps e Inicialização.",
+            "Personalizar Windows e Apps aplicam as mudanças em segundo plano, sem congelar a tela.",
+            "Nova tela de execução das otimizações: porcentagem real, etapa atual e quantas faltam.",
+            "Nova aba \"Etapas\" mostra o que já foi feito, o que está em andamento e o que falta; o registro detalhado fica em outra aba, sem visual de terminal.",
+        }),
         ("v1.8.15", "04/10/2026", new[]
         {
             "Removido o idioma espanhol: o app volta a ter português e inglês. Quem usava espanhol passa a ver o app em português.",

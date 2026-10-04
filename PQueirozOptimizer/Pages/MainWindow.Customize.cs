@@ -31,12 +31,17 @@ public partial class MainWindow
 
         var switches = new List<(WindowsSetting Setting, CheckBox Check)>();
         var applying = false;
-        void Set(WindowsSetting setting, CheckBox check, bool on)
+        // Uma alteração por vez, fora da thread da tela: o aviso WM_SETTINGCHANGE para todas as janelas
+        // pode levar até 2 s e, na thread da tela, congelava a página e a animação do interruptor.
+        // O interruptor fica bloqueado até gravar, para uma falha não desfazer um clique mais novo.
+        async void Set(WindowsSetting setting, CheckBox check, bool on)
         {
+            check.IsHitTestVisible = false; // bloqueia cliques sem apagar o interruptor
+            await _systemTweakGate.WaitAsync();
             try
             {
-                Customize.Apply(setting, on);
-                if (setting.NeedsExplorerRestart) restartCard.Visibility = Visibility.Visible;
+                await Task.Run(() => Customize.Apply(setting, on));
+                if (setting.NeedsExplorerRestart && restartCard.Visibility != Visibility.Visible) ShowKeepingScroll(restartCard);
             }
             catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException)
             {
@@ -44,6 +49,7 @@ public partial class MainWindow
                 ShowToast("Não foi possível alterar", $"{setting.Title}: {ex.Message}", "Danger");
                 applying = true; check.IsChecked = !on; applying = false;
             }
+            finally { _systemTweakGate.Release(); check.IsHitTestVisible = true; }
         }
 
         // Cabeçalho com o botão de aplicar todos os recomendados

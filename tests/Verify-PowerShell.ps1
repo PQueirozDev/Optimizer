@@ -30,13 +30,17 @@ $script:SnapshotNome = 'Test fixture'
 $script:ContAplicados = 0; $script:ContPulados = 0; $script:ContFalhas = 0
 $script:SelectedSteps = @('good', 'bad', 'native')
 $script:ran = @()
-Executar-Etapas 'Test' @(
+$saida = @(Executar-Etapas 'Test' @(
     @{ Nome='good'; Acao={ $script:ran += 'good' } },
     @{ Nome='skip'; Acao={ throw 'Must not execute' } },
     @{ Nome='bad'; Acao={ Write-Error 'Expected failure' } },
     @{ Nome='native'; Acao={ $global:LASTEXITCODE=7 } }
-)
+) 6>&1 | ForEach-Object { "$_" })
 Assert ($script:ContAplicados -eq 1 -and $script:ContPulados -eq 1 -and $script:ContFalhas -eq 2) 'Partial failure and skipped steps reported accurately'
+$plano = $saida | Where-Object { $_ -like '`[PLANO`] *' } | Select-Object -First 1
+$planoJson = if ($plano) { $plano.Substring(8) | ConvertFrom-Json }
+Assert ($planoJson.Atividade -eq 'Test' -and (@($planoJson.Etapas) -join ',') -eq 'good,bad,native') 'UI plan lists only the selected steps, in order'
+Assert ((@($saida | Where-Object { $_ -like '`[ETAPA`] *' }) -join ',') -eq '[ETAPA] good,[ETAPA] bad,[ETAPA] native') 'UI step markers emitted before each selected step'
 $blocked = $false
 try { Executar-Etapas 'Ponto de restauracao' @(@{ Nome='restore'; Acao={ throw 'Expected restore failure' } }) } catch { $blocked = $true }
 Assert $blocked 'Restore point failure stops execution'

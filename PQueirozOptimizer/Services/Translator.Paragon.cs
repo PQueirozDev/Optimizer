@@ -318,11 +318,27 @@ public static partial class Translator
         ["Sistema"] = "System", ["Tempo ligado"] = "Uptime", ["Sistema:"] = "System:", ["Tempo ligado:"] = "Uptime:",
         ["Mostra quanto espaço dá para liberar antes de apagar qualquer coisa"] = "Shows how much space can be freed before deleting anything",
         ["● Saudável"] = "● Healthy", ["▲ Atenção"] = "▲ Attention", ["▲ Crítico"] = "▲ Critical",
+
+        // ---------- Tela de execução (etapas ao vivo) ----------
+        ["Etapas"] = "Steps", ["Registro detalhado"] = "Detailed log", ["O que está sendo feito"] = "What is being done",
+        ["Concluídas, em andamento e o que ainda falta, na ordem em que rodam."] = "Done, in progress and what is still left, in the order they run.",
+        ["As etapas aparecem aqui assim que a execução começa."] = "Steps show up here as soon as the run starts.",
+        ["Cada mensagem da execução, com avisos e falhas destacados."] = "Every message from the run, with warnings and failures highlighted.",
+        ["Aguardando"] = "Waiting", ["Nada na fila"] = "Nothing left", ["Falta 1"] = "1 left",
+        ["Em andamento"] = "In progress", ["Concluída"] = "Done", ["Falhou"] = "Failed", ["Não executada"] = "Not run", ["Na fila"] = "Queued", ["Interrompida"] = "Interrupted",
+        ["Iniciando…"] = "Starting…", ["Preparando a execução"] = "Preparing the run", ["1 etapa concluída"] = "1 step done",
+        ["Preparando: ponto de restauração antes de qualquer alteração"] = "Preparing: restore point before any change",
+        ["Otimização padrão"] = "Standard optimization", ["Otimização avançada"] = "Advanced optimization", ["Otimização inteligente"] = "Smart optimization",
     };
 
     private static readonly (Regex Regex, Func<Match, string> Build)[] ParagonPatterns =
     {
         P(@"^(\d+) de (\d+) desligados$", m => $"{m.Groups[1].Value} of {m.Groups[2].Value} off"),
+        P(@"^(\d+) de (\d+) etapas · faltam (\d+)$", m => $"{m.Groups[1].Value} of {m.Groups[2].Value} steps · {m.Groups[3].Value} left"),
+        P(@"^Faltam (\d+)$", m => $"{m.Groups[1].Value} left"),
+        P(@"^(\d+) etapas concluídas$", m => $"{m.Groups[1].Value} steps done"),
+        P(@"^(\d+) concluídas · (\d+) com falha · (\d+) não executadas · (.+)$", m => $"{m.Groups[1].Value} done · {m.Groups[2].Value} failed · {m.Groups[3].Value} not run · {m.Groups[4].Value}"),
+        P(@"^Tempo total: (.+)$", m => $"Total time: {m.Groups[1].Value}"),
         P(@"^(\d+) correções$", m => $"{m.Groups[1].Value} fixes"),
         P(@"^(\d+)\. (.+)$", m => $"{m.Groups[1].Value}. {Tr(m.Groups[2].Value)}"),
         P(@"^(.+) — (Desligar a aceleração por hardware|Não rodar em segundo plano|Não rodar em segundo plano nem pré-carregar)$", m => $"{m.Groups[1].Value} — {Tr(m.Groups[2].Value)}"),

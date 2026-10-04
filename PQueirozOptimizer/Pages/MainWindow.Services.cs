@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -46,7 +46,8 @@ public partial class MainWindow
                     off => off
                         ? ExecuteTrackedAsync("Desligando: " + group.Name, async _ => await service.DisableAsync(group))
                         : ExecuteTrackedAsync("Restaurando: " + group.Name, async _ => await service.RestoreAsync(group)),
-                    () => { if (_currentPage == "services") ShowServices(); });
+                    // Atualiza só a etiqueta: redesenhar a página trocava o interruptor no meio da animação e voltava a rolagem ao topo
+                    () => { var now = ServiceGroupsService.IsDisabled(group); SetChoiceRowPill(check, now ? "Aplicado" : "Padrão", now ? "Success" : "Info"); });
                 section.Children.Add(row);
             }
             host.Children.Add(Surface(section));

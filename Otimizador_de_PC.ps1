@@ -505,12 +505,18 @@ function Registrar-Irreversivel($descricao) {
 function Executar-Etapas($atividade, $etapas) {
     $total = $etapas.Count
     $i = 0
+    if ($UiMode) {
+        # Plano para a tela de progresso do app: so as etapas que de fato vao rodar
+        $plano = @($etapas | Where-Object { $atividade -eq 'Ponto de restauracao' -or $null -eq $script:SelectedSteps -or $_.Nome -in $script:SelectedSteps } | ForEach-Object { [string]$_.Nome })
+        Write-Host "[PLANO] $(ConvertTo-Json -InputObject @{ Atividade = $atividade; Etapas = $plano } -Compress)"
+    }
     foreach ($etapa in $etapas) {
         $i++
         if ($UiMode -and $atividade -ne 'Ponto de restauracao' -and $null -ne $script:SelectedSteps -and $etapa.Nome -notin $script:SelectedSteps) {
             $script:ContPulados++; Write-Host "[IGNORADA] $($etapa.Nome)"; continue
         }
         $script:EtapaAtual = $etapa.Nome
+        if ($UiMode) { Write-Host "[ETAPA] $($etapa.Nome)" }
         $percent = [Math]::Round(($i / $total) * 100)
         Write-Progress -Activity $atividade -Status "[$i/$total] $($etapa.Nome)" -PercentComplete $percent
         $sucesso = $true
@@ -541,6 +547,7 @@ function Executar-Se-Confirmado($pergunta, $nomeEtapa, $acao, $modoRapido = $fal
     }
     if ($aplicar) {
         $script:EtapaAtual = $nomeEtapa
+        if ($UiMode) { Write-Host "[ETAPA] $nomeEtapa" }
         $sucesso = $true
         Try {
             $ErrorActionPreference = 'Stop'
