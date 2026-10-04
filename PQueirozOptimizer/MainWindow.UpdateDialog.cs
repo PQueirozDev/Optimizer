@@ -26,7 +26,7 @@ public partial class MainWindow
         shade.MouseLeftButtonDown += (_, _) => { if (!_installingUpdate) CloseUpdateDialog(); };
         UpdateLayer.Children.Add(shade);
 
-        var card = new Border { Width = 520, CornerRadius = new CornerRadius(22), BorderThickness = new Thickness(1), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, ClipToBounds = true };
+        var card = new Border { Width = 620, MaxHeight = 760, CornerRadius = new CornerRadius(24), BorderThickness = new Thickness(1), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, ClipToBounds = true };
         card.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
         card.SetResourceReference(Border.BorderBrushProperty, "CardBorderBrush");
         card.Effect = new DropShadowEffect { BlurRadius = 48, ShadowDepth = 12, Opacity = 0.55, Color = Colors.Black };
@@ -35,7 +35,7 @@ public partial class MainWindow
         glow.SetResourceReference(Border.BackgroundProperty, "GlowBrush");
         layers.Children.Add(glow);
 
-        var body = new StackPanel { Margin = new Thickness(28, 26, 28, 24) };
+        var body = new StackPanel { Margin = new Thickness(32, 30, 32, 28) };
         // Cabeçalho: ícone com brilho, título e versão atual → nova
         var head = new DockPanel { Margin = new Thickness(0, 0, 0, 18) };
         var icon = new Border { Width = 52, Height = 52, CornerRadius = new CornerRadius(16), Child = GlyphIcon(Glyphs.Download, 22, "OnAccentBrush") };
@@ -43,9 +43,12 @@ public partial class MainWindow
         icon.Effect = new DropShadowEffect { BlurRadius = 22, ShadowDepth = 0, Opacity = 0.6, Color = (Color)(Application.Current.Resources["AccentColor"] ?? Colors.MediumPurple) };
         DockPanel.SetDock(icon, Dock.Left); head.Children.Add(icon);
         var titles = new StackPanel { Margin = new Thickness(16, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-        var title = Label("Nova versão disponível", 19); title.FontWeight = FontWeights.SemiBold; title.Margin = new Thickness(0);
+        var title = Label("Uma atualização está pronta", 22); title.FontWeight = FontWeights.Bold; title.Margin = new Thickness(0);
         title.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
         titles.Children.Add(title);
+        var subtitle = Label($"Novidades e melhorias do PQueiroz Optimizer · {info.LatestVersion}", 12, true);
+        subtitle.Margin = new Thickness(0, 4, 0, 0);
+        titles.Children.Add(subtitle);
         var versions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
         var from = Pill("v" + info.CurrentVersion.TrimStart('v'), "Info"); from.Margin = new Thickness(0);
         var arrow = GlyphIcon(Glyphs.ChevronRight, 11, "MutedBrush"); arrow.Margin = new Thickness(8, 0, 8, 0);
@@ -55,21 +58,43 @@ public partial class MainWindow
         head.Children.Add(titles);
         body.Children.Add(head);
 
+        var summary = new Border { Padding = new Thickness(14, 11, 14, 11), CornerRadius = new CornerRadius(12), Margin = new Thickness(0, 0, 0, 18) };
+        summary.SetResourceReference(Border.BackgroundProperty, "AccentSoftBrush");
+        summary.SetResourceReference(Border.BorderBrushProperty, "AccentSoftBrush");
+        summary.BorderThickness = new Thickness(1);
+        var summaryRow = new DockPanel();
+        var secure = Label(UpdateService.CanAutoInstall(info) ? "DOWNLOAD SEGURO" : "DOWNLOAD MANUAL", 10.5);
+        secure.FontWeight = FontWeights.Bold;
+        secure.SetResourceReference(TextBlock.ForegroundProperty, UpdateService.CanAutoInstall(info) ? "SuccessBrush" : "WarningBrush");
+        DockPanel.SetDock(secure, Dock.Left); summaryRow.Children.Add(secure);
+        var summaryText = Label(UpdateService.CanAutoInstall(info)
+            ? "Instalador verificado por SHA256 e configurações preservadas."
+            : "Você será direcionado à página oficial da release.", 11.5, true);
+        summaryText.Margin = new Thickness(12, 0, 0, 0);
+        summaryRow.Children.Add(summaryText);
+        summary.Child = summaryRow;
+        body.Children.Add(summary);
+
         // Novidades
         if (info.Notes is { Count: > 0 } notes)
         {
-            var whatsNew = Label("O que há de novo", 13); whatsNew.FontWeight = FontWeights.SemiBold; whatsNew.Margin = new Thickness(0, 0, 0, 8);
+            var whatsNew = Label("O que há de novo", 15); whatsNew.FontWeight = FontWeights.SemiBold; whatsNew.Margin = new Thickness(0, 0, 0, 10);
             body.Children.Add(whatsNew);
             var list = new StackPanel();
             foreach (var note in notes)
             {
-                var row = new DockPanel { Margin = new Thickness(0, 0, 0, 7) };
-                var dot = new Border { Width = 6, Height = 6, CornerRadius = new CornerRadius(3), Margin = new Thickness(2, 6, 10, 0), VerticalAlignment = VerticalAlignment.Top };
+                var row = new Border { Padding = new Thickness(12, 10, 12, 10), Margin = new Thickness(0, 0, 0, 7), CornerRadius = new CornerRadius(10) };
+                row.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
+                row.SetResourceReference(Border.BorderBrushProperty, "BorderSubtleBrush");
+                row.BorderThickness = new Thickness(1);
+                var rowContent = new DockPanel();
+                var dot = new Border { Width = 7, Height = 7, CornerRadius = new CornerRadius(4), Margin = new Thickness(1, 5, 11, 0), VerticalAlignment = VerticalAlignment.Top };
                 dot.SetResourceReference(Border.BackgroundProperty, "AccentBrush");
-                DockPanel.SetDock(dot, Dock.Left); row.Children.Add(dot);
+                DockPanel.SetDock(dot, Dock.Left); rowContent.Children.Add(dot);
                 var text = Label(note, 12.5, true); text.Margin = new Thickness(0); text.TextWrapping = TextWrapping.Wrap;
                 text.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondaryBrush");
-                row.Children.Add(text);
+                rowContent.Children.Add(text);
+                row.Child = rowContent;
                 list.Children.Add(row);
             }
             var scroll = new ScrollViewer { Content = list, MaxHeight = 220, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Margin = new Thickness(0, 0, 0, 16) };
@@ -86,16 +111,18 @@ public partial class MainWindow
         var safety = Label(UpdateService.CanAutoInstall(info)
             ? "O instalador é verificado por SHA256 antes de rodar e o app reabre sozinho ao terminar. Suas configurações e backups são mantidos."
             : "Esta versão é baixada pela página de releases.", 11.5, true);
-        safety.Margin = new Thickness(0, 0, 0, 18);
+        safety.Margin = new Thickness(0, 0, 0, 22);
         body.Children.Add(safety);
 
         var actions = new DockPanel { LastChildFill = false };
         _updateNow = IconButton(Glyphs.Download, UpdateService.CanAutoInstall(info) ? "Atualizar agora" : "Abrir download", primary: true);
-        _updateNow.Margin = new Thickness(8, 0, 0, 0);
+        _updateNow.Margin = new Thickness(10, 0, 0, 0);
+        _updateNow.Padding = new Thickness(18, 10, 18, 10);
         _updateLater = IconButton(Glyphs.Clock, "Depois");
         _updateLater.Margin = new Thickness(0);
+        _updateLater.Padding = new Thickness(14, 10, 14, 10);
         var page = IconButton(Glyphs.OpenInNew, "Ver no GitHub");
-        page.Margin = new Thickness(0); page.SetResourceReference(StyleProperty, "GhostButton");
+        page.Margin = new Thickness(0); page.Padding = new Thickness(10, 10, 10, 10); page.SetResourceReference(StyleProperty, "GhostButton");
         page.Click += (_, _) => OpenUrl(info.DownloadUrl);
         DockPanel.SetDock(_updateNow, Dock.Right); DockPanel.SetDock(_updateLater, Dock.Right); DockPanel.SetDock(page, Dock.Left);
         actions.Children.Add(_updateNow); actions.Children.Add(_updateLater); actions.Children.Add(page);

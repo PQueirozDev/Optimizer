@@ -25,6 +25,11 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.8.6", "03/10/2026", new[]
+        {
+            "Aviso de atualização redesenhado: versão atual e nova, novidades em cartões, selo de download seguro e ações mais claras para atualizar ou continuar depois.",
+            "Página Correções com busca rápida, filtro por categoria e cartões mais destacados para encontrar e executar reparos com menos cliques.",
+        }),
         ("v1.8.5", "03/10/2026", new[]
         {
             "VALORANT nas configurações dos jogos, com dois perfis: Otimizado (o máximo de FPS) e Qrz (a configuração usada pelo Qrz). Sensibilidade, mira, teclas e volume continuam os seus, e o original volta com um clique.",

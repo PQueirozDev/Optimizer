@@ -83,16 +83,17 @@ public partial class MainWindow
         details.Margin = new Thickness(12, 0, 0, 0); details.VerticalAlignment = VerticalAlignment.Center;
         details.Click += (_, _) => ShowUpdateDialog(info);
         DockPanel.SetDock(details, Dock.Right); banner.Children.Add(details);
-        var chip = IconChip(Glyphs.Download, "Info", 40); DockPanel.SetDock(chip, Dock.Left); banner.Children.Add(chip);
+        var chip = IconChip(Glyphs.Download, "Accent", 46); DockPanel.SetDock(chip, Dock.Left); banner.Children.Add(chip);
         var bannerText = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-        var bt = Label($"Nova versão disponível: {info.LatestVersion}", 14); bt.FontWeight = FontWeights.SemiBold; bt.Margin = new Thickness(0);
+        var bt = Label($"Nova versão disponível · {info.LatestVersion}", 16); bt.FontWeight = FontWeights.Bold; bt.Margin = new Thickness(0);
         bannerText.Children.Add(bt);
-        var bs = Label(UpdateService.CanAutoInstall(info) ? "O instalador é verificado por SHA256 e o aplicativo reabre sozinho ao terminar." : "Esta versão será baixada pela página de releases.", 12, true); bs.Margin = new Thickness(0, 2, 0, 0);
+        var bs = Label(UpdateService.CanAutoInstall(info) ? "Instalador seguro, verificado por SHA256 e pronto para atualizar." : "Baixe a versão pela página oficial do GitHub.", 12, true); bs.Margin = new Thickness(0, 4, 0, 0);
         bannerText.Children.Add(bs);
         banner.Children.Add(bannerText);
-        var bannerCard = Surface(banner); bannerCard.Padding = new Thickness(18, 14, 18, 14);
+        var bannerCard = Surface(banner); bannerCard.Padding = new Thickness(20, 16, 20, 16);
         bannerCard.SetResourceReference(Border.BackgroundProperty, "HeroBrush");
         bannerCard.SetResourceReference(Border.BorderBrushProperty, "InfoBrush");
+        bannerCard.BorderThickness = new Thickness(1);
         _updateSlot.Children.Clear();
         _updateSlot.Children.Add(bannerCard);
     }
