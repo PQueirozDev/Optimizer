@@ -37,7 +37,7 @@ public partial class MainWindow
         var secTitle = new TextBlock
         {
             Text = "Modos & Perfis de Visualização",
-            FontSize = 17.5,
+            FontSize = 18,
             FontWeight = FontWeights.Bold
         };
         secTitle.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
@@ -59,7 +59,7 @@ public partial class MainWindow
         var selectLabel = new TextBlock
         {
             Text = "Perfil Selecionado:",
-            FontSize = 13,
+            FontSize = 12.5,
             FontWeight = FontWeights.Medium,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 10, 8)
@@ -119,8 +119,8 @@ public partial class MainWindow
         checkHeaderDock.Children.Add(checkListTitle);
 
         var quickBtns = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-        var selectAllBtn = new Button { Content = "Marcar Todas", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(0, 0, 6, 0), FontSize = 11.5 };
-        var deselectAllBtn = new Button { Content = "Desmarcar Todas", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(0), FontSize = 11.5 };
+        var selectAllBtn = new Button { Content = "Marcar Todas", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(0, 0, 6, 0), FontSize = 11 };
+        var deselectAllBtn = new Button { Content = "Desmarcar Todas", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(0), FontSize = 11 };
         quickBtns.Children.Add(selectAllBtn);
         quickBtns.Children.Add(deselectAllBtn);
         DockPanel.SetDock(quickBtns, Dock.Right);
@@ -144,7 +144,7 @@ public partial class MainWindow
             };
 
             var cbContent = new StackPanel();
-            var cbTitle = new TextBlock { Text = $"{opt.Icon} {opt.Name}", FontSize = 13, FontWeight = FontWeights.Medium };
+            var cbTitle = new TextBlock { Text = $"{opt.Icon} {opt.Name}", FontSize = 12.5, FontWeight = FontWeights.Medium };
             cbTitle.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
             var cbDesc = new TextBlock { Text = opt.Description, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) };
             cbDesc.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
@@ -173,7 +173,7 @@ public partial class MainWindow
             ToolTip = "Digite o nome do novo perfil"
         };
         // Texto de exemplo enquanto a caixa está vazia
-        var placeholder = new TextBlock { Text = "Nome do novo modo…", IsHitTestVisible = false, Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, FontSize = 13 };
+        var placeholder = new TextBlock { Text = "Nome do novo modo…", IsHitTestVisible = false, Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, FontSize = 12.5 };
         placeholder.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         newProfileBox.TextChanged += (_, _) => placeholder.Visibility = string.IsNullOrEmpty(newProfileBox.Text) ? Visibility.Visible : Visibility.Collapsed;
         var newProfileField = new Grid { Margin = new Thickness(0, 0, 8, 8), VerticalAlignment = VerticalAlignment.Center };
@@ -303,7 +303,7 @@ public partial class MainWindow
         var langTitle = new TextBlock
         {
             Text = "Language / Idioma",
-            FontSize = 17.5,
+            FontSize = 18,
             FontWeight = FontWeights.Bold
         };
         langTitle.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");

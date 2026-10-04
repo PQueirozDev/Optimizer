@@ -36,11 +36,10 @@ public partial class MainWindow
         layers.Children.Add(glow);
 
         var body = new StackPanel { Margin = new Thickness(32, 30, 32, 28) };
-        // Cabeçalho: ícone com brilho, título e versão atual → nova
+        // Cabeçalho: ícone, título e versão atual → nova
         var head = new DockPanel { Margin = new Thickness(0, 0, 0, 18) };
         var icon = new Border { Width = 52, Height = 52, CornerRadius = new CornerRadius(16), Child = GlyphIcon(Glyphs.Download, 22, "OnAccentBrush") };
         icon.SetResourceReference(Border.BackgroundProperty, "AccentGradientBrush");
-        icon.Effect = new DropShadowEffect { BlurRadius = 22, ShadowDepth = 0, Opacity = 0.6, Color = (Color)(Application.Current.Resources["AccentColor"] ?? Colors.MediumPurple) };
         DockPanel.SetDock(icon, Dock.Left); head.Children.Add(icon);
         var titles = new StackPanel { Margin = new Thickness(16, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
         var title = Label("Uma atualização está pronta", 22); title.FontWeight = FontWeights.Bold; title.Margin = new Thickness(0);

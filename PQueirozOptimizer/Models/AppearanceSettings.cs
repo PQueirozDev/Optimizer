@@ -16,6 +16,8 @@ public sealed class AppearanceSettings
     [JsonPropertyName("density"), JsonConverter(typeof(JsonStringEnumConverter))] public Density Density { get; set; } = Density.Default;
     [JsonPropertyName("cardSize"), JsonConverter(typeof(JsonStringEnumConverter))] public CardSize CardSize { get; set; } = CardSize.Medium;
     [JsonPropertyName("animations")] public bool Animations { get; set; } = true;
+    /// <summary>Fundo translúcido (Acrylic do Windows 11) atrás da janela.</summary>
+    [JsonPropertyName("translucent")] public bool Translucent { get; set; }
     /// <summary>Cor principal (#RRGGBB); vazio = roxo padrão do app.</summary>
     [JsonPropertyName("accentColor")] public string? AccentColor { get; set; }
     /// <summary>Cor secundária, usada nos gradientes e indicadores (#RRGGBB); vazio = ciano padrão.</summary>

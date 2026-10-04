@@ -160,9 +160,9 @@ public static class StartupSplash
         content.Children.Add(logoHost);
 
         content.Children.Add(new TextBlock { Text = "PQueiroz", FontSize = 24, FontWeight = FontWeights.Bold, Foreground = Frozen(p.Text), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 16, 0, 0), FontFamily = new FontFamily("Segoe UI Variable Display, Segoe UI") });
-        content.Children.Add(new TextBlock { Text = "O P T I M I Z E R", FontSize = 10.5, FontWeight = FontWeights.SemiBold, Foreground = Frozen(p.Muted), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 2, 0, 22) });
+        content.Children.Add(new TextBlock { Text = "O P T I M I Z E R", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = Frozen(p.Muted), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 2, 0, 22) });
 
-        _status = new TextBlock { Text = firstStatus, FontSize = 12, Foreground = Frozen(p.Muted), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 10) };
+        _status = new TextBlock { Text = firstStatus, FontSize = 12.5, Foreground = Frozen(p.Muted), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 10) };
         content.Children.Add(_status);
         _barWidth = width - 72;
         var track = new Border { Height = 4, CornerRadius = new CornerRadius(2), Background = Frozen(p.Border), Width = _barWidth, HorizontalAlignment = HorizontalAlignment.Center };
@@ -171,7 +171,7 @@ public static class StartupSplash
         content.Children.Add(track);
         layers.Children.Add(content);
 
-        layers.Children.Add(new TextBlock { Text = "v" + version, FontSize = 10.5, Foreground = Frozen(p.Muted, 0.8), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 16, 12) });
+        layers.Children.Add(new TextBlock { Text = "v" + version, FontSize = 11, Foreground = Frozen(p.Muted, 0.8), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 16, 12) });
         card.Child = layers;
         window.Content = card;
 

@@ -284,7 +284,7 @@ public partial class MainWindow
         catch (Exception ex) when (ex is System.IO.IOException or UriFormatException) { logo.Child = GlyphIcon(Glyphs.Lightning, 30, "OnAccentBrush"); }
         DockPanel.SetDock(logo, Dock.Left); hero.Children.Add(logo);
         var heroText = new StackPanel { Margin = new Thickness(22, 0, 0, 0) };
-        var name = new TextBlock { Text = "PQueiroz Optimizer", FontSize = 26, FontWeight = FontWeights.Bold };
+        var name = new TextBlock { Text = "PQueiroz Optimizer", FontSize = 24, FontWeight = FontWeights.Bold };
         name.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
         heroText.Children.Add(name);
         var badges = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 12) };

@@ -114,9 +114,15 @@ public partial class MainWindow
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException) { _log.Write("WARN", "Não foi possível abrir a pasta: " + ex.Message); }
     }
 
+    /// <summary>
+    /// Escala única de tipografia (11 · 12.5 · 14 · 18 · 24): qualquer tamanho pedido cai no degrau mais
+    /// próximo, para as páginas não misturarem uma dúzia de tamanhos quase iguais.
+    /// </summary>
+    private static double TypeScale(double size) => size switch { <= 11.5 => 11, <= 13 => 12.5, <= 16 => 14, <= 20 => 18, _ => 24 };
+
     private TextBlock Label(string text, double size = 13, bool muted = false)
     {
-        var label = new TextBlock { Text = text, FontSize = size, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 8) };
+        var label = new TextBlock { Text = text, FontSize = TypeScale(size), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 8) };
         if (size >= 18) { label.FontWeight = FontWeights.SemiBold; label.Margin = new Thickness(0, 4, 0, 12); }
         label.SetResourceReference(TextBlock.ForegroundProperty, muted ? "MutedBrush" : "TextBrush");
         return label;
@@ -130,17 +136,33 @@ public partial class MainWindow
         return icon;
     }
 
-    /// <summary>Quadrado arredondado com ícone colorido sobre fundo translúcido da mesma cor.</summary>
+    /// <summary>
+    /// Quadrado neutro com borda fina; só o ícone leva a cor do tom (roxo, ou a cor de um alerta),
+    /// sem o fundo colorido que deixava cada página com um arco-íris de quadradinhos.
+    /// </summary>
     private static Border IconChip(string glyph, string tone = "Accent", double size = 40)
     {
-        var chip = new Border { Width = size, Height = size, CornerRadius = new CornerRadius(size * 0.3), Child = GlyphIcon(glyph, size * 0.42, tone + "Brush") };
-        chip.SetResourceReference(Border.BackgroundProperty, tone + "SoftBrush");
+        var chip = new Border { Width = size, Height = size, CornerRadius = new CornerRadius(size * 0.26), BorderThickness = new Thickness(1), Child = GlyphIcon(glyph, size * 0.42, tone + "Brush") };
+        chip.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
+        chip.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
+        return chip;
+    }
+
+    /// <summary>
+    /// Quadrado neutro com borda fina e ícone vetorial na cor do texto; os cartões principais
+    /// recebem o ícone no roxo de destaque.
+    /// </summary>
+    private static Border OutlineChip(VectorIcon icon, double size = 42, bool primary = false)
+    {
+        var chip = new Border { Width = size, Height = size, CornerRadius = new CornerRadius(size * 0.26), BorderThickness = new Thickness(1), Child = OptimizationIcons.Render(icon, size * 0.52, primary ? "AccentBrush" : "TextBrush") };
+        chip.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
+        chip.SetResourceReference(Border.BorderBrushProperty, primary ? "AccentSoftBrush" : "BorderBrush");
         return chip;
     }
 
     private static Border Pill(string text, string tone = "Accent")
     {
-        var label = new TextBlock { Text = text, FontSize = 10.5, FontWeight = FontWeights.SemiBold };
+        var label = new TextBlock { Text = text, FontSize = 11, FontWeight = FontWeights.SemiBold };
         label.SetResourceReference(TextBlock.ForegroundProperty, tone + "Brush");
         var pill = new Border { CornerRadius = new CornerRadius(9), Padding = new Thickness(9, 3, 9, 3), Child = label, VerticalAlignment = VerticalAlignment.Center, BorderThickness = new Thickness(1) };
         pill.SetResourceReference(Border.BackgroundProperty, tone + "SoftBrush");
@@ -148,64 +170,20 @@ public partial class MainWindow
         return pill;
     }
 
-    private static DropShadowEffect CardShadow()
-    {
-        var shadow = new DropShadowEffect { BlurRadius = 24, ShadowDepth = 3, Direction = 270, Opacity = 0.16 };
-        // Efeitos não aceitam recursos dinâmicos; as páginas são recriadas ao trocar o tema
-        if (Application.Current?.TryFindResource("ShadowColor") is Color color) shadow.Color = color;
-        return shadow;
-    }
 
     private Border Surface(UIElement content)
     {
-        var border = new Border { Child = content, Padding = AppearanceService.CardPadding, CornerRadius = new CornerRadius(16), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, AppearanceService.Space(16)), Effect = CardShadow() };
+        // Painel plano: borda fina e sem sombra; o cartão não reage ao mouse porque não é clicável
+        var border = new Border { Child = content, Padding = AppearanceService.CardPadding, CornerRadius = new CornerRadius(14), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, AppearanceService.Space(16)) };
         border.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
         border.SetResourceReference(Border.BorderBrushProperty, "CardBorderBrush");
-        AddHoverOutline(border);
         return border;
-    }
-
-    /// <summary>
-    /// Ao passar o mouse o cartão sobe um pouco, a sombra cresce e a borda ganha o gradiente de destaque;
-    /// ao sair volta à borda que tinha (alguns cartões usam outra cor).
-    /// </summary>
-    private static void AddHoverOutline(Border border)
-    {
-        object? previous = null;
-        var lift = border.RenderTransform as TranslateTransform ?? new TranslateTransform();
-        border.RenderTransform = lift;
-        var ease = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
-        void Animate(double y, double blur, double opacity)
-        {
-            // Sem animações: só a borda muda, sem subir nem mexer na sombra
-            if (!AppearanceService.AnimationsEnabled) return;
-            var time = TimeSpan.FromMilliseconds(180);
-            lift.BeginAnimation(TranslateTransform.YProperty, new System.Windows.Media.Animation.DoubleAnimation(y, time) { EasingFunction = ease });
-            if (border.Effect is DropShadowEffect { IsFrozen: false } shadow)
-            {
-                shadow.BeginAnimation(DropShadowEffect.BlurRadiusProperty, new System.Windows.Media.Animation.DoubleAnimation(blur, time));
-                shadow.BeginAnimation(DropShadowEffect.OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(opacity, time));
-            }
-        }
-        border.MouseEnter += (_, _) =>
-        {
-            previous = border.ReadLocalValue(Border.BorderBrushProperty);
-            border.SetResourceReference(Border.BorderBrushProperty, "CardHoverBorderBrush");
-            Animate(-3, 34, 0.28);
-        };
-        border.MouseLeave += (_, _) =>
-        {
-            // ReadLocalValue devolve a expressão do recurso dinâmico; reaplicá-la mantém a troca de tema funcionando
-            if (previous is System.Windows.Expression or Brush) border.SetValue(Border.BorderBrushProperty, previous);
-            else border.SetResourceReference(Border.BorderBrushProperty, "CardBorderBrush");
-            Animate(0, 24, 0.16);
-        };
     }
 
     private void Primary(Button button)
     {
         button.SetResourceReference(StyleProperty, "PrimaryButton");
-        button.SetResourceReference(Button.BackgroundProperty, "AccentGradientBrush");
+        button.SetResourceReference(Button.BackgroundProperty, "AccentBrush");
         button.BorderBrush = Brushes.Transparent;
         button.SetResourceReference(Button.ForegroundProperty, "OnAccentBrush");
     }
@@ -250,10 +228,9 @@ public partial class MainWindow
         Grid.SetColumn(text, 1);
         grid.Children.Add(text);
 
-        var card = new Border { Padding = new Thickness(AppearanceService.Space(15) * scale), CornerRadius = new CornerRadius(16), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 14, AppearanceService.Space(14)), Child = grid, Effect = CardShadow() };
+        var card = new Border { Padding = new Thickness(AppearanceService.Space(15) * scale), CornerRadius = new CornerRadius(14), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 14, AppearanceService.Space(14)), Child = grid };
         card.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
         card.SetResourceReference(Border.BorderBrushProperty, "CardBorderBrush");
-        AddHoverOutline(card);
         return card;
     }
 
@@ -278,7 +255,6 @@ public partial class MainWindow
         figure.Segments.Add(new ArcSegment(At(angle), new Size(radius, radius), 0, angle > 180, SweepDirection.Clockwise, true));
         var arc = new Path { Data = new PathGeometry(new[] { figure }), StrokeThickness = 10, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round };
         arc.SetResourceReference(Shape.StrokeProperty, "AccentGradientBrush");
-        arc.Effect = new DropShadowEffect { BlurRadius = 18, ShadowDepth = 0, Opacity = 0.55, Color = Color.FromRgb(0x8B, 0x5C, 0xF6) };
         // O arco "se desenha" ao aparecer: o traço tracejado começa escondido e é revelado
         var dash = radius * angle * Math.PI / 180 / arc.StrokeThickness + 1;
         arc.StrokeDashArray = new DoubleCollection { dash, dash };
@@ -290,7 +266,7 @@ public partial class MainWindow
         var labels = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
         var number = new TextBlock { Text = ((int)Math.Round(value)).ToString(), FontSize = size * 0.26, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Center };
         number.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
-        var small = new TextBlock { Text = caption, FontSize = 10.5, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Center };
+        var small = new TextBlock { Text = caption, FontSize = 11, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Center };
         small.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         labels.Children.Add(number); labels.Children.Add(small);
         grid.Children.Add(labels);
@@ -301,7 +277,7 @@ public partial class MainWindow
     private StackPanel SectionHeader(string title, string? subtitle = null)
     {
         var panel = new StackPanel { Margin = new Thickness(0, 8, 0, 12) };
-        var t = new TextBlock { Text = title, FontSize = 17, FontWeight = FontWeights.SemiBold };
+        var t = new TextBlock { Text = title, FontSize = 18, FontWeight = FontWeights.SemiBold };
         t.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
         panel.Children.Add(t);
         if (!string.IsNullOrWhiteSpace(subtitle))

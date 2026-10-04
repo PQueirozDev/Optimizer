@@ -236,8 +236,8 @@ public static partial class Translator
 
         // ---------- Temas e cores ----------
         ["Claro"] = "Light", ["Grafite"] = "Graphite", ["Oceano"] = "Ocean", ["Floresta"] = "Forest",
-        ["Cor principal"] = "Main color", ["Botões, seleção da barra lateral, gráficos e brilhos."] = "Buttons, sidebar selection, charts and glows.",
-        ["Cor secundária"] = "Secondary color", ["Segunda cor dos gradientes, do anel de saúde e dos indicadores."] = "Second color of gradients, the health ring and indicators.",
+        ["Cor principal"] = "Main color", ["Botões, seleção da barra lateral e gráficos."] = "Buttons, sidebar selection and charts.",
+        ["Cor secundária"] = "Secondary color", ["Cor do anel de saúde e dos indicadores."] = "Color of the health ring and indicators.",
         ["Intensidade da cor"] = "Color intensity", ["Suave deixa as cores mais discretas; Vibrante, mais vivas."] = "Soft makes colors more subtle; Vibrant, more vivid.",
         ["Roxo (padrão)"] = "Purple (default)", ["Azul"] = "Blue", ["Ciano"] = "Cyan", ["Verde"] = "Green", ["Laranja"] = "Orange", ["Rosa"] = "Pink",
         ["Vermelho"] = "Red", ["Dourado"] = "Gold", ["Ciano (padrão)"] = "Cyan (default)", ["Lilás"] = "Lilac", ["Amarelo"] = "Yellow",
@@ -300,7 +300,10 @@ public static partial class Translator
         ["Tamanho dos cards"] = "Card size", ["Compacto"] = "Compact", ["Médio"] = "Medium", ["Grande"] = "Large",
         ["Cards de monitoramento, hardware e das outras páginas."] = "Monitoring, hardware and other pages' cards.",
         ["Animações da interface"] = "Interface animations",
-        ["Entrada das páginas, movimento dos cards, brilhos e fundo animado. O monitor ao vivo e os gráficos continuam atualizando."] = "Page entrances, card motion, glows and animated background. The live monitor and charts keep updating.",
+        ["Entrada das páginas e transições. O monitor ao vivo e os gráficos continuam atualizando."] = "Page entrances and transitions. The live monitor and charts keep updating.",
+        ["Janela translúcida"] = "Translucent window",
+        ["O fundo da janela fica desfocado e deixa ver o que está atrás, como nos apps do Windows 11."] = "The window background is blurred and lets what is behind it show through, like Windows 11 apps.",
+        ["Disponível só no Windows 11 (versão 22H2 ou mais nova)."] = "Only available on Windows 11 (version 22H2 or newer).",
         ["Pré-visualização"] = "Preview", ["Exemplo"] = "Example", ["MEMÓRIA"] = "MEMORY", ["SAÚDE"] = "HEALTH", ["Restaurar padrão"] = "Restore defaults",
         ["Padrão restaurado: Escuro, roxo Padrão, densidade Padrão, cards Médios e animações ligadas."] = "Defaults restored: Dark, Default purple, Default density, Medium cards and animations on.",
         ["Tema: Escuro (clique para OLED)"] = "Theme: Dark (click for OLED)", ["Tema: OLED (clique para Automático)"] = "Theme: OLED (click for Automatic)", ["Tema: Automático (clique para Escuro)"] = "Theme: Automatic (click for Dark)",

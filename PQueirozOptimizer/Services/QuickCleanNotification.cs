@@ -30,12 +30,12 @@ public static class QuickCleanNotification
         var content = new StackPanel { Margin = new Thickness(18, 15, 18, 16) };
         content.Children.Add(new TextBlock
         {
-            Text = "Limpeza rápida concluída", FontSize = 16, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White
+            Text = "Limpeza rápida concluída", FontSize = 14, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White
         });
         content.Children.Add(new TextBlock
         {
             Text = $"Temporários do usuário e do Windows processados.\n{result.Removed:N0} arquivos removidos • {result.Ignored:N0} ignorados • {freed:N1} MB liberados",
-            Margin = new Thickness(0, 7, 0, 0), FontSize = 12,
+            Margin = new Thickness(0, 7, 0, 0), FontSize = 12.5,
             Foreground = new SolidColorBrush(Color.FromRgb(203, 213, 225)), TextWrapping = TextWrapping.Wrap
         });
 

@@ -127,10 +127,10 @@ public partial class MainWindow
 
             // 4. Hardware
             var stats = Responsive(new UniformGrid { Columns = 4, Margin = new Thickness(0, 0, -14, 2) }, 210, 4);
-            stats.Children.Add(Card("PROCESSADOR", snapshot.Processor, Glyphs.Chip, "AccentBrush"));
-            stats.Children.Add(Card("MEMÓRIA", snapshot.Memory, Glyphs.Memory, "InfoBrush"));
-            stats.Children.Add(Card("ESPAÇO LIVRE", $"{snapshot.FreeSpace} de {snapshot.Storage}", Glyphs.Drive, "SuccessBrush"));
-            stats.Children.Add(Card("PLACA DE VÍDEO", snapshot.Graphics, Glyphs.Monitor, "WarningBrush"));
+            stats.Children.Add(Card("PROCESSADOR", snapshot.Processor, Glyphs.Chip, "MutedBrush"));
+            stats.Children.Add(Card("MEMÓRIA", snapshot.Memory, Glyphs.Memory, "MutedBrush"));
+            stats.Children.Add(Card("ESPAÇO LIVRE", $"{snapshot.FreeSpace} de {snapshot.Storage}", Glyphs.Drive, "MutedBrush"));
+            stats.Children.Add(Card("PLACA DE VÍDEO", snapshot.Graphics, Glyphs.Monitor, "MutedBrush"));
             root.Children.Add(stats);
 
             var columns = new Grid();
@@ -223,7 +223,7 @@ public partial class MainWindow
         row.Children.Add(IconChip(glyph, tone, 34));
         var body = new StackPanel { Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
         var head = new DockPanel();
-        var s = new TextBlock { Text = status, FontSize = 11.5, FontWeight = FontWeights.SemiBold };
+        var s = new TextBlock { Text = status, FontSize = 11, FontWeight = FontWeights.SemiBold };
         s.SetResourceReference(TextBlock.ForegroundProperty, tone + "Brush");
         DockPanel.SetDock(s, Dock.Right); head.Children.Add(s);
         var t = new TextBlock { Text = title, FontSize = 12.5, FontWeight = FontWeights.Medium };

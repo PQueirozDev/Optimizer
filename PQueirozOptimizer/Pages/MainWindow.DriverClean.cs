@@ -45,7 +45,7 @@ public partial class MainWindow
             var row = new DockPanel { Margin = new Thickness(0, 0, 0, 12) };
             var badge = new Border { Width = 26, Height = 26, CornerRadius = new CornerRadius(13), Margin = new Thickness(0, 0, 12, 0), VerticalAlignment = VerticalAlignment.Top };
             badge.SetResourceReference(Border.BackgroundProperty, number == "2" && _cleanInstaller != null ? "SuccessBrush" : "AccentGradientBrush");
-            badge.Child = new TextBlock { Text = number == "2" && _cleanInstaller != null ? "✓" : number, Foreground = System.Windows.Media.Brushes.White, FontWeight = FontWeights.Bold, FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Tag = Translator.SystemDataTag };
+            badge.Child = new TextBlock { Text = number == "2" && _cleanInstaller != null ? "✓" : number, Foreground = System.Windows.Media.Brushes.White, FontWeight = FontWeights.Bold, FontSize = 12.5, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Tag = Translator.SystemDataTag };
             DockPanel.SetDock(badge, Dock.Left); row.Children.Add(badge);
             var text = new StackPanel();
             var t = Label(title, 13); t.FontWeight = FontWeights.SemiBold; t.Margin = new Thickness(0);

@@ -45,15 +45,14 @@ public partial class MainWindow
         return text.Length == 0 ? null : new OutputLine(text, tone);
     }
 
-    private (string Title, string Glyph, string Description) OperationInfo(string operation)
+    private (string Title, VectorIcon Icon, string Description) OperationInfo(string operation)
     {
         var def = ConfigService.AllOptimizations.FirstOrDefault(o => o.Operation == operation);
-        var glyph = def is null ? Glyphs.Undo : OptimizationVisual(def).Glyph;
         return operation switch
         {
-            "reverter" => ("Restaurar configurações", Glyphs.Undo, "Desfazendo as alterações registradas no último backup."),
-            "corrupcao" => ("Verificação de corrupção do sistema", Glyphs.Shield, "ChkDsk, SFC, DISM e uma verificação final do SFC. Pode levar mais de 30 minutos."),
-            _ => (def?.Name ?? operation, glyph, def?.Description ?? ""),
+            "reverter" => ("Restaurar configurações", OptimizationIcons.For("reverter"), "Desfazendo as alterações registradas no último backup."),
+            "corrupcao" => ("Verificação de corrupção do sistema", OptimizationIcons.For("corrupcao"), "ChkDsk, SFC, DISM e uma verificação final do SFC. Pode levar mais de 30 minutos."),
+            _ => (def?.Name ?? operation, OptimizationIcons.For(def?.Id ?? "reverter"), def?.Description ?? ""),
         };
     }
 
@@ -61,7 +60,7 @@ public partial class MainWindow
     private async Task RunLiveAsync(string operation, IReadOnlyList<string>? selectedSteps = null)
     {
         if (_operationRunning) { OperationStatus.Text = "Aguarde a operação em andamento."; return; }
-        var (title, glyph, description) = OperationInfo(operation);
+        var (title, icon, description) = OperationInfo(operation);
         PageTitle.Text = title;
         PageBadge.Visibility = Visibility.Collapsed;
 
@@ -79,7 +78,7 @@ public partial class MainWindow
         cancel.Click += (_, _) => { if (ConfirmCancelOperation()) cancel.IsEnabled = false; };
         right.Children.Add(cancel);
         DockPanel.SetDock(right, Dock.Right); head.Children.Add(right);
-        var chip = IconChip(glyph, "Accent", 52); DockPanel.SetDock(chip, Dock.Left); head.Children.Add(chip);
+        var chip = OutlineChip(icon, 52, primary: true); DockPanel.SetDock(chip, Dock.Left); head.Children.Add(chip);
         var headText = new StackPanel { Margin = new Thickness(18, 0, 16, 0), VerticalAlignment = VerticalAlignment.Center };
         var t = Label(title, 18); t.Margin = new Thickness(0, 0, 0, 4);
         headText.Children.Add(t);

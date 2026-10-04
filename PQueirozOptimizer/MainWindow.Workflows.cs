@@ -123,12 +123,12 @@ public partial class MainWindow
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var text = new StackPanel();
-        var t = new TextBlock { Text = title, FontSize = 13.5, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
+        var t = new TextBlock { Text = title, FontSize = 14, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
         t.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
         text.Children.Add(t);
         if (!string.IsNullOrWhiteSpace(detail))
         {
-            var d = new TextBlock { Text = detail, FontSize = 12, Margin = new Thickness(0, 3, 0, 0), TextWrapping = TextWrapping.Wrap };
+            var d = new TextBlock { Text = detail, FontSize = 12.5, Margin = new Thickness(0, 3, 0, 0), TextWrapping = TextWrapping.Wrap };
             d.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
             text.Children.Add(d);
         }
@@ -254,7 +254,7 @@ public partial class MainWindow
             hero.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             hero.Children.Add(IconChip(Glyphs.Broom, "Accent", 52));
             var heroText = new StackPanel { Margin = new Thickness(18, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-            var big = new TextBlock { Text = $"{totalBytes / 1048576d:N1} MB podem ser liberados", FontSize = 22, FontWeight = FontWeights.SemiBold };
+            var big = new TextBlock { Text = $"{totalBytes / 1048576d:N1} MB podem ser liberados", FontSize = 24, FontWeight = FontWeights.SemiBold };
             big.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
             heroText.Children.Add(big);
             heroText.Children.Add(Label("Arquivos alterados nas últimas 48 horas, links e itens sem acesso são preservados. A exclusão é permanente.", 12, true));

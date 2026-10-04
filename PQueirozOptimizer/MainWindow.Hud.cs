@@ -96,11 +96,11 @@ public partial class MainWindow
         var top = new DockPanel();
         var scale = AppearanceService.CardScale;
         var chip = IconChip(glyph, tone, 26 * scale); DockPanel.SetDock(chip, Dock.Right); top.Children.Add(chip);
-        var label = new TextBlock { Text = title, FontSize = 10.5, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
+        var label = new TextBlock { Text = title, FontSize = 11, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
         label.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         top.Children.Add(label);
         stack.Children.Add(top);
-        var value = new TextBlock { Text = "--", FontSize = 26 * scale, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 4, 0, 0), Tag = Translator.SystemDataTag };
+        var value = new TextBlock { Text = "--", FontSize = 24 * scale, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 4, 0, 0), Tag = Translator.SystemDataTag };
         value.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
         value.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
         stack.Children.Add(value);

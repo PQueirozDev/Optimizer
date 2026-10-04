@@ -115,6 +115,12 @@ public static class ThemeService
 
     public static bool IsDark { get; private set; } = true;
 
+    /// <summary>Se o modo translúcido está ativo agora (ligado nas preferências e suportado pelo Windows).</summary>
+    public static bool IsTranslucent { get; private set; }
+
+    /// <summary>O fundo Acrylic da janela (DWMWA_SYSTEMBACKDROP_TYPE) só existe no Windows 11 22H2 em diante.</summary>
+    public static bool TranslucencySupported => Environment.OSVersion.Version.Build >= 22621;
+
     /// <summary>Tema efetivo: Automático segue a configuração "modo de aplicativo" do Windows.</summary>
     public static bool ResolveDark(ThemeMode mode)
     {
@@ -137,11 +143,15 @@ public static class ThemeService
         var (accent, accentHover, info, softAlpha, glow) = AccentFor(settings, !dark);
 
         void Brush(string key, Color color) { var b = new SolidColorBrush(color); b.Freeze(); resources[key] = b; }
-        Brush("BackgroundBrush", C(palette.Background)); Brush("HeaderBrush", C(palette.Background));
-        Brush("SidebarBrush", C(palette.Sidebar));
-        Brush("PanelBrush", C(palette.Panel)); Brush("SurfaceSecondaryBrush", C(palette.Panel));
-        Brush("PanelHoverBrush", C(palette.PanelHover)); Brush("SurfaceHoverBrush", C(palette.PanelHover));
-        Brush("CardBgBrush", C(palette.Card)); Brush("SurfaceBrush", C(palette.Card));
+        // Translúcido: as superfícies ficam parcialmente transparentes e o Acrylic do Windows aparece por trás
+        var translucent = !forceLight && settings.Translucent && TranslucencySupported;
+        IsTranslucent = translucent;
+        Color Surface(string hex, byte alpha) => translucent ? WithAlpha(C(hex), alpha) : C(hex);
+        Brush("BackgroundBrush", Surface(palette.Background, 0x55)); Brush("HeaderBrush", Surface(palette.Background, 0x55));
+        Brush("SidebarBrush", Surface(palette.Sidebar, 0x70));
+        Brush("PanelBrush", Surface(palette.Panel, 0xB0)); Brush("SurfaceSecondaryBrush", Surface(palette.Panel, 0xB0));
+        Brush("PanelHoverBrush", Surface(palette.PanelHover, 0xC8)); Brush("SurfaceHoverBrush", Surface(palette.PanelHover, 0xC8));
+        Brush("CardBgBrush", Surface(palette.Card, 0xA8)); Brush("SurfaceBrush", Surface(palette.Card, 0xA8));
         Brush("BorderBrush", C(palette.Border)); Brush("BorderSubtleBrush", C(palette.BorderSubtle));
         Brush("TextBrush", C(palette.Text)); Brush("TextSecondaryBrush", C(palette.TextSecondary)); Brush("MutedBrush", C(palette.Muted));
         Brush("AccentBrush", accent); Brush("AccentHoverBrush", accentHover); Brush("AccentSoftBrush", WithAlpha(accent, softAlpha));
@@ -157,43 +167,21 @@ public static class ThemeService
         resources["AccentColor"] = accent;
         resources["GlowOpacity"] = glow;
 
-        resources["AccentGradientBrush"] = Frozen(new LinearGradientBrush(accent, Blend(accent, info, 0.55), new Point(0, 0), new Point(1, 1)));
+        // Cor sólida: o nome "Gradient" ficou pelos estilos que já usam a chave (o splash lê as duas paradas)
+        resources["AccentGradientBrush"] = Frozen(new LinearGradientBrush(accent, accent, new Point(0, 0), new Point(1, 1)));
 
-        // Borda dos cartões: a borda comum com um leve brilho do destaque no canto superior esquerdo
-        var border = C(palette.BorderSubtle);
-        var cardBorder = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
-        cardBorder.GradientStops.Add(new GradientStop(Blend(border, accent, dark ? 0.35 : 0.25), 0));
-        cardBorder.GradientStops.Add(new GradientStop(border, 0.3));
-        cardBorder.GradientStops.Add(new GradientStop(border, 1));
-        resources["CardBorderBrush"] = Frozen(cardBorder);
-        resources["CardHoverBorderBrush"] = resources["BorderHoverBrush"];
+        resources["CardBorderBrush"] = resources["BorderSubtleBrush"];
+        resources["CardHoverBorderBrush"] = resources["BorderBrush"];
+        Brush("NavSelectedBrush", WithAlpha(accent, softAlpha));
 
-        var navSelected = new LinearGradientBrush { StartPoint = new Point(0, 0.5), EndPoint = new Point(1, 0.5) };
-        navSelected.GradientStops.Add(new GradientStop(WithAlpha(accent, (byte)(softAlpha + (dark ? 0x10 : 0x08))), 0));
-        navSelected.GradientStops.Add(new GradientStop(WithAlpha(accent, (byte)(softAlpha / 4)), 1));
-        resources["NavSelectedBrush"] = Frozen(navSelected);
-
+        // Destaque de cartões principais: só um leve tom do roxo sobre o fundo do cartão, sem gradiente
         var baseColor = C(palette.Card) with { A = 255 };
-        var hero = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
-        hero.GradientStops.Add(new GradientStop(Blend(baseColor, accent, dark ? 0.2 : 0.08), 0));
-        hero.GradientStops.Add(new GradientStop(Blend(baseColor, accent, dark ? 0.05 : 0.02), 0.6));
-        hero.GradientStops.Add(new GradientStop(Blend(baseColor, info, dark ? 0.1 : 0.06), 1));
-        resources["HeroBrush"] = Frozen(hero);
-
-        var glowBrush = new RadialGradientBrush { Center = new Point(0.85, 0), GradientOrigin = new Point(0.85, 0), RadiusX = 0.7, RadiusY = 0.9 };
-        glowBrush.GradientStops.Add(new GradientStop(WithAlpha(accent, (byte)(dark ? 0x22 : 0x14)), 0));
-        glowBrush.GradientStops.Add(new GradientStop(Colors.Transparent, 1));
-        resources["GlowBrush"] = Frozen(glowBrush);
-
-        // Fundo aurora bem discreto (no OLED, quase nada, para o preto continuar preto)
-        var aurora = settings.Theme == ThemeMode.Oled && dark ? 0.35 : dark ? 0.65 : 0.5;
-        resources["AuroraA"] = WithAlpha(accent, (byte)(0x48 * aurora));
-        resources["AuroraB"] = WithAlpha(info, (byte)(0x30 * aurora));
-        resources["AuroraC"] = WithAlpha(C("#EC4899"), (byte)(0x22 * aurora));
+        Brush("HeroBrush", translucent ? WithAlpha(Blend(baseColor, accent, dark ? 0.08 : 0.04), 0xB8) : Blend(baseColor, accent, dark ? 0.08 : 0.04));
+        Brush("GlowBrush", Colors.Transparent);
 
         // Forma e espaço
         var density = settings.Density switch { Density.Compact => 0.78, Density.Comfortable => 1.22, _ => 1.0 };
-        resources["CardRadius"] = new CornerRadius(16);
+        resources["CardRadius"] = new CornerRadius(14);
         resources["ControlRadius"] = new CornerRadius(10);
         resources["CardPadding"] = new Thickness(Math.Round(22 * density));
         resources["ContentGap"] = Math.Round(16 * density);

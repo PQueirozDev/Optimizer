@@ -28,7 +28,7 @@ public partial class MainWindow
         foreach (var (label, value) in new[] { ("PLACA-MÃE", $"{board.Manufacturer} {board.Model}".Trim()), ("PROCESSADOR", board.Cpu), ("VERSÃO DA BIOS", board.BiosVersion) })
         {
             var cell = new StackPanel();
-            var l = new TextBlock { Text = label, FontSize = 10.5, FontWeight = FontWeights.SemiBold };
+            var l = new TextBlock { Text = label, FontSize = 11, FontWeight = FontWeights.SemiBold };
             l.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
             var v = new TextBlock { Text = string.IsNullOrWhiteSpace(value) ? "Não identificado" : value, FontSize = 12.5, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 3, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis, Tag = string.IsNullOrWhiteSpace(value) ? null : Translator.SystemDataTag };
             v.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
@@ -119,7 +119,7 @@ public partial class MainWindow
         foreach (var (id, title) in new[] { ("recomendados", "Recomendados"), ("alterados", "Alterados"), ("todos", "Todas") })
         {
             var count = id switch { "recomendados" => settings.Count(s => BiosService.RecommendationFor(s) != null), "alterados" => settings.Count(s => s.Changed), _ => settings.Count };
-            var pill = new Button { Content = $"{title}  {count}", Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(0, 0, 8, 0), FontSize = 12 };
+            var pill = new Button { Content = $"{title}  {count}", Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(0, 0, 8, 0), FontSize = 12.5 };
             if (_biosFilter == id) Primary(pill);
             pill.Click += (_, _) => { _biosFilter = id; ShowBios(); };
             filters.Children.Add(pill);

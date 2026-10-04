@@ -9,20 +9,6 @@ namespace PQueirozOptimizer;
 public partial class MainWindow
 {
     #region Optimization Page
-    private static (string Glyph, string Tone) OptimizationVisual(OptimizationDef opt) => opt.Id switch
-    {
-        "padrao" => (Glyphs.Speed, "Accent"),
-        "gamer" or "gamerservicos" => (Glyphs.Game, "Accent"),
-        "debloat" => (Glyphs.Shield, "Info"),
-        "quickclean" => (Glyphs.Broom, "Info"),
-        "analisar" => (Glyphs.Diagnostic, "Success"),
-        "benchmark" => (Glyphs.Lightning, "Success"),
-        "sfc" or "dism" or "chkdsk" or "reparar" => (Glyphs.Repair, "Warning"),
-        "update" => (Glyphs.Refresh, "Warning"),
-        "reverter" => (Glyphs.Undo, "Danger"),
-        _ => (Glyphs.Settings, "Accent"),
-    };
-
     private static string CategoryTone(string category) => category switch
     {
         "Desempenho" => "Accent",
@@ -56,7 +42,7 @@ public partial class MainWindow
         customizeBtn.Margin = new Thickness(16, 0, 0, 0); customizeBtn.VerticalAlignment = VerticalAlignment.Center;
         customizeBtn.Click += (_, _) => NavigateTo("settings");
         DockPanel.SetDock(customizeBtn, Dock.Right); profileGrid.Children.Add(customizeBtn);
-        var profileChip = IconChip(Glyphs.Lightning, "Accent", 44); DockPanel.SetDock(profileChip, Dock.Left); profileGrid.Children.Add(profileChip);
+        var profileChip = OutlineChip(OptimizationIcons.For("padrao"), 44, primary: true); DockPanel.SetDock(profileChip, Dock.Left); profileGrid.Children.Add(profileChip);
         var profileText = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
         var profileTitle = Label("Perfil ativo: " + activeProfile.Name, 15); profileTitle.FontWeight = FontWeights.SemiBold; profileTitle.Margin = new Thickness(0);
         profileText.Children.Add(profileTitle);
@@ -84,7 +70,7 @@ public partial class MainWindow
                 Tag = cat,
                 Padding = new Thickness(14, 6, 14, 6),
                 Margin = new Thickness(0, 0, 8, 8),
-                FontSize = 12,
+                FontSize = 12.5,
             };
             if (isSelected) Primary(pill);
             else
@@ -126,7 +112,6 @@ public partial class MainWindow
             var grid = Responsive(new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, -14, 0) }, 360, 2);
             foreach (var opt in filteredList)
             {
-                var (glyph, tone) = OptimizationVisual(opt);
                 var body = new DockPanel();
 
                 var footer = new DockPanel { Margin = new Thickness(0, 14, 0, 0) };
@@ -139,7 +124,7 @@ public partial class MainWindow
                 DockPanel.SetDock(footer, Dock.Bottom); body.Children.Add(footer);
 
                 var head = new DockPanel();
-                var chip = IconChip(glyph, tone, 42); chip.VerticalAlignment = VerticalAlignment.Top;
+                var chip = OutlineChip(OptimizationIcons.For(opt.Id), 42, primary: opt.Id is "padrao" or "gamer" or "quickclean"); chip.VerticalAlignment = VerticalAlignment.Top;
                 DockPanel.SetDock(chip, Dock.Left); head.Children.Add(chip);
                 var text = new StackPanel { Margin = new Thickness(14, 0, 0, 0) };
                 var title = Label(opt.Name, 14.5); title.FontWeight = FontWeights.SemiBold; title.Margin = new Thickness(0, 1, 0, 4);

@@ -162,7 +162,7 @@ public partial class MainWindow
         foreach (var (category, label) in new (AutorunCategory?, string)[] { (null, "Tudo"), (AutorunCategory.Logon, "Logon"), (AutorunCategory.Tasks, "Tarefas agendadas"), (AutorunCategory.Services, "Serviços") })
         {
             var count = category is null ? visible.Count : visible.Count(e => e.Category == category);
-            var tab = new Button { Content = $"{label} ({count})", Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(0, 0, 8, 8), FontSize = 12 };
+            var tab = new Button { Content = $"{label} ({count})", Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(0, 0, 8, 8), FontSize = 12.5 };
             if (category == _autorunsCategory) Primary(tab);
             else
             {
@@ -189,7 +189,7 @@ public partial class MainWindow
             .ThenBy(g => g.Key.Location, StringComparer.OrdinalIgnoreCase);
         foreach (var group in groups)
         {
-            var header = new TextBlock { Text = group.Key.Location, FontSize = 11.5, FontWeight = FontWeights.SemiBold, Margin = new Thickness(4, list.Children.Count == 0 ? 0 : 16, 0, 6), TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = group.Key.Location };
+            var header = new TextBlock { Text = group.Key.Location, FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new Thickness(4, list.Children.Count == 0 ? 0 : 16, 0, 6), TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = group.Key.Location };
             header.SetResourceReference(TextBlock.FontFamilyProperty, "MonoFont");
             header.SetResourceReference(TextBlock.ForegroundProperty, "AccentBrush");
             list.Children.Add(header);
@@ -225,12 +225,12 @@ public partial class MainWindow
 
         // Nomes, descrições dos fabricantes, editores e caminhos vêm do sistema: o tradutor não mexe neles
         var names = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0) };
-        var name = new TextBlock { Text = entry.Name, FontSize = 13, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, Tag = Translator.SystemDataTag };
+        var name = new TextBlock { Text = entry.Name, FontSize = 12.5, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, Tag = Translator.SystemDataTag };
         names.Children.Add(name);
         var about = entry.Description.Length > 0 ? entry.Description : entry.Detail;
         if (about.Length > 0)
         {
-            var aboutText = new TextBlock { Text = about, FontSize = 11.5, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 2, 0, 0), Tag = entry.Description.Length > 0 ? Translator.SystemDataTag : null };
+            var aboutText = new TextBlock { Text = about, FontSize = 11, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 2, 0, 0), Tag = entry.Description.Length > 0 ? Translator.SystemDataTag : null };
             aboutText.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
             names.Children.Add(aboutText);
         }
@@ -241,7 +241,7 @@ public partial class MainWindow
         var publisher = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0) };
         var publisherName = entry.Signature == SignatureStatus.Verified && entry.Signer.Length > 0 ? entry.Signer : entry.Company;
         if (publisherName.Length > 0)
-            publisher.Children.Add(new TextBlock { Text = publisherName, FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = publisherName, Tag = Translator.SystemDataTag });
+            publisher.Children.Add(new TextBlock { Text = publisherName, FontSize = 12.5, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = publisherName, Tag = Translator.SystemDataTag });
         var (badge, tone) = entry.ImagePath != null && !entry.FileExists ? ("Arquivo não encontrado", "Warning")
             : entry.Signature switch
             {

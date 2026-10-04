@@ -46,7 +46,7 @@ public partial class MainWindow
         var left = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         var pill = Pill(_lastSpeed is null ? "Teste de velocidade" : "Último resultado", "Accent"); pill.HorizontalAlignment = HorizontalAlignment.Left; pill.Margin = new Thickness(0, 0, 0, 10);
         left.Children.Add(pill);
-        var title = new TextBlock { Text = _lastSpeed is null ? "Quão rápida e estável é a sua conexão?" : SpeedVerdict(_lastSpeed), FontSize = 22, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
+        var title = new TextBlock { Text = _lastSpeed is null ? "Quão rápida e estável é a sua conexão?" : SpeedVerdict(_lastSpeed), FontSize = 24, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
         title.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
         left.Children.Add(title);
         var sub = Label("Mede download, upload, ping, jitter e perda de pacotes nos servidores da Cloudflare. Leva cerca de 25 segundos.", 12.5, true);
@@ -102,14 +102,14 @@ public partial class MainWindow
     private Border SpeedStat(string label, string value, string unit, string tone)
     {
         var stack = new StackPanel();
-        var l = new TextBlock { Text = label, FontSize = 10.5, FontWeight = FontWeights.SemiBold };
+        var l = new TextBlock { Text = label, FontSize = 11, FontWeight = FontWeights.SemiBold };
         l.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         stack.Children.Add(l);
         var line = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0) };
-        var v = new TextBlock { Text = value, FontSize = 26, FontWeight = FontWeights.Bold, Tag = Translator.SystemDataTag };
+        var v = new TextBlock { Text = value, FontSize = 24, FontWeight = FontWeights.Bold, Tag = Translator.SystemDataTag };
         v.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
         v.SetResourceReference(TextBlock.ForegroundProperty, tone + "Brush");
-        var u = new TextBlock { Text = unit, FontSize = 12, Margin = new Thickness(5, 0, 0, 5), VerticalAlignment = VerticalAlignment.Bottom, Tag = Translator.SystemDataTag };
+        var u = new TextBlock { Text = unit, FontSize = 12.5, Margin = new Thickness(5, 0, 0, 5), VerticalAlignment = VerticalAlignment.Bottom, Tag = Translator.SystemDataTag };
         u.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         line.Children.Add(v); line.Children.Add(u);
         stack.Children.Add(line);

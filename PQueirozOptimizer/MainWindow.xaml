@@ -10,21 +10,18 @@
   <Grid x:Name="RootGrid">
    <Grid.ColumnDefinitions><ColumnDefinition Width="248"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
 
-   <!-- Fundo aurora: manchas de luz que se movem devagar (animadas em StartAurora) -->
-   <Grid x:Name="AuroraLayer" Grid.ColumnSpan="2" IsHitTestVisible="False" ClipToBounds="True"/>
 
    <!-- ============ BARRA LATERAL ============ -->
    <Border Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,1,0">
     <DockPanel>
      <!-- Logo (faz parte da área de arrastar a janela) -->
      <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="20,18,16,14">
-      <Border Width="36" Height="36" CornerRadius="11" Background="{DynamicResource AccentGradientBrush}">
-       <Border.Effect><DropShadowEffect BlurRadius="14" ShadowDepth="0" Opacity="0.35" Color="#8B5CF6"/></Border.Effect>
+      <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource AccentBrush}">
        <Image Source="pack://application:,,,/PQueirozOptimizer;component/Assets/app.png" Width="22" Height="22" RenderOptions.BitmapScalingMode="HighQuality"/>
       </Border>
       <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-       <TextBlock Text="PQueiroz" FontSize="15" FontWeight="Bold" FontFamily="{StaticResource DisplayFont}"/>
-       <TextBlock Text="OPTIMIZER" FontSize="9.5" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" Margin="0,1,0,0"/>
+       <TextBlock Text="PQueiroz" FontSize="14" FontWeight="Bold" FontFamily="{StaticResource DisplayFont}"/>
+       <TextBlock Text="OPTIMIZER" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" Margin="0,1,0,0"/>
       </StackPanel>
      </StackPanel>
 
@@ -34,20 +31,20 @@
        <DockPanel Margin="0,0,0,10">
         <TextBlock x:Name="HudPing" DockPanel.Dock="Right" Text="-- ms" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Tag="dado-do-sistema" ToolTip="Latência até 1.1.1.1"/>
         <Ellipse x:Name="HudLiveDot" Width="7" Height="7" Fill="{DynamicResource SuccessBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-        <TextBlock x:Name="NavFooterStatus" Text="Monitor ao vivo" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+        <TextBlock x:Name="NavFooterStatus" Text="Monitor ao vivo" FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
        </DockPanel>
        <Grid>
         <Grid.ColumnDefinitions><ColumnDefinition Width="34"/><ColumnDefinition Width="*"/><ColumnDefinition Width="40"/></Grid.ColumnDefinitions>
         <Grid.RowDefinitions><RowDefinition Height="18"/><RowDefinition Height="18"/><RowDefinition Height="18"/></Grid.RowDefinitions>
-        <TextBlock Text="CPU" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center"/>
+        <TextBlock Text="CPU" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center"/>
         <ProgressBar x:Name="HudCpuBar" Grid.Column="1" Height="4" Maximum="100" VerticalAlignment="Center"/>
-        <TextBlock x:Name="HudCpuText" Grid.Column="2" Text="--" FontSize="10.5" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Tag="dado-do-sistema"/>
-        <TextBlock Grid.Row="1" Text="GPU" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center"/>
+        <TextBlock x:Name="HudCpuText" Grid.Column="2" Text="--" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Tag="dado-do-sistema"/>
+        <TextBlock Grid.Row="1" Text="GPU" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center"/>
         <ProgressBar x:Name="HudGpuBar" Grid.Row="1" Grid.Column="1" Height="4" Maximum="100" VerticalAlignment="Center"/>
-        <TextBlock x:Name="HudGpuText" Grid.Row="1" Grid.Column="2" Text="--" FontSize="10.5" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Tag="dado-do-sistema"/>
-        <TextBlock Grid.Row="2" Text="RAM" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center"/>
+        <TextBlock x:Name="HudGpuText" Grid.Row="1" Grid.Column="2" Text="--" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Tag="dado-do-sistema"/>
+        <TextBlock Grid.Row="2" Text="RAM" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center"/>
         <ProgressBar x:Name="HudRamBar" Grid.Row="2" Grid.Column="1" Height="4" Maximum="100" VerticalAlignment="Center"/>
-        <TextBlock x:Name="HudRamText" Grid.Row="2" Grid.Column="2" Text="--" FontSize="10.5" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Tag="dado-do-sistema"/>
+        <TextBlock x:Name="HudRamText" Grid.Row="2" Grid.Column="2" Text="--" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Tag="dado-do-sistema"/>
        </Grid>
        <Border Height="1" Background="{DynamicResource BorderSubtleBrush}" Margin="0,10,0,8"/>
        <DockPanel>
@@ -68,7 +65,7 @@
        <RadioButton x:Name="NavOpt" Tag="optimization" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
         <DockPanel>
          <Border x:Name="NavOptBadge" DockPanel.Dock="Right" Padding="7,1" CornerRadius="8" Background="{DynamicResource AccentSoftBrush}" VerticalAlignment="Center">
-          <TextBlock x:Name="NavOptBadgeText" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
+          <TextBlock x:Name="NavOptBadgeText" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
          </Border>
          <TextBlock Text="&#xE945;" Style="{StaticResource NavIcon}"/>
          <TextBlock x:Name="NavOptText" Text="Otimizações" VerticalAlignment="Center" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
@@ -114,7 +111,7 @@
        <RadioButton x:Name="NavGaming" Tag="gaming" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
         <DockPanel>
          <Border x:Name="NavGamingBadge" DockPanel.Dock="Right" Padding="7,1" CornerRadius="8" Background="{DynamicResource SuccessSoftBrush}" VerticalAlignment="Center" Visibility="Collapsed">
-          <TextBlock Text="ATIVO" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource SuccessBrush}"/>
+          <TextBlock Text="ATIVO" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource SuccessBrush}"/>
          </Border>
          <TextBlock Text="&#xE7FC;" Style="{StaticResource NavIcon}"/>
          <TextBlock Text="Modo Jogo" VerticalAlignment="Center" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
@@ -155,9 +152,9 @@
     <Grid x:Name="SearchHost" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="36,11,0,0" Width="340" WindowChrome.IsHitTestVisibleInChrome="True">
      <Border x:Name="SearchBorder" CornerRadius="12" Height="34" Background="{DynamicResource CardBgBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1">
       <DockPanel Margin="12,0,6,0">
-       <TextBlock DockPanel.Dock="Left" Text="&#xE721;" Style="{StaticResource IconText}" FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="0,0,10,0"/>
+       <TextBlock DockPanel.Dock="Left" Text="&#xE721;" Style="{StaticResource IconText}" FontSize="12.5" Foreground="{DynamicResource MutedBrush}" Margin="0,0,10,0"/>
        <Border DockPanel.Dock="Right" CornerRadius="6" Padding="6,1" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center">
-        <TextBlock Text="Ctrl K" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" Tag="dado-do-sistema"/>
+        <TextBlock Text="Ctrl K" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" Tag="dado-do-sistema"/>
        </Border>
        <Grid>
         <TextBox x:Name="SearchBox" Background="Transparent" BorderThickness="0" Padding="0" FontSize="12.5" VerticalAlignment="Center" Style="{x:Null}" Foreground="{DynamicResource TextBrush}" CaretBrush="{DynamicResource AccentBrush}"
@@ -176,18 +173,18 @@
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
      <Border CornerRadius="17" Padding="12,0" Height="34" Margin="0,11,8,0" Background="{DynamicResource CardBgBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1">
       <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-       <TextBlock Text="&#xE9D9;" Style="{StaticResource IconText}" FontSize="12" Foreground="{DynamicResource AccentBrush}" Margin="0,0,7,0"/>
-       <TextBlock x:Name="TitleOptChip" Text="Pronto" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+       <TextBlock Text="&#xE9D9;" Style="{StaticResource IconText}" FontSize="12.5" Foreground="{DynamicResource AccentBrush}" Margin="0,0,7,0"/>
+       <TextBlock x:Name="TitleOptChip" Text="Pronto" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
       </StackPanel>
      </Border>
      <Border CornerRadius="17" Padding="12,0" Height="34" Margin="0,11,8,0" Background="{DynamicResource CardBgBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1">
       <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
        <Ellipse x:Name="TitleAdminDot" Width="7" Height="7" Fill="{DynamicResource MutedBrush}" Margin="0,0,7,0"/>
-       <TextBlock x:Name="TitleAdminChip" Text="Verificando" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+       <TextBlock x:Name="TitleAdminChip" Text="Verificando" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
       </StackPanel>
      </Border>
      <Button x:Name="LangButton" Content="PT" Style="{StaticResource ChipButton}" Margin="0,11,6,0" Click="LangButton_Click" WindowChrome.IsHitTestVisibleInChrome="True"/>
-     <Button x:Name="ThemeButton" Style="{StaticResource ChipButton}" Margin="0,11,14,0" FontFamily="{StaticResource IconFont}" FontSize="13" Click="ThemeButton_Click" WindowChrome.IsHitTestVisibleInChrome="True"/>
+     <Button x:Name="ThemeButton" Style="{StaticResource ChipButton}" Margin="0,11,14,0" FontFamily="{StaticResource IconFont}" FontSize="12.5" Click="ThemeButton_Click" WindowChrome.IsHitTestVisibleInChrome="True"/>
      <Button Style="{StaticResource TitleBarBtnStyle}" Content="&#xE921;" ToolTip="Minimizar" Click="BtnMinimize_Click" WindowChrome.IsHitTestVisibleInChrome="True"/>
      <Button x:Name="BtnMaximize" Style="{StaticResource TitleBarBtnStyle}" Content="&#xE922;" Click="BtnMaximize_Click" WindowChrome.IsHitTestVisibleInChrome="True"/>
      <Button Style="{StaticResource TitleBarCloseBtnStyle}" Content="&#xE8BB;" ToolTip="Fechar" Click="BtnClose_Click" WindowChrome.IsHitTestVisibleInChrome="True"/>
@@ -196,15 +193,14 @@
     <!-- Cabeçalho da página: ícone, seção, título e subtítulo -->
     <DockPanel Grid.Row="1" Margin="36,8,36,22">
      <Border x:Name="PageBadge" DockPanel.Dock="Right" Visibility="Collapsed" VerticalAlignment="Center" Background="{DynamicResource AccentSoftBrush}" BorderBrush="{DynamicResource AccentSoftBrush}" BorderThickness="1" CornerRadius="12" Padding="14,7">
-      <TextBlock x:Name="PageBadgeText" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
+      <TextBlock x:Name="PageBadgeText" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
      </Border>
-     <Border x:Name="PageIconChip" DockPanel.Dock="Left" Width="54" Height="54" CornerRadius="17" Background="{DynamicResource AccentGradientBrush}" Margin="0,0,18,0" VerticalAlignment="Center">
-      <Border.Effect><DropShadowEffect BlurRadius="18" ShadowDepth="0" Opacity="0.3" Color="#8B5CF6"/></Border.Effect>
-      <TextBlock x:Name="PageIcon" Text="&#xE80F;" Style="{StaticResource IconText}" FontSize="22" Foreground="White"/>
+     <Border x:Name="PageIconChip" DockPanel.Dock="Left" Width="44" Height="44" CornerRadius="11" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,16,0" VerticalAlignment="Center">
+      <TextBlock x:Name="PageIcon" Text="&#xE80F;" Style="{StaticResource IconText}" FontSize="18" Foreground="{DynamicResource AccentBrush}"/>
      </Border>
      <StackPanel VerticalAlignment="Center">
-      <TextBlock x:Name="PageEyebrow" Text="MONITORAR" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,3"/>
-      <TextBlock x:Name="PageTitle" Text="Visão geral" FontSize="28" FontWeight="Bold" FontFamily="{StaticResource DisplayFont}"/>
+      <TextBlock x:Name="PageEyebrow" Text="MONITORAR" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,3"/>
+      <TextBlock x:Name="PageTitle" Text="Visão geral" FontSize="24" FontWeight="Bold" FontFamily="{StaticResource DisplayFont}"/>
       <TextBlock x:Name="PageSubtitle" FontSize="12.5" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis"/>
      </StackPanel>
     </DockPanel>
@@ -220,10 +216,10 @@
        <Button Content="Ver atividade" DockPanel.Dock="Right" Click="History_Click" Margin="12,0,0,0" Padding="12,5" Style="{StaticResource GhostButton}"/>
        <StackPanel x:Name="LastActivityPanel" DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0" MaxWidth="460" Visibility="Collapsed">
         <Ellipse x:Name="LastActivityDot" Width="6" Height="6" Fill="{DynamicResource SuccessBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-        <TextBlock x:Name="LastActivityText" MaxWidth="440" FontSize="11.5" Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Tag="dado-do-sistema"/>
+        <TextBlock x:Name="LastActivityText" MaxWidth="440" FontSize="11" Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Tag="dado-do-sistema"/>
        </StackPanel>
-       <Border Width="28" Height="28" CornerRadius="9" Background="{DynamicResource AccentGradientBrush}" Margin="0,0,12,0">
-        <TextBlock Text="&#xE946;" Style="{StaticResource IconText}" FontSize="12" Foreground="White"/>
+       <Border Width="20" Height="28" Margin="0,0,10,0">
+        <TextBlock Text="&#xE946;" Style="{StaticResource IconText}" FontSize="14" Foreground="{DynamicResource MutedBrush}"/>
        </Border>
        <TextBlock x:Name="OperationStatus" Text="Pronto para começar" TextWrapping="Wrap" VerticalAlignment="Center" FontSize="12.5" Foreground="{DynamicResource MutedBrush}"/>
       </DockPanel>

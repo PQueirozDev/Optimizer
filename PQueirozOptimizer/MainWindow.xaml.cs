@@ -78,7 +78,7 @@ public partial class MainWindow : Window
         Action onAppearance = () => Dispatcher.BeginInvoke(OnAppearanceChanged);
         AppearanceService.Changed += onAppearance;
         Closed += (_, _) => AppearanceService.Changed -= onAppearance;
-        StartAurora();
+        ApplyBackdrop();
         UpdatePageHeader(_currentPage);
         _loc.SetLanguage(_configService.Config.Language ?? "pt");
         UpdateLanguageUi();
@@ -319,13 +319,13 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Depois de mudar a aparência: atualiza o que não acompanha os recursos dinâmicos (sombras, aurora,
+    /// Depois de mudar a aparência: atualiza o que não acompanha os recursos dinâmicos (sombras, fundo translúcido,
     /// ícone do tema) e redesenha a página — exceto durante uma operação, para não apagar a saída na tela.
     /// </summary>
     private void OnAppearanceChanged()
     {
         _darkTheme = ThemeService.IsDark;
-        StartAurora(); // reinicia (ou para) o movimento do fundo conforme as animações
+        ApplyBackdrop(); // liga ou desliga o fundo translúcido
         UpdateThemeButton();
         if (Application.Current.TryFindResource("ShadowColor") is Color shadow) RefreshThemedVisuals(this, shadow);
         if (!_operationRunning && IsLoaded && _currentPage is not ("dashboard")) NavigateTo(_currentPage);
@@ -355,7 +355,7 @@ public partial class MainWindow : Window
     {
         ThemeService.Apply(Application.Current.Resources, AppearanceService.Current, forceLight: !isDark);
         _darkTheme = ThemeService.IsDark;
-        RefreshAuroraColors();
+        ApplyBackdrop();
         UpdateThemeButton();
     }
     #endregion

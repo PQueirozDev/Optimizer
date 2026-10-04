@@ -80,7 +80,7 @@ public partial class MainWindow
         var types = new StackPanel { Orientation = Orientation.Horizontal };
         foreach (var (store, title) in new[] { (false, "Área de trabalho"), (true, "Microsoft Store") })
         {
-            var b = new Button { Content = title, Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(0, 0, 8, 0), FontSize = 12 };
+            var b = new Button { Content = title, Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(0, 0, 8, 0), FontSize = 12.5 };
             if (_appsStore == store) Primary(b);
             b.Click += (_, _) => { _appsStore = store; ShowApps(); };
             types.Children.Add(b);

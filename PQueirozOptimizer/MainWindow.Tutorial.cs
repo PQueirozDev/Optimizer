@@ -206,7 +206,7 @@ public partial class MainWindow
         DockPanel.SetDock(count, Dock.Right); top.Children.Add(count);
         var chip = IconChip(Glyphs.Lightning, "Accent", 30); chip.HorizontalAlignment = HorizontalAlignment.Left; top.Children.Add(chip);
         panel.Children.Add(top);
-        var title = new TextBlock { Text = Translator.Tr(step.Title), FontSize = 16, FontWeight = FontWeights.Bold, TextWrapping = TextWrapping.Wrap };
+        var title = new TextBlock { Text = Translator.Tr(step.Title), FontSize = 14, FontWeight = FontWeights.Bold, TextWrapping = TextWrapping.Wrap };
         title.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
         title.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
         panel.Children.Add(title);

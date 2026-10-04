@@ -35,11 +35,11 @@ public partial class MainWindow
             var top = new DockPanel();
             var code = Pill($"0x{level.Value:X2}", selected ? "Success" : "Info"); DockPanel.SetDock(code, Dock.Right); top.Children.Add(code);
             ((TextBlock)code.Child).Tag = Translator.SystemDataTag;
-            var t = new TextBlock { Text = level.Label, FontSize = 13, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
+            var t = new TextBlock { Text = level.Label, FontSize = 12.5, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
             t.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
             top.Children.Add(t);
             stack.Children.Add(top);
-            var d = new TextBlock { Text = level.Description, FontSize = 11.5, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0) };
+            var d = new TextBlock { Text = level.Description, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0) };
             d.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
             stack.Children.Add(d);
             tile.Content = stack;

@@ -59,13 +59,13 @@
     </Style>
     <Style x:Key="IconText" TargetType="TextBlock">
       <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
-      <Setter Property="FontSize" Value="16"/>
+      <Setter Property="FontSize" Value="14"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
       <Setter Property="HorizontalAlignment" Value="Center"/>
     </Style>
 
     <!-- Botão padrão (secundário). O realce de hover é uma camada por cima do fundo,
-         então funciona também em botões primários com gradiente. -->
+         então funciona também nos botões primários. -->
     <Style TargetType="Button">
       <Setter Property="local:Motion.Kind" Value="button"/>
       <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
@@ -85,8 +85,8 @@
           <ControlTemplate TargetType="Button">
             <Grid x:Name="btnRoot" RenderTransformOrigin="0.5,0.5">
               <Border x:Name="btnBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                      BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12"/>
-              <Border x:Name="hover" Background="{DynamicResource TextBrush}" CornerRadius="12" Opacity="0" IsHitTestVisible="False"/>
+                      BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10"/>
+              <Border x:Name="hover" Background="{DynamicResource TextBrush}" CornerRadius="10" Opacity="0" IsHitTestVisible="False"/>
               <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                 VerticalAlignment="Center" RecognizesAccessKey="True"/>
             </Grid>
@@ -107,24 +107,11 @@
       </Setter>
     </Style>
 
-    <!-- Primário: gradiente com brilho que se intensifica ao passar o mouse -->
+    <!-- Primário: cor sólida do destaque (o realce de hover vem da camada do botão padrão) -->
     <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-      <Setter Property="Background" Value="{DynamicResource AccentGradientBrush}"/>
+      <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
       <Setter Property="BorderBrush" Value="Transparent"/>
       <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}"/>
-      <Setter Property="Effect">
-        <Setter.Value><DropShadowEffect BlurRadius="12" ShadowDepth="0" Opacity="0.22" Color="{StaticResource GlowColor}"/></Setter.Value>
-      </Setter>
-      <Style.Triggers>
-        <Trigger Property="IsMouseOver" Value="True">
-          <Setter Property="Effect">
-            <Setter.Value><DropShadowEffect BlurRadius="18" ShadowDepth="0" Opacity="0.4" Color="{StaticResource GlowColor}"/></Setter.Value>
-          </Setter>
-        </Trigger>
-        <Trigger Property="IsEnabled" Value="False">
-          <Setter Property="Effect" Value="{x:Null}"/>
-        </Trigger>
-      </Style.Triggers>
     </Style>
 
     <Style x:Key="GhostButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
@@ -142,7 +129,7 @@
       <Setter Property="Height" Value="40"/>
       <Setter Property="Margin" Value="0"/>
       <Setter Property="Padding" Value="0"/>
-      <Setter Property="FontSize" Value="10"/>
+      <Setter Property="FontSize" Value="11"/>
       <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -198,14 +185,14 @@
       <Setter Property="Margin" Value="0,0,6,0"/>
       <Setter Property="Height" Value="30"/>
       <Setter Property="MinWidth" Value="34"/>
-      <Setter Property="FontSize" Value="11.5"/>
+      <Setter Property="FontSize" Value="11"/>
       <Setter Property="Background" Value="{DynamicResource CardBgBrush}"/>
     </Style>
 
     <!-- Navegação lateral -->
     <Style x:Key="NavButtonStyle" TargetType="RadioButton">
       <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/>
-      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="FontSize" Value="12.5"/>
       <Setter Property="FontWeight" Value="Medium"/>
       <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
       <Setter Property="Margin" Value="0,1"/>
@@ -218,11 +205,9 @@
         <Setter.Value>
           <ControlTemplate TargetType="RadioButton">
             <Grid>
-              <Border x:Name="bg" CornerRadius="12" Background="Transparent"/>
-              <Border x:Name="indicator" Width="3" Height="20" CornerRadius="2" HorizontalAlignment="Left"
-                      Background="{DynamicResource AccentGradientBrush}" Opacity="0">
-                <Border.Effect><DropShadowEffect BlurRadius="10" ShadowDepth="0" Opacity="0.9" Color="{StaticResource GlowColor}"/></Border.Effect>
-              </Border>
+              <Border x:Name="bg" CornerRadius="10" Background="Transparent"/>
+              <Border x:Name="indicator" Width="3" Height="18" CornerRadius="2" HorizontalAlignment="Left"
+                      Background="{DynamicResource AccentBrush}" Opacity="0"/>
               <ContentPresenter x:Name="content" Margin="{TemplateBinding Padding}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
             </Grid>
             <ControlTemplate.Triggers>
@@ -242,13 +227,13 @@
       </Setter>
     </Style>
     <Style x:Key="NavIcon" TargetType="TextBlock" BasedOn="{StaticResource IconText}">
-      <Setter Property="FontSize" Value="15"/>
+      <Setter Property="FontSize" Value="14"/>
       <Setter Property="Width" Value="20"/>
       <Setter Property="Margin" Value="0,0,12,0"/>
       <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
     </Style>
     <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
-      <Setter Property="FontSize" Value="10.5"/>
+      <Setter Property="FontSize" Value="11"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
       <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/>
       <Setter Property="Opacity" Value="0.75"/>
@@ -303,7 +288,7 @@
       <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="Padding" Value="12,8"/>
-      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="FontSize" Value="12.5"/>
       <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
       <Setter Property="CaretBrush" Value="{DynamicResource AccentBrush}"/>
       <Setter Property="SelectionBrush" Value="{DynamicResource AccentBrush}"/>
@@ -331,7 +316,7 @@
     <Style TargetType="CheckBox">
       <Setter Property="local:Motion.Kind" Value="check"/>
       <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
-      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="FontSize" Value="12.5"/>
       <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="Margin" Value="0,4"/>
@@ -421,8 +406,8 @@
                 <Border.Background>
                   <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                     <GradientStop Color="Transparent" Offset="-0.6"/>
-                    <GradientStop Color="#8B5CF6" Offset="-0.3"/>
-                    <GradientStop Color="#22D3EE" Offset="-0.15"/>
+                    <GradientStop Color="{DynamicResource AccentColor}" Offset="-0.3"/>
+                    <GradientStop Color="{DynamicResource AccentColor}" Offset="-0.15"/>
                     <GradientStop Color="Transparent" Offset="0"/>
                   </LinearGradientBrush>
                 </Border.Background>
@@ -484,7 +469,7 @@
     <!-- Dica flutuante -->
     <Style TargetType="ToolTip">
       <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
-      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="FontSize" Value="12.5"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="ToolTip">
@@ -501,7 +486,7 @@
       <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="Padding" Value="12,9"/>
-      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="FontSize" Value="12.5"/>
       <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="HorizontalContentAlignment" Value="Left"/>
@@ -546,7 +531,7 @@
       <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="Padding" Value="12,8"/>
-      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="FontSize" Value="12.5"/>
       <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="SnapsToDevicePixels" Value="True"/>
@@ -563,7 +548,7 @@
                 <ContentPresenter.Resources>
                   <Style TargetType="TextBlock">
                     <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
-                    <Setter Property="FontSize" Value="13"/>
+                    <Setter Property="FontSize" Value="12.5"/>
                   </Style>
                 </ContentPresenter.Resources>
               </ContentPresenter>

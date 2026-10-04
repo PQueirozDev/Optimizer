@@ -49,7 +49,7 @@ public partial class MainWindow
         foreach (var category in categories.Prepend(AllDriversCategory))
         {
             var count = category == AllDriversCategory ? allDrivers.Count : allDrivers.Count(d => d.Category == category);
-            var pill = new Button { Content = $"{category} ({count})", Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(0, 0, 8, 8), FontSize = 12 };
+            var pill = new Button { Content = $"{category} ({count})", Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(0, 0, 8, 8), FontSize = 12.5 };
             if (category == _driverCategory) Primary(pill);
             else
             {

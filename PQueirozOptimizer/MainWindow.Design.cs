@@ -11,54 +11,9 @@ using PQueirozOptimizer.Services;
 
 namespace PQueirozOptimizer;
 
-/// <summary>Camada visual: fundo aurora, cabeçalho de cada página, busca rápida (Ctrl+K), notificações e abas.</summary>
+/// <summary>Camada visual: cabeçalho de cada página, busca rápida (Ctrl+K), notificações e abas.</summary>
 public partial class MainWindow
 {
-    // ================= Fundo aurora =================
-    private readonly List<(Ellipse Blob, string ColorKey)> _auroraBlobs = new();
-
-    /// <summary>Três manchas de luz desfocadas que flutuam devagar atrás da interface.</summary>
-    private void StartAurora()
-    {
-        AuroraLayer.Children.Clear();
-        _auroraBlobs.Clear();
-        // Posição por alinhamento + margem negativa: não depende do tamanho da janela já estar calculado
-        var specs = new[]
-        {
-            ("AuroraA", HorizontalAlignment.Right, VerticalAlignment.Top, new Thickness(0, -300, 80, 0), 820d, 26d),
-            ("AuroraB", HorizontalAlignment.Left, VerticalAlignment.Bottom, new Thickness(-220, 0, 0, -260), 700d, 32d),
-            ("AuroraC", HorizontalAlignment.Right, VerticalAlignment.Bottom, new Thickness(0, 0, -180, -200), 560d, 38d),
-        };
-        foreach (var (key, horizontal, vertical, margin, size, seconds) in specs)
-        {
-            var blob = new Ellipse { Width = size, Height = size * 0.8, IsHitTestVisible = false, HorizontalAlignment = horizontal, VerticalAlignment = vertical, Margin = margin };
-            var move = new TranslateTransform();
-            blob.RenderTransform = move;
-            _auroraBlobs.Add((blob, key));
-            AuroraLayer.Children.Add(blob);
-            if (!AppearanceService.AnimationsEnabled) continue; // fundo estático com as animações desligadas
-            var drift = TimeSpan.FromSeconds(seconds);
-            var ease = new SineEase { EasingMode = EasingMode.EaseInOut };
-            move.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(-60, 80, drift) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = ease });
-            move.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(40, -50, TimeSpan.FromSeconds(seconds * 0.8)) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = ease });
-        }
-        RefreshAuroraColors();
-    }
-
-    private void RefreshAuroraColors()
-    {
-        foreach (var (blob, key) in _auroraBlobs)
-        {
-            var color = Application.Current?.TryFindResource(key) is Color c ? c : Colors.Transparent;
-            var brush = new RadialGradientBrush();
-            brush.GradientStops.Add(new GradientStop(color, 0));
-            brush.GradientStops.Add(new GradientStop(Color.FromArgb((byte)(color.A / 3), color.R, color.G, color.B), 0.45));
-            brush.GradientStops.Add(new GradientStop(Colors.Transparent, 1));
-            brush.Freeze();
-            blob.Fill = brush;
-        }
-    }
-
     // ================= Cabeçalho de cada página =================
     private static readonly Dictionary<string, (string Eyebrow, string Glyph, string Subtitle)> PageHeaders = new()
     {
@@ -110,9 +65,9 @@ public partial class MainWindow
         close.SetResourceReference(StyleProperty, "GhostButton");
         DockPanel.SetDock(close, Dock.Right); dock.Children.Add(close);
         var text = new StackPanel { Margin = new Thickness(12, 0, 0, 0) };
-        var t = new TextBlock { Text = Translator.Tr(title), FontSize = 13, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
+        var t = new TextBlock { Text = Translator.Tr(title), FontSize = 12.5, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
         t.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
-        var m = new TextBlock { Text = Translator.Tr(message), FontSize = 12, Margin = new Thickness(0, 2, 0, 0), TextWrapping = TextWrapping.Wrap };
+        var m = new TextBlock { Text = Translator.Tr(message), FontSize = 12.5, Margin = new Thickness(0, 2, 0, 0), TextWrapping = TextWrapping.Wrap };
         m.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         text.Children.Add(t); if (!string.IsNullOrWhiteSpace(message)) text.Children.Add(m);
         dock.Children.Add(text);
@@ -274,7 +229,7 @@ public partial class MainWindow
             section.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
             DockPanel.SetDock(section, Dock.Right); row.Children.Add(section);
             var chip = IconChip(entry.Glyph, i == _paletteIndex ? "Accent" : "Info", 30); DockPanel.SetDock(chip, Dock.Left); row.Children.Add(chip);
-            var title = new TextBlock { Text = entry.Title, FontSize = 13, FontWeight = FontWeights.SemiBold, Margin = new Thickness(12, 0, 12, 0), VerticalAlignment = VerticalAlignment.Center };
+            var title = new TextBlock { Text = entry.Title, FontSize = 12.5, FontWeight = FontWeights.SemiBold, Margin = new Thickness(12, 0, 12, 0), VerticalAlignment = VerticalAlignment.Center };
             title.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
             row.Children.Add(title);
             var item = new Border { Child = row, Padding = new Thickness(10, 8, 12, 8), CornerRadius = new CornerRadius(10), Cursor = Cursors.Hand };

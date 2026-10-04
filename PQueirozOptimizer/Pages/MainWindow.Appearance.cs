@@ -28,9 +28,9 @@ public partial class MainWindow
         panel.Children.Add(themeHint);
         panel.Children.Add(ThemeGallery(current.Theme, theme => Update(s => s.Theme = theme)));
 
-        panel.Children.Add(SettingRow("Cor principal", "Botões, seleção da barra lateral, gráficos e brilhos.",
+        panel.Children.Add(SettingRow("Cor principal", "Botões, seleção da barra lateral e gráficos.",
             ColorPicker(current.AccentColor, AccentChoices, hex => Update(s => s.AccentColor = hex))));
-        panel.Children.Add(SettingRow("Cor secundária", "Segunda cor dos gradientes, do anel de saúde e dos indicadores.",
+        panel.Children.Add(SettingRow("Cor secundária", "Cor do anel de saúde e dos indicadores.",
             ColorPicker(current.SecondaryColor, SecondaryChoices, hex => Update(s => s.SecondaryColor = hex))));
         panel.Children.Add(SettingRow("Intensidade da cor", "Suave deixa as cores mais discretas; Vibrante, mais vivas.",
             Segmented(new[] { "Suave", "Padrão", "Vibrante" }, (int)current.Accent, i => Update(s => s.Accent = (AccentIntensity)i))));
@@ -43,8 +43,16 @@ public partial class MainWindow
         animations.SetResourceReference(StyleProperty, "SwitchCheckBox");
         animations.Checked += (_, _) => Update(s => s.Animations = true);
         animations.Unchecked += (_, _) => Update(s => s.Animations = false);
-        const string animationsHint = "Entrada das páginas, movimento dos cards, brilhos e fundo animado. O monitor ao vivo e os gráficos continuam atualizando.";
+        const string animationsHint = "Entrada das páginas e transições. O monitor ao vivo e os gráficos continuam atualizando.";
         panel.Children.Add(SettingRow("Animações da interface", animationsHint, animations));
+
+        var translucent = new CheckBox { IsChecked = current.Translucent && ThemeService.TranslucencySupported, Content = "", IsEnabled = ThemeService.TranslucencySupported };
+        translucent.SetResourceReference(StyleProperty, "SwitchCheckBox");
+        translucent.Checked += (_, _) => Update(s => s.Translucent = true);
+        translucent.Unchecked += (_, _) => Update(s => s.Translucent = false);
+        panel.Children.Add(SettingRow("Janela translúcida", ThemeService.TranslucencySupported
+            ? "O fundo da janela fica desfocado e deixa ver o que está atrás, como nos apps do Windows 11."
+            : "Disponível só no Windows 11 (versão 22H2 ou mais nova).", translucent));
 
         panel.Children.Add(Divider());
         var previewTitle = Label("Pré-visualização", 13); previewTitle.FontWeight = FontWeights.SemiBold; previewTitle.Margin = new Thickness(0, 0, 0, 10);
@@ -64,7 +72,7 @@ public partial class MainWindow
     }
 
     private static bool IsDefaultAppearance(AppearanceSettings s) =>
-        s.Theme == ThemeMode.Dark && s.Accent == AccentIntensity.Default && s.Density == Density.Default && s.CardSize == CardSize.Medium && s.Animations
+        s.Theme == ThemeMode.Dark && s.Accent == AccentIntensity.Default && s.Density == Density.Default && s.CardSize == CardSize.Medium && s.Animations && !s.Translucent
         && string.IsNullOrEmpty(s.AccentColor) && string.IsNullOrEmpty(s.SecondaryColor);
 
     // ================= Temas e cores =================
@@ -164,7 +172,7 @@ public partial class MainWindow
             row.Children.Add(Swatch(custom, "Personalizada " + normalized, true, () => { }));
 
         var input = new TextBox { Width = 92, Height = 32, Padding = new Thickness(8, 0, 8, 0), Text = isPreset ? "" : normalized ?? "", Margin = new Thickness(8, 0, 4, 0), VerticalContentAlignment = VerticalAlignment.Center, ToolTip = "Código da cor, por exemplo #FF6A00", MaxLength = 7 };
-        var hint = new TextBlock { Text = "#RRGGBB", IsHitTestVisible = false, Margin = new Thickness(17, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, FontSize = 12, Tag = Translator.SystemDataTag };
+        var hint = new TextBlock { Text = "#RRGGBB", IsHitTestVisible = false, Margin = new Thickness(17, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, FontSize = 12.5, Tag = Translator.SystemDataTag };
         hint.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         hint.Visibility = string.IsNullOrEmpty(input.Text) ? Visibility.Visible : Visibility.Collapsed;
         input.TextChanged += (_, _) => hint.Visibility = string.IsNullOrEmpty(input.Text) ? Visibility.Visible : Visibility.Collapsed;
@@ -239,8 +247,8 @@ public partial class MainWindow
         var ring = ScoreRing(100, "", 70 * AppearanceService.CardScale);
         DockPanel.SetDock(ring, Dock.Right); head.Children.Add(ring);
         var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        var l = new TextBlock { Text = "SAÚDE", FontSize = 10.5, FontWeight = FontWeights.SemiBold }; l.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
-        var v = new TextBlock { Text = "100", FontSize = 26 * AppearanceService.CardScale, FontWeight = FontWeights.Bold, Tag = Translator.SystemDataTag };
+        var l = new TextBlock { Text = "SAÚDE", FontSize = 11, FontWeight = FontWeights.SemiBold }; l.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+        var v = new TextBlock { Text = "100", FontSize = 24 * AppearanceService.CardScale, FontWeight = FontWeights.Bold, Tag = Translator.SystemDataTag };
         v.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont"); v.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
         text.Children.Add(l); text.Children.Add(v);
         head.Children.Add(text);
@@ -263,11 +271,11 @@ public partial class MainWindow
         var stack = new StackPanel();
         var top = new DockPanel();
         var chip = IconChip(glyph, tone, 26 * scale); DockPanel.SetDock(chip, Dock.Right); top.Children.Add(chip);
-        var label = new TextBlock { Text = title, FontSize = 10.5, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
+        var label = new TextBlock { Text = title, FontSize = 11, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
         label.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         top.Children.Add(label);
         stack.Children.Add(top);
-        var v = new TextBlock { Text = value, FontSize = 26 * scale, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 4, 0, 0), Tag = Translator.SystemDataTag };
+        var v = new TextBlock { Text = value, FontSize = 24 * scale, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 4, 0, 0), Tag = Translator.SystemDataTag };
         v.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
         v.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
         stack.Children.Add(v);
@@ -283,7 +291,6 @@ public partial class MainWindow
         var card = new Border { Child = content, Padding = new Thickness(AppearanceService.Space(14) * AppearanceService.CardScale), CornerRadius = new CornerRadius(14), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, AppearanceService.Gap, 0), Tag = tone };
         card.SetResourceReference(Border.BackgroundProperty, "SurfaceSecondaryBrush");
         card.SetResourceReference(Border.BorderBrushProperty, "BorderSubtleBrush");
-        AddHoverOutline(card);
         return card;
     }
 
