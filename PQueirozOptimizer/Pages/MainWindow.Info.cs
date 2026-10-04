@@ -25,6 +25,10 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.8.9", "03/10/2026", new[]
+        {
+            "Versão do aplicativo sincronizada com o instalador e com o mecanismo de atualizações para garantir que a nova build seja reconhecida corretamente.",
+        }),
         ("v1.8.8", "03/10/2026", new[]
         {
             "A Central de diagnóstico agora é o único acesso principal aos diagnósticos, evitando duas funções com o mesmo nome e mantendo todas as verificações em um só lugar.",
