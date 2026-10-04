@@ -25,6 +25,10 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.8.15", "04/10/2026", new[]
+        {
+            "Removido o idioma espanhol: o app volta a ter português e inglês. Quem usava espanhol passa a ver o app em português.",
+        }),
         ("v1.8.14", "04/10/2026", new[]
         {
             "Nova página Personalizar Windows: 24 preferências com liga/desliga aplicadas na hora, como barra de tarefas à esquerda, botão Finalizar tarefa, extensões de arquivo, menu de contexto clássico, Num Lock e aceleração do mouse.",

@@ -6,18 +6,18 @@ using System.Windows.Controls;
 namespace PQueirozOptimizer.Services;
 
 /// <summary>
-/// Tradução central do português para inglês ou espanhol. O app é escrito em português; com outro
-/// idioma ativo, todo TextBlock que aparece na tela (páginas, botões, dicas, listas e a saída do
+/// Tradução central do português para o inglês. O app é escrito em português; com o inglês
+/// ativo, todo TextBlock que aparece na tela (páginas, botões, dicas, listas e a saída do
 /// script) passa por aqui, inclusive quando o texto muda depois de exibido.
 /// </summary>
 public static partial class Translator
 {
-    /// <summary>Idioma da tela: "pt" (original, sem tradução), "en" ou "es".</summary>
+    /// <summary>Idioma da tela: "pt" (original, sem tradução) ou "en".</summary>
     public static string Language { get; set; } = "pt";
 
     public static bool IsEnglish { get => Language == "en"; set => Language = value ? "en" : "pt"; }
 
-    /// <summary>Há tradução a fazer (qualquer idioma que não o português).</summary>
+    /// <summary>Há tradução a fazer (idioma diferente do português).</summary>
     private static bool Active => Language != "pt";
 
     /// <summary>Marca (Tag) de textos que vêm do sistema, como nomes de programas e caminhos: não são traduzidos.</summary>
@@ -76,7 +76,7 @@ public static partial class Translator
         tb.SetValue(ProcessedProperty, translated);
     }
 
-    /// <summary>Traduz um texto do português para o idioma ativo (inglês ou espanhol).</summary>
+    /// <summary>Traduz um texto do português para o inglês quando o idioma ativo é inglês.</summary>
     public static string Tr(string? text)
     {
         if (!Active || string.IsNullOrWhiteSpace(text)) return text ?? "";
@@ -95,25 +95,20 @@ public static partial class Translator
 
     private static readonly Regex SymbolPrefix = new(@"^([^\p{L}\p{N}'""(\[]+)(.+)$", RegexOptions.Compiled);
 
-    /// <summary>Texto exato no dicionário do idioma ativo.</summary>
-    private static bool Lookup(string text, out string translated)
-    {
-        if (Language == "es") return SpanishExact.TryGetValue(text, out translated!);
-        return Exact.TryGetValue(text, out translated!) || GamingExact.TryGetValue(text, out translated!) || ExtrasExact.TryGetValue(text, out translated!)
+    /// <summary>Texto exato nos dicionários de inglês.</summary>
+    private static bool Lookup(string text, out string translated) =>
+        Exact.TryGetValue(text, out translated!) || GamingExact.TryGetValue(text, out translated!) || ExtrasExact.TryGetValue(text, out translated!)
             || ParagonExact.TryGetValue(text, out translated!) || CustomizeExact.TryGetValue(text, out translated!);
-    }
 
     private static string? TranslateTrimmed(string core)
     {
         if (Lookup(core, out var exact)) return exact;
 
-        // Os padrões montam frases em inglês; em espanhol, texto dinâmico sem tradução exata fica em português
-        if (IsEnglish)
-            foreach (var (regex, build) in Patterns.Concat(GamingPatterns).Concat(ExtrasPatterns).Concat(ParagonPatterns).Concat(CustomizePatterns))
-            {
-                var m = regex.Match(core);
-                if (m.Success) return build(m);
-            }
+        foreach (var (regex, build) in Patterns.Concat(GamingPatterns).Concat(ExtrasPatterns).Concat(ParagonPatterns).Concat(CustomizePatterns))
+        {
+            var m = regex.Match(core);
+            if (m.Success) return build(m);
+        }
 
         // Texto com vários trechos: "A · B", várias linhas, "A + B"
         foreach (var separator in new[] { "\n", " · ", " • ", " + ", " — " })

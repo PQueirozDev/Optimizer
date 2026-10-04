@@ -78,8 +78,8 @@ public static partial class Translator
         ["Limpeza ampliada: sobras do Windows Update, cache de entrega, relatórios de erro, despejos de travamento e lixeira, com o tamanho de cada um antes de limpar."] = "Expanded cleanup: Windows Update leftovers, delivery cache, error reports, crash dumps and Recycle Bin, with the size of each before cleaning.",
         ["Tarefas agendadas: executar, parar e excluir (só as de programas) direto na página Inicialização."] = "Scheduled tasks: run, stop and delete (program tasks only) right from the Startup page.",
         ["Novo idioma: espanhol."] = "New language: Spanish.",
+        ["Removido o idioma espanhol: o app volta a ter português e inglês. Quem usava espanhol passa a ver o app em português."] = "Spanish language removed: the app is back to Portuguese and English. Anyone using Spanish now sees the app in Portuguese.",
         ["Abertura nova, com logo animado, nome letra a letra e anel de progresso."] = "New startup screen, with an animated logo, letter-by-letter name and progress ring.",
-        ["Español (ES)"] = "Español (ES)",
 
         // ---------- Tarefas agendadas ----------
         ["Executar agora"] = "Run now", ["Parar"] = "Stop", ["Excluir tarefa"] = "Delete task", ["Tarefa agendada"] = "Scheduled task",

@@ -2,8 +2,8 @@ namespace PQueirozOptimizer.Services;
 
 public class LocalizationService
 {
-    /// <summary>Idiomas na ordem do botão do topo: português (original), inglês e espanhol.</summary>
-    public static readonly string[] Languages = { "pt", "en", "es" };
+    /// <summary>Idiomas disponíveis: português (original) e inglês.</summary>
+    public static readonly string[] Languages = { "pt", "en" };
 
     public string CurrentLanguage { get; private set; } = "pt";
 
@@ -17,9 +17,8 @@ public class LocalizationService
         Translator.Language = CurrentLanguage;
     }
 
-    /// <summary>Próximo idioma da lista (PT → EN → ES → PT).</summary>
+    /// <summary>O outro idioma (PT ↔ EN).</summary>
     public string NextLanguage => Languages[(Array.IndexOf(Languages, CurrentLanguage) + 1) % Languages.Length];
 
-    /// <summary>Texto com versão própria em inglês; em espanhol, usa o dicionário de tradução (ou o português).</summary>
-    public string T(string pt, string en) => CurrentLanguage switch { "en" => en, "es" => Translator.Tr(pt), _ => pt };
+    public string T(string pt, string en) => IsEnglish ? en : pt;
 }

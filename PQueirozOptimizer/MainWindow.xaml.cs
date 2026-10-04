@@ -127,7 +127,7 @@ public partial class MainWindow : Window
     {
         // Os demais textos fixos do layout são traduzidos pelo Translator ao serem exibidos
         LangButton.Content = _loc.CurrentLanguage.ToUpperInvariant();
-        LangButton.ToolTip = _loc.NextLanguage switch { "en" => "Alternar idioma para inglês (EN)", "es" => "Switch language to Spanish (ES)", _ => "Cambiar el idioma a portugués (PT)" };
+        LangButton.ToolTip = _loc.T("Alternar idioma para inglês (EN)", "Switch language to Portuguese (PT)");
     }
 
     private void BtnMinimize_Click(object sender, RoutedEventArgs e)

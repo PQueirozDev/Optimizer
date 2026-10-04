@@ -323,7 +323,7 @@ public partial class MainWindow
         langStack.Children.Add(langDesc);
 
         var langBtns = new WrapPanel();
-        foreach (var (code, name) in new[] { ("pt", "Português (PT)"), ("en", "English (EN)"), ("es", "Español (ES)") })
+        foreach (var (code, name) in new[] { ("pt", "Português (PT)"), ("en", "English (EN)") })
         {
             var button = IconButton(Glyphs.Check, name, primary: _loc.CurrentLanguage == code);
             // Nome do idioma sempre na própria língua, nunca traduzido
