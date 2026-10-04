@@ -25,7 +25,7 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
-        ("v1.8.4", "03/10/2026", new[]
+        ("v1.8.5", "03/10/2026", new[]
         {
             "VALORANT nas configurações dos jogos, com dois perfis: Otimizado (o máximo de FPS) e Qrz (a configuração usada pelo Qrz). Sensibilidade, mira, teclas e volume continuam os seus, e o original volta com um clique.",
             "Nova correção de Bluetooth em Correções: identifica o adaptador físico, restaura o rádio e os serviços de descoberta, recarrega o dispositivo e instala o driver oficial do TP-Link UB500 somente quando esse modelo é detectado.",
