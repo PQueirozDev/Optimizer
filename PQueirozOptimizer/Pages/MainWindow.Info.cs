@@ -25,6 +25,12 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.8.12", "04/10/2026", new[]
+        {
+            "Dois temas novos: Areia, claro e com tom quente, menos ofuscante que o Claro; e Ameixa, escuro com tom vinho.",
+            "Janela translúcida: quando os efeitos de transparência do Windows estão desligados, Configurações → Aparência avisa e abre a opção certa; ao ligá-los, o app fica translúcido na hora.",
+            "O tema Automático agora acompanha a troca de claro/escuro do Windows sem precisar reabrir o app.",
+        }),
         ("v1.8.11", "04/10/2026", new[]
         {
             "Visual mais limpo: saíram os gradientes, os brilhos e o fundo animado, e os cartões ficaram planos, sem sombra e sem subir ao passar o mouse.",

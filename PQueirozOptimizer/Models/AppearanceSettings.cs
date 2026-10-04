@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace PQueirozOptimizer.Models;
 
 /// <summary>Temas (gravados pelo nome, então a lista pode crescer sem quebrar preferências salvas).</summary>
-public enum ThemeMode { Dark, Oled, Auto, Light, Graphite, Ocean, Forest }
+public enum ThemeMode { Dark, Oled, Auto, Light, Graphite, Ocean, Forest, Sand, Plum }
 public enum AccentIntensity { Soft, Default, Vibrant }
 public enum Density { Compact, Default, Comfortable }
 public enum CardSize { Compact, Medium, Large }

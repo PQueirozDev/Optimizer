@@ -53,6 +53,21 @@ public partial class MainWindow
         panel.Children.Add(SettingRow("Janela translúcida", ThemeService.TranslucencySupported
             ? "O fundo da janela fica desfocado e deixa ver o que está atrás, como nos apps do Windows 11."
             : "Disponível só no Windows 11 (versão 22H2 ou mais nova).", translucent));
+        if (ThemeService.TranslucencySupported && current.Translucent && !ThemeService.SystemTransparencyEnabled)
+        {
+            // Sem os efeitos de transparência do Windows o Acrylic vira cor sólida: explica e leva direto à opção
+            var warning = new DockPanel { Margin = new Thickness(0, -4, 0, AppearanceService.Space(14)) };
+            var open = IconButton(Glyphs.OpenInNew, "Abrir Cores do Windows");
+            open.Margin = new Thickness(12, 0, 0, 0);
+            open.Click += (_, _) => Launch("ms-settings:colors");
+            DockPanel.SetDock(open, Dock.Right); warning.Children.Add(open);
+            var icon = GlyphIcon(Glyphs.Warning, 14, "WarningBrush"); icon.Margin = new Thickness(0, 0, 10, 0); icon.VerticalAlignment = VerticalAlignment.Top;
+            DockPanel.SetDock(icon, Dock.Left); warning.Children.Add(icon);
+            var text = Label("Os efeitos de transparência estão desligados no Windows, então a janela continua sólida. Ligue \"Efeitos de transparência\" em Personalização → Cores; o app atualiza sozinho.", 12, true);
+            text.Margin = new Thickness(0);
+            warning.Children.Add(text);
+            panel.Children.Add(warning);
+        }
 
         panel.Children.Add(Divider());
         var previewTitle = Label("Pré-visualização", 13); previewTitle.FontWeight = FontWeights.SemiBold; previewTitle.Margin = new Thickness(0, 0, 0, 10);
@@ -80,7 +95,7 @@ public partial class MainWindow
     internal static readonly (ThemeMode Mode, string Name)[] Themes =
     {
         (ThemeMode.Dark, "Escuro"), (ThemeMode.Oled, "OLED"), (ThemeMode.Light, "Claro"), (ThemeMode.Graphite, "Grafite"),
-        (ThemeMode.Ocean, "Oceano"), (ThemeMode.Forest, "Floresta"), (ThemeMode.Auto, "Automático"),
+        (ThemeMode.Ocean, "Oceano"), (ThemeMode.Forest, "Floresta"), (ThemeMode.Plum, "Ameixa"), (ThemeMode.Sand, "Areia"), (ThemeMode.Auto, "Automático"),
     };
 
     // A primeira de cada lista (null) é a cor original do app
@@ -98,7 +113,7 @@ public partial class MainWindow
     /// <summary>Galeria de temas: miniatura com fundo, cartão, texto e a cor principal de cada tema.</summary>
     private FrameworkElement ThemeGallery(ThemeMode selected, Action<ThemeMode> onSelect)
     {
-        var grid = Responsive(new System.Windows.Controls.Primitives.UniformGrid { Margin = new Thickness(0, 0, -10, AppearanceService.Space(16)) }, 132, 7);
+        var grid = Responsive(new System.Windows.Controls.Primitives.UniformGrid { Margin = new Thickness(0, 0, -10, AppearanceService.Space(16)) }, 132, 9);
         var accent = (Color)(Application.Current.Resources["AccentColor"] ?? Color.FromRgb(0x8B, 0x5C, 0xF6));
         foreach (var (mode, name) in Themes)
         {

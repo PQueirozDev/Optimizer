@@ -44,15 +44,27 @@ public static class ThemeService
     private static readonly Palette Forest = new("#060D0A", "#F2091410", "#0E1A15", "#15251E", "#F20B1712", "#1F3329", "#172820",
         "#EEF7F1", "#BCD3C5", "#81A08E", "#4ADE80", "#FBBF24", "#F87171", "#000000");
 
+    // Areia: claro quente e de menos contraste que o Claro, para quem acha o branco ofuscante
+    private static readonly Palette Sand = new("#EFEBE4", "#F7F4EFE8", "#EAE5DC", "#E2DCD1", "#FFFAF8F4", "#D6CEC0", "#E3DDD2",
+        "#1E1A15", "#4A4339", "#71685B", "#15803D", "#B45309", "#C2410C", "#6B5E4B");
+
+    // Ameixa: escuro com fundo vinho/roxo bem fechado
+    private static readonly Palette Plum = new("#140A16", "#F21A0E1D", "#22132A", "#2D1A36", "#F21D1023", "#45294F", "#301C38",
+        "#F7F1F8", "#D2C3D6", "#9C8BA3", "#34D399", "#FBBF24", "#FB7185", "#000000");
+
+    /// <summary>Temas de fundo claro; os demais (fora o Automático) são escuros.</summary>
+    public static bool IsLightTheme(ThemeMode mode) => mode is ThemeMode.Light or ThemeMode.Sand;
+
     /// <summary>Cores de cada tema para as miniaturas da galeria: fundo, superfície e texto.</summary>
     public static (Color Background, Color Surface, Color Text) Swatch(ThemeMode mode)
     {
-        var p = PaletteFor(mode, dark: mode != ThemeMode.Light);
+        var p = PaletteFor(mode, dark: !IsLightTheme(mode));
         return (C(p.Background), C(p.Card) with { A = 255 }, C(p.Text));
     }
 
-    private static Palette PaletteFor(ThemeMode mode, bool dark) => !dark ? Light : mode switch
+    private static Palette PaletteFor(ThemeMode mode, bool dark) => !dark ? (mode == ThemeMode.Sand ? Sand : Light) : mode switch
     {
+        ThemeMode.Plum => Plum,
         ThemeMode.Oled => Oled,
         ThemeMode.Graphite => Graphite,
         ThemeMode.Ocean => Ocean,
@@ -121,10 +133,27 @@ public static class ThemeService
     /// <summary>O fundo Acrylic da janela (DWMWA_SYSTEMBACKDROP_TYPE) só existe no Windows 11 22H2 em diante.</summary>
     public static bool TranslucencySupported => Environment.OSVersion.Version.Build >= 22621;
 
+    /// <summary>
+    /// "Efeitos de transparência" do Windows (Personalização → Cores). Desligado, o Windows pinta o Acrylic
+    /// como cor sólida em todos os apps, então o modo translúcido não tem como aparecer.
+    /// </summary>
+    public static bool SystemTransparencyEnabled
+    {
+        get
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+                return key?.GetValue("EnableTransparency") is not 0;
+            }
+            catch (System.Security.SecurityException) { return true; }
+        }
+    }
+
     /// <summary>Tema efetivo: Automático segue a configuração "modo de aplicativo" do Windows.</summary>
     public static bool ResolveDark(ThemeMode mode)
     {
-        if (mode == ThemeMode.Light) return false;
+        if (IsLightTheme(mode)) return false;
         if (mode != ThemeMode.Auto) return true;
         try
         {
@@ -144,7 +173,7 @@ public static class ThemeService
 
         void Brush(string key, Color color) { var b = new SolidColorBrush(color); b.Freeze(); resources[key] = b; }
         // Translúcido: as superfícies ficam parcialmente transparentes e o Acrylic do Windows aparece por trás
-        var translucent = !forceLight && settings.Translucent && TranslucencySupported;
+        var translucent = !forceLight && settings.Translucent && TranslucencySupported && SystemTransparencyEnabled;
         IsTranslucent = translucent;
         Color Surface(string hex, byte alpha) => translucent ? WithAlpha(C(hex), alpha) : C(hex);
         Brush("BackgroundBrush", Surface(palette.Background, 0x55)); Brush("HeaderBrush", Surface(palette.Background, 0x55));

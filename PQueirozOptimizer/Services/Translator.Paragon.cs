@@ -235,7 +235,7 @@ public static partial class Translator
         ["Um dos arquivos de configuração do VALORANT não foi encontrado. Abra o jogo uma vez e feche para ele criar os arquivos."] = "One of VALORANT's config files was not found. Open the game once and close it so it creates the files.",
 
         // ---------- Temas e cores ----------
-        ["Claro"] = "Light", ["Grafite"] = "Graphite", ["Oceano"] = "Ocean", ["Floresta"] = "Forest",
+        ["Claro"] = "Light", ["Grafite"] = "Graphite", ["Oceano"] = "Ocean", ["Floresta"] = "Forest", ["Areia"] = "Sand", ["Ameixa"] = "Plum",
         ["Cor principal"] = "Main color", ["Botões, seleção da barra lateral e gráficos."] = "Buttons, sidebar selection and charts.",
         ["Cor secundária"] = "Secondary color", ["Cor do anel de saúde e dos indicadores."] = "Color of the health ring and indicators.",
         ["Intensidade da cor"] = "Color intensity", ["Suave deixa as cores mais discretas; Vibrante, mais vivas."] = "Soft makes colors more subtle; Vibrant, more vivid.",
@@ -302,6 +302,8 @@ public static partial class Translator
         ["Animações da interface"] = "Interface animations",
         ["Entrada das páginas e transições. O monitor ao vivo e os gráficos continuam atualizando."] = "Page entrances and transitions. The live monitor and charts keep updating.",
         ["Janela translúcida"] = "Translucent window",
+        ["Abrir Cores do Windows"] = "Open Windows Colors",
+        ["Os efeitos de transparência estão desligados no Windows, então a janela continua sólida. Ligue \"Efeitos de transparência\" em Personalização → Cores; o app atualiza sozinho."] = "Transparency effects are turned off in Windows, so the window stays solid. Turn on \"Transparency effects\" in Personalization → Colors; the app updates on its own.",
         ["O fundo da janela fica desfocado e deixa ver o que está atrás, como nos apps do Windows 11."] = "The window background is blurred and lets what is behind it show through, like Windows 11 apps.",
         ["Disponível só no Windows 11 (versão 22H2 ou mais nova)."] = "Only available on Windows 11 (version 22H2 or newer).",
         ["Pré-visualização"] = "Preview", ["Exemplo"] = "Example", ["MEMÓRIA"] = "MEMORY", ["SAÚDE"] = "HEALTH", ["Restaurar padrão"] = "Restore defaults",

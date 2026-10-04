@@ -335,7 +335,7 @@ public partial class MainWindow : Window
     private void UpdateThemeButton()
     {
         var mode = AppearanceService.Current.Theme;
-        ThemeButton.Content = GlyphIcon(mode switch { Models.ThemeMode.Light => Glyphs.Sun, Models.ThemeMode.Auto => Glyphs.Refresh, _ => Glyphs.Moon }, 13);
+        ThemeButton.Content = GlyphIcon(mode switch { Models.ThemeMode.Light or Models.ThemeMode.Sand => Glyphs.Sun, Models.ThemeMode.Auto => Glyphs.Refresh, _ => Glyphs.Moon }, 13);
         ThemeButton.ToolTip = $"Tema: {Themes.First(t => t.Mode == mode).Name} (clique para {NextTheme(mode).Name})";
     }
 
