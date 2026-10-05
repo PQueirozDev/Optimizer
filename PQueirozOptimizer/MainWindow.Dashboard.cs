@@ -166,19 +166,27 @@ public partial class MainWindow
             var activityCard = Surface(activityPanel);
             Grid.SetColumn(activityCard, 2);
             columns.Children.Add(activityCard);
-            columns.SizeChanged += (_, _) =>
+            // Empilha os cartões em telas estreitas. A decisão usa a área visível (não a largura da própria grade,
+            // que muda ao reorganizar e entrava em ciclo) e só reorganiza quando o modo muda de fato.
+            bool? stackedNow = null;
+            void Arrange()
             {
-                var stacked = columns.ActualWidth < 900;
-                columns.RowDefinitions[0].Height = GridLength.Auto;
+                var stacked = ContentScroll.ViewportWidth is > 0 and < 940;
+                if (stackedNow == stacked) return;
+                stackedNow = stacked;
                 columns.RowDefinitions[1].Height = stacked ? GridLength.Auto : new GridLength(0);
                 columns.ColumnDefinitions[0].Width = stacked ? new GridLength(1, GridUnitType.Star) : new GridLength(1.1, GridUnitType.Star);
-                columns.ColumnDefinitions[1].Width = stacked ? new GridLength(0) : new GridLength(16);
-                columns.ColumnDefinitions[2].Width = stacked ? new GridLength(1, GridUnitType.Star) : new GridLength(1, GridUnitType.Star);
-                Grid.SetRow(health, stacked ? 0 : 0);
-                Grid.SetColumn(health, 0);
+                columns.ColumnDefinitions[1].Width = new GridLength(stacked ? 0 : 16);
+                columns.ColumnDefinitions[2].Width = stacked ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
                 Grid.SetRow(activityCard, stacked ? 1 : 0);
                 Grid.SetColumn(activityCard, stacked ? 0 : 2);
-            };
+            }
+            Arrange();
+            // ScrollChanged também pega a barra de rolagem aparecendo ou sumindo (muda a largura visível)
+            ScrollChangedEventHandler onResize = (_, e) => { if (e.ViewportWidthChange != 0) Arrange(); };
+            ContentScroll.ScrollChanged += onResize;
+            columns.Loaded += (_, _) => Arrange();
+            columns.Unloaded += (_, _) => ContentScroll.ScrollChanged -= onResize;
             root.Children.Add(columns);
             // 6. Recursos secundários: o passo a passo completo
             root.Children.Add(FixAllCard());

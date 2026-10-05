@@ -147,13 +147,13 @@
 
    <!-- ============ ÁREA PRINCIPAL ============ -->
    <Grid Grid.Column="1">
-    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <Grid.ColumnDefinitions><ColumnDefinition Width="2*" MaxWidth="388"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
     <Grid.RowDefinitions><RowDefinition Height="56"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
 
     <!-- Barra superior: busca rápida (Ctrl+K), estado e controles da janela -->
     <TextBlock x:Name="TitlePageHint" Visibility="Collapsed"/>
     <TextBlock x:Name="TitleRamChip" Visibility="Collapsed"/>
-    <Grid x:Name="SearchHost" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="36,11,12,0" MaxWidth="340" WindowChrome.IsHitTestVisibleInChrome="True">
+    <Grid x:Name="SearchHost" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="36,11,12,0" WindowChrome.IsHitTestVisibleInChrome="True">
      <Border x:Name="SearchBorder" CornerRadius="12" Height="34" Background="{DynamicResource CardBgBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1">
       <DockPanel Margin="12,0,6,0">
        <TextBlock DockPanel.Dock="Left" Text="&#xE721;" Style="{StaticResource IconText}" FontSize="12.5" Foreground="{DynamicResource MutedBrush}" Margin="0,0,10,0"/>
@@ -195,7 +195,7 @@
     </StackPanel>
 
     <!-- Cabeçalho da página: ícone, seção, título e subtítulo -->
-    <DockPanel Grid.Row="1" Margin="36,8,36,22">
+    <DockPanel Grid.Row="1" Grid.ColumnSpan="3" Margin="36,8,36,22">
      <Border x:Name="PageBadge" DockPanel.Dock="Right" Visibility="Collapsed" VerticalAlignment="Center" Background="{DynamicResource AccentSoftBrush}" BorderBrush="{DynamicResource AccentSoftBrush}" BorderThickness="1" CornerRadius="12" Padding="14,7">
       <TextBlock x:Name="PageBadgeText" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
      </Border>
@@ -209,12 +209,12 @@
      </StackPanel>
     </DockPanel>
 
-    <ScrollViewer x:Name="ContentScroll" Grid.Row="2" Margin="36,0,22,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-     <Grid x:Name="ContentHost" Margin="0,0,14,8" MaxWidth="1200" HorizontalAlignment="Center"/>
+    <ScrollViewer x:Name="ContentScroll" Grid.Row="2" Grid.ColumnSpan="3" Margin="36,0,22,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+     <Grid x:Name="ContentHost" Margin="0,0,14,8" MaxWidth="1640"/>
     </ScrollViewer>
 
     <!-- Barra de status -->
-    <Border Grid.Row="3" Margin="36,12,36,18" Padding="14,10" CornerRadius="16" Background="{DynamicResource CardBgBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
+    <Border Grid.Row="3" Grid.ColumnSpan="3" Margin="36,12,36,18" Padding="14,10" CornerRadius="16" Background="{DynamicResource CardBgBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
      <StackPanel>
       <DockPanel>
        <Button Content="Ver atividade" DockPanel.Dock="Right" Click="History_Click" Margin="12,0,0,0" Padding="12,5" Style="{StaticResource GhostButton}"/>
@@ -232,7 +232,7 @@
     </Border>
 
     <!-- Notificações (toasts) -->
-    <StackPanel x:Name="ToastHost" Grid.Row="1" Grid.RowSpan="3" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,40,84" Width="360" IsHitTestVisible="True"/>
+    <StackPanel x:Name="ToastHost" Grid.Row="1" Grid.RowSpan="3" Grid.ColumnSpan="3" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,40,84" Width="360" IsHitTestVisible="True"/>
    </Grid>
 
    <!-- Tutorial: escurece a janela e ilumina um elemento por vez (MainWindow.Tutorial.cs) -->

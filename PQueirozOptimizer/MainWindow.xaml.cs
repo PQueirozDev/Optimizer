@@ -162,8 +162,10 @@ public partial class MainWindow : Window
     {
         if (WindowState == WindowState.Maximized)
         {
-            MainRootBorder.Padding = new Thickness(0);
             MainRootBorder.BorderThickness = new Thickness(0);
+            FitMaximizedToWorkArea();
+            // O Windows termina de posicionar a janela maximizada depois deste evento: mede de novo em seguida
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, FitMaximizedToWorkArea);
             BtnMaximize.Content = Glyphs.Restore;
             BtnMaximize.ToolTip = _loc.T("Restaurar", "Restore");
         }

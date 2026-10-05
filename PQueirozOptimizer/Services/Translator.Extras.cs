@@ -28,6 +28,9 @@ public static partial class Translator
         ["Jogos"] = "Games", ["NVIDIA"] = "NVIDIA",
 
         // ---------- Patch notes ----------
+        ["Corrigido o layout espremido numa coluna estreita, com cartões cortados, na janela normal e maximizada."] = "Fixed the layout squeezed into a narrow column with clipped cards, in both normal and maximized windows.",
+        ["Janela maximizada não passa mais por trás da barra de tarefas: a barra de status volta a aparecer, inclusive com dois monitores."] = "The maximized window no longer goes behind the taskbar: the status bar shows again, including with two monitors.",
+        ["Painel inicial: os cartões ficam lado a lado em telas largas e empilham só quando falta espaço."] = "Overview: cards sit side by side on wide screens and only stack when space runs out.",
         ["Otimizações reformuladas: novos ajustes (gravação de jogos em segundo plano, Modo de Jogo, transparência, experiências personalizadas), valores de latência corrigidos e remoção de ações que mais atrapalhavam do que ajudavam."] = "Optimizations reworked: new tweaks (background game recording, Game Mode, transparency, tailored experiences), corrected latency values and removal of actions that hurt more than they helped.",
         ["As otimizações agora aplicam o plano de energia Qrz no lugar do Desempenho Máximo; reverter volta ao plano anterior."] = "Optimizations now apply the Qrz power plan instead of Ultimate Performance; reverting returns to the previous plan.",
         ["Tela cheia corrigida: a janela maximizada respeita a barra de tarefas, sem bordas cortadas, e o conteúdo fica centralizado em telas largas."] = "Full screen fixed: the maximized window respects the taskbar with no clipped edges, and content is centered on wide screens.",

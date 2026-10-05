@@ -25,6 +25,12 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.8.18", "04/10/2026", new[]
+        {
+            "Corrigido o layout espremido numa coluna estreita, com cartões cortados, na janela normal e maximizada.",
+            "Janela maximizada não passa mais por trás da barra de tarefas: a barra de status volta a aparecer, inclusive com dois monitores.",
+            "Painel inicial: os cartões ficam lado a lado em telas largas e empilham só quando falta espaço.",
+        }),
         ("v1.8.17", "04/10/2026", new[]
         {
             "Otimizações reformuladas: novos ajustes (gravação de jogos em segundo plano, Modo de Jogo, transparência, experiências personalizadas), valores de latência corrigidos e remoção de ações que mais atrapalhavam do que ajudavam.",

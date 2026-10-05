@@ -36,7 +36,28 @@ public partial class MainWindow
     [DllImport("user32.dll")] private static extern IntPtr MonitorFromWindow(IntPtr hwnd, int flags);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
 
+    [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr hwnd, out NativeRect rect);
+
     private bool _settingsHooked;
+
+    /// <summary>
+    /// Maximizada sem a moldura do Windows, a janela pode passar da área útil do monitor (bordas cortadas e a
+    /// barra de status atrás da barra de tarefas). Mede quanto passou em cada lado e recua o conteúdo exatamente isso.
+    /// </summary>
+    private void FitMaximizedToWorkArea()
+    {
+        if (WindowState != WindowState.Maximized) { MainRootBorder.Padding = new Thickness(0); return; }
+        var hwnd = new WindowInteropHelper(this).Handle;
+        var monitor = MonitorFromWindow(hwnd, MonitorDefaultToNearest);
+        var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
+        if (hwnd == IntPtr.Zero || monitor == IntPtr.Zero || !GetMonitorInfo(monitor, ref info) || !GetWindowRect(hwnd, out var window)) return;
+        // Pixels físicos → unidades do WPF (escala do monitor)
+        var dpi = VisualTreeHelper.GetDpi(this);
+        Thickness Inset(int left, int top, int right, int bottom) => new(
+            Math.Max(0, left) / dpi.DpiScaleX, Math.Max(0, top) / dpi.DpiScaleY,
+            Math.Max(0, right) / dpi.DpiScaleX, Math.Max(0, bottom) / dpi.DpiScaleY);
+        MainRootBorder.Padding = Inset(info.Work.Left - window.Left, info.Work.Top - window.Top, window.Right - info.Work.Right, window.Bottom - info.Work.Bottom);
+    }
 
     /// <summary>Aplica (ou remove) o fundo translúcido conforme o tema atual; chamado ao abrir e a cada troca de aparência.</summary>
     private void ApplyBackdrop()
@@ -70,6 +91,9 @@ public partial class MainWindow
     {
         if (_settingsHooked || HwndSource.FromHwnd(hwnd) is not { } source) return;
         _settingsHooked = true;
+        // Janela maximizada levada para outro monitor (outra barra de tarefas ou outra escala): mede de novo
+        LocationChanged += (_, _) => { if (WindowState == WindowState.Maximized) FitMaximizedToWorkArea(); };
+        DpiChanged += (_, _) => FitMaximizedToWorkArea();
         source.AddHook((IntPtr _, int msg, IntPtr _, IntPtr lParam, ref bool _) =>
         {
             if (msg == WmGetMinMaxInfo && lParam != IntPtr.Zero)
