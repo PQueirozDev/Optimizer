@@ -1,7 +1,7 @@
 namespace PQueirozOptimizer.BiosAdvisor;
 
 /// <summary>Tudo o que uma regra precisa saber. Montado uma vez por análise.</summary>
-public sealed record AdvisorContext(HardwareProfile Profile, PlatformInfo Platform, MemoryAnalysis Memory, BoardProfile? Board, VendorProfile Vendor, AdvisorPreset Preset)
+public sealed record AdvisorContext(HardwareProfile Profile, PlatformInfo Platform, MemoryAnalysis Memory, BoardProfile? Board, VendorProfile Vendor, AdvisorPreset Preset, BiosDatabase Db)
 {
     public CpuModel Cpu => Platform.Cpu;
     public bool IsIntel => Cpu.Vendor == CpuVendor.Intel || Profile.Cpu.Vendor == CpuVendor.Intel;

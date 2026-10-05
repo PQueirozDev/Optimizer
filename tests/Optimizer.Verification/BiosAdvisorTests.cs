@@ -1,3 +1,4 @@
+using System.IO;
 using PQueirozOptimizer.BiosAdvisor;
 using PQueirozOptimizer.BiosAdvisor.Benchmark;
 using PQueirozOptimizer.BiosAdvisor.Detector;
@@ -64,6 +65,8 @@ internal static class BiosAdvisorTests
         DetectorTests();
         BenchmarkTests();
         UpdateTests();
+        DatabaseTests();
+        BiosReadTests();
     }
 
     static void PlatformTests()
@@ -250,6 +253,131 @@ internal static class BiosAdvisorTests
         Assert(withSensors.CpuTempMax is null && withSensors.GpuTempMax == 60 && withSensors.CpuUsageAvg == 60, "Sensores ausentes ficam null (sem valores inventados)");
 
         static SensorSnapshot Snap(double cpu, double? gpuTemp) => new(cpu, null, null, null, null, null, null, gpuTemp, null, null, Array.Empty<LocalizedText>(), DateTime.Now);
+    }
+
+    static string RepoFile(string relative)
+    {
+        // Sobe a partir da pasta do teste até a raiz do repositório (onde fica bios-db/)
+        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir != null; dir = dir.Parent)
+            if (File.Exists(Path.Combine(dir.FullName, relative))) return Path.Combine(dir.FullName, relative);
+        throw new FileNotFoundException(relative);
+    }
+
+    static void DatabaseTests()
+    {
+        var db = BiosDatabase.LoadEmbedded();
+        Assert(db.Version >= 1 && db.BoardFor(new MotherboardInfo("ASUSTeK", "TUF GAMING B460M-PLUS", "")) is { Name: "ASUS TUF GAMING B460M-PLUS" } && db.PathSetsFor("asus").Any(), "Banco embutido: perfil da TUF B460M-PLUS e caminhos ASUS");
+        Assert(db.BiosQuestions.ContainsKey(Settings.MemoryProfile) && db.OptionNamesFor("msi", Settings.MemoryProfile)!.Contains("A-XMP"), "Banco embutido: nomes de perguntas do SCEWIN e opções por fabricante");
+
+        // Assinatura do arquivo publicado (o mesmo que o app baixa do GitHub)
+        var json = File.ReadAllBytes(RepoFile("bios-db/bios-db.json"));
+        var sig = File.ReadAllText(RepoFile("bios-db/bios-db.json.sig"));
+        Assert(BiosDatabase.VerifySignature(json, sig), "bios-db.json.sig confere com a chave pública do app (rode tools/Sign-BiosDatabase.ps1 após editar o banco)");
+        var lf = System.Text.Encoding.UTF8.GetBytes(System.Text.Encoding.UTF8.GetString(json).Replace("\r\n", "\n"));
+        var crlf = System.Text.Encoding.UTF8.GetBytes(System.Text.Encoding.UTF8.GetString(lf).Replace("\n", "\r\n"));
+        Assert(BiosDatabase.VerifySignature(lf, sig) && BiosDatabase.VerifySignature(crlf, sig), "Assinatura vale com LF (GitHub) e CRLF (Windows)");
+        var bom = System.Text.Encoding.UTF8.GetPreamble().Concat(lf).ToArray();
+        Assert(BiosDatabase.VerifySignature(bom, sig), "Assinatura aceita UTF-8 com BOM");
+        foreach (var version in new[] { 0, -1 })
+        {
+            var rejected = false;
+            try { BiosDatabase.Parse("{\"format\":1,\"version\":" + version + "}", "teste"); }
+            catch (FormatException) { rejected = true; }
+            Assert(rejected, "Banco com versão " + version + " é recusado");
+        }
+        var tampered = System.Text.Encoding.UTF8.GetBytes(System.Text.Encoding.UTF8.GetString(json).Replace("Ai Overclock Tuner", "Ai Overclock Tunes"));
+        Assert(!BiosDatabase.VerifySignature(tampered, sig) && !BiosDatabase.VerifySignature(json, "AAAA"), "Banco alterado ou assinatura inválida é recusado");
+        Assert(BiosDatabase.Parse(System.Text.Encoding.UTF8.GetString(json), "teste").Version == db.Version, "Arquivo do repositório e banco embutido são o mesmo");
+
+        var threw = false;
+        try { BiosDatabase.Parse("{\"format\":2,\"version\":9}", "x"); } catch (FormatException) { threw = true; }
+        Assert(threw, "Formato de banco desconhecido é recusado");
+
+        // Banco "remoto" com uma placa nova: entra sem mudar código (e expressões inválidas são ignoradas)
+        var remote = BiosDatabase.Parse("""
+            { "format": 1, "version": 99, "updated": "2026-12-01",
+              "pathSets": [ { "id": "msi-b550", "vendor": "msi", "source": "MSI B550 BIOS Manual", "chipsets": ["B550"], "productPattern": "MAG B550",
+                              "paths": { "mem.profile": ["OC", "A-XMP"] }, "notes": {} } ],
+              "optionNames": {},
+              "boards": [ { "name": "MSI MAG B550 TOMAHAWK", "vendor": "msi", "productPattern": "^MAG B550 TOMAHAWK", "chipset": "B550", "source": "MSI", "mappedCpus": ["5800X3D"], "facts": [] },
+                          { "name": "Quebrada", "vendor": "x", "productPattern": "([", "chipset": "", "source": "" } ],
+              "biosQuestions": { "mem.profile": ["^A-XMP$", "(["] } }
+            """, "teste");
+        Assert(remote.Boards.Count == 1 && remote.BiosQuestions[Settings.MemoryProfile].Length == 1, "Padrão inválido no banco é ignorado sem quebrar");
+        var amd = BiosAdvisorEngine.Analyze(Ryzen5800X3D(), AdvisorPreset.Safe, db: remote);
+        Assert(amd.SpecificProfileAvailable && amd.SpecificProfileName!.Contains("5800X3D"), "Placa adicionada só pelo banco vira perfil específico");
+        Assert(Get(amd, "mem-profile")!.Guide is { HasConfirmedPath: true } mg && mg.Steps.SequenceEqual(new[] { "Advanced Mode (F7)", "OC", "A-XMP" }) && mg.Source == "MSI B550 BIOS Manual", "Caminho MSI vindo do banco, com a fonte");
+    }
+
+    static void BiosReadTests()
+    {
+        // Trecho no formato do export do SCEWIN (nvram.txt)
+        var nvram = """
+            HIICrc32= 1234
+            Setup Question	= Intel(R) Speed Shift Technology
+            Help String	= Enable/Disable Speed Shift
+            Token	=1A	// Do NOT change this line
+            Offset	=10
+            Width	=01
+            BIOS Default	=[01]Enabled
+            Options	=*[01]Enabled	// Move "*" to the desired Option
+                     [00]Disabled
+
+            Setup Question	= Ai Overclock Tuner
+            Help String	= Overclock
+            Token	=2B	// Do NOT change this line
+            Options	=*[00]Auto	// Move "*" to the desired Option
+                     [01]Manual
+                     [02]XMP I
+                     [03]XMP II
+
+            Setup Question	= Launch CSM
+            Token	=3C	// Do NOT change this line
+            Options	=[01]Enabled	// Move "*" to the desired Option
+                     *[00]Disabled
+
+            Setup Question	= Hyper-Threading
+            Token	=4D	// Do NOT change this line
+            Options	=*[01]Enabled	// Move "*" to the desired Option
+                     [00]Disabled
+
+            Setup Question	= Turbo Mode
+            Token	=5E	// Do NOT change this line
+            Options	=*[01]Enabled	// Move "*" to the desired Option
+                     [00]Disabled
+            """.Replace("\r\n", "\n");
+        var settings = PQueirozOptimizer.Services.BiosService.Parse(nvram, out _);
+        var profile = TufB460() with { Observed = null };
+        var readings = BiosSettingMapper.Map(settings, BiosDatabase.LoadEmbedded(), profile.Fingerprint, DateTime.Now);
+        Assert(readings.Values[Settings.IntelSpeedShift].Value == "Enabled" && readings.Values[Settings.MemoryProfile] is { Question: "Ai Overclock Tuner", Value: "Auto" } && readings.Values[Settings.Csm].Value == "Disabled", "SCEWIN: perguntas reconhecidas pelos nomes do banco");
+        Assert(readings.Values[Settings.MemoryProfile].Options.Contains("XMP II") && readings.TotalQuestions == 5, "SCEWIN: opções e total de perguntas guardados");
+
+        var statePath = Path.Combine(Path.GetTempPath(), "advisor-readings-" + Guid.NewGuid().ToString("N"), "state.json");
+        try
+        {
+            var store = new BiosAdvisorStore(statePath);
+            store.Save(new BiosAdvisorState { Readings = readings });
+            var restored = store.Load().Readings;
+            Assert(restored != null && restored.Fingerprint == readings.Fingerprint && restored.ReadAt == readings.ReadAt
+                && restored.Values[Settings.MemoryProfile].Options.SequenceEqual(readings.Values[Settings.MemoryProfile].Options)
+                && restored.Values[Settings.IntelSpeedShift].Value == "Enabled", "Leituras da BIOS persistem entre aberturas");
+        }
+        finally { if (File.Exists(statePath)) File.Delete(statePath); Directory.Delete(Path.GetDirectoryName(statePath)!); }
+        var r = BiosAdvisorEngine.Analyze(profile, AdvisorPreset.Safe, readings: readings);
+        Assert(Get(r, "intel-speedshift") is { Evidence: Evidence.ReadFromBios, Compliance: Compliance.Ok } s && s.CurrentValue!.Pt.Contains("lido da BIOS"), "Speed Shift lido da BIOS: Enabled = OK");
+        Assert(Get(r, "intel-turbo") is { Evidence: Evidence.ReadFromBios, Compliance: Compliance.Ok }, "Turbo lido da BIOS quando o Windows não observou");
+        Assert(Get(r, "mem-profile") is { Evidence: Evidence.ReadFromBios, Compliance: Compliance.Attention }, "Ai Overclock Tuner em Auto: XMP desligado na BIOS (vale mais que a dedução)");
+        Assert(Get(r, "boot-uefi") is { Evidence: Evidence.ReadFromBios, Compliance: Compliance.Ok }, "Launch CSM Disabled lido da BIOS");
+        Assert(Get(r, "cpu-smt") is { Evidence: Evidence.Detected, BiosValue.Value: "Enabled" }, "Leitura do Windows não é trocada; valor da BIOS só complementa");
+        Assert(Get(r, "intel-speedshift")!.Guide is { } g && g.HasConfirmedPath, "Guia continua com o caminho do manual");
+        var unread = BiosAdvisorEngine.Analyze(profile, AdvisorPreset.Safe);
+        Assert(r.Score.Verifiable > unread.Score.Verifiable, "Leitura da BIOS aumenta o número de itens com evidência");
+        var other = BiosAdvisorEngine.Analyze(profile with { Bios = profile.Bios with { Version = "2003" } }, AdvisorPreset.Safe, readings: readings);
+        Assert(Get(other, "intel-speedshift")!.Evidence == Evidence.NeedsBiosCheck, "Leitura de outra versão de BIOS é ignorada");
+        var changed = PQueirozOptimizer.Services.BiosService.Parse(nvram, out _);
+        changed.First(x => x.Question == "Intel(R) Speed Shift Technology").SelectedIndex = 1; // Disabled
+        var disabled = BiosSettingMapper.Map(changed, BiosDatabase.LoadEmbedded(), profile.Fingerprint, DateTime.Now);
+        Assert(Get(BiosAdvisorEngine.Analyze(profile, AdvisorPreset.Safe, readings: disabled), "intel-speedshift")!.Compliance == Compliance.Attention, "Speed Shift Disabled na BIOS = ajustar");
     }
 
     static void UpdateTests()

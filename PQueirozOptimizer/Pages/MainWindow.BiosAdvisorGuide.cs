@@ -93,6 +93,16 @@ public partial class MainWindow
             target.FontWeight = FontWeights.SemiBold;
             body.Children.Add(target);
         }
+        // Lido desta BIOS pelo SCEWIN: o nome exato da opção, o valor atual e as opções que ela aceita
+        if (rec.BiosValue is { } read)
+        {
+            var exact = new TextBlock { Text = T($"Nesta BIOS a opção se chama \"{read.Question}\" e está em \"{read.Value}\". Opções: {string.Join(" · ", read.Options)}.",
+                $"In this BIOS the option is called \"{read.Question}\" and is set to \"{read.Value}\". Options: {string.Join(" · ", read.Options)}."), FontSize = 12.5, TextWrapping = TextWrapping.Wrap, Tag = Translator.SystemDataTag };
+            exact.SetResourceReference(TextBlock.ForegroundProperty, "SuccessBrush");
+            var box = new Border { Child = exact, Padding = new Thickness(14, 10, 14, 10), CornerRadius = new CornerRadius(12), Margin = new Thickness(0, 12, 0, 0) };
+            box.SetResourceReference(Border.BackgroundProperty, "SuccessSoftBrush");
+            body.Children.Add(box);
+        }
         var enter = Label(T("Para entrar na BIOS: reinicie e pressione Delete (ou F2) durante a inicialização, ou use \"Reiniciar na BIOS/UEFI\" no topo da página. Salve com F10.",
             "To enter the BIOS: restart and press Delete (or F2) during boot, or use \"Restart into BIOS/UEFI\" at the top of the page. Save with F10."), 12, true);
         enter.Margin = new Thickness(0, 12, 0, 0);

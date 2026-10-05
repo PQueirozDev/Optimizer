@@ -78,7 +78,7 @@ public sealed class PcieRules : IAdvisorRule
         var legacy = c.Profile.Bios.Firmware == FirmwareMode.Legacy;
         yield return new AdvisorRecommendation
         {
-            Id = "pcie-rebar", SettingId = Settings.ResizableBar, Category = AdvisorCategory.Pcie,
+            Id = "pcie-rebar", BiosTarget = @"^(Enabled|Auto)$", SettingId = Settings.ResizableBar, Category = AdvisorCategory.Pcie,
             Name = T("Above 4G Decoding + Resizable BAR", "Above 4G Decoding + Resizable BAR"),
             Description = T("Deixa o processador acessar toda a VRAM de uma vez. Precisa de Above 4G Decoding ligado, CSM desligado (Windows em UEFI), BIOS da placa com suporte e driver de vídeo atualizado. O ganho depende do jogo." +
                     (legacy ? " Este Windows iniciou em modo Legacy: resolva o modo de boot primeiro." : ""),

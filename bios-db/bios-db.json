@@ -1,0 +1,115 @@
+{
+  "format": 1,
+  "version": 1,
+  "updated": "2026-10-05",
+  "pathSets": [
+    {
+      "id": "asus-intel-400",
+      "vendor": "asus",
+      "source": "ASUS PRIME/PRO/ProArt/TUF GAMING Intel 400 Series BIOS Manual",
+      "sourceUrl": "https://dlcdnets.asus.com/pub/ASUS/mb/13MANUAL/PRIME_PRO_PROART_TUF_GAMING_Intel_400_Series_BIOS_EM_WEB_EN.pdf",
+      "chipsets": ["H410", "B460", "H470", "Z490", "Q470", "W480"],
+      "productPattern": "^(PRIME|PRO|ProArt|TUF)\\b",
+      "paths": {
+        "mem.profile": ["Ai Tweaker", "Ai Overclock Tuner"],
+        "mem.voltage": ["Ai Tweaker", "DRAM Voltage"],
+        "power.enhancement": ["Ai Tweaker", "ASUS MultiCore Enhancement"],
+        "power.limits": ["Ai Tweaker", "Internal CPU Power Management", "Long Duration Package Power Limit / Package Power Time Window / Short Duration Package Power Limit"],
+        "latency.spread": ["Ai Tweaker", "BCLK Spread Spectrum"],
+        "cpu.smt": ["Advanced", "CPU Configuration", "Hyper-Threading"],
+        "cpu.cores": ["Advanced", "CPU Configuration", "Active Processor Cores"],
+        "virt.vtx": ["Advanced", "CPU Configuration", "Intel (VMX) Virtualization Technology"],
+        "intel.speedstep": ["Advanced", "CPU Configuration", "CPU Power Management Configuration", "Intel(R) SpeedStep(tm)"],
+        "intel.speedshift": ["Advanced", "CPU Configuration", "CPU Power Management Configuration", "Intel(R) Speed Shift Technology"],
+        "intel.turbo": ["Advanced", "CPU Configuration", "CPU Power Management Configuration", "Turbo Mode"],
+        "cpu.cstates": ["Advanced", "CPU Configuration", "CPU Power Management Configuration", "CPU C-states"],
+        "thermal.monitor": ["Advanced", "CPU Configuration", "CPU Power Management Configuration", "Thermal Monitor"],
+        "pcie.above4g": ["Advanced", "System Agent (SA) Configuration", "Above 4G Decoding"],
+        "pcie.linkspeed": ["Advanced", "System Agent (SA) Configuration", "PEG Port Configuration", "PCIEx16_1 Link Speed"],
+        "sec.tpm": ["Advanced", "PCH-FW Configuration", "PTT"],
+        "boot.csm": ["Boot", "CSM (Compatibility Support Module)", "Launch CSM"],
+        "sec.secureboot": ["Boot", "Secure Boot", "OS Type"]
+      },
+      "notes": {
+        "mem.profile": {
+          "pt": "[XMP I] usa o perfil do pente com ajustes da ASUS; [XMP II] carrega o perfil XMP original do pente. A opção só aparece com pentes que têm XMP.",
+          "en": "[XMP I] uses the module profile with ASUS adjustments; [XMP II] loads the module's original XMP profile. The option only appears with XMP modules."
+        },
+        "latency.spread": {
+          "pt": "Esta opção só aparece com o Ai Overclock Tuner em [XMP I], [XMP II] ou [Manual].",
+          "en": "This option only appears when Ai Overclock Tuner is set to [XMP I], [XMP II] or [Manual]."
+        },
+        "power.enhancement": {
+          "pt": "Opções: [Auto - Lets BIOS Optimize], [Disabled - Enforce All limits] (limites Intel) e [Enabled - Remove All limits].",
+          "en": "Options: [Auto - Lets BIOS Optimize], [Disabled - Enforce All limits] (Intel limits) and [Enabled - Remove All limits]."
+        },
+        "thermal.monitor": {
+          "pt": "No manual o item aparece no fim de CPU Power Management Configuration, logo após os C-states.",
+          "en": "In the manual the item appears at the end of CPU Power Management Configuration, right after the C-states."
+        }
+      }
+    }
+  ],
+  "optionNames": {
+    "asus": {
+      "power.enhancement": ["ASUS MultiCore Enhancement", "ASUS Performance Enhancement"]
+    },
+    "msi": {
+      "mem.profile": ["Extreme Memory Profile (XMP)", "A-XMP", "EXPO"],
+      "power.enhancement": ["Enhanced Turbo"]
+    },
+    "gigabyte": {
+      "mem.profile": ["Extreme Memory Profile (X.M.P.)", "EXPO"],
+      "power.enhancement": ["Enhanced Multi-Core Performance"]
+    }
+  },
+  "boards": [
+    {
+      "name": "ASUS TUF GAMING B460M-PLUS",
+      "vendor": "asus",
+      "productPattern": "^TUF GAMING B460M-PLUS( \\(WI-FI\\))?$",
+      "chipset": "B460",
+      "source": "ASUS TUF GAMING B460M-PLUS User's Manual (E17227) + ASUS PRIME/PRO/ProArt/TUF GAMING Intel 400 Series BIOS Manual",
+      "sourceUrl": "https://dlcdnets.asus.com/pub/ASUS/mb/LGA1200/TUF_GAMING_B460M-PLUS/E17227_TUF_GAMING_B460M-PLUS_UM_V3_WEB.pdf",
+      "twoModuleSlots": ["A2", "B2"],
+      "twoModuleSlotsConfirmed": false,
+      "primaryGpuSlot": "PCIEX16_1",
+      "primaryGpuSlotLink": "PCIe 3.0 x16",
+      "biosFileName": "TG460MP.CAP",
+      "mappedCpus": ["10700F"],
+      "facts": [
+        {
+          "pt": "Memória: até 128 GB em 4 slots DDR4, canal duplo. Core i9/i7 da 10ª geração rodam a memória a até 2933 MHz; os demais processadores, a até 2666 MHz.",
+          "en": "Memory: up to 128 GB in 4 DDR4 slots, dual channel. 10th gen Core i9/i7 run memory at up to 2933 MHz; other CPUs at up to 2666 MHz."
+        },
+        {
+          "pt": "Placa de vídeo: use o slot PCIEX16_1 (PCIe 3.0 x16). O PCIEX16_2 funciona só em x4.",
+          "en": "Graphics card: use the PCIEX16_1 slot (PCIe 3.0 x16). PCIEX16_2 runs at x4 only."
+        },
+        {
+          "pt": "Atualização pelo ASUS EZ Flash 3 (aba Tool da BIOS); o manual pede o arquivo renomeado como TG460MP.CAP.",
+          "en": "Update with ASUS EZ Flash 3 (BIOS Tool tab); the manual asks for the file renamed to TG460MP.CAP."
+        }
+      ]
+    }
+  ],
+  "biosQuestions": {
+    "intel.turbo": ["^(Intel\\(R\\) )?Turbo (Mode|Boost( Technology)?)$", "^Intel\\(R\\) Turbo Boost Technology$"],
+    "intel.speedstep": ["^Intel\\(R\\) SpeedStep\\(tm\\)$", "^(Intel )?SpeedStep$", "^EIST$"],
+    "intel.speedshift": ["^Intel\\(R\\) Speed Shift Technology$", "^Intel Speed Shift Technology$", "^Speed Shift$"],
+    "cpu.smt": ["^Hyper-Threading$", "^Intel\\(R\\) Hyper-Threading Technology$", "^SMT (Control|Mode)$"],
+    "cpu.cores": ["^Active Processor Cores$", "^Downcore control$"],
+    "cpu.cstates": ["^CPU C-states$", "^C-States Control$", "^Global C-state Control$"],
+    "thermal.monitor": ["^(Intel\\(R\\) )?Thermal Monitor$"],
+    "amd.cpb": ["^Core Performance Boost$"],
+    "amd.pbo": ["^Precision Boost Overdrive$"],
+    "amd.cppc": ["^CPPC$"],
+    "mem.profile": ["^Ai Overclock Tuner$", "^Extreme Memory Profile ?\\(X\\.M\\.P\\.?\\)$", "^XMP$", "^A-XMP$", "^(Memory|DRAM) Profile$", "^D\\.?O\\.?C\\.?P\\.?$", "^EXPO$"],
+    "power.enhancement": ["^ASUS MultiCore Enhancement$", "^MultiCore Enhancement$", "^Enhanced Multi-Core Performance$", "^Enhanced Turbo$"],
+    "pcie.above4g": ["^Above 4G Decoding$"],
+    "pcie.rebar": ["^Re-?Size BAR( Support)?$", "^Resizable BAR( Support)?$"],
+    "boot.csm": ["^Launch CSM$", "^CSM( Support)?$"],
+    "virt.vtx": ["^Intel \\(VMX\\) Virtualization Technology$", "^Intel Virtualization Technology$", "^VMX$", "^SVM Mode$"],
+    "latency.spread": ["^BCLK Spread Spectrum$", "^Spread Spectrum$"]
+  }
+}

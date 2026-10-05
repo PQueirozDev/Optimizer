@@ -45,7 +45,7 @@ public sealed class MemoryRules : IAdvisorRule
             : T("", "");
         yield return new AdvisorRecommendation
         {
-            Id = "mem-profile", SettingId = Settings.MemoryProfile, Category = AdvisorCategory.Ram,
+            Id = "mem-profile", BiosTarget = @"^(?!.*(Disabled|Auto|Manual)).*(XMP|EXPO|DOCP|Profile|Enabled)", SettingId = Settings.MemoryProfile, Category = AdvisorCategory.Ram,
             Name = T($"Perfil de memória ({profileName})", $"Memory profile ({profileName})"),
             Description = T("Sem o perfil a memória roda na velocidade padrão JEDEC, mais lenta que a anunciada no pente." + capNote.Pt,
                 "Without the profile, memory runs at the slower JEDEC default instead of the advertised speed." + capNote.En),

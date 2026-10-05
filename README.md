@@ -64,6 +64,15 @@ dotnet run --project .\tests\Optimizer.Verification
 
 O projeto de verificação também aceita `--render`, que gera imagens das telas, e `--i18n`, que confere se a interface em inglês está toda traduzida (o esperado é 0 textos em português). O teste que ativa e desativa serviços só roda com o terminal aberto como administrador; no GitHub Actions ele sempre roda.
 
+## Banco do BIOS Advisor
+
+O Advisor pode ler os valores atuais pelo SCEWIN escolhido pelo usuário. Essa leitura apenas exporta as configurações; não grava ajustes na BIOS. Os valores ficam salvos com a identificação da placa e versão da BIOS e deixam de valer quando essa identificação muda.
+
+Os perfis, caminhos documentados e nomes das opções ficam em `bios-db/bios-db.json`, embutido no aplicativo. O app procura atualizações assinadas no GitHub; aceita apenas assinaturas RSA-SHA256 válidas e versões maiores que a atual. Sem conexão, continua usando o banco embutido ou o cache verificado.
+
+Para atualizar o banco, edite os dados com fontes oficiais, aumente `version` e execute `powershell -File .\tools\Sign-BiosDatabase.ps1`. A chave privada fica em `private/`, fora do Git. Para conferir a assinatura com a chave pública do app, execute `powershell -File .\tools\Sign-BiosDatabase.ps1 -Verify`; a verificação não precisa da pasta privada.
+
+Para testar o recurso: `dotnet run --project .\tests\Optimizer.Verification -- artifacts/verification --bios-advisor`.
 ## Gerar o instalador localmente
 
 Instale o Inno Setup 6:

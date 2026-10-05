@@ -55,9 +55,35 @@ public sealed class BiosAdvisorService
     public AdvisorReport Analyze(HardwareProfile profile)
     {
         _log.Write("INFO", $"Rules loaded: {BiosAdvisorEngine.Rules.Count}");
-        var report = BiosAdvisorEngine.Analyze(profile, State.Preset, BiosAdvisorStore.ValidConfirmations(State, profile));
-        _log.Write("INFO", $"Recommendations generated: {report.Recommendations.Count} ({report.Preset}, score {report.Score.Overall?.ToString() ?? "n/a"})");
+        var db = BiosDatabase.Current;
+        var report = BiosAdvisorEngine.Analyze(profile, State.Preset, BiosAdvisorStore.ValidConfirmations(State, profile), State.Readings, db);
+        _log.Write("INFO", $"Recommendations generated: {report.Recommendations.Count} ({report.Preset}, score {report.Score.Overall?.ToString() ?? "n/a"}, database v{db.Version})");
         return report;
+    }
+
+    /// <summary>Leitura da BIOS desta placa, se for da versão de BIOS atual.</summary>
+    public BiosReadings? ReadingsFor(HardwareProfile profile) => State.Readings is { } r && r.Fingerprint == profile.Fingerprint ? r : null;
+
+    /// <summary>
+    /// Lê os valores atuais da BIOS pelo SCEWIN (export: só leitura, nada é gravado na BIOS) e guarda o que o banco
+    /// consegue reconhecer. Devolve quantas configurações foram encontradas.
+    /// </summary>
+    public async Task<BiosReadings> ReadBiosAsync(BiosService bios, HardwareProfile profile)
+    {
+        var settings = await bios.ExportAsync();
+        var readings = BiosSettingMapper.Map(settings, BiosDatabase.Current, profile.Fingerprint, DateTime.Now);
+        State.Readings = readings;
+        Store.Save(State);
+        _log.Write("INFO", $"BIOS Advisor: BIOS read via SCEWIN ({readings.Values.Count} of {readings.TotalQuestions} settings recognized)");
+        return readings;
+    }
+
+    /// <summary>Busca uma versão nova e assinada do banco; true se passou a valer.</summary>
+    public async Task<bool> RefreshDatabaseAsync()
+    {
+        var updated = await BiosDatabase.RefreshAsync();
+        if (updated) _log.Write("INFO", $"BIOS Advisor: database updated to v{BiosDatabase.Current.Version}");
+        return updated;
     }
 
     public void SetPreset(AdvisorPreset preset) { State.Preset = preset; Store.Save(State); }

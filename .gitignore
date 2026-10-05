@@ -37,3 +37,6 @@ installer/Output/
 secrets.*
 appsettings.Local.json
 private/
+
+# Permissões locais do assistente
+.claude/

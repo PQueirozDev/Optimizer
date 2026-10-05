@@ -24,6 +24,8 @@
     <Content Include="Assets\Qrz.powerplan.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- Banco do BIOS Advisor: o mesmo arquivo publicado em bios-db/ no GitHub (o app também baixa versões novas assinadas) -->
+    <EmbeddedResource Include="..\bios-db\bios-db.json" Link="BiosAdvisor\bios-db.json" LogicalName="PQueirozOptimizer.BiosAdvisor.bios-db.json" />
     <Content Include="..\Otimizador_de_PC.ps1" Link="Otimizador_de_PC.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

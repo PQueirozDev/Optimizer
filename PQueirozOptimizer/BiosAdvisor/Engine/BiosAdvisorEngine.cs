@@ -18,13 +18,17 @@ public static class BiosAdvisorEngine
     public static readonly AdvisorCategory[] ScoredCategories =
         { AdvisorCategory.Cpu, AdvisorCategory.Ram, AdvisorCategory.Power, AdvisorCategory.Latency, AdvisorCategory.Pcie, AdvisorCategory.Thermal };
 
-    public static AdvisorReport Analyze(HardwareProfile profile, AdvisorPreset preset, IReadOnlySet<string>? confirmedIds = null)
+    /// <param name="readings">Valores lidos da BIOS pelo SCEWIN; só valem se forem desta placa e versão de BIOS.</param>
+    /// <param name="db">Banco de caminhos/perfis; null usa o banco em vigor (embutido ou atualizado).</param>
+    public static AdvisorReport Analyze(HardwareProfile profile, AdvisorPreset preset, IReadOnlySet<string>? confirmedIds = null, BiosReadings? readings = null, BiosDatabase? db = null)
     {
+        db ??= BiosDatabase.Current;
         var platform = PlatformAnalyzer.Analyze(profile);
         var memory = MemoryAnalyzer.Analyze(profile.Memory, platform);
-        var board = BoardProfiles.For(profile.Motherboard);
+        var board = db.BoardFor(profile.Motherboard);
         var vendor = VendorCatalog.For(profile.Motherboard);
-        var context = new AdvisorContext(profile, platform, memory, board, vendor, preset);
+        var context = new AdvisorContext(profile, platform, memory, board, vendor, preset, db);
+        if (readings != null && readings.Fingerprint != profile.Fingerprint) readings = null;
 
         var list = new List<AdvisorRecommendation>();
         foreach (var rule in Rules)
@@ -32,13 +36,16 @@ public static class BiosAdvisorEngine
             {
                 if (rec.MinPreset > preset || rec.MaxPreset < preset) continue;
                 var item = rec;
+                // Valor lido da própria BIOS: vale mais que dedução ou confirmação manual (uma leitura real do Windows continua valendo)
+                if (item.SettingId is { } id && item.Evidence != Evidence.NotApplicable && readings?.Values.TryGetValue(id, out var read) == true)
+                    item = ApplyReading(item, read);
                 // Confirmação do usuário só substitui o que o Windows não consegue ver; nunca uma leitura real
                 if (confirmedIds?.Contains(item.Id) == true && item.Evidence == Evidence.NeedsBiosCheck && item.Compliance == Compliance.Unknown)
                     item = item with { Evidence = Evidence.UserConfirmed, Compliance = Compliance.Ok };
                 // Numa máquina virtual o Windows vê o hardware virtual: nada vale como evidência da BIOS física
                 if (profile.IsVirtualMachine) item = item with { Weight = 0 };
                 if (item.SettingId is { } setting && item.Evidence != Evidence.NotApplicable)
-                    item = item with { Guide = vendor.Guide(setting, profile.Motherboard, platform, item.RecommendedValue.En) };
+                    item = item with { Guide = vendor.Guide(db, setting, profile.Motherboard, platform, item.RecommendedValue.En) };
                 list.Add(item);
             }
         if (list.Select(r => r.Id).Distinct().Count() != list.Count)
@@ -61,12 +68,27 @@ public static class BiosAdvisorEngine
     }
 
     /// <summary>
+    /// Aplica um valor lido da BIOS. Com BiosTarget, a opção atual decide se está OK; sem alvo, só mostra o valor.
+    /// Uma leitura do Windows (Detected) não é trocada: a BIOS só complementa o que o Windows não mostra ou só deduz.
+    /// </summary>
+    private static AdvisorRecommendation ApplyReading(AdvisorRecommendation item, BiosReading read)
+    {
+        var current = new LocalizedText($"{read.Value} (lido da BIOS)", $"{read.Value} (read from BIOS)");
+        if (item.Evidence == Evidence.Detected) return item with { BiosValue = read };
+        if (item.BiosTarget is null) return item with { BiosValue = read, Evidence = Evidence.ReadFromBios, CurrentValue = current };
+        bool ok;
+        try { ok = System.Text.RegularExpressions.Regex.IsMatch(read.Value, item.BiosTarget, System.Text.RegularExpressions.RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(100)); }
+        catch (System.Text.RegularExpressions.RegexMatchTimeoutException) { return item with { BiosValue = read }; }
+        return item with { BiosValue = read, Evidence = Evidence.ReadFromBios, Compliance = item.Compliance == Compliance.Info ? Compliance.Info : ok ? Compliance.Ok : Compliance.Attention, CurrentValue = current };
+    }
+
+    /// <summary>
     /// Nota 0–100 só com o que tem evidência: lido do Windows e confirmado pelo usuário valem 1; deduzido vale meio.
     /// Itens que precisam ser vistos na BIOS ficam fora (a nota não finge saber o que o Windows não mostra).
     /// </summary>
     public static AdvisorScore Score(IReadOnlyList<AdvisorRecommendation> items)
     {
-        static double Certainty(Evidence e) => e switch { Evidence.Detected or Evidence.UserConfirmed => 1, Evidence.Inferred => 0.5, _ => 0 };
+        static double Certainty(Evidence e) => e switch { Evidence.Detected or Evidence.ReadFromBios or Evidence.UserConfirmed => 1, Evidence.Inferred => 0.5, _ => 0 };
         var scored = items.Where(r => r.Weight > 0 && ScoredCategories.Contains(r.Category) && r.Evidence != Evidence.NotApplicable).ToList();
         bool Known(AdvisorRecommendation r) => r.Compliance is Compliance.Ok or Compliance.Attention && Certainty(r.Evidence) > 0;
         int? Percent(IEnumerable<AdvisorRecommendation> set)

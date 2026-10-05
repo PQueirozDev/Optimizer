@@ -17,6 +17,8 @@ public sealed class BiosAdvisorState
     public HashSet<string> Confirmed { get; set; } = new();
     public BenchmarkRun? Baseline { get; set; }
     public BenchmarkRun? After { get; set; }
+    /// <summary>Última leitura da BIOS pelo SCEWIN (vale só para a mesma placa + versão de BIOS).</summary>
+    public BiosReadings? Readings { get; set; }
 }
 
 public sealed class BiosAdvisorStore

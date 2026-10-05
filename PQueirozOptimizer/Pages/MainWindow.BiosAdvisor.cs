@@ -51,6 +51,8 @@ public partial class MainWindow
 
         var report = _advisorReport = Advisor.Analyze(detection.Result);
         root.Children.Add(AdvisorHardwareCard(report));
+        root.Children.Add(AdvisorBiosReadCard(report));
+        _ = RefreshAdvisorDatabaseAsync();
         foreach (var w in report.Warnings) root.Children.Add(Notice(L(w), "Warning"));
         var presets = AdvisorPresetTabs(report);
         presets.Margin = new Thickness(0, 16, 0, 16);
@@ -174,7 +176,7 @@ public partial class MainWindow
             grid.Children.Add(box);
         }
         panel.Children.Add(grid);
-        if (BoardProfiles.For(p.Motherboard) is { } board)
+        if (BiosDatabase.Current.BoardFor(p.Motherboard) is { } board)
             foreach (var fact in board.Facts)
             {
                 var f = Label("• " + L(fact), 12, true); f.Margin = new Thickness(2, 2, 0, 0);
@@ -241,8 +243,8 @@ public partial class MainWindow
         var right = new StackPanel();
         var title = Label("BIOS Optimization Score", 16); title.FontWeight = FontWeights.SemiBold; title.Margin = new Thickness(0, 0, 0, 4);
         right.Children.Add(title);
-        var explain = Label(T("A nota só conta o que tem evidência: lido do Windows e conferido por você valem inteiro; deduzido vale metade. O que só dá para ver na BIOS fica fora da nota até você conferir.",
-            "The score only counts what has evidence: read from Windows and checked by you count fully; inferred counts half. What can only be seen in the BIOS stays out of the score until you check it."), 12, true);
+        var explain = Label(T("A nota só conta o que tem evidência: lido do Windows, lido da BIOS (SCEWIN) e conferido por você valem inteiro; deduzido vale metade. O que só dá para ver na BIOS fica fora da nota até ser lido ou conferido.",
+            "The score only counts what has evidence: read from Windows, read from the BIOS (SCEWIN) and checked by you count fully; inferred counts half. What can only be seen in the BIOS stays out of the score until it is read or checked."), 12, true);
         right.Children.Add(explain);
         var grid = Responsive(new UniformGrid { Columns = 3, Margin = new Thickness(0, 4, -10, 0) }, 190, 3);
         foreach (var cat in s.Categories)
@@ -266,7 +268,7 @@ public partial class MainWindow
         }
         right.Children.Add(grid);
         var legend = new WrapPanel { Margin = new Thickness(0, 4, 0, 0) };
-        foreach (var e in new[] { Evidence.Detected, Evidence.Inferred, Evidence.NeedsBiosCheck, Evidence.UserConfirmed })
+        foreach (var e in new[] { Evidence.Detected, Evidence.ReadFromBios, Evidence.Inferred, Evidence.NeedsBiosCheck, Evidence.UserConfirmed })
         {
             var (text, tone) = EvidenceLabel(e);
             var pill = Pill(text, tone); pill.Margin = new Thickness(0, 0, 6, 6);
@@ -294,6 +296,7 @@ public partial class MainWindow
     private (string Text, string Tone) EvidenceLabel(Evidence e) => e switch
     {
         Evidence.Detected => (T("DETECTADO", "DETECTED"), "Success"),
+        Evidence.ReadFromBios => (T("LIDO DA BIOS", "READ FROM BIOS"), "Success"),
         Evidence.Inferred => (T("INFERIDO", "INFERRED"), "Info"),
         Evidence.NeedsBiosCheck => (T("PRECISA SER VERIFICADO NA BIOS", "NEEDS BIOS CHECK"), "Warning"),
         Evidence.UserConfirmed => (T("CONFERIDO POR VOCÊ", "CHECKED BY YOU"), "Accent"),
@@ -380,6 +383,7 @@ public partial class MainWindow
         }
         Field(T("RECOMENDADO", "RECOMMENDED"), L(rec.RecommendedValue));
         if (rec.CurrentValue is { } current) Field(T("ATUAL", "CURRENT"), L(current));
+        if (rec.BiosValue is { } bv && rec.Evidence == Evidence.Detected) Field(T("NA BIOS", "IN BIOS"), $"{bv.Question}: {bv.Value}", systemData: true);
         Field(T("BENEFÍCIO", "BENEFIT"), L(rec.ExpectedBenefit));
 
         var levels = new WrapPanel { Margin = new Thickness(0, 6, 0, 12) };

@@ -21,6 +21,8 @@ public enum Evidence
     Inferred,
     /// <summary>O Windows não expõe: só dá para saber olhando na BIOS.</summary>
     NeedsBiosCheck,
+    /// <summary>Lido da própria BIOS pelo SCEWIN (export, só leitura).</summary>
+    ReadFromBios,
     /// <summary>O usuário conferiu na BIOS e marcou como feito (vale só para a versão de BIOS atual).</summary>
     UserConfirmed,
     /// <summary>Não se aplica a este hardware (mostrado com o motivo, fora da nota).</summary>
@@ -60,6 +62,10 @@ public sealed record AdvisorRecommendation
     /// <summary>Peso na nota (0 = só informativo).</summary>
     public int Weight { get; init; } = 1;
     public BiosGuide? Guide { get; init; }
+    /// <summary>Opção(ões) da BIOS que atendem a recomendação (expressão sobre o rótulo lido pelo SCEWIN). Null = só informativo.</summary>
+    public string? BiosTarget { get; init; }
+    /// <summary>Valor lido da BIOS para esta configuração, quando houve leitura.</summary>
+    public BiosReading? BiosValue { get; init; }
 
     public bool RequiresExtraConfirmation => Risk == Level.High;
 }

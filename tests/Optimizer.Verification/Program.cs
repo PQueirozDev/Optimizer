@@ -230,7 +230,13 @@ internal static class Program
                 Assert(StartupService.IsEnabled(approved?.GetValue(testName) as byte[]), "Reativar desfaz a desativação");
             var eventLog = entries.Where(e => e.Key == "EventLog").ToList();
             service.VerifySignaturesAsync(eventLog).GetAwaiter().GetResult();
-            Assert(eventLog[0].Signature == SignatureStatus.Verified && eventLog[0].IsWindows, "Assinatura de catálogo do Windows verificada e item oculto como do Windows");
+            if (eventLog[0].Signature != SignatureStatus.Verified)
+            {
+                var diagnostic = "try { $s = Get-AuthenticodeSignature -LiteralPath $env:PQO_SIGNATURE_TEST -ErrorAction Stop; $s | Select-Object Status,StatusMessage | ConvertTo-Json -Compress } catch { $_.Exception.Message }";
+                Console.WriteLine("Signature diagnostic: " + PowerShellBridge.RunScriptAsync(diagnostic,
+                    new Dictionary<string, string> { ["PQO_SIGNATURE_TEST"] = eventLog[0].ImagePath! }).GetAwaiter().GetResult());
+            }
+            Assert(eventLog[0].Signature == SignatureStatus.Verified && eventLog[0].IsWindows, $"Assinatura de catálogo do Windows: {eventLog[0].ImagePath}, status={eventLog[0].Signature}, signer={eventLog[0].Signer}, Windows={eventLog[0].IsWindows}");
         }
         finally
         {
@@ -421,6 +427,8 @@ internal static class Program
         var flags = BindingFlags.NonPublic | BindingFlags.Instance;
         var advisor = (PQueirozOptimizer.BiosAdvisor.BiosAdvisorService)typeof(MainWindow).GetProperty("Advisor", flags)!.GetValue(window)!;
         advisor.UseProfile(BiosAdvisorTests.TufB460());
+        // Sem internet nas telas de teste: o banco usado é o embutido
+        typeof(MainWindow).GetField("_advisorDatabaseChecked", flags)!.SetValue(window, true);
         typeof(MainWindow).GetField("_biosUpdateCheck", flags)!.SetValue(window, Task.FromResult(new PQueirozOptimizer.BiosAdvisor.Updates.BiosUpdateResult(
             PQueirozOptimizer.BiosAdvisor.Updates.BiosUpdateStatus.UpdateAvailable, "0708", "2003", new DateTime(2026, 3, 16), "https://www.asus.com/supportonly/tuf%20gaming%20b460m-plus/helpdesk_bios/", "asus.com")));
     }
@@ -796,10 +804,10 @@ internal static class Program
                 // Efeitos visuais (fim de Personalizar Windows) e a tela de upgrade de um plano Base
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "customize" });
                 Render("customize-tall", 1320, 3600);
-                ((App)Application.Current).SetActiveLicense(new LicenseInfo("Teste", DateTime.UtcNow.AddDays(30), "TESTE", "Standard", LicensePlans.Base));
+                ((App)Application.Current!).SetActiveLicense(new LicenseInfo("Teste", DateTime.UtcNow.AddDays(30), "TESTE", "Standard", LicensePlans.Base));
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "gaming" });
                 Render("locked-gaming-dark", 1320, 860);
-                ((App)Application.Current).SetActiveLicense(new LicenseInfo("Teste", null, "TESTE", "Standard", LicensePlans.Lifetime));
+                ((App)Application.Current!).SetActiveLicense(new LicenseInfo("Teste", null, "TESTE", "Standard", LicensePlans.Lifetime));
                 // Página exclusiva de licença admin: chamada direto, sem a checagem da navegação
                 typeof(MainWindow).GetMethod("ShowIsos", flags)!.Invoke(window, null);
                 Render("isos-dark", 1320, 860);

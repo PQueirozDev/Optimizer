@@ -25,7 +25,7 @@ public sealed class CommonCpuRules : IAdvisorRule
         if (modelHasSmt != false && (smtOn || modelHasSmt == true))
             yield return new AdvisorRecommendation
             {
-                Id = "cpu-smt", SettingId = Settings.Smt, Category = AdvisorCategory.Cpu,
+                Id = "cpu-smt", BiosTarget = @"^(Enabled|Auto)$", SettingId = Settings.Smt, Category = AdvisorCategory.Cpu,
                 Name = smtName,
                 Description = T("Dois threads por núcleo. Jogos atuais e o Windows aproveitam os threads extras; desligar raramente melhora o FPS e piora o desempenho geral.",
                     "Two threads per core. Modern games and Windows use the extra threads; turning it off rarely improves FPS and hurts overall performance."),

@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -37,6 +37,9 @@ public sealed class PowerShellBridge
         };
         foreach (var argument in new[] { "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", Convert.ToBase64String(Encoding.Unicode.GetBytes(wrapped)) })
             psi.ArgumentList.Add(argument);
+        // O app pode ser iniciado pelo PowerShell 7: seus módulos não são compatíveis com powershell.exe (5.1).
+        // Deixa o Windows PowerShell montar os caminhos de módulos da própria instalação.
+        psi.Environment.Remove("PSModulePath");
         if (variables != null) foreach (var (name, value) in variables) psi.Environment[name] = value;
 
         using var process = Process.Start(psi) ?? throw new InvalidOperationException("Não foi possível iniciar o PowerShell.");

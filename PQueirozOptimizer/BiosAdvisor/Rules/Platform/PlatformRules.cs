@@ -18,7 +18,7 @@ public sealed class PlatformRules : IAdvisorRule
             var uefi = bios.Firmware == FirmwareMode.Uefi;
             yield return new AdvisorRecommendation
             {
-                Id = "boot-uefi", SettingId = Settings.Csm, Category = AdvisorCategory.Boot, Weight = 0,
+                Id = "boot-uefi", BiosTarget = @"^Disabled$", SettingId = Settings.Csm, Category = AdvisorCategory.Boot, Weight = 0,
                 Name = T("Modo de boot UEFI (CSM desligado)", "UEFI boot mode (CSM off)"),
                 Description = uefi
                     ? T("O Windows iniciou em UEFI. Com o CSM desligado, Secure Boot e Resizable BAR ficam disponíveis.",

@@ -13,7 +13,7 @@ public sealed class AmdCpuRules : IAdvisorRule
 
         yield return new AdvisorRecommendation
         {
-            Id = "amd-cpb", SettingId = Settings.AmdCpb, Category = AdvisorCategory.Cpu,
+            Id = "amd-cpb", BiosTarget = @"^(Enabled|Auto)$", SettingId = Settings.AmdCpb, Category = AdvisorCategory.Cpu,
             Name = T("Precision Boost (Core Performance Boost)", "Precision Boost (Core Performance Boost)"),
             Description = T("O boost da AMD: deixa os núcleos subirem acima do clock base conforme temperatura e energia.",
                 "AMD's boost: lets cores run above base clock depending on temperature and power."),
@@ -30,7 +30,7 @@ public sealed class AmdCpuRules : IAdvisorRule
         if (c.Cpu.Generation >= 3)
             yield return new AdvisorRecommendation
             {
-                Id = "amd-cppc", SettingId = Settings.AmdCppc, Category = AdvisorCategory.Latency,
+                Id = "amd-cppc", BiosTarget = @"^(Enabled|Auto)$", SettingId = Settings.AmdCppc, Category = AdvisorCategory.Latency,
                 Name = T("CPPC e Preferred Cores", "CPPC and Preferred Cores"),
                 Description = T("Informam ao Windows quais núcleos alcançam o maior clock, para as tarefas leves e os jogos irem para eles.",
                     "Tell Windows which cores reach the highest clocks, so light tasks and games run on them."),
@@ -46,7 +46,7 @@ public sealed class AmdCpuRules : IAdvisorRule
         if (c.IsDesktop && c.Cpu.Generation >= 3 && !x3dLocked && c.Platform.ChipsetAllowsCpuOverclock != false)
             yield return new AdvisorRecommendation
             {
-                Id = "amd-pbo", SettingId = Settings.AmdPbo, Category = AdvisorCategory.Power, MinPreset = AdvisorPreset.Performance,
+                Id = "amd-pbo", BiosTarget = @"^(Enabled|Advanced)$", SettingId = Settings.AmdPbo, Category = AdvisorCategory.Power, MinPreset = AdvisorPreset.Performance,
                 Name = T("Precision Boost Overdrive (PBO)", "Precision Boost Overdrive (PBO)"),
                 Description = c.Cpu.IsX3D
                     ? T("Nos X3D o PBO só amplia os limites de energia dentro do que a AMD permite. Ative sem mexer em tensões e confira a temperatura no monitor.",

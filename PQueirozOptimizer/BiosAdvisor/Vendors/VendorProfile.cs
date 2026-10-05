@@ -1,6 +1,6 @@
 namespace PQueirozOptimizer.BiosAdvisor;
 
-/// <summary>IDs estáveis das configurações de BIOS. Regras, fabricantes e confirmações do usuário usam estes nomes.</summary>
+/// <summary>IDs estáveis das configurações de BIOS. Regras, fabricantes, banco de dados e confirmações do usuário usam estes nomes.</summary>
 public static class Settings
 {
     public const string IntelTurbo = "intel.turbo", IntelSpeedStep = "intel.speedstep", IntelSpeedShift = "intel.speedshift";
@@ -12,12 +12,9 @@ public static class Settings
     public const string Csm = "boot.csm", SecureBoot = "sec.secureboot", Tpm = "sec.tpm", Virtualization = "virt.vtx", SpreadSpectrum = "latency.spread";
 }
 
-/// <summary>Conjunto de caminhos documentados para uma família de BIOS (ex.: ASUS Intel série 400), com a fonte.</summary>
-public sealed record BiosPathSet(string Source, Func<MotherboardInfo, PlatformInfo, bool> AppliesTo, IReadOnlyDictionary<string, string[]> Paths, IReadOnlyDictionary<string, LocalizedText>? Notes = null);
-
 /// <summary>
-/// Dados de uma fabricante: nome da interface, teclas, nomes das opções e caminhos documentados.
-/// Caminho só entra com fonte oficial; sem fonte, a página mostra que a localização não foi confirmada.
+/// Dados fixos de uma fabricante: nome da interface, tecla do modo avançado e página de suporte. Caminhos, nomes de
+/// opções e perfis de placas ficam no banco (BiosDatabase), que pode ser atualizado sem lançar uma versão nova.
 /// </summary>
 public abstract class VendorProfile
 {
@@ -28,22 +25,23 @@ public abstract class VendorProfile
     public abstract string[] ManufacturerAliases { get; }
     /// <summary>Tecla que abre o modo avançado, quando a fabricante tem modo simples e avançado.</summary>
     public virtual string? AdvancedModeKey => null;
-    public virtual IReadOnlyList<BiosPathSet> PathSets => Array.Empty<BiosPathSet>();
-    /// <summary>Nomes que a fabricante usa para cada configuração (para procurar na BIOS quando não há caminho).</summary>
-    public virtual IReadOnlyDictionary<string, string[]> OptionNames => new Dictionary<string, string[]>();
 
     public bool Matches(MotherboardInfo board) => ManufacturerAliases.Any(a => board.Manufacturer.Contains(a, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>Página oficial de suporte/BIOS da placa. Null quando não há endereço oficial confiável.</summary>
     public virtual string? SupportUrl(MotherboardInfo board) => null;
 
-    public BiosGuide Guide(string settingId, MotherboardInfo board, PlatformInfo platform, string? target)
+    /// <summary>Nomes que a fabricante usa para a opção (do banco) ou os nomes usuais.</summary>
+    public string[] NamesFor(BiosDatabase db, string settingId, PlatformInfo platform) => db.OptionNamesFor(Id, settingId) ?? SettingNames.For(settingId, platform);
+
+    /// <summary>Passo a passo com fonte. Sem caminho documentado para esta placa, o guia vem vazio (nunca inventado).</summary>
+    public BiosGuide Guide(BiosDatabase db, string settingId, MotherboardInfo board, PlatformInfo platform, string? target)
     {
-        var names = OptionNames.TryGetValue(settingId, out var own) ? own : SettingNames.For(settingId, platform);
-        foreach (var set in PathSets)
+        var names = NamesFor(db, settingId, platform);
+        foreach (var set in db.PathSetsFor(Id))
         {
             if (!set.AppliesTo(board, platform) || !set.Paths.TryGetValue(settingId, out var steps)) continue;
-            var note = set.Notes != null && set.Notes.TryGetValue(settingId, out var n) ? n : null;
+            var note = set.Notes.TryGetValue(settingId, out var n) ? n : null;
             var full = AdvancedModeKey is { } key ? new[] { $"Advanced Mode ({key})" }.Concat(steps).ToArray() : steps;
             return new BiosGuide(Interface, full, target, set.Source, names, note);
         }

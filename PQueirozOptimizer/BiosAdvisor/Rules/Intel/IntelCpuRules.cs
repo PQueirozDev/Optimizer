@@ -17,7 +17,7 @@ public sealed class IntelCpuRules : IAdvisorRule
             var mhz = peak is { } p && c.Profile.Cpu.BaseClockMhz > 0 ? (int)Math.Round(c.Profile.Cpu.BaseClockMhz * p / 100 / 50) * 50 : (int?)null;
             yield return new AdvisorRecommendation
             {
-                Id = "intel-turbo", SettingId = Settings.IntelTurbo, Category = AdvisorCategory.Cpu,
+                Id = "intel-turbo", BiosTarget = @"^(Enabled|Auto)$", SettingId = Settings.IntelTurbo, Category = AdvisorCategory.Cpu,
                 Name = T("Intel Turbo Boost", "Intel Turbo Boost"),
                 Description = T("Deixa o processador subir acima do clock base quando há margem de energia e temperatura.",
                     "Lets the CPU run above its base clock when there is power and thermal headroom."),
@@ -34,7 +34,7 @@ public sealed class IntelCpuRules : IAdvisorRule
 
         yield return new AdvisorRecommendation
         {
-            Id = "intel-speedstep", SettingId = Settings.IntelSpeedStep, Category = AdvisorCategory.Cpu,
+            Id = "intel-speedstep", BiosTarget = @"^(Enabled|Auto)$", SettingId = Settings.IntelSpeedStep, Category = AdvisorCategory.Cpu,
             Name = T("Intel SpeedStep", "Intel SpeedStep"),
             Description = T("Permite variar a frequência e a tensão conforme a carga. Em muitas BIOS o Speed Shift depende dele.",
                 "Allows frequency and voltage to change with load. On many BIOSes Speed Shift depends on it."),
@@ -48,7 +48,7 @@ public sealed class IntelCpuRules : IAdvisorRule
         if (c.Cpu.Brand == "Core Ultra" || c.Cpu.Generation >= 6)
             yield return new AdvisorRecommendation
             {
-                Id = "intel-speedshift", SettingId = Settings.IntelSpeedShift, Category = AdvisorCategory.Latency,
+                Id = "intel-speedshift", BiosTarget = @"^(Enabled|Auto)$", SettingId = Settings.IntelSpeedShift, Category = AdvisorCategory.Latency,
                 Name = T("Intel Speed Shift", "Intel Speed Shift"),
                 Description = T("O próprio processador escolhe a frequência (P-states por hardware), em vez de esperar o Windows.",
                     "The CPU picks its own frequency (hardware P-states) instead of waiting for Windows."),
@@ -61,7 +61,7 @@ public sealed class IntelCpuRules : IAdvisorRule
 
         yield return new AdvisorRecommendation
         {
-            Id = "intel-thermal-monitor", SettingId = Settings.ThermalMonitor, Category = AdvisorCategory.Thermal,
+            Id = "intel-thermal-monitor", BiosTarget = @"^(Enabled|Auto)$", SettingId = Settings.ThermalMonitor, Category = AdvisorCategory.Thermal,
             Name = T("Thermal Monitor", "Thermal Monitor"),
             Description = T("Proteção que reduz o clock quando o processador chega ao limite de temperatura. Nunca desative.",
                 "Protection that lowers clocks when the CPU reaches its temperature limit. Never disable it."),

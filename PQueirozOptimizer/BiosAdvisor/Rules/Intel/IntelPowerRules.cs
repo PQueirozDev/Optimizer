@@ -52,11 +52,11 @@ public sealed class IntelPowerRules : IAdvisorRule
             Rollback = UndoToAuto,
         };
 
-        var enhancementNames = c.Vendor.OptionNames.TryGetValue(Settings.PowerEnhancement, out var names) ? names : null;
+        var enhancementNames = c.Db.OptionNamesFor(c.Vendor.Id, Settings.PowerEnhancement);
         var isAsus = c.Vendor is AsusVendor;
         yield return new AdvisorRecommendation
         {
-            Id = "vendor-enhancement", SettingId = Settings.PowerEnhancement, Category = AdvisorCategory.Power,
+            Id = "vendor-enhancement", BiosTarget = @"^Auto", SettingId = Settings.PowerEnhancement, Category = AdvisorCategory.Power,
             Name = isAsus ? T("ASUS MultiCore Enhancement", "ASUS MultiCore Enhancement") : enhancementNames is { Length: > 0 } ? T(enhancementNames[0], enhancementNames[0]) : T("Aprimoramento da fabricante (MultiCore Enhancement e similares)", "Vendor enhancement (MultiCore Enhancement and similar)"),
             Description = T("Opção da fabricante que muda os limites de Turbo e energia. \"Remover todos os limites\" pode passar muito do consumo previsto: não é recomendado sem refrigeração e VRM adequados.",
                 "Vendor option that changes Turbo and power limits. \"Remove all limits\" can go far past the expected power draw: not recommended without suitable cooling and VRM."),
