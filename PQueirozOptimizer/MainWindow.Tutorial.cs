@@ -43,7 +43,7 @@ public partial class MainWindow
     /// <summary>Tour da primeira abertura, pelos principais pontos da interface.</summary>
     private List<TutorialStep> WelcomeTour() => new()
     {
-        new(() => null, "Bem-vindo ao PQueiroz Optimizer!", "Em menos de um minuto você conhece o essencial. Use Próximo para avançar ou Pular para começar a usar agora."),
+        new(() => null, "Bem-vindo ao Qrztweaks!", "Em menos de um minuto você conhece o essencial. Use Próximo para avançar ou Pular para começar a usar agora."),
         new(() => NavDashboard, "Visão geral", "A saúde do PC, o monitor ao vivo e os atalhos para limpar e otimizar ficam aqui."),
         new(() => NavResources, "Recursos — comece por aqui", "Verificação de arquivos corrompidos do Windows, instalação de runtimes para jogos e reinstalação limpa do driver de vídeo."),
         new(() => NavFixes, "Correções", "Soluções rápidas para problemas comuns: Windows Update travado, Loja, áudio, pesquisa, ícones e mais."),

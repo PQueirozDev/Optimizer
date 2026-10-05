@@ -78,7 +78,7 @@ public static class Glyphs
 public partial class MainWindow
 {
     /// <summary>MessageBox com texto e título traduzidos para o idioma ativo.</summary>
-    private static MessageBoxResult Msg(string text, string caption = "PQueiroz Optimizer", MessageBoxButton button = MessageBoxButton.OK,
+    private static MessageBoxResult Msg(string text, string caption = "Qrztweaks", MessageBoxButton button = MessageBoxButton.OK,
         MessageBoxImage icon = MessageBoxImage.None, MessageBoxResult defaultResult = MessageBoxResult.None)
         => MessageBox.Show(Services.Translator.Tr(text), Services.Translator.Tr(caption), button, icon, defaultResult);
 

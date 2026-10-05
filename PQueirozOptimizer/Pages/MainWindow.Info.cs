@@ -25,6 +25,11 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.9.1", "05/10/2026", new[]
+        {
+            "O PQueiroz Optimizer agora se chama Qrztweaks, com logo nova. Licenças, configurações e backups continuam valendo.",
+            "O instalador passa a se chamar Qrztweaks-Setup e troca os atalhos antigos pelos novos.",
+        }),
         ("v1.9.0", "05/10/2026", new[]
         {
             "Novos planos: Base (R$ 15/mês), Intermediário (R$ 25/mês), Avançado (R$ 29,99/mês, app completo) e Vitalício (R$ 59,99, para sempre). Chaves Mensal já emitidas continuam com o app completo.",
@@ -229,7 +234,7 @@ public partial class MainWindow
         ("v1.1.1", "17/09/2026", new[]
         {
             "Ativação por chave assinada vinculada ao computador.",
-            "Plano de energia com nome PQueiroz Optimizer.",
+            "Plano de energia com nome Qrztweaks.",
             "Redução de latência para mouse, teclado e USB.",
             "Melhorias nas políticas avançadas de privacidade e desempenho.",
         }),
@@ -343,12 +348,12 @@ public partial class MainWindow
 
         var hero = new DockPanel();
         var logo = new Border { Width = 72, Height = 72, CornerRadius = new CornerRadius(20), VerticalAlignment = VerticalAlignment.Top };
-        logo.SetResourceReference(Border.BackgroundProperty, "AccentGradientBrush");
-        try { logo.Child = new Image { Source = new BitmapImage(new Uri("pack://application:,,,/PQueirozOptimizer;component/Assets/app.png")), Width = 44, Height = 44 }; }
-        catch (Exception ex) when (ex is System.IO.IOException or UriFormatException) { logo.Child = GlyphIcon(Glyphs.Lightning, 30, "OnAccentBrush"); }
+        // O logo já tem o próprio bloco arredondado; o fundo de destaque só aparece se a imagem não carregar
+        try { logo.Child = new Image { Source = new BitmapImage(new Uri("pack://application:,,,/PQueirozOptimizer;component/Assets/app.png")), Width = 72, Height = 72 }; }
+        catch (Exception ex) when (ex is System.IO.IOException or UriFormatException) { logo.SetResourceReference(Border.BackgroundProperty, "AccentGradientBrush"); logo.Child = GlyphIcon(Glyphs.Lightning, 30, "OnAccentBrush"); }
         DockPanel.SetDock(logo, Dock.Left); hero.Children.Add(logo);
         var heroText = new StackPanel { Margin = new Thickness(22, 0, 0, 0) };
-        var name = new TextBlock { Text = "PQueiroz Optimizer", FontSize = 24, FontWeight = FontWeights.Bold };
+        var name = new TextBlock { Text = "Qrztweaks", FontSize = 24, FontWeight = FontWeights.Bold };
         name.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
         heroText.Children.Add(name);
         var badges = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 12) };

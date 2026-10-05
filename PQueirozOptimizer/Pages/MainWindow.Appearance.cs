@@ -13,7 +13,7 @@ public partial class MainWindow
     {
         var current = AppearanceService.Current;
         var panel = new StackPanel();
-        panel.Children.Add(SectionHeader("Aparência", "Personalize o visual do PQueiroz Optimizer. Só muda a aparência: nenhuma função é alterada."));
+        panel.Children.Add(SectionHeader("Aparência", "Personalize o visual do Qrztweaks. Só muda a aparência: nenhuma função é alterada."));
 
         void Update(Action<AppearanceSettings> change)
         {

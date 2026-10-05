@@ -85,7 +85,7 @@ public sealed class DriverCleanService
         File.Copy(installerPath, installer, overwrite: true);
 
         progress?.Report("Criando ponto de restauração...");
-        try { await PowerShellBridge.RunScriptAsync("Checkpoint-Computer -Description 'PQueiroz Optimizer - antes da instalação limpa de driver' -RestorePointType MODIFY_SETTINGS", timeout: TimeSpan.FromMinutes(5)); }
+        try { await PowerShellBridge.RunScriptAsync("Checkpoint-Computer -Description 'Qrztweaks - antes da instalação limpa de driver' -RestorePointType MODIFY_SETTINGS", timeout: TimeSpan.FromMinutes(5)); }
         catch (Exception ex) when (ex is InvalidOperationException or TimeoutException) { progress?.Report("Ponto de restauração não criado: " + ex.Message); }
 
         progress?.Report("Bloqueando drivers do Windows Update até o driver novo ser instalado...");

@@ -45,7 +45,7 @@ public partial class MainWindow
         var title = Label("Uma atualização está pronta", 22); title.FontWeight = FontWeights.Bold; title.Margin = new Thickness(0);
         title.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
         titles.Children.Add(title);
-        var subtitle = Label($"Novidades e melhorias do PQueiroz Optimizer · {info.LatestVersion}", 12, true);
+        var subtitle = Label($"Novidades e melhorias do Qrztweaks · {info.LatestVersion}", 12, true);
         subtitle.Margin = new Thickness(0, 4, 0, 0);
         titles.Children.Add(subtitle);
         var versions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };

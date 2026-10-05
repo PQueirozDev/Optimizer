@@ -50,6 +50,12 @@ internal static class Media
 
     static BitmapSource Capture(MainWindow w, int outWidth, int outHeight)
     {
+        // Material do site: sem a última linha do registro de atividade deste PC e sem o titular da licença de teste
+        if (w.FindName("LastActivityPanel") is UIElement lastActivity) lastActivity.Visibility = Visibility.Collapsed;
+        if (w.FindName("LicenseLabel") is TextBlock license) license.Text = "Vitalício";
+        // Tutorial da página (aparece na primeira visita): só some da foto, sem marcar como visto nas configurações
+        if (w.FindName("TutorialLayer") is UIElement tutorial) tutorial.Visibility = Visibility.Collapsed;
+        w.UpdateLayout();
         var visual = (FrameworkElement)w.Content;
         var dpi = 96.0 * outWidth / visual.ActualWidth;
         var bitmap = new RenderTargetBitmap(outWidth, outHeight, dpi, dpi, PixelFormats.Pbgra32);
@@ -111,7 +117,7 @@ internal static class Media
             ("drivers", null, true, "Instalação limpa de driver", "DDU, reinício e o driver novo instalado sozinho"),
             ("bios", null, true, "Editor de BIOS", "Leia e ajuste a BIOS pelo Windows, com cópia original"),
             ("optimization", null, true, "Otimizações revisáveis", "Você vê cada ajuste antes de aplicar — tudo com backup"),
-            ("dashboard", null, false, "Tema claro e escuro", "PQueiroz Optimizer"),
+            ("dashboard", null, false, "Tema claro e escuro", "Qrztweaks"),
         };
         for (var i = 0; i < scenes.Length; i++)
         {

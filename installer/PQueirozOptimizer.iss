@@ -1,6 +1,6 @@
-﻿#define MyAppName "PQueiroz Optimizer"
+﻿#define MyAppName "Qrztweaks"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.8.4"
+  #define MyAppVersion "1.9.1"
 #endif
 #ifndef MyAppPublisher
   #define MyAppPublisher "Pedro Queiroz"
@@ -19,10 +19,10 @@ AppPublisherURL=https://pqoptimizer.vercel.app/
 AppSupportURL=https://discord.gg/pHJ4Waxft
 AppUpdatesURL=https://github.com/PQueirozDev/Optimizer/releases/latest
 AppCopyright=Copyright (c) {#MyAppPublisher}
-DefaultDirName={autopf}\PQueiroz Optimizer
+DefaultDirName={autopf}\Qrztweaks
 DefaultGroupName={#MyAppName}
 OutputDir=..\artifacts\installer
-OutputBaseFilename=PQueirozOptimizer-Setup-v{#MyAppVersion}
+OutputBaseFilename=Qrztweaks-Setup-v{#MyAppVersion}
 SetupIconFile=..\PQueirozOptimizer\Assets\app.ico
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
@@ -70,18 +70,23 @@ english.FinishedHeadingLabel=All set!
 english.FinishedLabel=[name] has been installed. On first launch, activate your access key in the activation window.
 
 [CustomMessages]
-brazilianportuguese.RunApp=Abrir o PQueiroz Optimizer agora
-english.RunApp=Open PQueiroz Optimizer now
-brazilianportuguese.RemoveData=Remover também os backups e as preferências do PQueiroz Optimizer?%n%nEles guardam o estado original do Windows para a reversão das otimizações. Mantenha-os se pretende reinstalar o aplicativo ou ainda quer desfazer algum ajuste.
-english.RemoveData=Also remove PQueiroz Optimizer backups and preferences?%n%nThey keep the original Windows state used to restore optimizations. Keep them if you plan to reinstall the app or still want to undo a tweak.
-brazilianportuguese.RequiresAdmin=O PQueiroz Optimizer precisa de permissão de administrador para aplicar as otimizações.
-english.RequiresAdmin=PQueiroz Optimizer needs administrator permission to apply optimizations.
+brazilianportuguese.RunApp=Abrir o Qrztweaks agora
+english.RunApp=Open Qrztweaks now
+brazilianportuguese.RemoveData=Remover também os backups e as preferências do Qrztweaks?%n%nEles guardam o estado original do Windows para a reversão das otimizações. Mantenha-os se pretende reinstalar o aplicativo ou ainda quer desfazer algum ajuste.
+english.RemoveData=Also remove Qrztweaks backups and preferences?%n%nThey keep the original Windows state used to restore optimizations. Keep them if you plan to reinstall the app or still want to undo a tweak.
+brazilianportuguese.RequiresAdmin=O Qrztweaks precisa de permissão de administrador para aplicar as otimizações.
+english.RequiresAdmin=Qrztweaks needs administrator permission to apply optimizations.
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
+
+[InstallDelete]
+; Atalhos com o nome antigo (antes da troca para Qrztweaks): a atualização recria com o nome novo
+Type: files; Name: "{autoprograms}\PQueiroz Optimizer.lnk"
+Type: files; Name: "{autodesktop}\PQueiroz Optimizer.lnk"
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Comment: "{cm:RequiresAdmin}"

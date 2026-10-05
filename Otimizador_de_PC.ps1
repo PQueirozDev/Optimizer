@@ -596,7 +596,7 @@ function Criar-PontoRestauracaoSemLimite {
     $original = (Get-ItemProperty -LiteralPath $chave -Name $nome -ErrorAction SilentlyContinue).$nome
     Try {
         Set-ItemProperty -LiteralPath $chave -Name $nome -Value 0 -Type DWord -ErrorAction Stop
-        Checkpoint-Computer -Description "Antes do PQueiroz Optimizer" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop -WarningAction Stop
+        Checkpoint-Computer -Description "Antes do Qrztweaks" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop -WarningAction Stop
     } Finally {
         if ($null -eq $original) { Remove-ItemProperty -LiteralPath $chave -Name $nome -ErrorAction SilentlyContinue }
         else { Set-ItemProperty -LiteralPath $chave -Name $nome -Value $original -Type DWord -ErrorAction SilentlyContinue }

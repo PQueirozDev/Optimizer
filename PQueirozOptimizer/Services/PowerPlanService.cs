@@ -91,7 +91,7 @@ public sealed class PowerPlanService
         finally { LocalFree(destination); }
 
         WriteText(PowerWriteFriendlyName, "Qrz");
-        WriteText(PowerWriteDescription, "Plano de energia de baixa latência do PQueiroz Optimizer.");
+        WriteText(PowerWriteDescription, "Plano de energia de baixa latência do Qrztweaks.");
 
         var applied = 0;
         foreach (var s in EmbeddedSettings())

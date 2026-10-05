@@ -120,7 +120,7 @@ public static class PowerModeService
         var icon = Path.Combine(system, "powercpl.dll");
         // Janela minimizada (7): o cmd só repassa o comando e fecha
         ShortcutFile.Create(ShortcutPath, Path.Combine(system, "cmd.exe"), ShortcutArguments(exe), AppContext.BaseDirectory,
-            File.Exists(icon) ? icon + ",0" : exe + ",0", "Modo de energia - PQueiroz Optimizer", windowStyle: 7);
+            File.Exists(icon) ? icon + ",0" : exe + ",0", "Modo de energia - Qrztweaks", windowStyle: 7);
         log.Write("SUCCESS", "Atalho de modo de energia criado na Área de Trabalho");
     }
 

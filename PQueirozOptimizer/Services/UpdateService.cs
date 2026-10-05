@@ -94,7 +94,7 @@ public sealed class UpdateService
         var latest = Normalize(tag);
         var releaseTag = "v" + latest;
         var baseUrl = $"https://github.com/PQueirozDev/Optimizer/releases/download/{releaseTag}";
-        var assetName = $"PQueirozOptimizer-Setup-{releaseTag}.exe";
+        var assetName = $"Qrztweaks-Setup-{releaseTag}.exe";
         return new(
             Compare(latest, current) > 0,
             current,
@@ -126,7 +126,7 @@ public sealed class UpdateService
 
         var expected = await GetExpectedHashAsync(update, token);
         var folder = PrepareUpdatesFolder();
-        var fileName = System.IO.Path.GetFileName(string.IsNullOrWhiteSpace(update.AssetName) ? $"PQueirozOptimizer-Setup-v{update.LatestVersion}.exe" : update.AssetName);
+        var fileName = System.IO.Path.GetFileName(string.IsNullOrWhiteSpace(update.AssetName) ? $"Qrztweaks-Setup-v{update.LatestVersion}.exe" : update.AssetName);
         var path = System.IO.Path.Combine(folder, $"{Guid.NewGuid():N}-{fileName}");
 
         using (var response = await Client.GetAsync(update.AssetUrl, HttpCompletionOption.ResponseHeadersRead, token))

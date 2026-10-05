@@ -146,7 +146,7 @@ public sealed class LicenseService
     public string BuildActivationRequest(string? renewalLicensee = null, string? desiredPlan = null)
     {
         var title = desiredPlan is not null && renewalLicensee is not null ? "Pedido de upgrade" : renewalLicensee is null ? "Pedido de ativação" : "Pedido de renovação";
-        var lines = new List<string> { $"{title} - PQueiroz Optimizer" };
+        var lines = new List<string> { $"{title} - Qrztweaks" };
         if (renewalLicensee is not null) lines.Add($"Titular: {renewalLicensee}");
         if (desiredPlan is not null) lines.Add($"Plano desejado: {desiredPlan}");
         lines.Add($"ID do computador: {DisplayMachineId}");

@@ -23,7 +23,7 @@ public partial class ActivationWindow : Window
     private void ShowRenewal(string licensee, DateTime expiredAtUtc)
     {
         _renewalLicensee = licensee;
-        Title = "Renovar PQueiroz Optimizer";
+        Title = "Renovar Qrztweaks";
         HeadingText.Text = "Renove sua licença";
         ShowProblem($"Sua licença expirou em {expiredAtUtc.ToLocalTime():dd/MM/yyyy}.",
             "Clique em \"Copiar pedido\", abra um ticket de renovação no Discord e cole o pedido lá. O pagamento é via Pix; ao copiar a nova chave, ela é colada aqui sozinha.", "WarningBrush", "WarningSoftBrush");

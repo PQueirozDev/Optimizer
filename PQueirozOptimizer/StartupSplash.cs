@@ -167,7 +167,7 @@ public static class StartupSplash
         {
             Width = width + 60, Height = height + 60, WindowStyle = WindowStyle.None, AllowsTransparency = true, Background = Brushes.Transparent,
             ResizeMode = ResizeMode.NoResize, ShowInTaskbar = false, Topmost = true, ShowActivated = false,
-            WindowStartupLocation = WindowStartupLocation.CenterScreen, Title = "PQueiroz Optimizer", Tag = p.Animations,
+            WindowStartupLocation = WindowStartupLocation.CenterScreen, Title = "Qrztweaks", Tag = p.Animations,
         };
         var accent = Frozen(p.Accent);
 
@@ -190,12 +190,12 @@ public static class StartupSplash
             StrokeDashOffset = _ringLength, RenderTransformOrigin = new Point(0.5, 0.5), RenderTransform = new RotateTransform(-90),
         };
         logoHost.Children.Add(_ring);
-        var logo = _logo = new Border { Width = 68, Height = 68, CornerRadius = new CornerRadius(18), Background = accent, RenderTransformOrigin = new Point(0.5, 0.5) };
+        var logo = _logo = new Border { Width = 68, Height = 68, RenderTransformOrigin = new Point(0.5, 0.5) }; // o logo já tem o próprio bloco arredondado
         try
         {
             var image = new BitmapImage();
-            image.BeginInit(); image.UriSource = new Uri("pack://application:,,,/PQueirozOptimizer;component/Assets/app.png"); image.CacheOption = BitmapCacheOption.OnLoad; image.DecodePixelWidth = 96; image.EndInit(); image.Freeze();
-            logo.Child = new Image { Source = image, Width = 40, Height = 40 };
+            image.BeginInit(); image.UriSource = new Uri("pack://application:,,,/PQueirozOptimizer;component/Assets/app.png"); image.CacheOption = BitmapCacheOption.OnLoad; image.DecodePixelWidth = 192; image.EndInit(); image.Freeze();
+            logo.Child = new Image { Source = image, Width = 68, Height = 68 };
             RenderOptions.SetBitmapScalingMode(logo.Child, BitmapScalingMode.HighQuality);
         }
         catch (Exception ex) when (ex is System.IO.IOException or NotSupportedException) { }
@@ -205,10 +205,10 @@ public static class StartupSplash
         // Nome letra a letra (cada letra é um bloco para poder entrar com atraso próprio)
         var word = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 20, 0, 0) };
         var display = new FontFamily("Segoe UI Variable Display, Segoe UI");
-        foreach (var letter in "PQueiroz")
+        foreach (var letter in "Qrztweaks")
             word.Children.Add(new TextBlock { Text = letter.ToString(), FontSize = 26, FontWeight = FontWeights.Bold, Foreground = Frozen(p.Text), FontFamily = display, RenderTransform = new TranslateTransform() });
         content.Children.Add(word);
-        var subtitle = new TextBlock { Text = "O P T I M I Z E R", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = accent, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 4, 0, 22), RenderTransform = new TranslateTransform() };
+        var subtitle = new TextBlock { Text = "P C   O P T I M I Z E R", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = accent, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 4, 0, 22), RenderTransform = new TranslateTransform() };
         content.Children.Add(subtitle);
 
         _status = new TextBlock { Text = firstStatus, FontSize = 12.5, Foreground = Frozen(p.Muted), HorizontalAlignment = HorizontalAlignment.Center };

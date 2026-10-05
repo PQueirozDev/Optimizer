@@ -1,4 +1,4 @@
-# PQueiroz Optimizer
+# Qrztweaks
 
 Aplicativo desktop nativo para Windows em C# + WPF (.NET 8).
 

@@ -1,4 +1,4 @@
-# PQueiroz Optimizer
+# Qrztweaks
 
 Aplicativo desktop para Windows, feito em C# + WPF (.NET 8), para otimização, manutenção e gerenciamento do Windows.
 
@@ -36,7 +36,7 @@ Aplicativo desktop para Windows, feito em C# + WPF (.NET 8), para otimização, 
 
 ## Instalar
 
-1. Baixe o `PQueirozOptimizer-Setup-vX.Y.Z.exe` da [release mais recente](https://github.com/PQueirozDev/Optimizer/releases/latest).
+1. Baixe o `Qrztweaks-Setup-vX.Y.Z.exe` da [release mais recente](https://github.com/PQueirozDev/Optimizer/releases/latest).
 2. Execute o instalador; escolha a pasta de instalação e, se quiser, marque o atalho na Área de Trabalho.
 
 O instalador cria o atalho no Menu Iniciar e registra o desinstalador no Windows. As versões seguintes são instaladas pelo próprio aplicativo (veja [Atualizações automáticas](#atualizações-automáticas)).
@@ -86,7 +86,7 @@ artifacts\publish\win-x64\PQueirozOptimizer.exe
 O instalador final fica em:
 
 ```text
-artifacts\installer\PQueirozOptimizer-Setup-v1.5.0.exe
+artifacts\installer\Qrztweaks-Setup-v1.5.0.exe
 ```
 
 ## Publicar uma versão
@@ -112,7 +112,7 @@ Ao abrir, o aplicativo consulta a release mais recente pela API do GitHub, sem l
 
 ## Emitir chaves de acesso (mantenedor)
 
-O jeito recomendado de emitir chaves é o **PQueiroz License Manager** (repositório separado), que lê o pedido do cliente, gera a chave e monta a mensagem de resposta. Como alternativa por linha de comando, mantenha a pasta `private/` fora do Git e execute:
+O jeito recomendado de emitir chaves é o **Qrztweaks License Manager** (repositório separado), que lê o pedido do cliente, gera a chave e monta a mensagem de resposta. Como alternativa por linha de comando, mantenha a pasta `private/` fora do Git e execute:
 
 ```powershell
 .\tools\New-OptimizerAccessKey.ps1 -Licensee "Nome do cliente" -MachineId "ID-DO-COMPUTADOR" -Plan Avançado
@@ -121,6 +121,8 @@ O jeito recomendado de emitir chaves é o **PQueiroz License Manager** (reposit�
 O comando imprime a chave a ser enviada ao cliente. `-Plan` é obrigatório (`Base`, `Intermediário`, `Avançado`, `Vitalício` ou `Personalizado`); os planos mensais valem 30 dias se `-ExpiresAtUtc` não for informado, e o Personalizado exige `-ExpiresAtUtc "2027-12-31"`. A chave privada usada para assinar fica em `private/optimizer-license-rsa-private.blob`; faça uma cópia segura dela. Sem essa chave não é possível emitir novas licenças.
 
 ## Estrutura
+
+O produto se chama **Qrztweaks** desde a v1.9.1 (antes, PQueiroz Optimizer). Os nomes internos `PQueirozOptimizer` continuam de propósito: o executável e a pasta do código, as pastas de dados em `%LocalAppData%` e `%ProgramData%`, o campo `Product` assinado nas chaves e o `AppId` do instalador. Trocar qualquer um deles invalida as licenças emitidas ou impede a atualização por cima das instalações existentes. A release também publica uma cópia do instalador com o nome antigo (`PQueirozOptimizer-Setup-vX.Y.Z.exe`) para o caminho reserva do atualizador das versões até a 1.9.0.
 
 - `PQueirozOptimizer/`: código-fonte WPF.
 - `Otimizador_de_PC.ps1`: script PowerShell com as otimizações, executado pelo aplicativo.

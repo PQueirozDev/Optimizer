@@ -202,7 +202,7 @@ public partial class MainWindow
         var run = IconButton(Glyphs.Play, "Rodar benchmark", primary: true);
         run.Click += (_, _) => _ = PrepareOperationAsync("benchmark");
         DockPanel.SetDock(run, Dock.Right); builtIn.Children.Add(run);
-        builtIn.Children.Add(FeatureHeader(Glyphs.Speed, "Accent", "Benchmark do PQueiroz Optimizer", "Mede CPU, disco e tempo de inicialização para comparar antes e depois das otimizações. Os resultados ficam em Atividade e reversão.", "Integrado", "Success"));
+        builtIn.Children.Add(FeatureHeader(Glyphs.Speed, "Accent", "Benchmark do Qrztweaks", "Mede CPU, disco e tempo de inicialização para comparar antes e depois das otimizações. Os resultados ficam em Atividade e reversão.", "Integrado", "Success"));
         var hero = Surface(builtIn); hero.SetResourceReference(Border.BackgroundProperty, "HeroBrush");
         panel.Children.Add(hero);
         panel.Children.Add(LinksCard("Ferramentas de estresse e benchmark", "Use para testar estabilidade depois de overclock ou para comparar com outros PCs.", Benchmarks));

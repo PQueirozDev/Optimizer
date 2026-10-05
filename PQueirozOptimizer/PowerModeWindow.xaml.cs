@@ -61,7 +61,7 @@ public partial class PowerModeWindow : Window
         PlansHeader.Visibility = PlansPanel.Visibility = otherPlans.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         foreach (var plan in otherPlans)
         {
-            var subtitle = plan.Name.Contains("PQueiroz", StringComparison.OrdinalIgnoreCase) ? "Criado pelo PQueiroz Optimizer" : "Plano de energia instalado neste PC";
+            var subtitle = plan.Name.Contains("PQueiroz", StringComparison.OrdinalIgnoreCase) || plan.Name.Equals("Qrz", StringComparison.OrdinalIgnoreCase) ? "Criado pelo Qrztweaks" : "Plano de energia instalado neste PC";
             PlansPanel.Children.Add(Option(Glyphs.Power, plan.Name, subtitle, active == plan.Id, () => PowerModeService.SetActivePlan(plan.Id)));
         }
     }

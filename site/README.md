@@ -1,4 +1,4 @@
-# PQueiroz Optimizer site
+# Qrztweaks site
 
 Landing page estática para o Optimizer e o Windows personalizado. Não exige build: publique a pasta `site/` em Vercel, Netlify ou GitHub Pages.
 

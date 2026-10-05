@@ -20,7 +20,7 @@ public static partial class Translator
         ["Perfis, tema, idioma, licença e atualizações."] = "Profiles, theme, language, license and updates.",
         ["Editor de BIOS pelo SCEWIN e ajustes recomendados."] = "BIOS editor via SCEWIN and recommended settings.",
         ["Novidades de cada versão."] = "What's new in each version.",
-        ["Sobre o PQueiroz Optimizer."] = "About PQueiroz Optimizer.",
+        ["Sobre o Qrztweaks."] = "About Qrztweaks.",
         ["Buscar recursos, ajustes e páginas…"] = "Search features, tweaks and pages…",
         ["Nada encontrado."] = "Nothing found.", ["Monitorar"] = "Monitor", ["Jogos e Rede"] = "Gaming & Network", ["Sistema"] = "System",
         ["Debloat e privacidade"] = "Debloat & privacy", ["Diagnóstico do PC"] = "PC diagnostics", ["Limpeza rápida"] = "Quick clean",
@@ -28,6 +28,8 @@ public static partial class Translator
         ["Jogos"] = "Games", ["NVIDIA"] = "NVIDIA",
 
         // ---------- Patch notes ----------
+        ["O PQueiroz Optimizer agora se chama Qrztweaks, com logo nova. Licenças, configurações e backups continuam valendo."] = "PQueiroz Optimizer is now called Qrztweaks, with a new logo. Licenses, settings and backups keep working.",
+        ["O instalador passa a se chamar Qrztweaks-Setup e troca os atalhos antigos pelos novos."] = "The installer is now named Qrztweaks-Setup and replaces the old shortcuts with new ones.",
         ["Novos planos: Base (R$ 15/mês), Intermediário (R$ 25/mês), Avançado (R$ 29,99/mês, app completo) e Vitalício (R$ 59,99, para sempre). Chaves Mensal já emitidas continuam com o app completo."] = "New plans: Base (R$ 15/month), Intermediate (R$ 25/month), Advanced (R$ 29.99/month, full app) and Lifetime (R$ 59.99, forever). Monthly keys already issued keep the full app.",
         ["Páginas fora do plano mostram o que falta e um botão de upgrade; Atividade e reversão e Pontos de restauração ficam liberados em todos os planos."] = "Pages outside your plan show what's missing and an upgrade button; Activity and restore and Restore points stay available on every plan.",
         ["Configurações → Minha licença mostra o que o plano libera e um botão de upgrade para cada plano acima do seu."] = "Settings → My license shows what your plan includes and an upgrade button for each plan above yours.",

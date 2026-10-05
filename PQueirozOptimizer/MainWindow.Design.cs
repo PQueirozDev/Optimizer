@@ -36,7 +36,7 @@ public partial class MainWindow
         ["settings"] = ("SISTEMA", Glyphs.Settings, "Perfis, tema, idioma, licença e atualizações."),
         ["bios"] = ("SISTEMA", Glyphs.Chip, "Editor de BIOS pelo SCEWIN e ajustes recomendados."),
         ["patchnotes"] = ("SISTEMA", Glyphs.Document, "Novidades de cada versão."),
-        ["about"] = ("SISTEMA", Glyphs.Info, "Sobre o PQueiroz Optimizer."),
+        ["about"] = ("SISTEMA", Glyphs.Info, "Sobre o Qrztweaks."),
     };
 
     private void UpdatePageHeader(string page)

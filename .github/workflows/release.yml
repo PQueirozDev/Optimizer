@@ -36,7 +36,7 @@ jobs:
       - name: App verification tests
         shell: powershell
         run: |
-          dotnet run --project tests/Optimizer.Verification -- "$env:RUNNER_TEMP\app-verification"
+          dotnet run --project tests/Optimizer.Verification -- "$env:RUNNER_TEMP\app-verification" --i18n
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   build:
@@ -78,18 +78,23 @@ jobs:
       # O aplicativo só instala atualizações automaticamente quando o hash confere com este arquivo.
       - name: Generate checksums
         shell: powershell
+        # Cópia com o nome antigo (antes da troca para Qrztweaks): versões até a 1.9.0, quando a API do
+        # GitHub atinge o limite, montam o link do instalador com esse nome. Os dois arquivos são idênticos.
         run: |
-          $installer = Get-Item "artifacts/installer/PQueirozOptimizer-Setup-v${{ steps.version.outputs.version }}.exe"
+          $version = "${{ steps.version.outputs.version }}"
+          $installer = Get-Item "artifacts/installer/Qrztweaks-Setup-v$version.exe"
+          $legacy = Join-Path $installer.DirectoryName "PQueirozOptimizer-Setup-v$version.exe"
+          Copy-Item -LiteralPath $installer.FullName -Destination $legacy -Force
           $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $installer.FullName).Hash.ToLowerInvariant()
-          "$hash  $($installer.Name)" | Out-File -FilePath "artifacts/installer/SHA256SUMS.txt" -Encoding ascii -NoNewline
+          "$hash  $($installer.Name)`n$hash  PQueirozOptimizer-Setup-v$version.exe" | Out-File -FilePath "artifacts/installer/SHA256SUMS.txt" -Encoding ascii -NoNewline
           Get-Content "artifacts/installer/SHA256SUMS.txt"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: PQueirozOptimizer-Setup-v${{ steps.version.outputs.version }}
+          name: Qrztweaks-Setup-v${{ steps.version.outputs.version }}
           path: |
-            artifacts/installer/PQueirozOptimizer-Setup-v${{ steps.version.outputs.version }}.exe
+            artifacts/installer/Qrztweaks-Setup-v${{ steps.version.outputs.version }}.exe
             artifacts/installer/SHA256SUMS.txt
 
       - name: Create GitHub Release
@@ -102,8 +107,10 @@ jobs:
           $version = "${{ steps.version.outputs.version }}"
           # As notas da release sao as mesmas do app; a janela de atualizacao do app mostra esta lista
           ./scripts/release-notes.ps1 -Version $version -Output release-notes.md
+          # O instalador novo sobe primeiro: o app e o site usam o primeiro .exe da release
           gh release create $tag `
-            "artifacts/installer/PQueirozOptimizer-Setup-v$version.exe" `
+            "artifacts/installer/Qrztweaks-Setup-v$version.exe" `
             "artifacts/installer/SHA256SUMS.txt" `
-            --title "PQueiroz Optimizer $tag" `
+            --title "Qrztweaks $tag" `
             --notes-file release-notes.md
+          gh release upload $tag "artifacts/installer/PQueirozOptimizer-Setup-v$version.exe"

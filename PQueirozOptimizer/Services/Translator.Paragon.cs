@@ -17,7 +17,7 @@ public static partial class Translator
         ["Ajuste Discord, navegadores e outros apps e remova o que não usa."] = "Tune Discord, browsers and other apps and remove what you don't use.",
 
         // ---------- Tutorial ----------
-        ["Bem-vindo ao PQueiroz Optimizer!"] = "Welcome to PQueiroz Optimizer!",
+        ["Bem-vindo ao Qrztweaks!"] = "Welcome to Qrztweaks!",
         ["Em menos de um minuto você conhece o essencial. Use Próximo para avançar ou Pular para começar a usar agora."] = "In less than a minute you'll know the essentials. Use Next to continue or Skip to start right away.",
         ["A saúde do PC, o monitor ao vivo e os atalhos para limpar e otimizar ficam aqui."] = "Your PC's health, the live monitor and shortcuts to clean and optimize are here.",
         ["Recursos — comece por aqui"] = "Resources — start here",
@@ -110,7 +110,7 @@ public static partial class Translator
         ["Saúde e temperatura de SSDs e HDs."] = "SSD and HDD health and temperature.", ["Velocidade de leitura e gravação do disco."] = "Disk read and write speed.",
         ["Gerenciador de tarefas avançado da Microsoft (Sysinternals)."] = "Microsoft's advanced task manager (Sysinternals).",
         ["Compactador de arquivos gratuito e leve."] = "Free, lightweight file archiver.", ["Cria pendrives de instalação do Windows."] = "Creates Windows installation USB drives.",
-        ["Benchmark do PQueiroz Optimizer"] = "PQueiroz Optimizer benchmark", ["Integrado"] = "Built in", ["Rodar benchmark"] = "Run benchmark",
+        ["Benchmark do Qrztweaks"] = "Qrztweaks benchmark", ["Integrado"] = "Built in", ["Rodar benchmark"] = "Run benchmark",
         ["Mede CPU, disco e tempo de inicialização para comparar antes e depois das otimizações. Os resultados ficam em Atividade e reversão."] = "Measures CPU, disk and boot time to compare before and after optimizing. Results go to Activity & restore.",
         ["Ferramentas de estresse e benchmark"] = "Stress and benchmark tools", ["Use para testar estabilidade depois de overclock ou para comparar com outros PCs."] = "Use them to test stability after overclocking or to compare with other PCs.",
         ["Teste de estresse da CPU e da memória: estabilidade e temperatura máxima."] = "CPU and memory stress test: stability and peak temperature.",
@@ -291,7 +291,7 @@ public static partial class Translator
         ["Aparência em Configurações: tema Escuro, OLED ou Automático, intensidade do roxo, densidade, tamanho dos cards, animações e pré-visualização ao vivo."] = "Appearance in Settings: Dark, OLED or Automatic theme, purple intensity, density, card size, animations and a live preview.",
 
         // ---------- Aparência ----------
-        ["Aparência"] = "Appearance", ["Personalize o visual do PQueiroz Optimizer. Só muda a aparência: nenhuma função é alterada."] = "Customize how PQueiroz Optimizer looks. It only changes appearance: no feature is affected.",
+        ["Aparência"] = "Appearance", ["Personalize o visual do Qrztweaks. Só muda a aparência: nenhuma função é alterada."] = "Customize how Qrztweaks looks. It only changes appearance: no feature is affected.",
         ["Tema"] = "Theme", ["Escuro"] = "Dark", ["OLED"] = "OLED", ["Automático"] = "Automatic",
         ["Automático segue o modo de aplicativo do Windows (claro ou escuro)."] = "Automatic follows the Windows app mode (light or dark).",
         ["Intensidade do roxo"] = "Purple intensity", ["Suave"] = "Soft", ["Vibrante"] = "Vibrant",

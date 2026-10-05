@@ -9,8 +9,8 @@
     <RootNamespace>PQueirozOptimizer</RootNamespace>
     <Authors>Pedro Queiroz</Authors>
     <Company>Pedro Queiroz</Company>
-    <Product>PQueiroz Optimizer</Product>
-    <AssemblyTitle>PQueiroz Optimizer</AssemblyTitle>
+    <Product>Qrztweaks</Product>
+    <AssemblyTitle>Qrztweaks</AssemblyTitle>
     <Description>Aplicativo desktop para otimizacao, manutencao e gerenciamento do Windows.</Description>
     <Copyright>Copyright (c) Pedro Queiroz</Copyright>
     <PackageProjectUrl>https://pqueiroz.vercel.app/</PackageProjectUrl>

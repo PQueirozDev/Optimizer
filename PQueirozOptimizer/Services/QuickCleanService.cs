@@ -152,7 +152,7 @@ public sealed class QuickCleanService
         var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico");
         if (!File.Exists(iconPath)) iconPath = exe;
         foreach (var target in new[] { DesktopShortcut, StartMenuShortcut })
-            ShortcutFile.Create(target, exe, "--quick-clean", AppContext.BaseDirectory, iconPath + ",0", "Limpeza Rápida - PQueiroz Optimizer");
+            ShortcutFile.Create(target, exe, "--quick-clean", AppContext.BaseDirectory, iconPath + ",0", "Limpeza Rápida - Qrztweaks");
         _log.Write("SUCCESS", "Atalho de Limpeza Rápida configurado");
     }
 

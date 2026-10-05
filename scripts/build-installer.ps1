@@ -50,7 +50,7 @@ function Find-InnoCompiler {
     return $null
 }
 
-Write-Host "==> Publicando PQueiroz Optimizer $Version ($Runtime)"
+Write-Host "==> Publicando Qrztweaks $Version ($Runtime)"
 Clear-Directory $publishDir
 Clear-Directory $installerDir
 
@@ -90,7 +90,7 @@ if (-not $iscc) {
 Write-Host "==> Gerando instalador com Inno Setup"
 & $iscc "/DMyAppVersion=$Version" "/DMyAppPublisher=Pedro Queiroz" $issPath
 
-$setupPath = Join-Path $installerDir "PQueirozOptimizer-Setup-v$Version.exe"
+$setupPath = Join-Path $installerDir "Qrztweaks-Setup-v$Version.exe"
 if (-not (Test-Path -LiteralPath $setupPath)) {
     throw "Instalador nao encontrado: $setupPath"
 }

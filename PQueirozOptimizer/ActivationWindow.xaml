@@ -1,17 +1,17 @@
 <Window x:Class="PQueirozOptimizer.ActivationWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Ativar PQueiroz Optimizer" Width="560" SizeToContent="Height" WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
+        Title="Ativar Qrztweaks" Width="560" SizeToContent="Height" WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
         Background="{DynamicResource BackgroundBrush}" Foreground="{DynamicResource TextBrush}" FontFamily="{StaticResource UiFont}"
         TextOptions.TextFormattingMode="Display" UseLayoutRounding="True">
   <Grid>
     <Border Background="{DynamicResource GlowBrush}" IsHitTestVisible="False"/>
     <StackPanel Margin="44,38,44,32">
       <StackPanel Orientation="Horizontal">
-        <Border Width="44" Height="44" CornerRadius="13" Background="{DynamicResource AccentGradientBrush}">
-          <Image Source="pack://application:,,,/PQueirozOptimizer;component/Assets/app.png" Width="26" Height="26" RenderOptions.BitmapScalingMode="HighQuality"/>
+        <Border Width="44" Height="44">
+          <Image Source="pack://application:,,,/PQueirozOptimizer;component/Assets/app.png" Width="44" Height="44" RenderOptions.BitmapScalingMode="HighQuality"/>
         </Border>
         <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
-          <TextBlock Text="PQueiroz" FontSize="14" FontWeight="Bold" FontFamily="{StaticResource DisplayFont}"/>
-          <TextBlock Text="OPTIMIZER" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}"/>
+          <TextBlock Text="Qrztweaks" FontSize="14" FontWeight="Bold" FontFamily="{StaticResource DisplayFont}"/>
+          <TextBlock Text="PC OPTIMIZER" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}"/>
         </StackPanel>
       </StackPanel>
 

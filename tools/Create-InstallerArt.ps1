@@ -12,6 +12,7 @@ $logo = [System.Drawing.Image]::FromFile((Resolve-Path $logoPath))
 
 $violet = [System.Drawing.Color]::FromArgb(139, 92, 246)
 $cyan = [System.Drawing.Color]::FromArgb(34, 211, 238)
+$blue = [System.Drawing.Color]::FromArgb(47, 123, 255)
 $background = [System.Drawing.Color]::FromArgb(10, 11, 18)
 
 function New-RoundedPath([float]$x, [float]$y, [float]$w, [float]$h, [float]$r) {
@@ -36,17 +37,9 @@ function Add-Glow($g, [float]$cx, [float]$cy, [float]$radius, [System.Drawing.Co
 }
 
 function Draw-LogoTile($g, [float]$x, [float]$y, [float]$size) {
-    # O logo já tem fundo escuro: ele preenche o bloco arredondado e a borda leva o gradiente da marca
-    Add-Glow $g ($x + $size / 2) ($y + $size / 2) ($size * 0.95) $violet 120
-    $tile = New-RoundedPath $x $y $size $size ($size * 0.26)
-    $state = $g.Save()
-    $g.SetClip($tile)
+    # O logo já traz o próprio bloco arredondado e a borda: aqui só entra o brilho azul da marca atrás dele
+    Add-Glow $g ($x + $size / 2) ($y + $size / 2) ($size * 0.95) $blue 120
     $g.DrawImage($logo, $x, $y, $size, $size)
-    $g.Restore($state)
-    $gradient = New-Object System.Drawing.Drawing2D.LinearGradientBrush((New-Object System.Drawing.PointF($x, $y)), (New-Object System.Drawing.PointF(($x + $size), ($y + $size))), $violet, $cyan)
-    $pen = New-Object System.Drawing.Pen($gradient, [Math]::Max(2, $size * 0.045))
-    $g.DrawPath($pen, $tile)
-    $pen.Dispose(); $gradient.Dispose(); $tile.Dispose()
 }
 
 function Save-Bmp($bitmap, [string]$name) {
@@ -76,9 +69,9 @@ function New-LargeImage([int]$scale) {
     $center.Alignment = "Center"
     $title = New-Object System.Drawing.Font("Segoe UI", (17 * $scale), [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
     $sub = New-Object System.Drawing.Font("Segoe UI", (9 * $scale), [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
-    $g.DrawString("PQueiroz", $title, [System.Drawing.Brushes]::White, (New-Object System.Drawing.RectangleF(0, (170 * $scale), $w, (26 * $scale))), $center)
+    $g.DrawString("Qrztweaks", $title, [System.Drawing.Brushes]::White, (New-Object System.Drawing.RectangleF(0, (170 * $scale), $w, (26 * $scale))), $center)
     $muted = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(160, 170, 190))
-    $g.DrawString("O P T I M I Z E R", $sub, $muted, (New-Object System.Drawing.RectangleF(0, (196 * $scale), $w, (16 * $scale))), $center)
+    $g.DrawString("P C   O P T I M I Z E R", $sub, $muted, (New-Object System.Drawing.RectangleF(0, (196 * $scale), $w, (16 * $scale))), $center)
 
     # Linha de destaque em gradiente embaixo do nome
     $lineY = 222 * $scale

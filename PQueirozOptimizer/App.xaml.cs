@@ -64,7 +64,7 @@ public partial class App : Application
             try
             {
                 MessageBox.Show(Services.Translator.Tr("Ocorreu um erro inesperado, mas o aplicativo continua aberto. Os detalhes foram salvos em Atividade e reversão.") + "\n\n" + args.Exception.Message,
-                    "PQueiroz Optimizer", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    "Qrztweaks", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             finally { _showingError = false; }
         };
@@ -175,7 +175,7 @@ public partial class App : Application
         {
             powerMode = false;
             MessageBox.Show(Services.Translator.Tr("O Modo de energia está disponível a partir do plano Avançado. Em Configurações → Minha licença você pede o upgrade."),
-                "PQueiroz Optimizer", MessageBoxButton.OK, MessageBoxImage.Information);
+                "Qrztweaks", MessageBoxButton.OK, MessageBoxImage.Information);
             Shutdown();
             return;
         }
@@ -233,7 +233,7 @@ public partial class App : Application
         MessageBox.Show(Services.Translator.Tr(error) + "\n\n" + Services.Translator.Tr(busy
                 ? "Termine a operação em andamento e feche o Optimizer: na próxima abertura, será preciso ativar uma nova chave."
                 : "O Optimizer será fechado. Ao abrir de novo, você poderá ativar uma nova chave."),
-            "PQueiroz Optimizer", MessageBoxButton.OK, MessageBoxImage.Warning);
+            "Qrztweaks", MessageBoxButton.OK, MessageBoxImage.Warning);
         if (!busy) Shutdown();
     }
 }

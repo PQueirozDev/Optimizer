@@ -397,8 +397,8 @@ internal static class Program
         Assert(PowerModeService.GetActivePlan() is { } active && plans.Any(p => p.Id == active && p.Name.Length > 0), "Planos de energia lidos com nome e plano ativo");
         Assert(PowerModeService.Describe(new PowerSource(true, false, 45, TimeSpan.FromMinutes(130), false)) == "Na bateria · 45% · cerca de 2h 10min restantes"
             && PowerModeService.Describe(new PowerSource(false, true, null, null, false)) == "Computador sem bateria (desktop)", "Estado da bateria descrito");
-        var arguments = PowerModeService.ShortcutArguments(@"C:\Program Files\PQueiroz Optimizer\PQueirozOptimizer.exe");
-        Assert(arguments.Contains("__COMPAT_LAYER=RunAsInvoker") && arguments.EndsWith("\"C:\\Program Files\\PQueiroz Optimizer\\PQueirozOptimizer.exe\" --power-mode"), "Atalho abre o seletor sem pedir administrador");
+        var arguments = PowerModeService.ShortcutArguments(@"C:\Program Files\Qrztweaks\PQueirozOptimizer.exe");
+        Assert(arguments.Contains("__COMPAT_LAYER=RunAsInvoker") && arguments.EndsWith("\"C:\\Program Files\\Qrztweaks\\PQueirozOptimizer.exe\" --power-mode"), "Atalho abre o seletor sem pedir administrador");
         Translator.IsEnglish = true;
         Assert(Translator.Tr("Na bateria · 45% · cerca de 2h 10min restantes") == "On battery · 45% · about 2h 10min left" && Translator.Tr("Ativado: Melhor desempenho") == "Activated: Best performance", "Seletor de energia traduzido");
         Assert(Translator.Tr("5 ativos · 0 desativados · 210 itens do Windows ocultos") == "5 enabled · 0 disabled · 210 Windows entries hidden", "Resumo da Inicialização traduzido");
