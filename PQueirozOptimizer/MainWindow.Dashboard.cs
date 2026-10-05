@@ -134,6 +134,8 @@ public partial class MainWindow
             root.Children.Add(stats);
 
             var columns = new Grid();
+            columns.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            columns.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.1, GridUnitType.Star) });
             columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(16) });
             columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -164,14 +166,30 @@ public partial class MainWindow
             var activityCard = Surface(activityPanel);
             Grid.SetColumn(activityCard, 2);
             columns.Children.Add(activityCard);
+            columns.SizeChanged += (_, _) =>
+            {
+                var stacked = columns.ActualWidth < 900;
+                columns.RowDefinitions[0].Height = GridLength.Auto;
+                columns.RowDefinitions[1].Height = stacked ? GridLength.Auto : new GridLength(0);
+                columns.ColumnDefinitions[0].Width = stacked ? new GridLength(1, GridUnitType.Star) : new GridLength(1.1, GridUnitType.Star);
+                columns.ColumnDefinitions[1].Width = stacked ? new GridLength(0) : new GridLength(16);
+                columns.ColumnDefinitions[2].Width = stacked ? new GridLength(1, GridUnitType.Star) : new GridLength(1, GridUnitType.Star);
+                Grid.SetRow(health, stacked ? 0 : 0);
+                Grid.SetColumn(health, 0);
+                Grid.SetRow(activityCard, stacked ? 1 : 0);
+                Grid.SetColumn(activityCard, stacked ? 0 : 2);
+            };
             root.Children.Add(columns);
             // 6. Recursos secundários: o passo a passo completo
             root.Children.Add(FixAllCard());
 
             var profile = _configService.GetActiveProfile();
-            var profileLine = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(4, 0, 0, 8) };
+            var profileLine = new Grid { Margin = new Thickness(4, 0, 0, 8) };
+            profileLine.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            profileLine.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             profileLine.Children.Add(GlyphIcon(Glyphs.Settings, 12, "MutedBrush"));
             var pl = Label($"Perfil selecionado: {profile.Name}. Você sempre revisa os ajustes antes de aplicar.", 12, true); pl.Margin = new Thickness(8, 0, 0, 0);
+            Grid.SetColumn(pl, 1);
             profileLine.Children.Add(pl);
             root.Children.Add(profileLine);
             AnimatePageIn();

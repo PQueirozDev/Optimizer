@@ -54,12 +54,18 @@ public sealed class DefenderService
     public async Task AddExclusionAsync(string folder)
     {
         await PowerShellBridge.RunScriptAsync("Add-MpPreference -ExclusionPath $env:PQO_PATH", new Dictionary<string, string> { ["PQO_PATH"] = folder });
+        var status = await ReadStatusAsync();
+        if (!status.Available || !status.Exclusions.Any(p => string.Equals(p, folder, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("O Windows não aceitou a exclusão do Defender; a Proteção contra Adulteração pode estar ativa.");
         _log.Write("SUCCESS", $"Pasta excluída da verificação do Defender: {folder}");
     }
 
     public async Task RemoveExclusionAsync(string folder)
     {
         await PowerShellBridge.RunScriptAsync("Remove-MpPreference -ExclusionPath $env:PQO_PATH", new Dictionary<string, string> { ["PQO_PATH"] = folder });
+        var status = await ReadStatusAsync();
+        if (!status.Available || status.Exclusions.Any(p => string.Equals(p, folder, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("O Windows não removeu a exclusão do Defender; a Proteção contra Adulteração pode estar ativa.");
         _log.Write("SUCCESS", $"Exclusão do Defender removida: {folder}");
     }
 }

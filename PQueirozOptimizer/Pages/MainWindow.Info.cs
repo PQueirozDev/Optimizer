@@ -25,6 +25,16 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.8.17", "04/10/2026", new[]
+        {
+            "Otimizações reformuladas: novos ajustes (gravação de jogos em segundo plano, Modo de Jogo, transparência, experiências personalizadas), valores de latência corrigidos e remoção de ações que mais atrapalhavam do que ajudavam.",
+            "As otimizações agora aplicam o plano de energia Qrz no lugar do Desempenho Máximo; reverter volta ao plano anterior.",
+            "Tela cheia corrigida: a janela maximizada respeita a barra de tarefas, sem bordas cortadas, e o conteúdo fica centralizado em telas largas.",
+            "Corrigido o erro ao ligar/desligar grupos em Serviços e interruptores de Apps e Personalizar Windows que podiam fechar o app.",
+            "Proteção contra Adulteração detectada: o interruptor do Defender explica o motivo e abre a Segurança do Windows.",
+            "Inicialização: apps da Microsoft Store aparecem e podem ser desligados; o botão de abrir as configurações do Windows voltou a funcionar.",
+            "Correções de permissão na pasta de atualizações, na limpeza de cache de shaders e na restauração de serviços.",
+        }),
         ("v1.8.16", "04/10/2026", new[]
         {
             "Interruptores: a animação aparece sempre, e a página não trava nem volta ao topo ao ligar/desligar em Aparência, Personalizar Windows, Serviços, Apps e Inicialização.",

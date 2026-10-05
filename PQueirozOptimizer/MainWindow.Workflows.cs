@@ -24,7 +24,9 @@ public partial class MainWindow
     /// Uma alteração de sistema por vez (Personalizar, Apps), compartilhada entre redesenhos da página:
     /// uma página recriada não pode gravar o mesmo ajuste enquanto a gravação anterior ainda roda.
     /// </summary>
-    private readonly SemaphoreSlim _systemTweakGate = new(1, 1);
+    private static readonly SemaphoreSlim _systemTweakGate = new(1, 1);
+    private static int _pendingSystemMutations;
+    private static int PendingSystemMutations => Volatile.Read(ref _pendingSystemMutations);
     private bool _closeAfterOperation;
 
     /// <summary>
@@ -40,8 +42,10 @@ public partial class MainWindow
         {
             if (busy) return; // a própria volta abaixo: ignora
             busy = true;
-            var wasEnabled = check.IsEnabled;
-            check.IsEnabled = false;
+            var wasFocusable = check.Focusable;
+            check.IsHitTestVisible = false;
+            check.Focusable = false;
+            Interlocked.Increment(ref _pendingSystemMutations);
             var ok = false;
             try { ok = await apply(value); }
             catch (Exception ex) { _log.Write("ERROR", "Não foi possível concluir a ação: " + ex.Message); }
@@ -49,7 +53,9 @@ public partial class MainWindow
             {
                 if (!ok) check.IsChecked = !value;
                 busy = false;
-                check.IsEnabled = wasEnabled;
+                check.Focusable = wasFocusable;
+                check.IsHitTestVisible = true;
+                Interlocked.Decrement(ref _pendingSystemMutations);
             }
             if (after != null) AfterToggleAnimation(after);
         }
@@ -92,7 +98,9 @@ public partial class MainWindow
         var last = badges.Children.Count - 1;
         var pill = Pill(text, tone);
         pill.Margin = ((FrameworkElement)badges.Children[last]).Margin;
-        badges.Children[last] = pill;
+        // Remover e inserir: a troca direta pelo índice dispara "o índice especificado já está em uso" no WPF
+        badges.Children.RemoveAt(last);
+        badges.Children.Insert(last, pill);
     }
 
     /// <summary>Executa com progresso, cancelamento e notificação. Retorna true só se terminou sem erro.</summary>

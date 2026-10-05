@@ -78,6 +78,7 @@ $script:RegistroPermitido = @(
     "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile",
     "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games",
     "HKCU:\System\GameConfigStore",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR",
     "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR",
     "HKCU:\Software\Microsoft\GameBar",
     "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers",
@@ -93,6 +94,8 @@ $script:RegistroPermitido = @(
     "HKCU:\Software\Microsoft\DirectX\UserGpuPreferences",
     "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling",
     "HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Privacy",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize",
     "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo",
     "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search",
     "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System",
@@ -102,10 +105,24 @@ $script:RegistroPermitido = @(
     "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy",
     "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power"
 )
+$script:TarefasPermitidas = @(
+    "\Microsoft\Windows\Application Experience\Microsoft Compatibility Appraiser",
+    "\Microsoft\Windows\Application Experience\ProgramDataUpdater",
+    "\Microsoft\Windows\Application Experience\StartupAppTask",
+    "\Microsoft\Windows\Autochk\Proxy",
+    "\Microsoft\Windows\Customer Experience Improvement Program\Consolidator",
+    "\Microsoft\Windows\Customer Experience Improvement Program\UsbCeip",
+    "\Microsoft\Windows\Customer Experience Improvement Program\KernelCeipTask",
+    "\Microsoft\Windows\DiskDiagnostic\Microsoft-Windows-DiskDiagnosticDataCollector",
+    "\Microsoft\Windows\Feedback\Siuf\DmClient",
+    "\Microsoft\Windows\Feedback\Siuf\DmClientOnScenarioDownload"
+)
 # Chaves que dependem do hardware (ID do dispositivo PCI) e por isso nao cabem numa lista fixa.
 # Cada padrao so libera os valores listados para ele.
 $script:RegistroPermitidoPadroes = @(
     @{ Padrao = '^HKLM:\\SYSTEM\\CurrentControlSet\\Enum\\PCI\\VEN_[0-9A-Fa-f]{4}&DEV_[0-9A-Fa-f]{4}[^\\]*\\[^\\]+\\Device Parameters\\Interrupt Management\\MessageSignaledInterruptProperties$'; Nomes = @("MSISupported") },
+    # Tarefas do agendador multimidia (Audio, Capture, Games...): so os valores que o Reparar-MMCSS recria
+    @{ Padrao = '^HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\[^\\]+$'; Nomes = @("Affinity", "Clock Rate", "GPU Priority", "SFIO Priority", "Priority", "Scheduling Category", "Background Only", "BackgroundPriority", "Latency Sensitive") }
     # Adaptadores de video (classe Display): so o ULPS das placas AMD
     @{ Padrao = '^HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Class\\\{4d36e968-e325-11ce-bfc1-08002be10318\}\\\d{4}$'; Nomes = @("EnableUlps") }
 )
@@ -360,8 +377,8 @@ function Test-ItemPermitido($item) {
         "Servico" {
             return ($script:ServicosPermitidos -contains $item.Nome) -and ($script:StartupTypesPermitidos -contains $item.StartupTypeAnterior)
         }
-        "PlanoEnergia"   { return "$($item.GuidAnterior)" -match '^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$' }
-        "TarefaAgendada" { return "$($item.Nome)" -match '^\\Microsoft\\Windows\\[A-Za-z0-9 .\\-]+$' }
+        "PlanoEnergia"   { $g = [guid]::Empty; return [guid]::TryParse("$($item.GuidAnterior)", [ref]$g) -and $g -ne [guid]::Empty }
+        "TarefaAgendada" { return $script:TarefasPermitidas -contains "$($item.Nome)" }
         "OneDrive"       { return $script:InstaladoresOneDrive -contains $item.Caminho }
         "Hibernacao"     { return $true }
         "Irreversivel"   { return $true }
@@ -453,6 +470,7 @@ function Capturar-PlanoEnergia {
 # Guarda se uma tarefa agendada estava ativa (para poder reativar depois).
 # Retorna $false quando a tarefa nao existe: varias foram removidas em versoes recentes do Windows 11.
 function Capturar-TarefaAgendada($nomeTarefa) {
+    if ($script:TarefasPermitidas -notcontains $nomeTarefa) { throw "Tarefa fora da lista permitida: $nomeTarefa" }
     $corte = $nomeTarefa.LastIndexOf('\') + 1
     $tarefa = Get-ScheduledTask -TaskPath $nomeTarefa.Substring(0, $corte) -TaskName $nomeTarefa.Substring($corte) -ErrorAction SilentlyContinue
     if (-not $tarefa) { return $false }
@@ -603,13 +621,7 @@ function Limpar-Temporarios {
     $etapas = @(
         @{ Nome = "Pasta TEMP do usuario";              Acao = { Remove-Item "$env:TEMP\*" -Recurse -Force } }
         @{ Nome = "Pasta TEMP do Windows";               Acao = { Remove-Item "$env:SystemRoot\Temp\*" -Recurse -Force } }
-        @{ Nome = "Cache de Prefetch";                   Acao = { Remove-Item "$env:SystemRoot\Prefetch\*" -Recurse -Force } }
         @{ Nome = "Lixeira";                              Acao = { Clear-RecycleBin -Force } }
-        @{ Nome = "Cache do Windows Update";             Acao = {
-                Stop-Service wuauserv -Force
-                Remove-Item "$env:SystemRoot\SoftwareDistribution\Download\*" -Recurse -Force
-                Start-Service wuauserv
-            } }
         @{ Nome = "Cache de miniaturas";                 Acao = { Remove-Item "$env:LOCALAPPDATA\Microsoft\Windows\Explorer\thumbcache_*.db" -Force } }
         @{ Nome = "Cache do Chrome";                     Acao = { Remove-Item "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Cache" -Recurse -Force } }
         @{ Nome = "Cache do Edge";                       Acao = { Remove-Item "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Cache" -Recurse -Force } }
@@ -655,25 +667,10 @@ function Otimizar-Padrao {
 
     Write-Secao "Aplicando otimizacoes gerais"
     $etapas = @(
-        @{ Nome = "Plano de energia 'Alto Desempenho'"; Acao = {
-                if (Test-X3dDuploCcd) { Write-Host "[INFO] Ryzen X3D com dois CCDs: plano Equilibrado mantido para o jogo usar o CCD com 3D V-Cache."; return }
-                # Quem ja usa um plano de desempenho (Desempenho Maximo, plano de outro otimizador) nao e rebaixado
-                $ativo = Obter-PlanoAtivo
-                if ($ativo -and $ativo -notin $script:PlanoEquilibrado, $script:PlanoEconomia) {
-                    Write-Host "[INFO] Ja ha um plano de energia de desempenho ativo; nenhuma mudanca necessaria."
-                    return
-                }
+        @{ Nome = "Plano de energia Qrz"; Risco = "moderado"; Requer = "desktop"; Acao = {
+                if (-not (Pode-AplicarPlanoQrz)) { Write-Host "[INFO] Plano atual mantido neste equipamento."; return }
                 Capturar-PlanoEnergia
-                if (-not (Ativar-PlanoAltoDesempenho)) { Write-Host "[INFO] Este PC so oferece o plano Equilibrado (comum em notebooks com Modern Standby); plano atual mantido." }
-            } }
-        @{ Nome = "Limpando fila de impressao";          Acao = {
-                # O Debloat pode ter desativado a impressao; nesse caso nao ha fila e o servico fica como esta
-                $spooler = Get-Service Spooler -ErrorAction SilentlyContinue
-                if (-not $spooler -or $spooler.StartType -eq "Disabled") { Write-Host "[INFO] Servico de impressao desativado ou ausente; nada a limpar."; return }
-                $estavaRodando = $spooler.Status -eq "Running"
-                Stop-Service Spooler -Force
-                Remove-Item "$env:SystemRoot\System32\spool\PRINTERS\*" -Force
-                if ($estavaRodando) { Start-Service Spooler }
+                Aplicar-PlanoQrz
             } }
         @{ Nome = "Otimizando/TRIM das unidades de disco"; Acao = {
                 Otimizar-Unidades
@@ -746,8 +743,8 @@ function Reparar-MMCSS {
     $reparados = 0
     Garantir-Chave $base
     $raiz = Get-Item -LiteralPath $base
-    if ($raiz.GetValueNames() -notcontains "SystemResponsiveness") { New-ItemProperty -LiteralPath $base -Name "SystemResponsiveness" -Value 20 -PropertyType DWord | Out-Null; $reparados++ }
-    if ($raiz.GetValueNames() -notcontains "NetworkThrottlingIndex") { New-ItemProperty -LiteralPath $base -Name "NetworkThrottlingIndex" -Value 10 -PropertyType DWord | Out-Null; $reparados++ }
+    if ($raiz.GetValueNames() -notcontains "SystemResponsiveness") { Set-PoliticaDword $base "SystemResponsiveness" 20; $reparados++ }
+    if ($raiz.GetValueNames() -notcontains "NetworkThrottlingIndex") { Set-PoliticaDword $base "NetworkThrottlingIndex" 10; $reparados++ }
     foreach ($tarefa in $script:TarefasMMCSS.Keys) {
         $caminho = "$base\Tasks\$tarefa"
         Garantir-Chave $caminho
@@ -757,7 +754,8 @@ function Reparar-MMCSS {
         foreach ($par in $valores.GetEnumerator()) {
             if ($existentes -contains $par.Key) { continue }
             $tipo = if ($par.Value -is [string]) { "String" } else { "DWord" }
-            New-ItemProperty -LiteralPath $caminho -Name $par.Key -Value $par.Value -PropertyType $tipo | Out-Null
+            Capturar-Registro $caminho $par.Key
+            New-ItemProperty -LiteralPath $caminho -Name $par.Key -Value $par.Value -PropertyType $tipo -ErrorAction Stop | Out-Null
             $reparados++
         }
     }
@@ -766,6 +764,7 @@ function Reparar-MMCSS {
 }
 
 function Executar-RepararConfiguracoes {
+    Iniciar-Snapshot "Reparar configuracoes"
     Write-Secao "Reparando configuracoes do Windows"
     Reparar-MMCSS
     Write-Host ""
@@ -831,6 +830,7 @@ function Aplicar-EfeitosVisuaisDesempenho {
     Capturar-Registro $metricas "MinAnimate"
     Set-PoliticaDword $avancado "TaskbarAnimations" 0
     Set-PoliticaDword $dwm "EnableAeroPeek" 0
+    Set-PoliticaDword "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" "EnableTransparency" 0
     Set-PoliticaDword $visual "VisualFXSetting" 3  # 3 = personalizado (reflete o que foi aplicado)
 
     Carregar-SPI
@@ -846,8 +846,7 @@ function Aplicar-EfeitosVisuaisDesempenho {
 # Modelos de plano de energia do Windows
 $script:PlanoEquilibrado      = "381b4222-f694-41f0-9685-ff5bb260df2e"
 $script:PlanoEconomia         = "a1841308-3541-4fab-bc81-f71556f20b4a"
-$script:PlanoAltoDesempenho   = "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"
-$script:PlanoDesempenhoMaximo = "e9a42b02-d5df-448d-aa00-03f14749eb61"
+$script:PlanoQrz              = "0a7f1b2c-5172-4e0a-9c11-517a00000001"
 
 function Obter-PlanoAtivo {
     if ((powercfg /getactivescheme) -match "([0-9a-fA-F-]{36})") { return $matches[1] }
@@ -857,20 +856,6 @@ function Obter-PlanoAtivo {
 # Ativa uma copia do plano-modelo com o nome do otimizador, reaproveitando a copia de execucoes
 # anteriores em vez de duplicar um plano novo a cada vez. Retorna $false quando o Windows nao
 # oferece o modelo (ex.: notebooks com Modern Standby so tem o Equilibrado).
-function Ativar-CopiaDoPlano($modelo, $nomePlano) {
-    $existente = (powercfg /list) | Where-Object { $_ -match [regex]::Escape($nomePlano) } | Select-Object -First 1
-    if ($existente -match "([0-9a-fA-F-]{36})") { powercfg /setactive $matches[1] | Out-Null; return $true }
-    $copia = powercfg /duplicatescheme $modelo
-    if ($copia -match "([0-9a-fA-F-]{36})") {
-        $guid = $matches[1]
-        powercfg /changename $guid $nomePlano | Out-Null
-        powercfg /setactive $guid | Out-Null
-        return $true
-    }
-    $global:LASTEXITCODE = 0
-    return $false
-}
-
 # Alto Desempenho do Windows; se outro otimizador ou uma imagem personalizada o apagou, recria pelo modelo
 # Ryzen X3D com dois CCDs (7900X3D, 7950X3D, 9900X3D, 9950X3D): o driver da AMD so manda o jogo para o CCD
 # com 3D V-Cache quando a Game Bar reconhece o jogo e o plano Equilibrado pode estacionar o outro CCD.
@@ -880,51 +865,59 @@ function Test-X3dDuploCcd {
     return [bool]($nome -match 'Ryzen\s+\d+\s+(7900|7950|9900|9950)X3D')
 }
 
-function Ativar-PlanoAltoDesempenho {
-    if ((powercfg /list) -match $script:PlanoAltoDesempenho) { powercfg /setactive $script:PlanoAltoDesempenho | Out-Null; return $true }
-    return (Ativar-CopiaDoPlano $script:PlanoAltoDesempenho "PQueiroz Optimizer - Alto Desempenho")
+function Pode-AplicarPlanoQrz {
+    if (Test-X3dDuploCcd) { return $false }
+    try {
+        $bateria = Get-CimInstance Win32_Battery -ErrorAction Stop
+        return $null -eq $bateria
+    } catch { return $false }
 }
 
-function Ativar-PlanoDesempenhoMaximo {
-    if (Ativar-CopiaDoPlano $script:PlanoDesempenhoMaximo "PQueiroz Optimizer - Desempenho Avancado") { return }
-    if (-not (Ativar-PlanoAltoDesempenho)) { Write-Host "[INFO] Este PC so oferece o plano Equilibrado (comum em notebooks com Modern Standby); plano atual mantido." }
+function Aplicar-PlanoQrz {
+    $qrz = $script:PlanoQrz
+    # Mesmo arquivo que o app usa (copiado ao lado do script); os testes apontam para o do projeto
+    $arquivo = if ($script:ArquivoQrz) { $script:ArquivoQrz } else { Join-Path $PSScriptRoot "Assets\Qrz.powerplan.txt" }
+    # Script rodado direto da pasta do projeto: o arquivo fica no projeto do app
+    if (-not (Test-Path -LiteralPath $arquivo -PathType Leaf)) { $arquivo = Join-Path $PSScriptRoot "PQueirozOptimizer\Assets\Qrz.powerplan.txt" }
+    if (-not (Test-Path -LiteralPath $arquivo -PathType Leaf)) { throw "Configuracao do plano Qrz nao encontrada." }
+    $lista = @(powercfg /list)
+    if ($lista -match $qrz) {
+        # O Windows nao apaga o plano ativo: com o Qrz ja ativo, passa antes para o Equilibrado
+        if ((Obter-PlanoAtivo) -eq $qrz) { powercfg /setactive $script:PlanoEquilibrado | Out-Null }
+        powercfg /delete $qrz | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "Nao foi possivel remover o plano Qrz anterior." }
+    }
+    powercfg /duplicatescheme $script:PlanoEquilibrado $qrz | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Nao foi possivel criar o plano Qrz." }
+    powercfg /changename $qrz "Qrz" | Out-Null
+    foreach ($linha in Get-Content -LiteralPath $arquivo) {
+        $dados = ($linha -split '#', 2)[0].Trim() -split '\s+'
+        if ($dados.Count -ne 4) { continue }
+        $sub = $dados[0]; $setting = $dados[1]; $ac = $dados[2]; $dc = $dados[3]
+        powercfg /setacvalueindex $qrz $sub $setting $ac | Out-Null
+        powercfg /setdcvalueindex $qrz $sub $setting $dc | Out-Null
+    }
+    powercfg /setactive $qrz | Out-Null
+    if ($LASTEXITCODE -ne 0 -or (Obter-PlanoAtivo) -ne $qrz) { throw "Nao foi possivel ativar o plano Qrz." }
 }
 
 function Aplicar-PoliticasAvancadas {
-    $dataCollection = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"
-    Set-PoliticaDword $dataCollection "AllowTelemetry" 0
-
+    Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" "AllowTelemetry" 0
     $appCompat = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppCompat"
     Set-PoliticaDword $appCompat "DisableInventory" 1
     Set-PoliticaDword $appCompat "DisableUAR" 1
-    Set-PoliticaDword $appCompat "DisableEngine" 1
-    Set-PoliticaDword $appCompat "DisablePCA" 1
     Set-PoliticaDword $appCompat "DisableProblemStepsRecorder" 1
-
     $cloud = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent"
     Set-PoliticaDword $cloud "DisableConsumerAccountStateContent" 1
     Set-PoliticaDword $cloud "DisableCloudOptimizedContent" 1
     Set-PoliticaDword $cloud "DisableWindowsConsumerFeatures" 1
     Set-PoliticaDword $cloud "DisableSoftLanding" 1
-
-    $speech = "HKLM:\SOFTWARE\Policies\Microsoft\Speech"
-    Set-PoliticaDword $speech "AllowSpeechModelUpdate" 0
-
-    $explorer = "HKCU:\Software\Policies\Microsoft\Windows\Explorer"
-    Set-PoliticaDword $explorer "DisableGraphRecentItems" 1
-
-    $windowsAi = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI"
-    Set-PoliticaDword $windowsAi "DisableAgenticSearch" 1
-    Set-PoliticaDword $windowsAi "DisableAIDataAnalysis" 1
-
-    $pushPolicy = "HKLM:\SOFTWARE\Policies\Microsoft\PushToInstall"
-    Set-PoliticaDword $pushPolicy "DisablePushToInstall" 1
-    if (Get-Service "PushToInstall" -ErrorAction SilentlyContinue) {
-        Capturar-Servico "PushToInstall"
-        Stop-Service "PushToInstall" -Force -ErrorAction Stop
-        Set-Service "PushToInstall" -StartupType Disabled -ErrorAction Stop
-    }
+    Set-PoliticaDword "HKCU:\Software\Policies\Microsoft\Windows\Explorer" "DisableGraphRecentItems" 1
+    Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI" "DisableAgenticSearch" 1
+    Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI" "DisableAIDataAnalysis" 1
+    Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\PushToInstall" "DisablePushToInstall" 1
 }
+
 # ---------------------------------------------------------------
 function Otimizar-Gamer {
     Iniciar-Snapshot "Versao Avancada"
@@ -933,11 +926,11 @@ function Otimizar-Gamer {
 
     Write-Secao "Aplicando otimizacoes de desempenho maximo para jogos"
     $etapas = @(
-        @{ Nome = "Verificando agendador multimidia do Windows (MMCSS)"; Acao = { Reparar-MMCSS } }
-        @{ Nome = "Plano de energia 'Desempenho Maximo'"; Acao = {
+        @{ Nome = "Verificando agendador multimidia do Windows (MMCSS)"; Risco = "seguro"; Acao = { Reparar-MMCSS } }
+        @{ Nome = "Plano de energia Qrz"; Risco = "moderado"; Requer = "desktop"; Acao = {
                 if (Test-X3dDuploCcd) { Write-Host "[INFO] Ryzen X3D com dois CCDs: plano Equilibrado mantido para o jogo usar o CCD com 3D V-Cache."; return }
                 Capturar-PlanoEnergia
-                Ativar-PlanoDesempenhoMaximo
+                if (Pode-AplicarPlanoQrz) { Aplicar-PlanoQrz } else { Write-Host "[INFO] Plano atual mantido neste equipamento." }
             } }
         @{ Nome = "Priorizando CPU para o jogo em foco";  Acao = {
                 # 38 (0x26) = quantum curto, variavel, 3x para a janela em foco. No Windows cliente o
@@ -961,23 +954,25 @@ function Otimizar-Gamer {
                 Set-ItemProperty $gamesPath "Priority" 6 -Type DWord
                 Capturar-Registro $gamesPath "Scheduling Category"
                 Set-ItemProperty $gamesPath "Scheduling Category" "High" -Type String
+                Capturar-Registro $gamesPath "SFIO Priority"
+                Set-ItemProperty $gamesPath "SFIO Priority" "High" -Type String
             } }
         @{ Nome = "Desativando limitacao de rede (Throttling)"; Risco = "moderado"; Acao = {
                 Capturar-Registro "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" "NetworkThrottlingIndex"
                 Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" "NetworkThrottlingIndex" 0xffffffff -Type DWord
             } }
-        @{ Nome = "Desativando Xbox Game Bar / Game DVR"; Acao = {
+        @{ Nome = "Desativando gravacao de jogos em segundo plano"; Risco = "moderado"; Acao = {
                 if (Test-X3dDuploCcd) { Write-Host "[INFO] Ryzen X3D com dois CCDs: Game Bar mantida (o Windows usa ela para levar o jogo ao CCD com 3D V-Cache)."; return }
-                Capturar-Registro "HKCU:\System\GameConfigStore" "GameDVR_Enabled"
-                Set-ItemProperty "HKCU:\System\GameConfigStore" "GameDVR_Enabled" 0 -Type DWord
+                Set-PoliticaDword "HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR" "AppCaptureEnabled" 0
+                Set-PoliticaDword "HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR" "HistoricalCaptureEnabled" 0
+                Set-PoliticaDword "HKCU:\System\GameConfigStore" "GameDVR_Enabled" 0
+                Set-PoliticaDword "HKCU:\System\GameConfigStore" "GameDVR_HistoricalCaptureEnabled" 0
                 Garantir-Chave "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR"
-                Capturar-Registro "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" "AllowGameDVR"
-                Set-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" "AllowGameDVR" 0 -Type DWord
+                Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" "AllowGameDVR" 0
             } }
         @{ Nome = "Ativando Modo de Jogo do Windows";     Acao = {
-                Garantir-Chave "HKCU:\Software\Microsoft\GameBar"
-                Capturar-Registro "HKCU:\Software\Microsoft\GameBar" "AutoGameModeEnabled"
-                Set-ItemProperty "HKCU:\Software\Microsoft\GameBar" "AutoGameModeEnabled" 1 -Type DWord
+                Set-PoliticaDword "HKCU:\Software\Microsoft\GameBar" "AllowAutoGameMode" 1
+                Set-PoliticaDword "HKCU:\Software\Microsoft\GameBar" "AutoGameModeEnabled" 1
             } }
         @{ Nome = "Habilitando GPU Scheduling por hardware"; Risco = "moderado"; Acao = {
                 if (-not (Suporta-GpuScheduling)) {
@@ -987,20 +982,8 @@ function Otimizar-Gamer {
                 Capturar-Registro "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" "HwSchMode"
                 Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" "HwSchMode" 2 -Type DWord
             } }
-        @{ Nome = "Ativando modo MSI (interrupcoes por mensagem) na placa de video"; Risco = "alto"; Acao = {
-                # Interrupcoes por mensagem (MSI) evitam o compartilhamento de linhas IRQ e reduzem a latencia DPC da GPU
-                $gpus = @(Obter-GpusPCI)
-                if ($gpus.Count -eq 0) { Write-Host "[INFO] Nenhuma placa de video PCI encontrada; ajuste ignorado."; return }
-                foreach ($gpu in $gpus) {
-                    if ($gpu.MSI -eq $true) { Write-Host "[INFO] $($gpu.Nome): modo MSI ja ativo."; continue }
-                    Garantir-Chave $gpu.CaminhoMSI
-                    Capturar-Registro $gpu.CaminhoMSI "MSISupported"
-                    Set-ItemProperty -LiteralPath $gpu.CaminhoMSI -Name "MSISupported" -Value 1 -Type DWord -ErrorAction Stop
-                    Write-Host "[INFO] $($gpu.Nome): modo MSI ativado (vale apos reiniciar)."
-                }
-            } }
         @{ Nome = "Ajustando efeitos visuais p/ desempenho"; Acao = { Aplicar-EfeitosVisuaisDesempenho } }
-        @{ Nome = "Reduzindo latencia de mouse, teclado e USB"; Risco = "moderado"; Acao = {
+        @{ Nome = "Desativando aceleracao do ponteiro do mouse"; Risco = "moderado"; Acao = {
                 $mousePath = "HKCU:\Control Panel\Mouse"
                 Capturar-Registro $mousePath "MouseSpeed"
                 Capturar-Registro $mousePath "MouseThreshold1"
@@ -1012,40 +995,16 @@ function Otimizar-Gamer {
                     Set-ItemProperty $mousePath "MouseThreshold1" "0" -Type String
                     Set-ItemProperty $mousePath "MouseThreshold2" "0" -Type String
                 }
-                # A suspensao seletiva de USB pertence ao plano de energia, que nao tem backup proprio: so muda
-                # quando o plano ativo nao e mais o original, ja que a reversao desfaz isso voltando ao plano original.
-                $original = @($script:SnapshotAtual | Where-Object { $_.Tipo -eq "PlanoEnergia" } | Select-Object -First 1).GuidAnterior
-                $ativo = Obter-PlanoAtivo
-                if ($original -and $ativo -and $ativo -ne $original) {
-                    powercfg /setacvalueindex SCHEME_CURRENT SUB_USB USBSELECTIVE 0 | Out-Null
-                    powercfg /setdcvalueindex SCHEME_CURRENT SUB_USB USBSELECTIVE 0 | Out-Null
-                    powercfg /setactive SCHEME_CURRENT | Out-Null
-                } else {
-                    Write-Host "[INFO] Suspensao seletiva de USB mantida: ela so e alterada junto com o plano de energia do otimizador."
-                }
-            } }
-        @{ Nome = "Ajustando SysMain e Windows Search"; Risco = "moderado";   Acao = {
-                # Em HD o SysMain (Superfetch) acelera a abertura de programas; so mexemos em SSD
-                if ((Obter-TipoMidia $env:SystemDrive.TrimEnd(":")) -ne "SSD") {
-                    Write-Host "[INFO] Disco do sistema nao e SSD; SysMain mantido."
-                } elseif (Servico-Existe "SysMain") {
-                    Capturar-Servico "SysMain"
-                    Set-Service "SysMain" -StartupType Manual
-                    Stop-Service "SysMain" -Force  # sem isso ele continuaria rodando ate reiniciar
-                }
-                if (Servico-Existe "WSearch") {
-                    Capturar-Servico "WSearch"
-                    Set-Service "WSearch" -StartupType Manual
-                } else {
-                    Write-Host "[INFO] Servico WSearch nao existe neste Windows; nada a fazer."
-                }
             } }
         @{ Nome = "Limpando cache DNS";                   Acao = { ipconfig /flushdns } }
         @{ Nome = "Otimizando unidades de disco";         Acao = {
                 Otimizar-Unidades
             } }
+        @{ Nome = "Desativando experiencias personalizadas com dados de diagnostico"; Acao = {
+                Set-PoliticaDword "HKCU:\Software\Microsoft\Windows\CurrentVersion\Privacy" "TailoredExperiencesWithDiagnosticDataEnabled" 0
+            } }
         @{ Nome = "Aplicando politicas do Editor de Politica de Grupo (diagnostico, nuvem, IA e Push)"; Risco = "moderado"; Acao = { Aplicar-PoliticasAvancadas } }
-        @{ Nome = "Ativando otimizacoes para jogos em janela"; Acao = {
+        @{ Nome = "Ativando otimizacoes para jogos em janela"; Risco = "moderado"; Requer = "win11"; Acao = {
                 # Recurso do Windows 11 que reduz a latencia de jogos DirectX 10/11 em janela/borderless
                 if ([Environment]::OSVersion.Version.Build -lt 22000) { Write-Host "[INFO] Recurso disponivel apenas no Windows 11; ajuste ignorado."; return }
                 $caminho = "HKCU:\Software\Microsoft\DirectX\UserGpuPreferences"
@@ -1186,37 +1145,21 @@ function Otimizar-Debloat {
     Write-Host ""
     Write-Host "   [ i] Xbox/Game Bar: mantido (nao e alterado nesta secao)." -ForegroundColor DarkGray
 
-    # 6. Impressao
-    Executar-Se-Confirmado "Desativar o servico de Impressao (Spooler)? So faca isso se NAO usa impressora." `
-        "Servico de impressao desativado" `
-        {
-            # risco: alto
-            Desativar-Servico "Spooler"
-        } $modoRapido
-
-    # 7. Bluetooth
-    Executar-Se-Confirmado "Desativar o servico de Bluetooth? So faca isso se NAO usa Bluetooth." `
-        "Bluetooth desativado" `
-        {
-            # risco: alto
-            Desativar-Servico "bthserv"
-        } $modoRapido
-
-    # 8. Fax
+    # 6. Fax
     Executar-Se-Confirmado "Desativar o servico de Fax?" `
         "Servico de Fax desativado" `
         {
             Desativar-Servico "Fax"
         } $modoRapido
 
-    # 9. Remote Registry
+    # 7. Remote Registry
     Executar-Se-Confirmado "Desativar o servico de Registro Remoto (Remote Registry)?" `
         "Remote Registry desativado" `
         {
             Desativar-Servico "RemoteRegistry"
         } $modoRapido
 
-    # 10. Remote Assistance
+    # 8. Remote Assistance
     Executar-Se-Confirmado "Desativar a Assistencia Remota (Remote Assistance)?" `
         "Assistencia Remota desativada" `
         {
@@ -1224,46 +1167,36 @@ function Otimizar-Debloat {
             Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance" "fAllowToGetHelp" -Type DWord -Value 0
         } $modoRapido
 
-    # 11. Mapas
+    # 9. Mapas
     Executar-Se-Confirmado "Desativar o servico de Mapas (Maps Broker)?" `
         "Servico de Mapas desativado" `
         {
             Desativar-Servico "MapsBroker"
         } $modoRapido
 
-    # 12. Servicos de diagnostico adicionais
-    # O DPS (Diagnostic Policy Service) fica ativo: sem ele o solucionador de problemas
-    # de rede e a deteccao de problemas do Windows param de funcionar.
-    Executar-Se-Confirmado "Desativar servicos adicionais de diagnostico (WdiServiceHost, WdiSystemHost)?" `
-        "Servicos adicionais de diagnostico desativados" `
+    # 10. Diagnostico
+    Executar-Se-Confirmado "Usar somente dados de diagnostico obrigatorios?" `
+        "Limitando dados de diagnostico ao nivel obrigatorio" `
         {
             # risco: moderado
-            $diagnosticServices = @("WdiServiceHost", "WdiSystemHost")
-            foreach ($service in $diagnosticServices) {
-                Desativar-Servico $service
-            }
+            Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" "AllowTelemetry" 1
         } $modoRapido
 
     # 13. Tarefas agendadas de telemetria
-    Executar-Se-Confirmado "Desativar tarefas agendadas de telemetria/CEIP?" `
-        "Tarefas de telemetria desativadas" `
+    Executar-Se-Confirmado "Desativar tarefas opcionais de CEIP e feedback?" `
+        "Desativando tarefas opcionais de CEIP e feedback" `
         {
             $tasks = @(
-                "\Microsoft\Windows\Application Experience\Microsoft Compatibility Appraiser",
-                "\Microsoft\Windows\Application Experience\ProgramDataUpdater",
-                "\Microsoft\Windows\Application Experience\StartupAppTask",
-                "\Microsoft\Windows\Autochk\Proxy",
                 "\Microsoft\Windows\Customer Experience Improvement Program\Consolidator",
                 "\Microsoft\Windows\Customer Experience Improvement Program\UsbCeip",
                 "\Microsoft\Windows\Customer Experience Improvement Program\KernelCeipTask",
-                "\Microsoft\Windows\DiskDiagnostic\Microsoft-Windows-DiskDiagnosticDataCollector",
                 "\Microsoft\Windows\Feedback\Siuf\DmClient",
                 "\Microsoft\Windows\Feedback\Siuf\DmClientOnScenarioDownload"
             )
             foreach ($task in $tasks) {
-                # Tarefa ausente nao e falha: antes a etapa parava na primeira e nao desativava as seguintes
                 if (-not (Capturar-TarefaAgendada $task)) { Write-Host "[INFO] Tarefa $task nao existe neste Windows; nada a fazer."; continue }
                 schtasks.exe /Change /TN $task /Disable | Out-Null
+                if ($LASTEXITCODE -ne 0) { throw "Falha ao desativar tarefa: $task" }
             }
         } $modoRapido
 
@@ -1288,7 +1221,7 @@ function Otimizar-Debloat {
             }
         } $modoRapido
 
-    # 14b. Privacidade: ID de publicidade, pesquisa na web, historico e Copilot
+    # 14b. Privacidade: ID de publicidade, experiencias, pesquisa na web, historico e Copilot
     Executar-Se-Confirmado "Desativar o ID de publicidade (anuncios personalizados)?" `
         "ID de publicidade desativado" `
         {
@@ -1296,11 +1229,16 @@ function Otimizar-Debloat {
             Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo" "DisabledByGroupPolicy" 1
         } $modoRapido
 
+    Executar-Se-Confirmado "Desativar experiencias personalizadas com dados de diagnostico?" `
+        "Desativando experiencias personalizadas com dados de diagnostico" `
+        {
+            Set-PoliticaDword "HKCU:\Software\Microsoft\Windows\CurrentVersion\Privacy" "TailoredExperiencesWithDiagnosticDataEnabled" 0
+        } $modoRapido
+
     Executar-Se-Confirmado "Remover resultados da web (Bing) da pesquisa do menu Iniciar?" `
         "Pesquisa na web removida do menu Iniciar" `
         {
             Set-PoliticaDword "HKCU:\Software\Policies\Microsoft\Windows\Explorer" "DisableSearchBoxSuggestions" 1
-            Set-PoliticaDword "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" "BingSearchEnabled" 0
         } $modoRapido
 
     Executar-Se-Confirmado "Desativar o historico de atividades (linha do tempo)?" `
@@ -1312,9 +1250,12 @@ function Otimizar-Debloat {
             Set-PoliticaDword $sistema "UploadUserActivities" 0
         } $modoRapido
 
-    Executar-Se-Confirmado "Desativar o Copilot do Windows?" `
-        "Copilot desativado" `
+    Executar-Se-Confirmado "Desativar o Copilot integrado do Windows?" `
+        "Desativando Copilot integrado do Windows" `
         {
+            # requer: win11-pre24h2
+            # risco: moderado
+            if ([Environment]::OSVersion.Version.Build -ge 26100) { Write-Host "[INFO] Copilot integrado nao se aplica a esta versao."; return }
             Set-PoliticaDword "HKCU:\Software\Policies\Microsoft\Windows\WindowsCopilot" "TurnOffWindowsCopilot" 1
             Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot" "TurnOffWindowsCopilot" 1
             Set-PoliticaDword "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "ShowCopilotButton" 0
@@ -1339,15 +1280,6 @@ function Otimizar-Debloat {
             Set-PoliticaDword "HKCU:\Software\Policies\Microsoft\Windows\WindowsAI" "DisableClickToDo" 1
         } $modoRapido
 
-    # 14d. Apps da Microsoft Store rodando em segundo plano
-    Executar-Se-Confirmado "Impedir que apps da Microsoft Store rodem em segundo plano?" `
-        "Apps em segundo plano bloqueados" `
-        {
-            # risco: moderado
-            # 2 = negar para todos os apps (apps como WhatsApp da Store deixam de notificar com a janela fechada)
-            Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsRunInBackground" 2
-        } $modoRapido
-
     # 15. Efeitos visuais
     Executar-Se-Confirmado "Ajustar efeitos visuais para melhor desempenho?" `
         "Efeitos visuais ajustados" `
@@ -1355,15 +1287,7 @@ function Otimizar-Debloat {
             Aplicar-EfeitosVisuaisDesempenho
         } $modoRapido
 
-    # 16. Indexacao do Windows Search
-    Executar-Se-Confirmado "Desativar a indexacao do Windows Search?" `
-        "Indexacao do Windows Search desativada" `
-        {
-            # risco: moderado
-            Desativar-Servico "WSearch"
-        } $modoRapido
-
-    # 17. Limpeza final de temporarios
+    # 15. Limpeza final de temporarios
     Executar-Se-Confirmado "Executar limpeza final de arquivos temporarios?" `
         "Arquivos temporarios removidos" `
         {
@@ -1476,8 +1400,10 @@ function Reverter-UltimaOtimizacao {
                     $revertidos++
                 }
                 "PlanoEnergia" {
-                    powercfg /setactive $item.GuidAnterior
-                    if ($LASTEXITCODE -ne 0) { throw "Falha no powercfg: $LASTEXITCODE" }
+                    $guid = [guid]::Empty
+                    if (-not [guid]::TryParse("$($item.GuidAnterior)", [ref]$guid) -or $guid -eq [guid]::Empty) { throw "GUID de plano invalido." }
+                    powercfg /setactive $guid
+                    if ($LASTEXITCODE -ne 0 -or (Obter-PlanoAtivo) -ne $guid.ToString()) { throw "O plano anterior nao foi restaurado." }
                     Write-Resultado $true "Plano de energia restaurado"
                     $revertidos++
                 }
@@ -2285,9 +2211,9 @@ function Otimizar-Inteligente {
     Write-Status "ok" "Otimizacao/TRIM do(s) disco(s)"
     Write-Status "ok" "Limpeza de cache DNS"
     if ($perfil -eq "Jogos" -or $perfil -eq "Misto") {
-        Write-Status "ok" "Plano de energia de Alto Desempenho + Modo de Jogo (perfil com jogos instalados)"
+        Write-Status "ok" "Plano de energia Qrz + Modo de Jogo (perfil com jogos instalados)"
     } else {
-        Write-Status "ok" "Plano de energia Equilibrado/Alto Desempenho (sem tweaks agressivos de jogo)"
+        Write-Status "ok" "Plano de energia atual mantido (perfil sem jogos)"
     }
     if ($perfil -eq "Trabalho" -or $perfil -eq "Misto") {
         Write-Status "info" "Windows Search, Bluetooth e Impressao NAO serao tocados (perfil de trabalho detectado)"
@@ -2309,16 +2235,10 @@ function Otimizar-Inteligente {
 
     Write-Secao "Aplicando otimizacoes decididas automaticamente"
     $etapas = @(
-        @{ Nome = "Ajustando plano de energia"; Acao = {
+        @{ Nome = "Plano de energia Qrz"; Risco = "moderado"; Requer = "desktop"; Acao = {
                 if (Test-X3dDuploCcd) { Write-Host "[INFO] Ryzen X3D com dois CCDs: plano Equilibrado mantido para o jogo usar o CCD com 3D V-Cache."; return }
                 Capturar-PlanoEnergia
-                if ($perfil -eq "Jogos" -or $perfil -eq "Misto") {
-                    $ultimatePlan = powercfg /duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61
-                    if ($ultimatePlan -match "([0-9a-fA-F-]{36})") { powercfg /setactive $matches[1] }
-                    else { powercfg /setactive SCHEME_MIN }
-                } else {
-                    powercfg /setactive SCHEME_MIN
-                }
+                if (($perfil -eq "Jogos" -or $perfil -eq "Misto") -and (Pode-AplicarPlanoQrz)) { Aplicar-PlanoQrz }
             } }
         @{ Nome = "Limpando cache DNS"; Acao = { ipconfig /flushdns } }
         @{ Nome = "Otimizando/TRIM das unidades de disco"; Acao = {
@@ -2328,9 +2248,8 @@ function Otimizar-Inteligente {
     )
     if ($perfil -eq "Jogos" -or $perfil -eq "Misto") {
         $etapas += @{ Nome = "Ativando Modo de Jogo do Windows"; Acao = {
-                Garantir-Chave "HKCU:\Software\Microsoft\GameBar"
-                Capturar-Registro "HKCU:\Software\Microsoft\GameBar" "AutoGameModeEnabled"
-                Set-ItemProperty "HKCU:\Software\Microsoft\GameBar" "AutoGameModeEnabled" 1 -Type DWord
+                Set-PoliticaDword "HKCU:\Software\Microsoft\GameBar" "AllowAutoGameMode" 1
+                Set-PoliticaDword "HKCU:\Software\Microsoft\GameBar" "AutoGameModeEnabled" 1
             } }
     }
     $etapas += @{ Nome = "Verificando arquivos do sistema (sfc /verifyonly)"; Acao = { sfc /verifyonly } }
@@ -2920,5 +2839,3 @@ finally {
         Read-Host "  Pressione ENTER para sair"
     }
 }
-
-

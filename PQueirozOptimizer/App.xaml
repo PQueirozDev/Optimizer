@@ -251,6 +251,9 @@
           <ControlTemplate TargetType="{x:Type ScrollBar}">
             <Grid x:Name="Bg" SnapsToDevicePixels="true" Background="Transparent">
               <Track x:Name="PART_Track" IsDirectionReversed="true">
+                <Track.DecreaseRepeatButton>
+                  <RepeatButton x:Name="decrease" Command="{x:Static ScrollBar.PageUpCommand}" CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}" Opacity="0"/>
+                </Track.DecreaseRepeatButton>
                 <Track.Thumb>
                   <Thumb>
                     <Thumb.Template>
@@ -268,8 +271,17 @@
                     </Thumb.Template>
                   </Thumb>
                 </Track.Thumb>
+                <Track.IncreaseRepeatButton>
+                  <RepeatButton x:Name="increase" Command="{x:Static ScrollBar.PageDownCommand}" CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}" Opacity="0"/>
+                </Track.IncreaseRepeatButton>
               </Track>
             </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="Orientation" Value="Horizontal">
+                <Setter TargetName="decrease" Property="Command" Value="{x:Static ScrollBar.PageLeftCommand}"/>
+                <Setter TargetName="increase" Property="Command" Value="{x:Static ScrollBar.PageRightCommand}"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
       </Setter>

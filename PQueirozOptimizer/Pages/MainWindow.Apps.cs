@@ -40,13 +40,18 @@ public partial class MainWindow
             var check = new CheckBox { IsChecked = applied, IsEnabled = installed };
             var row = ChoiceRow(check, $"{tweak.App} — {tweak.Title}", tweak.Description, !installed ? "Não instalado" : applied ? "Aplicado" : "Padrão", !installed ? "Warning" : applied ? "Success" : "Info");
             var reverting = false;
+            var busy = false;
             // Fora da thread da tela (arquivos, registro, processos) e sem redesenhar a página:
             // antes o interruptor travava, pulava a animação e a rolagem voltava ao topo
             async void Run(bool apply)
             {
-                if (reverting) return;
-                check.IsHitTestVisible = false; // bloqueia cliques sem apagar o interruptor
+                if (reverting || busy) return;
+                busy = true;
+                var wasFocusable = check.Focusable;
+                check.IsHitTestVisible = false;
+                check.Focusable = false;
                 var ok = false;
+                Interlocked.Increment(ref _pendingSystemMutations);
                 await _systemTweakGate.WaitAsync();
                 try
                 {
@@ -54,15 +59,28 @@ public partial class MainWindow
                     ok = true;
                     ShowToast(tweak.App, apply ? "Ajuste aplicado. Reabra o app para valer." : "Configuração original restaurada.", "Success");
                 }
-                catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or System.Text.Json.JsonException)
+                catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or System.Security.SecurityException or System.Text.Json.JsonException)
                 {
                     ShowToast(tweak.App, ex.Message, "Danger");
                 }
-                finally { _systemTweakGate.Release(); }
-                if (!ok) { reverting = true; check.IsChecked = !apply; reverting = false; }
-                var now = service.IsApplied(tweak);
-                SetChoiceRowPill(check, now ? "Aplicado" : "Padrão", now ? "Success" : "Info");
-                check.IsHitTestVisible = true;
+                finally
+                {
+                    _systemTweakGate.Release();
+                    if (!ok) { reverting = true; check.IsChecked = !apply; reverting = false; }
+                    try
+                    {
+                        var now = service.IsApplied(tweak);
+                        SetChoiceRowPill(check, now ? "Aplicado" : "Padrão", now ? "Success" : "Info");
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+                    {
+                        _log.Write("WARN", $"Não foi possível reler {tweak.Title}: {ex.Message}");
+                    }
+                    check.IsHitTestVisible = true;
+                    check.Focusable = wasFocusable;
+                    busy = false;
+                    Interlocked.Decrement(ref _pendingSystemMutations);
+                }
             }
             check.Checked += (_, _) => Run(true);
             check.Unchecked += (_, _) => Run(false);

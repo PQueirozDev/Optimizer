@@ -14,12 +14,27 @@ public partial class MainWindow
     private const int DwmSystemBackdropType = 38;
     private const int BackdropNone = 1, BackdropAcrylic = 3;
     private const int WmSettingChange = 0x001A;
+    private const int WmGetMinMaxInfo = 0x0024;
+    private const int MonitorDefaultToNearest = 2;
 
     [StructLayout(LayoutKind.Sequential)]
     private struct Margins { public int Left, Right, Top, Bottom; }
+    [StructLayout(LayoutKind.Sequential)]
+    private struct PointStruct { public int X, Y; }
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MinMaxInfo
+    {
+        public PointStruct Reserved, MaxSize, MaxPosition, MinTrackSize, MaxTrackSize;
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativeRect { public int Left, Top, Right, Bottom; }
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MonitorInfo { public int Size; public NativeRect Monitor, Work; public int Flags; }
 
     [DllImport("dwmapi.dll")] private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
     [DllImport("dwmapi.dll")] private static extern int DwmExtendFrameIntoClientArea(IntPtr hwnd, ref Margins margins);
+    [DllImport("user32.dll")] private static extern IntPtr MonitorFromWindow(IntPtr hwnd, int flags);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
 
     private bool _settingsHooked;
 
@@ -57,6 +72,26 @@ public partial class MainWindow
         _settingsHooked = true;
         source.AddHook((IntPtr _, int msg, IntPtr _, IntPtr lParam, ref bool _) =>
         {
+            if (msg == WmGetMinMaxInfo && lParam != IntPtr.Zero)
+            {
+                var monitor = MonitorFromWindow(new WindowInteropHelper(this).Handle, MonitorDefaultToNearest);
+                if (monitor != IntPtr.Zero)
+                {
+                    var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
+                    if (GetMonitorInfo(monitor, ref info))
+                    {
+                        var data = Marshal.PtrToStructure<MinMaxInfo>(lParam);
+                        data.MaxPosition = new PointStruct { X = info.Work.Left - info.Monitor.Left, Y = info.Work.Top - info.Monitor.Top };
+                        data.MaxSize = new PointStruct { X = info.Work.Right - info.Work.Left, Y = info.Work.Bottom - info.Work.Top };
+                        data.MinTrackSize = new PointStruct
+                        {
+                            X = Math.Min(data.MinTrackSize.X > 0 ? data.MinTrackSize.X : 760, info.Work.Right - info.Work.Left),
+                            Y = Math.Min(data.MinTrackSize.Y > 0 ? data.MinTrackSize.Y : 520, info.Work.Bottom - info.Work.Top)
+                        };
+                        Marshal.StructureToPtr(data, lParam, false);
+                    }
+                }
+            }
             if (msg == WmSettingChange && lParam != IntPtr.Zero && Marshal.PtrToStringUni(lParam) == "ImmersiveColorSet")
                 Dispatcher.BeginInvoke(() => AppearanceService.Apply(AppearanceService.Current));
             return IntPtr.Zero;

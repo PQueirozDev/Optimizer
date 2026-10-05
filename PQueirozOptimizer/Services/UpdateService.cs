@@ -177,18 +177,27 @@ public sealed class UpdateService
     // privilégios não consegue trocar o instalador entre o download e a execução.
     private static string PrepareUpdatesFolder()
     {
-        var security = new DirectorySecurity();
-        security.SetAccessRuleProtection(true, false);
-        var admins = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
-        var system = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
-        security.SetOwner(admins);
-        foreach (var sid in new[] { admins, system })
-            security.AddAccessRule(new FileSystemAccessRule(sid, FileSystemRights.FullControl, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
-
         var info = new DirectoryInfo(UpdatesFolder);
-        if (info.Exists && info.Attributes.HasFlag(FileAttributes.ReparsePoint)) info.Delete();
-        info = new DirectoryInfo(UpdatesFolder);
-        if (!info.Exists) info.Create(security); else info.SetAccessControl(security);
+        var parent = info.Parent ?? throw new InvalidOperationException("Não foi possível determinar a pasta pai das atualizações.");
+        if (parent.Exists && parent.Attributes.HasFlag(FileAttributes.ReparsePoint)) throw new InvalidOperationException("A pasta pai das atualizações é um reparse point; download cancelado.");
+        if (info.Exists && info.Attributes.HasFlag(FileAttributes.ReparsePoint)) throw new InvalidOperationException("A pasta de atualizações é um reparse point; download cancelado.");
+        try
+        {
+            var security = new DirectorySecurity();
+            security.SetAccessRuleProtection(true, false);
+            var admins = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+            var system = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+            security.SetOwner(admins);
+            foreach (var sid in new[] { admins, system })
+                security.AddAccessRule(new FileSystemAccessRule(sid, FileSystemRights.FullControl, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
+            info = new DirectoryInfo(UpdatesFolder);
+            if (!info.Exists) info.Create(security); else info.SetAccessControl(security);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or System.Security.SecurityException)
+        { throw new InvalidOperationException("Não foi possível proteger a pasta de atualizações; execute o instalador elevado para provisioná-la.", ex); }
+        parent = info.Parent!;
+        if (parent.Attributes.HasFlag(FileAttributes.ReparsePoint)) throw new InvalidOperationException("A pasta pai das atualizações é um reparse point; download cancelado.");
+        if (info.Attributes.HasFlag(FileAttributes.ReparsePoint)) throw new InvalidOperationException("A pasta de atualizações tornou-se um reparse point; download cancelado.");
 
         foreach (var old in info.EnumerateFiles("*.exe"))
         {

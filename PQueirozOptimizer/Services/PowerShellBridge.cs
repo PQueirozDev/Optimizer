@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 namespace PQueirozOptimizer.Services;
 
@@ -47,19 +48,44 @@ public sealed class PowerShellBridge
         catch (OperationCanceledException)
         {
             try { process.Kill(true); } catch (InvalidOperationException) { }
+            try { await Task.WhenAll(output, error); } catch (OperationCanceledException) { }
+            if (cancellationToken.IsCancellationRequested) throw new OperationCanceledException(cancellationToken);
             throw new TimeoutException("O comando do PowerShell excedeu o tempo limite.");
         }
+        await Task.WhenAll(output, error);
         if (process.ExitCode != 0)
         {
-            var message = (await error).Trim();
+            var message = NormalizeError((await error).Trim());
             throw new InvalidOperationException(string.IsNullOrWhiteSpace(message) ? $"O PowerShell terminou com código {process.ExitCode}." : message);
         }
         return (await output).Trim();
     }
 
+    internal static string NormalizeError(string text)
+    {
+        if (!text.Contains("#< CLIXML", StringComparison.Ordinal)) return text;
+        try
+        {
+            var xml = text[text.IndexOf('<')..];
+            var values = XDocument.Parse(xml).Descendants("S")
+                .Where(e => string.Equals(e.Attribute("S")?.Value, "Error", StringComparison.OrdinalIgnoreCase))
+                .Select(e => DecodePowerShellEscapes(e.Value))
+                .Where(s => !string.IsNullOrWhiteSpace(s));
+            var result = string.Join(Environment.NewLine, values);
+            return string.IsNullOrWhiteSpace(result) ? DecodePowerShellEscapes(text.Replace("#< CLIXML", "", StringComparison.Ordinal)).Trim() : result;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.Xml.XmlException)
+        {
+            return DecodePowerShellEscapes(text.Replace("#< CLIXML", "", StringComparison.Ordinal)).Trim();
+        }
+    }
+
+    private static string DecodePowerShellEscapes(string value) =>
+        Regex.Replace(value, @"_x([0-9A-Fa-f]{4})_", m => ((char)Convert.ToInt32(m.Groups[1].Value, 16)).ToString());
+
     public IReadOnlyList<OperationStep> GetSteps(string operation)
     {
-        var function = operation switch { "padrao" => "Otimizar-Padrao", "gamer" or "gamerservicos" => "Otimizar-Gamer", "debloat" => "Otimizar-Debloat", _ => "" };
+        var function = operation switch { "padrao" => "Otimizar-Padrao", "gamer" or "gamerservicos" => "Otimizar-Gamer", "debloat" => "Otimizar-Debloat", "inteligente" => "Otimizar-Inteligente", _ => "" };
         if (function.Length == 0) return Array.Empty<OperationStep>();
         var script = File.ReadAllText(_scriptPath);
         var start = script.IndexOf("function " + function + " {", StringComparison.Ordinal);
@@ -101,7 +127,7 @@ public sealed class PowerShellBridge
 
     public static StepEffect ClassifyStep(string code) =>
         Regex.IsMatch(code, @"Registrar-Irreversivel|Remove-Item|Remove-Appx|cleanmgr", RegexOptions.IgnoreCase) ? StepEffect.Irreversible
-        : Regex.IsMatch(code, @"Capturar-|Set-PoliticaDword|Desativar-Servico|Aplicar-EfeitosVisuais|Aplicar-Politicas", RegexOptions.IgnoreCase) ? StepEffect.Backup
+        : Regex.IsMatch(code, @"Capturar-|Set-PoliticaDword|Desativar-Servico|Reparar-MMCSS|Aplicar-EfeitosVisuais|Aplicar-Politicas", RegexOptions.IgnoreCase) ? StepEffect.Backup
         : StepEffect.OneOff;
 
     public async Task RunAsync(string operation, IReadOnlyList<string>? selectedSteps = null, IProgress<string>? progress = null, CancellationToken cancellationToken = default)
@@ -136,6 +162,7 @@ public sealed class PowerShellBridge
             while (await reader.ReadLineAsync() is { } line)
             {
                 if (string.IsNullOrWhiteSpace(line)) continue;
+                line = level == "ERROR" ? NormalizeError(line) : line;
                 _log.Write(level, line);
                 // Erros vão marcados para a tela destacá-los e contá-los como falha
                 progress?.Report(level == "ERROR" ? "[ERRO] " + line : line);
@@ -151,5 +178,3 @@ public sealed class PowerShellBridge
         _log.Write("SUCCESS", $"Execução concluída: {operation}");
     }
 }
-
-

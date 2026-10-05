@@ -34,13 +34,21 @@ public partial class MainWindow
         // Uma alteração por vez, fora da thread da tela: o aviso WM_SETTINGCHANGE para todas as janelas
         // pode levar até 2 s e, na thread da tela, congelava a página e a animação do interruptor.
         // O interruptor fica bloqueado até gravar, para uma falha não desfazer um clique mais novo.
-        async void Set(WindowsSetting setting, CheckBox check, bool on)
+        async Task<bool> Set(WindowsSetting setting, CheckBox check, bool on)
         {
-            check.IsHitTestVisible = false; // bloqueia cliques sem apagar o interruptor
+            if (check.Tag is true) return false;
+            check.Tag = true;
+            var wasFocusable = check.Focusable;
+            check.IsHitTestVisible = false;
+            check.Focusable = false;
+            Interlocked.Increment(ref _pendingSystemMutations);
             await _systemTweakGate.WaitAsync();
             try
             {
                 await Task.Run(() => Customize.Apply(setting, on));
+                applying = true;
+                try { check.IsChecked = setting.Read(); }
+                finally { applying = false; }
                 if (setting.NeedsExplorerRestart && restartCard.Visibility != Visibility.Visible) ShowKeepingScroll(restartCard);
             }
             catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException)
@@ -48,8 +56,17 @@ public partial class MainWindow
                 _log.Write("ERROR", $"Personalizar Windows: {setting.Title}: {ex.Message}");
                 ShowToast("Não foi possível alterar", $"{setting.Title}: {ex.Message}", "Danger");
                 applying = true; check.IsChecked = !on; applying = false;
+                return false;
             }
-            finally { _systemTweakGate.Release(); check.IsHitTestVisible = true; }
+            finally
+            {
+                _systemTweakGate.Release();
+                check.IsHitTestVisible = true;
+                check.Focusable = wasFocusable;
+                check.Tag = false;
+                Interlocked.Decrement(ref _pendingSystemMutations);
+            }
+            return true;
         }
 
         // Cabeçalho com o botão de aplicar todos os recomendados
@@ -74,8 +91,8 @@ public partial class MainWindow
                 catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException) { current = false; }
                 var check = new CheckBox { IsChecked = current, Content = "" };
                 check.SetResourceReference(StyleProperty, "SwitchCheckBox");
-                check.Checked += (_, _) => { if (!applying) Set(setting, check, true); };
-                check.Unchecked += (_, _) => { if (!applying) Set(setting, check, false); };
+                check.Checked += (_, _) => { if (!applying) _ = Set(setting, check, true); };
+                check.Unchecked += (_, _) => { if (!applying) _ = Set(setting, check, false); };
                 switches.Add((setting, check));
 
                 var control = new StackPanel { Orientation = Orientation.Horizontal };
@@ -91,14 +108,27 @@ public partial class MainWindow
             root.Children.Add(Surface(panel));
         }
 
-        recommended.Click += (_, _) =>
+        recommended.Click += async (_, _) =>
         {
             var pending = switches.Where(s => s.Setting.Recommended is { } rec && s.Check.IsChecked != rec).ToList();
             if (pending.Count == 0) { ShowToast("Personalizar Windows", "Tudo já está como recomendado."); return; }
             var list = string.Join("\n", pending.Select(p => $"• {p.Setting.Title}: {(p.Setting.Recommended == true ? "ligar" : "desligar")}"));
             if (Msg($"Estas opções vão mudar:\n\n{list}\n\nContinuar?", "Aplicar recomendados", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes) return;
-            foreach (var (_, check) in pending) check.IsChecked = !check.IsChecked; // dispara Set de cada uma
-            ShowToast("Personalizar Windows", $"{pending.Count} opções ajustadas para o recomendado.");
+            recommended.IsHitTestVisible = false;
+            var success = 0;
+            try
+            {
+                foreach (var (setting, check) in pending)
+                {
+                    applying = true;
+                    check.IsChecked = setting.Recommended;
+                    applying = false;
+                    if (await Set(setting, check, setting.Recommended!.Value)) success++;
+                }
+            }
+            finally { recommended.IsHitTestVisible = true; }
+            ShowToast("Personalizar Windows", $"{success} de {pending.Count} opções ajustadas para o recomendado.",
+                success == pending.Count ? "Success" : "Warning");
         };
 
         ContentHost.Children.Clear();

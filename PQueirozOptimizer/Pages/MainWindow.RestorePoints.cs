@@ -3,6 +3,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Media;
 using PQueirozOptimizer.Services;
 
 namespace PQueirozOptimizer;
@@ -36,14 +37,21 @@ public partial class MainWindow
             var swatch = new Border { Width = 22, Height = 22, CornerRadius = new CornerRadius(11), Margin = new Thickness(0, 0, 8, 0), BorderThickness = new Thickness(2), Cursor = System.Windows.Input.Cursors.Hand, Tag = tone, ToolTip = tone };
             swatch.SetResourceReference(Border.BackgroundProperty, tone + "Brush");
             swatch.BorderBrush = System.Windows.Media.Brushes.Transparent;
+            var selected = new TextBlock { Text = "✓", FontSize = 12, FontWeight = FontWeights.Bold, Foreground = Brushes.White,
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Visibility = tone == color ? Visibility.Visible : Visibility.Collapsed };
+            swatch.Child = selected;
             swatch.MouseLeftButtonUp += (_, _) =>
             {
                 color = tone;
-                foreach (var s in swatches) s.BorderBrush = s.Tag as string == tone ? System.Windows.Media.Brushes.White : System.Windows.Media.Brushes.Transparent;
+                foreach (var s in swatches)
+                {
+                    s.BorderBrush = s.Tag as string == tone ? (Brush)FindResource("AccentBrush") : Brushes.Transparent;
+                    if (s.Child is TextBlock mark) mark.Visibility = s.Tag as string == tone ? Visibility.Visible : Visibility.Collapsed;
+                }
             };
             swatches.Add(swatch); colorRow.Children.Add(swatch);
         }
-        swatches[0].BorderBrush = System.Windows.Media.Brushes.White;
+        swatches[0].BorderBrush = (Brush)FindResource("AccentBrush");
         var createBtn = IconButton(Glyphs.Add, "Criar ponto", primary: true);
         createBtn.Click += async (_, _) =>
         {

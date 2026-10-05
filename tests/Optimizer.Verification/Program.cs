@@ -257,6 +257,11 @@ internal static class Program
         // Ajuste reversível: grava, guarda o original e a reversão só restaura o que o ajuste declarou
         const string key = @"Software\PQueirozOptimizer-Verificacao";
         var store = new RegistryTweakStore(Path.Combine(root, "tweaks"));
+        // Backup gravado por versões anteriores (sem "Status") continua valendo como aplicado após atualizar o app
+        Directory.CreateDirectory(Path.Combine(root, "tweaks"));
+        File.WriteAllText(Path.Combine(root, "tweaks", "legado.json"), """{"Id":"legado","Title":"Legado","Entries":[]}""");
+        Assert(store.IsApplied("legado"), "Ajuste aplicado em versão anterior continua aparecendo como aplicado");
+        Assert(StartupService.PackageFamily("OpenAI.ChatGPT-Desktop_1.2025.1.0_x64__2p2nqsd0c76g0") == "OpenAI.ChatGPT-Desktop_2p2nqsd0c76g0" && StartupService.PackageFamily("invalido") is null, "Família do pacote calculada a partir do nome completo");
         using (var k = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(key)) k.SetValue("Existente", 5, Microsoft.Win32.RegistryValueKind.DWord);
         try
         {
@@ -424,15 +429,15 @@ internal static class Program
             var bridge = new PowerShellBridge(log);
             // Algumas etapas só aparecem quando se aplicam ao PC (desktop, GPU AMD, Windows 11 24H2...)
             int If(string requirement) => SystemConditions.Satisfies(requirement) ? 1 : 0;
-            Assert(bridge.GetSteps("padrao").Count == 8 + If("desktop"), "Plano padrão contém 8 etapas (+ hibernação em desktop)");
-            Assert(bridge.GetSteps("gamer").Count == 16 + If("desktop") + If("amd"), "Plano avançado contém 16 etapas (+ Power Throttling em desktop e ULPS em AMD)");
+            Assert(bridge.GetSteps("padrao").Count == 7 + If("desktop"), "Plano padrão contém as etapas atuais (+ hibernação em desktop)");
+            Assert(bridge.GetSteps("gamer").Count == 14 + If("win11") + If("desktop") + If("amd"), "Plano avançado contém Qrz e as políticas preservadas (+ Windows 11, Power Throttling e ULPS quando aplicáveis)");
             Assert(PowerShellBridge.ClassifyRisk("@{ Nome = \"X\"; Risco = \"alto\"; Acao = {") == StepRisk.High && PowerShellBridge.ClassifyRisk("{\n    # risco: moderado\n") == StepRisk.Moderate && PowerShellBridge.ClassifyRisk("{ ipconfig /flushdns }") == StepRisk.Safe, "Risco lido da tabela, do comentário ou seguro por padrão");
-            Assert(bridge.GetSteps("gamer").First(s => s.Name.StartsWith("Ativando modo MSI")).Risk == StepRisk.High, "Modo MSI marcado como arriscado");
+            Assert(!bridge.GetSteps("gamer").Any(s => s.Name.Contains("MSI")), "Modo MSI não é aplicado automaticamente");
             Assert(SystemConditions.Satisfies(null) && SystemConditions.Satisfies("desconhecida") && SystemConditions.Satisfies("win10") != SystemConditions.Satisfies("win11"), "Condições: vazia e desconhecida liberam; Windows 10 e 11 se excluem");
             var keepServices = bridge.GetSteps("gamerservicos");
             var gamerNames = bridge.GetSteps("gamer").Select(s => s.Name).ToHashSet();
             Console.WriteLine($"  Sem parar serviços: {keepServices.Count} de {gamerNames.Count} etapas (sem: {string.Join(", ", gamerNames.Except(keepServices.Select(s => s.Name)))})");
-            Assert(keepServices.Count > 0 && keepServices.Count < gamerNames.Count && keepServices.All(s => gamerNames.Contains(s.Name)), "Plano sem parar serviços tira só as etapas de serviço do plano avançado");
+            Assert(keepServices.SequenceEqual(bridge.GetSteps("gamer")), "Plano sem parar serviços não muda etapas sem ações de serviço");
             Assert(UpdateService.ReleaseNotes("## Novidades\n\n- Um\n* Dois\nTexto solto\n**Full Changelog**: x\n- Full Changelog: y").SequenceEqual(new[] { "Um", "Dois" }), "Novidades da release lidas só dos itens de lista");
             Assert(!UpdateService.CanAutoInstall(new UpdateInfo(true, "1.0.0", "1.1.0", null, "https://github.com/PQueirozDev/Optimizer/releases/download/v1.1.0/Setup.exe", "Setup.exe", null)), "Atualização sem hash publicado não é instalada automaticamente");
             Assert(new LicenseService().MachineId.Length == 20, "ID do computador gerado");
@@ -441,13 +446,15 @@ internal static class Program
             Assert(LicenseService.ExtractKey($"Sua chave:\n{sampleKey[..60]}\n{sampleKey[60..]}\nObrigado!") == sampleKey, "Chave extraída de mensagem com quebras de linha");
             Assert(LicenseService.ExtractKey("sem chave aqui") is null, "Texto sem chave é ignorado");
             Assert(!new LicenseService().TryActivate(sampleKey, out _, out _), "Chave com assinatura falsa é recusada");
-            Assert(bridge.GetSteps("debloat").Count == 19 + If("win11") + 2 * If("win11-24h2"), "Plano debloat contém 19 etapas (+ Widgets no Windows 11, Recall e Click To Do no 24H2), limpeza usa análise separada");
+            Assert(bridge.GetSteps("debloat").Count == 15 + If("win11") + 2 * If("win11-24h2") + If("win11-pre24h2"), "Plano debloat contém as etapas atuais e condições do Windows");
             // O aviso da tela de revisão vem do código da etapa, não de palavras do nome
             StepEffect Effect(string operation, string step) => bridge.GetSteps(operation).First(s => s.Name == step).Effect;
             Assert(Effect("debloat", "Pesquisa na web removida do menu Iniciar") == StepEffect.Backup, "Ajuste de registro com backup não é marcado como irreversível pelo nome");
             Assert(Effect("debloat", "Cortana removida") == StepEffect.Irreversible && Effect("debloat", "OneDrive removido") == StepEffect.Irreversible, "Remoção de apps marcada como não reversível");
             Assert(Effect("padrao", "Limpando cache DNS") == StepEffect.OneOff && Effect("gamer", "Otimizando unidades de disco") == StepEffect.OneOff, "Cache DNS e TRIM são ações pontuais");
-            Assert(Effect("padrao", "Executando limpeza de disco (cleanmgr)") == StepEffect.Irreversible && Effect("padrao", "Plano de energia 'Alto Desempenho'") == StepEffect.Backup, "Limpeza de disco não reversível e plano de energia com backup");
+            Assert(Effect("padrao", "Executando limpeza de disco (cleanmgr)") == StepEffect.Irreversible && (If("desktop") == 0 || Effect("padrao", "Plano de energia Qrz") == StepEffect.Backup), "Limpeza de disco não reversível e plano de energia com backup");
+            Assert(If("desktop") == 0 || new[] { "padrao", "gamer", "inteligente" }.All(op => bridge.GetSteps(op).Any(s => s.Name == "Plano de energia Qrz")), "Otimizações usam o plano de energia Qrz");
+            Assert(new[] { "padrao", "gamer", "gamerservicos", "inteligente" }.All(op => !bridge.GetSteps(op).Any(s => s.Name.Contains("Desempenho Maximo") || s.Name.Contains("Alto Desempenho"))), "Nenhuma otimização ativa Desempenho Máximo ou Alto Desempenho");
             Assert(bridge.GetSteps("gamer").Count(s => s.Effect == StepEffect.Irreversible) == 0, "Versão Avançada não tem etapa irreversível");
             var configPath = Path.Combine(root, "config-test.json");
             File.WriteAllText(configPath, """{"activeProfile":"Modo Gamer","profiles":[{"name":"Modo Gamer","enabledOptimizations":null}]}""");
@@ -777,7 +784,4 @@ internal static class Program
         catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
     }
 }
-
-
-
 

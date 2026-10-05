@@ -222,8 +222,18 @@ public partial class MainWindow
 
         var rtp = new DockPanel { Margin = new Thickness(0, 0, 0, 14) };
         var toggle = IconButton(status.RealTimeOn ? Glyphs.Shield : Glyphs.Check, status.RealTimeOn ? "Desligar" : "Ligar", primary: !status.RealTimeOn);
+        toggle.IsEnabled = !status.TamperProtected;
+        toggle.ToolTip = status.TamperProtected
+            ? "A Proteção contra Adulteração está ativa. Altere esta opção na Segurança do Windows."
+            : null;
         toggle.Click += async (_, _) =>
         {
+            var current = await DefenderService.ReadStatusAsync();
+            if (!current.Available || current.TamperProtected)
+            {
+                ShowToast("Windows Defender", "A Proteção contra Adulteração impede esta alteração. Use a Segurança do Windows.", "Warning");
+                return;
+            }
             if (status.RealTimeOn && Msg("Desligar a proteção em tempo real deixa o PC sem verificação de vírus até ela ser religada (o Windows a religa sozinho depois de um tempo). Continuar?",
                     "Windows Defender", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
             await ExecuteTrackedAsync(status.RealTimeOn ? "Desligando a proteção em tempo real" : "Ligando a proteção em tempo real", async _ => await defender.SetRealTimeAsync(!status.RealTimeOn));
@@ -237,7 +247,7 @@ public partial class MainWindow
             DockPanel.SetDock(open, Dock.Right); rtp.Children.Add(open);
         }
         rtp.Children.Add(BoostText("Proteção em tempo real", (status.RealTimeOn ? "Ligada." : "Desligada.") +
-            (status.TamperProtected ? " A Proteção contra Adulteração está ativa: desative-a na Segurança do Windows para mudar por aqui." : "")));
+            (status.TamperProtected ? " A Proteção contra Adulteração está ativa; o Windows gerencia esta configuração. Use a Segurança do Windows para revisar a proteção." : "")));
         body.Children.Add(rtp);
 
         var exHead = new DockPanel { Margin = new Thickness(0, 4, 0, 8) };

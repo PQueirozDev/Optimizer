@@ -82,12 +82,15 @@ public partial class MainWindow
         => MessageBox.Show(Services.Translator.Tr(text), Services.Translator.Tr(caption), button, icon, defaultResult);
 
     /// <summary>
-    /// Abre um endereço no navegador. Só aceita http/https: alguns links vêm do config.json do
+    /// Abre um endereço no navegador. Aceita apenas http/https e os esquemas explícitos de configurações do Windows.
     /// usuário e o aplicativo roda como administrador, então nunca executa um caminho local daqui.
     /// </summary>
     private void OpenUrl(string? url)
     {
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp))
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+            (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp &&
+             !uri.Scheme.Equals("ms-settings", StringComparison.OrdinalIgnoreCase) &&
+             !uri.Scheme.Equals("windowsdefender", StringComparison.OrdinalIgnoreCase)))
         {
             _log.Write("WARN", "Link ignorado (não é um endereço da web): " + url);
             OperationStatus.Text = "Link inválido: " + url;

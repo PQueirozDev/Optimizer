@@ -15,7 +15,7 @@ function Centralizar($text) { return $text }
 function Write-Resultado($ok, $text) { }
 function Write-Pulado($text) { }
 # Load the real allowlists so the tests exercise the same rules the script uses.
-$allowlists = 'TarefasMMCSS|RegistroPermitido|RegistroPermitidoPadroes|ServicosPermitidos|TiposRegistroPermitidos|StartupTypesPermitidos|InstaladoresOneDrive|RunKeysPermitidas|LimiteHistorico|Plano\w+|InicializacaoAprovada|PerfilCleanmgr|CategoriasCleanmgr'
+$allowlists = 'TarefasMMCSS|TarefasPermitidas|RegistroPermitido|RegistroPermitidoPadroes|ServicosPermitidos|TiposRegistroPermitidos|StartupTypesPermitidos|InstaladoresOneDrive|RunKeysPermitidas|LimiteHistorico|Plano\w+|InicializacaoAprovada|PerfilCleanmgr|CategoriasCleanmgr'
 foreach ($assignment in $ast.EndBlock.Statements | Where-Object { $_ -is [System.Management.Automation.Language.AssignmentStatementAst] -and $_.Left.Extent.Text -match "^\`$script:($allowlists)$" }) {
     . ([scriptblock]::Create($assignment.Extent.Text))
 }
@@ -146,12 +146,19 @@ $script:SnapshotAtual = @()
 Desativar-Servico 'Fax'
 Assert (@($script:SnapshotAtual).Count -eq 0) 'Missing service is skipped without capture or failure'
 Assert ($script:RegistroPermitido -contains 'HKCU:\Control Panel\Desktop' -and $script:RegistroPermitido -contains 'HKCU:\Control Panel\Desktop\WindowMetrics') 'Visual effects keys can be restored'
+Assert ($script:RegistroPermitido -contains 'HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR' -and
+        $script:RegistroPermitido -contains 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Privacy' -and
+        $script:RegistroPermitido -contains 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' -and
+        $script:TarefasPermitidas.Count -eq 10) 'Game capture, privacy, transparency and historical task allowlists are present'
 
 # Tarefas agendadas removidas do Windows 11 recente nao podem interromper o Debloat
 function Get-ScheduledTask($TaskPath, $TaskName) { if ($TaskName -eq 'Existe') { [pscustomobject]@{ State = 'Ready' } } }
 $script:SnapshotAtual = @()
-Assert (-not (Capturar-TarefaAgendada '\Microsoft\Windows\Teste\Removida')) 'Missing scheduled task is reported as absent instead of failing'
-Assert ((Capturar-TarefaAgendada '\Microsoft\Windows\Teste\Existe') -and $script:SnapshotAtual[-1].HabilitadaAnterior -eq $true) 'Existing scheduled task state is captured'
+$missingTask = '\Microsoft\Windows\Customer Experience Improvement Program\Consolidator'
+$existingTask = '\Microsoft\Windows\Customer Experience Improvement Program\UsbCeip'
+function Get-ScheduledTask($TaskPath, $TaskName) { if ($TaskName -eq 'UsbCeip') { [pscustomobject]@{ State = 'Ready' } } }
+Assert (-not (Capturar-TarefaAgendada $missingTask)) 'Missing scheduled task is reported as absent instead of failing'
+Assert ((Capturar-TarefaAgendada $existingTask) -and $script:SnapshotAtual[-1].HabilitadaAnterior -eq $true) 'Existing scheduled task state is captured'
 
 # Servicos com inicio atrasado (Windows Search) voltam como estavam
 & {
@@ -190,14 +197,25 @@ Assert ((Capturar-TarefaAgendada '\Microsoft\Windows\Teste\Existe') -and $script
     Assert ($null -eq (Obter-DesinstaladorOneDrive)) 'OneDrive not installed is not treated as a failure'
 }
 
-# Plano Alto Desempenho apagado por outro otimizador e recriado; sem ele (Modern Standby) a etapa nao falha
-& {
-    $script:chamadas = @()
-    function powercfg { $script:chamadas += "$args"; $global:LASTEXITCODE = 0; switch ($args[0]) { '/list' { 'Power Scheme GUID: 381b4222-f694-41f0-9685-ff5bb260df2e  (Balanced) *' } '/duplicatescheme' { 'Power Scheme GUID: 11111111-2222-3333-4444-555555555555  (High performance)' } } }
-    Assert ((Ativar-PlanoAltoDesempenho) -and $script:chamadas -contains '/setactive 11111111-2222-3333-4444-555555555555') 'Deleted High Performance plan is recreated and activated'
-    function powercfg { $global:LASTEXITCODE = 0; switch ($args[0]) { '/list' { 'Power Scheme GUID: 381b4222-f694-41f0-9685-ff5bb260df2e  (Balanced) *' } '/duplicatescheme' { 'Unable to perform operation.'; $global:LASTEXITCODE = 1 } } }
-    Assert (-not (Ativar-PlanoAltoDesempenho) -and $LASTEXITCODE -eq 0) 'Balanced-only laptop keeps its plan without failing the step'
-}
+# O script e o servico devem interpretar exatamente as mesmas 182 linhas do plano Qrz.
+$qrzPath = Join-Path $projectRoot 'PQueirozOptimizer\Assets\Qrz.powerplan.txt'
+$qrzLines = @(Get-Content -LiteralPath $qrzPath | Where-Object {
+    (($_ -split '#', 2)[0].Trim()) -match '^[0-9a-fA-F-]{36}\s+[0-9a-fA-F-]{36}\s+\d+\s+\d+$'
+})
+Assert ($qrzLines.Count -eq 182) 'PowerShell parses the same 182 Qrz settings as C#'
+
+# Aplicar-PlanoQrz com powercfg simulado: recria o plano mesmo quando o Qrz ja esta ativo
+$script:qrzChamadas = @(); $script:qrzAtivo = $script:PlanoQrz
+function powercfg { $script:qrzChamadas += ($args -join ' '); $global:LASTEXITCODE = 0
+    if ($args[0] -eq '/list') { "Power Scheme GUID: $($script:PlanoQrz)  (Qrz) *" }
+    if ($args[0] -eq '/setactive') { $script:qrzAtivo = $args[1] }
+    if ($args[0] -eq '/delete' -and $script:qrzAtivo -eq $args[1]) { $global:LASTEXITCODE = 1 } }
+function Obter-PlanoAtivo { $script:qrzAtivo }
+$script:ArquivoQrz = $qrzPath
+$qrzOk = $true; try { Aplicar-PlanoQrz } catch { $qrzOk = $false; Write-Host $_ }
+Assert ($qrzOk -and $script:qrzAtivo -eq $script:PlanoQrz -and @($script:qrzChamadas | Where-Object { $_ -like '/setacvalueindex*' }).Count -eq 182 -and -not ($script:qrzChamadas -match 'e9a42b02|8c5e7fda')) 'Qrz recreated over an active Qrz, 182 settings written, no Ultimate/High Performance'
+Remove-Item function:powercfg, function:Obter-PlanoAtivo
+Assert ((Test-RegistroPermitido 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Audio' 'Clock Rate') -and -not (Test-RegistroPermitido 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Audio' 'Outro')) 'MMCSS repair can back up every task it recreates, and only those values'
 
 # cleanmgr /sagerun sem categorias marcadas nao apaga nada; o perfil proprio evita as categorias perigosas
 Assert (-not ($script:CategoriasCleanmgr | Where-Object { $_ -in 'Recycle Bin', 'DownloadsFolder', 'Previous Installations', 'Windows ESD installation files', 'D3D Shader Cache', 'User file versions', 'Update Cleanup' })) 'Disk cleanup never touches Recycle Bin, Downloads, Windows.old, reset files or shader cache'

@@ -33,6 +33,8 @@ public sealed class RegistryTweakStore
         public bool KeyCreated { get; set; }
         public string? Kind { get; set; }
         public JsonElement? Data { get; set; }
+        public string? TargetKind { get; set; }
+        public JsonElement? TargetData { get; set; }
     }
 
     private sealed class Backup
@@ -41,6 +43,8 @@ public sealed class RegistryTweakStore
         public string Title { get; set; } = "";
         public Dictionary<string, string> Meta { get; set; } = new();
         public DateTime AppliedAtUtc { get; set; }
+        /// <summary>null = backup de versões anteriores (sem estado gravado): vale como aplicado, como antes.</summary>
+        public string? Status { get; set; }
         public List<Entry> Entries { get; set; } = new();
     }
 
@@ -48,7 +52,18 @@ public sealed class RegistryTweakStore
 
     private string PathFor(string id) => Path.Combine(_directory, Regex.Replace(id, @"[^A-Za-z0-9_.-]", "_") + ".json");
 
-    public bool IsApplied(string id) => File.Exists(PathFor(id));
+    public bool IsApplied(string id)
+    {
+        var path = PathFor(id);
+        if (!File.Exists(path)) return false;
+        try
+        {
+            var backup = JsonSerializer.Deserialize<Backup>(File.ReadAllText(path));
+            if (backup is null) return false;
+            return backup.Status is null || (backup.Status == "Applied" && backup.Entries.All(IsCurrent));
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException) { return false; }
+    }
 
     public IReadOnlyList<AppliedTweak> List(string idPrefix)
     {
@@ -74,12 +89,18 @@ public sealed class RegistryTweakStore
     {
         var path = PathFor(id);
         var backup = File.Exists(path) ? JsonSerializer.Deserialize<Backup>(File.ReadAllText(path)) ?? new Backup() : new Backup();
-        backup.Id = id; backup.Title = title; backup.AppliedAtUtc = DateTime.UtcNow;
+        backup.Id = id; backup.Title = title; backup.AppliedAtUtc = DateTime.UtcNow; backup.Status = "Pending";
         if (meta != null) backup.Meta = new Dictionary<string, string>(meta);
         foreach (var w in writes)
         {
             var hive = w.Hive.ToString();
-            if (backup.Entries.Any(e => e.Hive == hive && e.Key.Equals(w.Key, StringComparison.OrdinalIgnoreCase) && e.Name.Equals(w.Name, StringComparison.OrdinalIgnoreCase))) continue;
+            var existingEntry = backup.Entries.FirstOrDefault(e => e.Hive == hive && e.Key.Equals(w.Key, StringComparison.OrdinalIgnoreCase) && e.Name.Equals(w.Name, StringComparison.OrdinalIgnoreCase));
+            if (existingEntry != null)
+            {
+                existingEntry.TargetKind = w.Kind.ToString();
+                existingEntry.TargetData = Serialize(w.Kind, w.Value);
+                continue;
+            }
             using var root = RegistryKey.OpenBaseKey(w.Hive, RegistryView.Registry64);
             using var existing = root.OpenSubKey(w.Key);
             var entry = new Entry { Hive = hive, Key = w.Key, Name = w.Name, KeyCreated = existing is null };
@@ -88,16 +109,40 @@ public sealed class RegistryTweakStore
                 var kind = existing.GetValueKind(w.Name);
                 entry.Existed = true; entry.Kind = kind.ToString(); entry.Data = Serialize(kind, value);
             }
+            entry.TargetKind = w.Kind.ToString();
+            entry.TargetData = Serialize(w.Kind, w.Value);
             backup.Entries.Add(entry);
         }
         // O backup vai para o disco antes de qualquer mudança: se algo falhar no meio, ainda dá para reverter
         Save(path, backup);
-        foreach (var w in writes)
+        try
         {
-            using var root = RegistryKey.OpenBaseKey(w.Hive, RegistryView.Registry64);
-            using var key = root.CreateSubKey(w.Key, writable: true) ?? throw new InvalidOperationException("Não foi possível abrir " + w.Key);
-            key.SetValue(w.Name, w.Value, w.Kind);
+            foreach (var w in writes)
+            {
+                using var root = RegistryKey.OpenBaseKey(w.Hive, RegistryView.Registry64);
+                using var key = root.CreateSubKey(w.Key, writable: true) ?? throw new InvalidOperationException("Não foi possível abrir " + w.Key);
+                key.SetValue(w.Name, w.Value, w.Kind);
+            }
+            backup.Status = backup.Entries.All(IsCurrent) ? "Applied" : "Partial";
+            Save(path, backup);
+            if (backup.Status != "Applied") throw new InvalidOperationException("O ajuste foi aplicado apenas parcialmente; o backup foi mantido para reversão.");
         }
+        catch
+        {
+            backup.Status = "Partial";
+            Save(path, backup);
+            throw;
+        }
+    }
+
+    private bool IsCurrent(Entry entry)
+    {
+        if (!Enum.TryParse<RegistryHive>(entry.Hive, out var hive) || !Enum.TryParse<RegistryValueKind>(entry.TargetKind, out var kind) || entry.TargetData is not { } data) return false;
+        using var root = RegistryKey.OpenBaseKey(hive, RegistryView.Registry64);
+        using var key = root.OpenSubKey(entry.Key);
+        if (key?.GetValue(entry.Name, null, RegistryValueOptions.DoNotExpandEnvironmentNames) is not { } value) return false;
+        try { return key.GetValueKind(entry.Name) == kind && Serialize(kind, value).GetRawText() == data.GetRawText(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException) { return false; }
     }
 
     /// <summary>Restaura o que havia antes. Itens fora de <paramref name="allowed"/> são ignorados.</summary>

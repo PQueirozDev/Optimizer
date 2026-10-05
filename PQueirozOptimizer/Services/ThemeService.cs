@@ -190,6 +190,7 @@ public static class ThemeService
         IsDark = dark;
         var palette = PaletteFor(settings.Theme, dark);
         var (accent, accentHover, info, softAlpha, glow) = AccentFor(settings, !dark);
+        accent = EnsureAccentContrast(accent);
 
         void Brush(string key, Color color) { var b = new SolidColorBrush(color); b.Freeze(); resources[key] = b; }
         // Translúcido: as superfícies ficam parcialmente transparentes e o Acrylic do Windows aparece por trás
@@ -204,7 +205,7 @@ public static class ThemeService
         Brush("BorderBrush", C(palette.Border)); Brush("BorderSubtleBrush", C(palette.BorderSubtle));
         Brush("TextBrush", C(palette.Text)); Brush("TextSecondaryBrush", C(palette.TextSecondary)); Brush("MutedBrush", C(palette.Muted));
         Brush("AccentBrush", accent); Brush("AccentHoverBrush", accentHover); Brush("AccentSoftBrush", WithAlpha(accent, softAlpha));
-        Brush("OnAccentBrush", Colors.White);
+        Brush("OnAccentBrush", BestAccentText(accent));
         Brush("InfoBrush", info); Brush("InfoSoftBrush", WithAlpha(info, (byte)(dark ? 0x24 : 0x1F)));
         foreach (var (key, hex) in new[] { ("Success", palette.Success), ("Warning", palette.Warning), ("Danger", palette.Danger) })
         {
@@ -241,6 +242,45 @@ public static class ThemeService
     private static Color C(string hex) => (Color)ColorConverter.ConvertFromString(hex);
     private static Color WithAlpha(Color c, byte a) => Color.FromArgb(a, c.R, c.G, c.B);
     private static Color Blend(Color a, Color b, double t) => Color.FromArgb(255, (byte)(a.R + (b.R - a.R) * t), (byte)(a.G + (b.G - a.G) * t), (byte)(a.B + (b.B - a.B) * t));
+    private static Color BestAccentText(Color accent)
+    {
+        static double Channel(byte value)
+        {
+            var v = value / 255.0;
+            return v <= 0.03928 ? v / 12.92 : Math.Pow((v + 0.055) / 1.055, 2.4);
+        }
+        var luminance = 0.2126 * Channel(accent.R) + 0.7152 * Channel(accent.G) + 0.0722 * Channel(accent.B);
+        var whiteContrast = 1.05 / (luminance + 0.05);
+        var blackContrast = (luminance + 0.05) / 0.05;
+        return blackContrast >= whiteContrast ? Colors.Black : Colors.White;
+    }
+    private static Color EnsureAccentContrast(Color color)
+    {
+        static double L(Color c)
+        {
+            static double Channel(byte value)
+            {
+                var v = value / 255.0;
+                return v <= 0.03928 ? v / 12.92 : Math.Pow((v + 0.055) / 1.055, 2.4);
+            }
+            return 0.2126 * Channel(c.R) + 0.7152 * Channel(c.G) + 0.0722 * Channel(c.B);
+        }
+        static double Ratio(Color a, Color b)
+        {
+            var x = L(a); var y = L(b);
+            return (Math.Max(x, y) + 0.05) / (Math.Min(x, y) + 0.05);
+        }
+        if (Math.Max(Ratio(color, Colors.Black), Ratio(color, Colors.White)) >= 4.5) return color;
+        for (var i = 1; i <= 100; i++)
+        {
+            var amount = i / 100.0;
+            var dark = Blend(color, Colors.Black, amount);
+            var light = Blend(color, Colors.White, amount);
+            if (Math.Max(Ratio(dark, Colors.Black), Ratio(dark, Colors.White)) >= 4.5) return dark;
+            if (Math.Max(Ratio(light, Colors.Black), Ratio(light, Colors.White)) >= 4.5) return light;
+        }
+        return color;
+    }
     private static T Frozen<T>(T freezable) where T : Freezable { freezable.Freeze(); return freezable; }
 
     private static (double H, double S, double L) ToHsl(Color c)

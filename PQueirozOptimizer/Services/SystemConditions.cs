@@ -32,6 +32,7 @@ public static class SystemConditions
                 "win10" => WindowsBuild < 22000,
                 "win11" => WindowsBuild >= 22000,
                 "win11-24h2" => WindowsBuild >= 26100,
+                "win11-pre24h2" => WindowsBuild >= 22000 && WindowsBuild < 26100,
                 "desktop" => IsDesktop,
                 "notebook" => !IsDesktop,
                 "amd" => System.Text.RegularExpressions.Regex.IsMatch(GpuProviders.Value, @"\b(AMD|ATI|Advanced Micro Devices)\b"),

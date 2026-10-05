@@ -57,7 +57,13 @@ public partial class MainWindow : Window
         VersionLabel.Text = "Versão " + AppVersion;
         Closing += (_, e) =>
         {
-            if (!_operationRunning) return;
+            if (!_operationRunning && PendingSystemMutations > 0)
+            {
+                e.Cancel = true;
+                OperationStatus.Text = "Aguarde a alteração em andamento terminar antes de fechar.";
+                return;
+            }
+            if (!_operationRunning && PendingSystemMutations == 0) return;
             e.Cancel = true;
             if (_closeAfterOperation) return;
             if (Msg("Há uma operação em andamento. Deseja cancelá-la e fechar o aplicativo? O que já foi aplicado continua registrado no backup e pode ser revertido em Atividade e reversão.",
@@ -105,7 +111,7 @@ public partial class MainWindow : Window
     /// </summary>
     private void ChangeLanguage(string language)
     {
-        if (_operationRunning) { OperationStatus.Text = "Aguarde a operação em andamento."; return; }
+        if (_operationRunning || PendingSystemMutations > 0) { OperationStatus.Text = "Aguarde a operação em andamento."; return; }
         if (language == _loc.CurrentLanguage) return;
         _loc.SetLanguage(language);
         try { _configService.SaveLanguage(language); }
@@ -116,6 +122,13 @@ public partial class MainWindow : Window
         {
             replacement.WindowStartupLocation = WindowStartupLocation.Manual;
             replacement.Left = Left; replacement.Top = Top; replacement.Width = Width; replacement.Height = Height;
+        }
+        else
+        {
+            var bounds = RestoreBounds;
+            replacement.WindowStartupLocation = WindowStartupLocation.Manual;
+            replacement.Left = bounds.Left; replacement.Top = bounds.Top;
+            replacement.Width = bounds.Width; replacement.Height = bounds.Height;
         }
         replacement.WindowState = WindowState;
         Application.Current.MainWindow = replacement;
@@ -149,13 +162,15 @@ public partial class MainWindow : Window
     {
         if (WindowState == WindowState.Maximized)
         {
-            MainRootBorder.Padding = new Thickness(7);
+            MainRootBorder.Padding = new Thickness(0);
+            MainRootBorder.BorderThickness = new Thickness(0);
             BtnMaximize.Content = Glyphs.Restore;
             BtnMaximize.ToolTip = _loc.T("Restaurar", "Restore");
         }
         else
         {
             MainRootBorder.Padding = new Thickness(0);
+            MainRootBorder.BorderThickness = new Thickness(1);
             BtnMaximize.Content = Glyphs.Maximize;
             BtnMaximize.ToolTip = _loc.T("Maximizar", "Maximize");
         }

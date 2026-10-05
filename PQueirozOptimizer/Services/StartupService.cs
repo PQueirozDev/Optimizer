@@ -1,5 +1,7 @@
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Security;
+using System.Security.Principal;
 using Microsoft.Win32;
 using PQueirozOptimizer.Models;
 
@@ -9,7 +11,8 @@ namespace PQueirozOptimizer.Services;
 /// Onde o item de logon está registrado e onde o Windows guarda se ele está ativo.
 /// Sem ApprovedKey o item é só de leitura (o Windows não tem liga/desliga para ele).
 /// </summary>
-public sealed record StartupSource(RegistryHive Hive, string? RunKey, string? Folder, string? ApprovedKey, string Label);
+public sealed record StartupSource(RegistryHive Hive, string? RunKey, string? Folder, string? ApprovedKey, string Label,
+    string? PackageFamilyName = null, string? PackageTaskId = null);
 
 /// <summary>
 /// Itens de logon (chaves Run, pastas Inicializar, RunOnce, políticas e Winlogon). Ativar e desativar usa o
@@ -22,13 +25,13 @@ public sealed class StartupService
     private readonly ActivityLog _log;
     public StartupService(ActivityLog log) => _log = log;
 
-    private static IEnumerable<StartupSource> Sources()
+    private static IEnumerable<StartupSource> Sources(string? startupFolder, string? commonStartupFolder)
     {
         yield return new(RegistryHive.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\Run", null, Approved + "Run", "Usuário");
         yield return new(RegistryHive.LocalMachine, @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", null, Approved + "Run", "Todos os usuários");
         yield return new(RegistryHive.LocalMachine, @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run", null, Approved + "Run32", "Todos os usuários (32 bits)");
-        yield return new(RegistryHive.CurrentUser, null, Environment.GetFolderPath(Environment.SpecialFolder.Startup), Approved + "StartupFolder", "Pasta Inicializar");
-        yield return new(RegistryHive.LocalMachine, null, Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup), Approved + "StartupFolder", "Pasta Inicializar (todos)");
+        yield return new(RegistryHive.CurrentUser, null, startupFolder, Approved + "StartupFolder", "Pasta Inicializar");
+        yield return new(RegistryHive.LocalMachine, null, commonStartupFolder, Approved + "StartupFolder", "Pasta Inicializar (todos)");
         // Só leitura, como aparecem no Autoruns: executam uma vez no próximo logon ou vêm de política
         yield return new(RegistryHive.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\RunOnce", null, null, "Executa uma vez no próximo logon");
         yield return new(RegistryHive.LocalMachine, @"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce", null, null, "Executa uma vez no próximo logon");
@@ -41,11 +44,12 @@ public sealed class StartupService
     public IReadOnlyList<AutorunEntry> GetEntries()
     {
         var entries = new List<AutorunEntry>();
-        foreach (var source in Sources())
+        var user = InteractiveUser();
+        foreach (var source in Sources(user.StartupFolder, Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup)))
         {
             try
             {
-                using var hive = RegistryKey.OpenBaseKey(source.Hive, RegistryView.Registry64);
+                using var hive = OpenSourceHive(source.Hive, user.Sid);
                 using var approved = source.ApprovedKey is null ? null : hive.OpenSubKey(source.ApprovedKey);
                 if (source.RunKey != null)
                 {
@@ -91,8 +95,67 @@ public sealed class StartupService
                 _log.Write("WARN", $"Inicialização: não foi possível ler {source.Label}: {ex.Message}");
             }
         }
+        AddPackagedEntries(entries, user);
         AddWinlogon(entries);
         return entries;
+    }
+
+    /// <summary>
+    /// Apps da Store/MSIX com tarefa de inicialização (como o Gerenciador de Tarefas mostra). O Windows indexa
+    /// essas tarefas em Classes\Extensions\ContractId\Windows.StartupTask\PackageId\{pacote}\ActivatableClassId\{tarefa};
+    /// o liga/desliga fica em SystemAppData\{família}\{tarefa}\State, gravável pelo próprio usuário.
+    /// </summary>
+    private void AddPackagedEntries(List<AutorunEntry> entries, InteractiveUserInfo user)
+    {
+        if (string.IsNullOrWhiteSpace(user.Sid)) return;
+        try
+        {
+            using var users = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry64);
+            using var index = users.OpenSubKey($@"{user.Sid}\Software\Classes\Extensions\ContractId\Windows.StartupTask\PackageId");
+            if (index is null) return;
+            foreach (var fullName in index.GetSubKeyNames())
+            {
+                var family = PackageFamily(fullName);
+                if (family is null) continue;
+                var packageName = family[..family.LastIndexOf('_')];
+                using var tasks = index.OpenSubKey($@"{fullName}\ActivatableClassId");
+                foreach (var id in tasks?.GetSubKeyNames() ?? Array.Empty<string>())
+                {
+                    var state = ReadPackageState(user.Sid, family, id);
+                    entries.Add(new AutorunEntry
+                    {
+                        Category = AutorunCategory.Logon,
+                        Name = $"{packageName} ({id})",
+                        Key = id,
+                        Command = "",
+                        Location = $"Pacote {family}",
+                        Detail = state is 3 or 4 ? "Controlado pela política do Windows" : "Tarefa de inicialização do pacote",
+                        Enabled = state is null or 2,
+                        CanToggle = state is null or 1 or 2,
+                        Source = new StartupSource(RegistryHive.CurrentUser, null, null, null, "Aplicativo empacotado", family, id),
+                    });
+                }
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
+        {
+            _log.Write("WARN", $"Inicialização: não foi possível ler os apps empacotados: {ex.Message}");
+        }
+    }
+
+    /// <summary>Nome_Versão_Arquitetura_Recurso_Editor → Nome_Editor (família do pacote).</summary>
+    public static string? PackageFamily(string fullName)
+    {
+        var parts = fullName.Split('_');
+        return parts.Length == 5 && parts[0].Length > 0 && parts[4].Length > 0 ? parts[0] + "_" + parts[4] : null;
+    }
+
+    private static int? ReadPackageState(string? sid, string family, string task)
+    {
+        if (string.IsNullOrWhiteSpace(sid)) return null;
+        using var users = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry64);
+        using var state = users.OpenSubKey($@"{sid}\Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\SystemAppData\{family}\{task}");
+        return state?.GetValue("State") is int value ? value : null;
     }
 
     /// <summary>Shell e Userinit do Winlogon: alterados, são um sinal clássico de malware.</summary>
@@ -132,8 +195,20 @@ public sealed class StartupService
 
     public void SetEnabled(AutorunEntry entry, bool enabled)
     {
+        if (entry.Source?.PackageFamilyName is { } family && entry.Source.PackageTaskId is { } task)
+        {
+            var sid = InteractiveUser().Sid ?? throw new InvalidOperationException("Não foi possível identificar o usuário interativo.");
+            using var users = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry64);
+            using var state = users.CreateSubKey($@"{sid}\Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\SystemAppData\{family}\{task}", writable: true)
+                ?? throw new UnauthorizedAccessException("O estado da tarefa do pacote não está disponível.");
+            state.SetValue("State", enabled ? 2 : 1, RegistryValueKind.DWord);
+            if (state.GetValue("State") is not int actual || actual != (enabled ? 2 : 1))
+                throw new IOException("O Windows não aceitou o estado da tarefa do pacote.");
+            _log.Write("SUCCESS", $"Inicialização: {entry.Name} {(enabled ? "ativado" : "desativado")}");
+            return;
+        }
         if (entry.Source?.ApprovedKey is not { } approvedKey) throw new InvalidOperationException("Este item não pode ser desativado por aqui.");
-        using var hive = RegistryKey.OpenBaseKey(entry.Source.Hive, RegistryView.Registry64);
+        using var hive = OpenSourceHive(entry.Source.Hive, InteractiveUser().Sid);
         using var approved = hive.CreateSubKey(approvedKey, writable: true);
         approved.SetValue(entry.Key, BuildApprovedValue(enabled, DateTime.UtcNow), RegistryValueKind.Binary);
         _log.Write("SUCCESS", $"Inicialização: {entry.Name} {(enabled ? "ativado" : "desativado")}");
@@ -150,6 +225,71 @@ public sealed class StartupService
         if (!enabled) BitConverter.GetBytes(utcNow.ToFileTimeUtc()).CopyTo(value, 4);
         return value;
     }
+
+    private static RegistryKey OpenSourceHive(RegistryHive hive, string? interactiveSid)
+    {
+        if (hive == RegistryHive.CurrentUser)
+        {
+            if (string.IsNullOrWhiteSpace(interactiveSid))
+                throw new InvalidOperationException("Não foi possível identificar o usuário interativo.");
+            return RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry64).OpenSubKey(interactiveSid, writable: true)
+                ?? throw new UnauthorizedAccessException("A conta interativa não está disponível no registro.");
+        }
+        return RegistryKey.OpenBaseKey(hive, RegistryView.Registry64);
+    }
+
+    private sealed record InteractiveUserInfo(string? Sid, string StartupFolder, string? ProfileFolder);
+
+    private static InteractiveUserInfo InteractiveUser()
+    {
+        var sid = TryGetInteractiveSid();
+        if (sid is null)
+            return new(null, Environment.GetFolderPath(Environment.SpecialFolder.Startup), null);
+
+        try
+        {
+            using var profiles = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList");
+            var profile = profiles?.OpenSubKey(sid)?.GetValue("ProfileImagePath")?.ToString();
+            if (!string.IsNullOrWhiteSpace(profile))
+            {
+                profile = Environment.ExpandEnvironmentVariables(profile);
+                return new(sid, Path.Combine(profile, "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup"), profile);
+            }
+        }
+        catch (Exception ex) when (ex is SecurityException or UnauthorizedAccessException or IOException) { }
+        return new(sid, Environment.GetFolderPath(Environment.SpecialFolder.Startup), null);
+    }
+
+    private static string? TryGetInteractiveSid()
+    {
+        // Sessão do próprio app (não a do console): em acesso remoto o console pode ser de outro usuário
+        var session = (uint)System.Diagnostics.Process.GetCurrentProcess().SessionId;
+        if (session == uint.MaxValue || !WTSQuerySessionInformation(IntPtr.Zero, session, WTS_INFO_CLASS.WTSUserName, out var user, out var userLength))
+            return null;
+        try
+        {
+            // O tamanho vem em bytes, não em caracteres: ler até o terminador evita lixo no nome
+            var name = Marshal.PtrToStringUni(user)?.TrimEnd('\0');
+            if (string.IsNullOrWhiteSpace(name)) return null;
+            if (!WTSQuerySessionInformation(IntPtr.Zero, session, WTS_INFO_CLASS.WTSDomainName, out var domain, out var domainLength))
+                return null;
+            try
+            {
+                var qualified = $"{Marshal.PtrToStringUni(domain)?.TrimEnd('\0')}\\{name}";
+                try { return new NTAccount(qualified).Translate(typeof(SecurityIdentifier)).Value; }
+                // Conta que não resolve (domínio fora do ar, nome inválido): usa o usuário atual
+                catch (Exception ex) when (ex is IdentityNotMappedException or System.ComponentModel.Win32Exception or SystemException) { return null; }
+            }
+            finally { WTSFreeMemory(domain); }
+        }
+        finally { WTSFreeMemory(user); }
+    }
+
+    private enum WTS_INFO_CLASS { WTSUserName = 5, WTSDomainName = 7 }
+    [DllImport("Wtsapi32.dll", CharSet = CharSet.Unicode)]
+    private static extern bool WTSQuerySessionInformation(IntPtr server, uint sessionId, WTS_INFO_CLASS infoClass, out IntPtr buffer, out uint bytes);
+    [DllImport("Wtsapi32.dll")]
+    private static extern void WTSFreeMemory(IntPtr buffer);
 
     /// <summary>
     /// Extrai o executável de uma linha de comando ("C:\x\a.exe" --arg ou C:\x\a.exe -arg).

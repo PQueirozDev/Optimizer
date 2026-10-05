@@ -348,17 +348,48 @@ public partial class MainWindow
             _log.Write("ERROR", $"Inicialização: {entry.Name}: {ex.Message}");
             // Acesso negado mesmo como administrador: o item é protegido pelo Windows ou pelo próprio programa
             var denied = ex is UnauthorizedAccessException || ex.HResult == unchecked((int)0x80070005) || ex is Win32Exception { NativeErrorCode: 5 };
-            if (denied && Msg($"O Windows protege \"{entry.Name}\": ele pertence ao sistema ou a um programa que trava as próprias permissões, então nem o administrador pode alterá-lo por aqui.\n\nDá para desligar pelas configurações do próprio programa ou em Configurações do Windows → Aplicativos → Inicialização. Abrir essa tela agora?",
-                    "Inicialização do Windows", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
-                OpenUrl("ms-settings:startupapps");
-            else if (!denied)
+            if (denied)
+            {
+                var source = entry.Source?.Label ?? "origem desconhecida";
+                var user = Environment.UserName;
+                var text = $"Não foi possível alterar \"{entry.Name}\" (origem: {source}; conta efetiva: {user}). " +
+                    $"O acesso foi negado pelo Windows ou pela origem do item; isso não prova que ele seja imutável.\n\n" +
+                    "Você pode conferir o item em Configurações do Windows → Aplicativos → Inicialização. Abrir essa tela agora?";
+                if (Msg(text, "Inicialização do Windows", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
+                    OpenSystemSettings("ms-settings:startupapps");
+            }
+            else
                 Msg("Não foi possível alterar este item: " + ex.Message, "Inicialização do Windows", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
+
         finally
         {
             check.IsEnabled = entry.CanToggle;
             // Redesenha a lista depois da animação do interruptor e sem perder a posição da rolagem
             AfterToggleAnimation(() => KeepScroll(RefreshAutorunsList));
+        }
+    }
+
+    private void OpenSystemSettings(string? setting)
+    {
+        if (!string.Equals(setting, "ms-settings:startupapps", StringComparison.OrdinalIgnoreCase))
+        {
+            _log.Write("WARN", "Configuração do Windows ignorada (não permitida): " + setting);
+            OperationStatus.Text = "Configuração do Windows não permitida.";
+            return;
+        }
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = setting,
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            _log.Write("ERROR", "Não foi possível abrir as Configurações do Windows: " + ex.Message);
+            Msg("Falha ao abrir as Configurações do Windows: " + ex.Message, "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 

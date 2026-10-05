@@ -92,18 +92,26 @@ public sealed class ServiceGroupsService
         var allowed = group.Services.ToHashSet(StringComparer.OrdinalIgnoreCase);
         var validTypes = new HashSet<string> { "auto", "delayed-auto", "demand", "disabled", "boot", "system" };
         var restored = 0;
+        var failed = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         await Task.Run(() =>
         {
             foreach (var (name, type) in original.Where(o => allowed.Contains(o.Key) && validTypes.Contains(o.Value)))
             {
-                if (GamingService.RunTool("sc.exe", "config", name, "start=", type) == 0) restored++;
+                if (GamingService.RunTool("sc.exe", "config", name, "start=", type) != 0) { failed[name] = type; continue; }
+                restored++;
                 if (type is "auto" or "delayed-auto")
                     try { using var c = new ServiceController(name); if (c.Status == ServiceControllerStatus.Stopped) c.Start(); }
-                    catch (Exception ex) when (ex is InvalidOperationException or Win32Exception) { }
+                    catch (Exception ex) when (ex is InvalidOperationException or Win32Exception) { failed[name] = type; }
             }
         });
-        backup.Remove(group.Id);
+        if (failed.Count > 0) backup[group.Id] = failed;
+        else backup.Remove(group.Id);
         SaveBackup(backup);
+        if (failed.Count > 0)
+        {
+            _log.Write("WARN", $"Serviços parcialmente restaurados: {group.Name} ({restored}/{original.Count})");
+            throw new InvalidOperationException($"Não foi possível restaurar {failed.Count} serviço(s): {string.Join(", ", failed.Keys)}");
+        }
         _log.Write("SUCCESS", $"Serviços restaurados: {group.Name} ({restored}/{original.Count})");
         return restored;
     }
