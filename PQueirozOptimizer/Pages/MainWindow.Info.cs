@@ -25,6 +25,13 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.10.1", "05/10/2026", new[]
+        {
+            "BIOS Advisor agora lê os valores atuais pelo SCEWIN escolhido pelo usuário, sem gravar alterações na BIOS, e mostra o nome exato da opção, o valor e as opções disponíveis.",
+            "Banco de perfis e caminhos da BIOS com atualizações assinadas, sem precisar atualizar o aplicativo para receber novos perfis.",
+            "Leituras da BIOS salvas entre aberturas e invalidadas quando a placa ou a versão da BIOS muda; a nota de otimização passa a considerar os valores lidos.",
+            "Corrigida a verificação de assinaturas do Windows quando o aplicativo é iniciado pelo PowerShell 7.",
+        }),
         ("v1.10.0", "05/10/2026", new[]
         {
             "Novo BIOS Advisor (Sistema): detecta placa-mãe, BIOS, processador, memória e placa de vídeo e mostra o que conferir ou mudar na BIOS, com caminho, risco, impacto térmico e como desfazer. Nada é alterado automaticamente.",
