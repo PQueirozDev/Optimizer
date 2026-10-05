@@ -19,6 +19,7 @@ public static partial class Translator
         ["Velocidade, DNS, latência e reparos de conexão."] = "Speed, DNS, latency and connection repairs.",
         ["Perfis, tema, idioma, licença e atualizações."] = "Profiles, theme, language, license and updates.",
         ["Editor de BIOS pelo SCEWIN e ajustes recomendados."] = "BIOS editor via SCEWIN and recommended settings.",
+        ["Análise do hardware e recomendações de BIOS, sem alterar nada automaticamente."] = "Hardware analysis and BIOS recommendations, without changing anything automatically.",
         ["Novidades de cada versão."] = "What's new in each version.",
         ["Sobre o Qrztweaks."] = "About Qrztweaks.",
         ["Buscar recursos, ajustes e páginas…"] = "Search features, tweaks and pages…",
@@ -28,6 +29,10 @@ public static partial class Translator
         ["Jogos"] = "Games", ["NVIDIA"] = "NVIDIA",
 
         // ---------- Patch notes ----------
+        ["Novo BIOS Advisor (Sistema): detecta placa-mãe, BIOS, processador, memória e placa de vídeo e mostra o que conferir ou mudar na BIOS, com caminho, risco, impacto térmico e como desfazer. Nada é alterado automaticamente."] = "New BIOS Advisor (System): detects motherboard, BIOS, CPU, memory and graphics card and shows what to check or change in the BIOS, with the path, risk, thermal impact and how to undo it. Nothing is changed automatically.",
+        ["Presets Seguro, Desempenho e Competitivo e uma nota de otimização que só conta o que tem evidência: detectado, inferido ou conferido por você na BIOS."] = "Safe, Performance and Competitive presets and an optimization score that only counts what has evidence: detected, inferred or checked by you in the BIOS.",
+        ["Verificação da versão da BIOS pelo site oficial da fabricante (ASUS), analisador de memória (canais, XMP, slots), monitor de sensores e comparação antes/depois com CSV do PresentMon ou CapFrameX."] = "BIOS version check against the manufacturer's official website (ASUS), memory analyzer (channels, XMP, slots), sensor monitor and before/after comparison from PresentMon or CapFrameX CSV.",
+        ["Primeiro perfil completo: ASUS TUF GAMING B460M-PLUS com Intel Core i7-10700F, com os caminhos do manual oficial da ASUS."] = "First full profile: ASUS TUF GAMING B460M-PLUS with Intel Core i7-10700F, with paths from the official ASUS manual.",
         ["O site oficial agora é qrztwk.vercel.app. Os links de compra e suporte do aplicativo usam o novo endereço."] = "The official website is now qrztwk.vercel.app. The app purchase and support links use the new address.",
         ["O PQueiroz Optimizer agora se chama Qrztweaks, com logo nova. Licenças, configurações e backups continuam valendo."] = "PQueiroz Optimizer is now called Qrztweaks, with a new logo. Licenses, settings and backups keep working.",
         ["O instalador passa a se chamar Qrztweaks-Setup e troca os atalhos antigos pelos novos."] = "The installer is now named Qrztweaks-Setup and replaces the old shortcuts with new ones.",

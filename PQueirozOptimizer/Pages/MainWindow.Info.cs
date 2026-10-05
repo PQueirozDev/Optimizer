@@ -25,6 +25,13 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.10.0", "05/10/2026", new[]
+        {
+            "Novo BIOS Advisor (Sistema): detecta placa-mãe, BIOS, processador, memória e placa de vídeo e mostra o que conferir ou mudar na BIOS, com caminho, risco, impacto térmico e como desfazer. Nada é alterado automaticamente.",
+            "Presets Seguro, Desempenho e Competitivo e uma nota de otimização que só conta o que tem evidência: detectado, inferido ou conferido por você na BIOS.",
+            "Verificação da versão da BIOS pelo site oficial da fabricante (ASUS), analisador de memória (canais, XMP, slots), monitor de sensores e comparação antes/depois com CSV do PresentMon ou CapFrameX.",
+            "Primeiro perfil completo: ASUS TUF GAMING B460M-PLUS com Intel Core i7-10700F, com os caminhos do manual oficial da ASUS.",
+        }),
         ("v1.9.2", "05/10/2026", new[]
         {
             "O site oficial agora é qrztwk.vercel.app. Os links de compra e suporte do aplicativo usam o novo endereço.",

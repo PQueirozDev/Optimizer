@@ -131,6 +131,9 @@
        <RadioButton x:Name="NavBios" Tag="bios" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE950;" Style="{StaticResource NavIcon}"/><TextBlock Text="BIOS / UEFI" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
        </RadioButton>
+       <RadioButton x:Name="NavBiosAdvisor" Tag="biosadvisor" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
+        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE9D9;" Style="{StaticResource NavIcon}"/><TextBlock Text="BIOS Advisor" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+       </RadioButton>
        <RadioButton x:Name="NavPatchNotes" Tag="patchnotes" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8A5;" Style="{StaticResource NavIcon}"/><TextBlock Text="Patch notes" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
        </RadioButton>
@@ -237,6 +240,9 @@
 
    <!-- Tutorial: escurece a janela e ilumina um elemento por vez (MainWindow.Tutorial.cs) -->
    <Grid x:Name="TutorialLayer" Grid.ColumnSpan="2" Visibility="Collapsed" Panel.ZIndex="50"/>
+
+   <!-- Guia de configuração do BIOS Advisor (Pages/MainWindow.BiosAdvisorGuide.cs) -->
+   <Grid x:Name="AdvisorLayer" Grid.ColumnSpan="2" Visibility="Collapsed" Panel.ZIndex="55"/>
 
    <!-- Janela de atualização (MainWindow.UpdateDialog.cs) -->
    <Grid x:Name="UpdateLayer" Grid.ColumnSpan="2" Visibility="Collapsed" Panel.ZIndex="60"/>

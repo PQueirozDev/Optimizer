@@ -35,6 +35,7 @@ public partial class MainWindow
         ["network"] = ("JOGOS E REDE", Glyphs.Network, "Velocidade, DNS, latência e reparos de conexão."),
         ["settings"] = ("SISTEMA", Glyphs.Settings, "Perfis, tema, idioma, licença e atualizações."),
         ["bios"] = ("SISTEMA", Glyphs.Chip, "Editor de BIOS pelo SCEWIN e ajustes recomendados."),
+        ["biosadvisor"] = ("SISTEMA", Glyphs.Diagnostic, "Análise do hardware e recomendações de BIOS, sem alterar nada automaticamente."),
         ["patchnotes"] = ("SISTEMA", Glyphs.Document, "Novidades de cada versão."),
         ["about"] = ("SISTEMA", Glyphs.Info, "Sobre o Qrztweaks."),
     };
@@ -159,6 +160,7 @@ public partial class MainWindow
         new("Servidor DNS", "Rede", Glyphs.Globe, "dns cloudflare google quad9", () => NavigateTo("network")),
         new("Configurações", "Sistema", Glyphs.Settings, "tema idioma licenca atualizacao perfil", () => NavigateTo("settings")),
         new("Editor de BIOS", "Sistema", Glyphs.Chip, "bios uefi scewin amisce rebar 4g xmp", () => NavigateTo("bios")),
+        new("BIOS Advisor", "Sistema", Glyphs.Diagnostic, "bios advisor assistente recomendacoes xmp turbo speed shift pl1 pl2 pbo resizable bar score benchmark fps", () => NavigateTo("biosadvisor")),
         new("Patch notes", "Sistema", Glyphs.Document, "novidades versao changelog", () => NavigateTo("patchnotes")),
         new("Sobre", "Sistema", Glyphs.Info, "autor contato discord", () => NavigateTo("about")),
     };

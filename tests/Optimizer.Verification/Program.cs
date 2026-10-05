@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Reflection;
 using System.Text.Json;
 using System.Windows;
@@ -415,6 +415,16 @@ internal static class Program
         return process.ExitCode;
     }
 
+    /// <summary>BIOS Advisor nas telas de teste: perfil fixo (TUF B460M-PLUS) e verificação de BIOS simulada, sem WMI nem internet.</summary>
+    static void PrepareBiosAdvisor(MainWindow window)
+    {
+        var flags = BindingFlags.NonPublic | BindingFlags.Instance;
+        var advisor = (PQueirozOptimizer.BiosAdvisor.BiosAdvisorService)typeof(MainWindow).GetProperty("Advisor", flags)!.GetValue(window)!;
+        advisor.UseProfile(BiosAdvisorTests.TufB460());
+        typeof(MainWindow).GetField("_biosUpdateCheck", flags)!.SetValue(window, Task.FromResult(new PQueirozOptimizer.BiosAdvisor.Updates.BiosUpdateResult(
+            PQueirozOptimizer.BiosAdvisor.Updates.BiosUpdateStatus.UpdateAvailable, "0708", "2003", new DateTime(2026, 3, 16), "https://www.asus.com/supportonly/tuf%20gaming%20b460m-plus/helpdesk_bios/", "asus.com")));
+    }
+
     [STAThread]
     static int Main(string[] args)
     {
@@ -428,6 +438,9 @@ internal static class Program
             if (args.Contains("--switches")) return Switches();
             if (args.Contains("--videoshots")) return Media.VideoShots(root);
             var log = new ActivityLog(Path.Combine(root, "verification.log"));
+            BiosAdvisorTests.Run();
+            if (args.Contains("--bios-advisor-live")) return BiosAdvisorTests.Live(log);
+            if (args.Contains("--bios-advisor")) return 0;
             var bridge = new PowerShellBridge(log);
             // Algumas etapas só aparecem quando se aplicam ao PC (desktop, GPU AMD, Windows 11 24H2...)
             int If(string requirement) => SystemConditions.Satisfies(requirement) ? 1 : 0;
@@ -663,7 +676,8 @@ internal static class Program
                 WalkTutorial("inicio", null, (System.Collections.IList)typeof(MainWindow).GetMethod("WelcomeTour", flags)!.Invoke(window, null)!);
                 foreach (var page in new[] { "resources", "gaming", "network", "services", "bios" })
                     if (typeof(MainWindow).GetMethod("PageTutorial", flags)!.Invoke(window, new object[] { page }) is System.Collections.IList pageSteps) WalkTutorial("pagina-" + page, page, pageSteps);
-                foreach (var page in new[] { "dashboard", "optimization", "startup", "drivers", "tools", "gaming", "network", "restore", "resources", "fixes", "services", "apps", "history", "settings", "about", "patchnotes", "bios" })
+                PrepareBiosAdvisor(window);
+                foreach (var page in new[] { "dashboard", "optimization", "startup", "drivers", "tools", "gaming", "network", "restore", "resources", "fixes", "services", "apps", "history", "settings", "about", "patchnotes", "bios", "biosadvisor" })
                 {
                     typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { page });
                     Wait(page == "dashboard" ? 4000 : page == "startup" ? 8000 : 600);
@@ -702,6 +716,7 @@ internal static class Program
             {
                 var app = CreateTestApp();
                 SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher)); var window = new MainWindow();
+                PrepareBiosAdvisor(window);
                 var flags = BindingFlags.NonPublic | BindingFlags.Instance;
                 void Pump(Task task)
                 {
@@ -751,7 +766,7 @@ internal static class Program
                 Render("review-dark", 1060, 700);
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "history" });
                 Render("history-dark", 1320, 860);
-                foreach (var page in new[] { "drivers", "startup", "tools", "gaming", "network", "restore", "resources", "fixes", "services", "apps", "settings", "about", "patchnotes", "bios" })
+                foreach (var page in new[] { "drivers", "startup", "tools", "gaming", "network", "restore", "resources", "fixes", "services", "apps", "settings", "about", "patchnotes", "bios", "biosadvisor" })
                 {
                     typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { page });
                     Render(page + "-dark", 1320, 860);
@@ -770,6 +785,14 @@ internal static class Program
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "gaming" });
                 Render("gaming-games-tall", 1320, 2000);
                 typeof(MainWindow).GetField("_gamingTab", flags)!.SetValue(window, 0);
+                // BIOS Advisor inteiro e o guia "Ver como configurar" (perfil fixo de teste)
+                typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "biosadvisor" });
+                Render("biosadvisor-tall", 1320, 4600);
+                var advisorReport = typeof(MainWindow).GetField("_advisorReport", flags)!.GetValue(window)!;
+                var memProfile = ((PQueirozOptimizer.BiosAdvisor.AdvisorReport)advisorReport).Recommendations.First(r => r.Id == "mem-profile");
+                typeof(MainWindow).GetMethod("ShowAdvisorGuide", flags)!.Invoke(window, new object[] { advisorReport, memProfile, false });
+                Render("biosadvisor-guide", 1320, 860);
+                typeof(MainWindow).GetMethod("CloseAdvisorGuide", flags)!.Invoke(window, null);
                 // Efeitos visuais (fim de Personalizar Windows) e a tela de upgrade de um plano Base
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "customize" });
                 Render("customize-tall", 1320, 3600);

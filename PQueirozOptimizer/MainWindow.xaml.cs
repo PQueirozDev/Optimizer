@@ -278,6 +278,7 @@ public partial class MainWindow : Window
             ActivateAdminLicense();
             return;
         }
+        if (AdvisorLayer.Visibility == Visibility.Visible) CloseAdvisorGuide();
         _currentPage = page;
         UpdateActiveNavButton(page);
         UpdatePageHeader(page);
@@ -305,6 +306,7 @@ public partial class MainWindow : Window
             case "about": ShowAbout(); break; case "history": ShowHistory(); break;
             case "patchnotes": ShowPatchNotes(); break;
             case "bios": ShowBios(); break;
+            case "biosadvisor": ShowBiosAdvisor(); break;
             case "startup": ShowStartup(); break;
             case "gaming": ShowGaming(); break;
             case "network": ShowNetwork(); break;
@@ -319,7 +321,7 @@ public partial class MainWindow : Window
 
     private void UpdateActiveNavButton(string page)
     {
-        var buttons = new[] { NavDashboard, NavOpt, NavStartup, NavDrivers, NavIsos, NavTools, NavCustomize, NavGaming, NavNetwork, NavRestore, NavResources, NavFixes, NavDiagnostics, NavServices, NavApps, NavSettings, NavAbout, NavHistory, NavPatchNotes, NavBios, NavAdmin };
+        var buttons = new[] { NavDashboard, NavOpt, NavStartup, NavDrivers, NavIsos, NavTools, NavCustomize, NavGaming, NavNetwork, NavRestore, NavResources, NavFixes, NavDiagnostics, NavServices, NavApps, NavSettings, NavAbout, NavHistory, NavPatchNotes, NavBios, NavBiosAdvisor, NavAdmin };
         foreach (var b in buttons) b.IsChecked = b.Tag?.ToString() == page;
     }
 

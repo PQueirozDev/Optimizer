@@ -22,6 +22,7 @@ Aplicativo desktop para Windows, feito em C# + WPF (.NET 8), para otimização, 
 - Busca rápida (Ctrl+K) e notificações ao concluir cada ação.
 - Drivers, utilitários do Windows, assistente de BIOS/UEFI e catálogo de ISOs.
 - Recursos (verificação de corrupção, runtimes, reinstalação limpa do driver, atalhos, downloads e benchmarks), Correções rápidas do Windows, Pontos de restauração, grupos de Serviços e otimizador/desinstalador de Apps.
+- BIOS Advisor: analisa o hardware e mostra o que conferir ou mudar na BIOS (caminho, risco, como desfazer), com nota baseada em evidência, verificação da versão da BIOS no site oficial, analisador de memória, monitor de sensores e benchmark antes/depois. Nunca altera a BIOS sozinho.
 - BIOS por grupos (XMP/EXPO, Resizable BAR, Spread Spectrum, PBO, C-States, virtualização), com instruções para ASUS e ASRock, e Win32 Priority no Modo Jogo.
 - Tutorial guiado na primeira abertura e tutoriais curtos por página, que podem ser revistos em Configurações.
 - Aparência personalizável: 9 temas (Escuro, OLED, Claro, Grafite, Oceano, Floresta, Ameixa, Areia e Automático, que segue o Windows), intensidade do roxo, densidade, tamanho dos cards, animações e janela translúcida (Windows 11), salvos em `%LocalAppData%\PQueirozOptimizer\config.json`.

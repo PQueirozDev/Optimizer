@@ -60,7 +60,7 @@ public static class PlanAccess
         ["optimization"] = PlanTier.Base, ["startup"] = PlanTier.Base, ["fixes"] = PlanTier.Base, ["tools"] = PlanTier.Base,
         ["services"] = PlanTier.Intermediate, ["apps"] = PlanTier.Intermediate, ["drivers"] = PlanTier.Intermediate,
         ["network"] = PlanTier.Intermediate, ["resources"] = PlanTier.Intermediate, ["diagnostics"] = PlanTier.Intermediate,
-        ["gaming"] = PlanTier.Full, ["customize"] = PlanTier.Full, ["bios"] = PlanTier.Full,
+        ["gaming"] = PlanTier.Full, ["customize"] = PlanTier.Full, ["bios"] = PlanTier.Full, ["biosadvisor"] = PlanTier.Full,
     };
 
     /// <summary>Modo de energia (atalho e janela própria): faz parte do Modo Jogo, então só nos planos completos.</summary>
