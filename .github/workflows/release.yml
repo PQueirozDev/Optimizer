@@ -36,7 +36,7 @@ jobs:
       - name: App verification tests
         shell: powershell
         run: |
-          dotnet run --project tests/Optimizer.Verification -- "$env:RUNNER_TEMP\app-verification" --i18n
+          dotnet run --project tests/Optimizer.Verification -- "$env:RUNNER_TEMP\app-verification"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   build:
