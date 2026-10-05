@@ -1,5 +1,5 @@
-// Efeitos e interações da página: progresso de rolagem, menu, abas de planos, contadores,
-// palavra rotativa, brilho nos cards, inclinação dos planos, FAQ suave e versão atual.
+// Efeitos e interações da página: progresso de rolagem, menu, abas de planos, contadores, download direto,
+// palavra rotativa, brilho nos cards, inclinação dos planos, FAQ suave, versão atual e rastro do mouse.
 // Tudo respeita prefers-reduced-motion e a página continua completa sem JavaScript.
 (() => {
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -131,7 +131,7 @@
   }
 
   // --- Brilho que segue o mouse nos cards e inclinação dos planos ------------------------
-  if (finePointer && !reduce) {
+  if (finePointer) {
     document.querySelectorAll(".spotlight, .plan").forEach((el) => {
       el.addEventListener("pointermove", (e) => {
         const r = el.getBoundingClientRect();
@@ -176,19 +176,92 @@
     });
   }
 
-  // --- Versão atual (da release mais recente no GitHub, com cache na sessão) ------------
+  // --- Versão atual e instalador (da release mais recente no GitHub, com cache na sessão) ---
+  // Sem resposta da API, os botões continuam levando à página da release mais recente.
   const versionTargets = document.querySelectorAll("[data-version]");
-  const showVersion = (tag) => { if (/^v?\d+\.\d+\.\d+$/.test(tag)) versionTargets.forEach((el) => { el.textContent = tag.startsWith("v") ? tag : `v${tag}`; }); };
-  try {
-    const cached = sessionStorage.getItem("pq-version");
-    if (cached) showVersion(cached);
-    else fetch("https://api.github.com/repos/PQueirozDev/Optimizer/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((release) => {
-        if (!release?.tag_name) return;
-        showVersion(release.tag_name);
-        try { sessionStorage.setItem("pq-version", release.tag_name); } catch { /* armazenamento indisponível */ }
-      })
-      .catch(() => { /* sem rede: fica a versão escrita na página */ });
-  } catch { /* sessionStorage bloqueado: fica a versão escrita na página */ }
+  const downloadLinks = document.querySelectorAll("[data-download-link]");
+  const downloadFiles = document.querySelectorAll("[data-download-file]");
+  const showRelease = ({ tag, url, name, size } = {}) => {
+    if (/^v?\d+\.\d+\.\d+$/.test(tag ?? "")) versionTargets.forEach((el) => { el.textContent = tag.startsWith("v") ? tag : `v${tag}`; });
+    if (url?.startsWith("https://github.com/PQueirozDev/Optimizer/releases/download/")) downloadLinks.forEach((a) => { a.href = url; });
+    if (name) downloadFiles.forEach((el) => { el.textContent = size ? `${name} (${(size / 1048576).toFixed(0)} MB)` : name; });
+  };
+  let cachedRelease = null;
+  try { cachedRelease = JSON.parse(sessionStorage.getItem("pq-release") || "null"); } catch { /* armazenamento indisponível */ }
+  if (cachedRelease) showRelease(cachedRelease);
+  else fetch("https://api.github.com/repos/PQueirozDev/Optimizer/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((release) => {
+      if (!release?.tag_name) return;
+      const setup = (release.assets || []).find((a) => /Setup.*\.exe$/i.test(a.name));
+      const info = { tag: release.tag_name, url: setup?.browser_download_url, name: setup?.name, size: setup?.size };
+      showRelease(info);
+      try { sessionStorage.setItem("pq-release", JSON.stringify(info)); } catch { /* armazenamento indisponível */ }
+    })
+    .catch(() => { /* sem rede: ficam a versão e o link escritos na página */ });
+
+  // --- Rastro do mouse ---------------------------------------------------------------------
+  // Um cometa azul que segue o ponteiro e se desfaz em ~350 ms. Só com mouse (nada no toque) e parado
+  // quando o ponteiro fica quieto. Fica ligado com prefers-reduced-motion: só se move junto com o mouse,
+  // e o Windows otimizado (efeitos visuais reduzidos) ativa essa preferência em quase todo PC de jogo.
+  if (finePointer) {
+    const trail = document.createElement("canvas");
+    trail.className = "cursor-trail";
+    trail.setAttribute("aria-hidden", "true");
+    document.body.appendChild(trail);
+    const tctx = trail.getContext("2d");
+    const points = [];
+    const life = 350;
+    let ratio = 1;
+    let running = false;
+
+    const size = () => {
+      ratio = Math.min(window.devicePixelRatio || 1, 2);
+      trail.width = innerWidth * ratio;
+      trail.height = innerHeight * ratio;
+      tctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    };
+    size();
+    window.addEventListener("resize", size);
+
+    const draw = (now) => {
+      while (points.length && now - points[0].t > life) points.shift();
+      tctx.clearRect(0, 0, innerWidth, innerHeight);
+      tctx.lineCap = "round";
+      tctx.lineJoin = "round";
+      for (let i = 1; i < points.length; i++) {
+        const a = points[i - 1];
+        const b = points[i];
+        const k = 1 - (now - b.t) / life; // 1 = mais novo
+        if (k <= 0) continue;
+        tctx.strokeStyle = `rgba(92, 155, 255, ${0.55 * k})`;
+        tctx.shadowColor = "rgba(47, 123, 255, 0.9)";
+        tctx.shadowBlur = 14 * k;
+        tctx.lineWidth = 1 + 5 * k;
+        tctx.beginPath();
+        tctx.moveTo(a.x, a.y);
+        tctx.lineTo(b.x, b.y);
+        tctx.stroke();
+      }
+      const head = points[points.length - 1];
+      if (head && now - head.t < life) {
+        tctx.shadowBlur = 18;
+        tctx.fillStyle = "rgba(220, 234, 255, 0.85)";
+        tctx.beginPath();
+        tctx.arc(head.x, head.y, 2.6, 0, Math.PI * 2);
+        tctx.fill();
+      }
+      tctx.shadowBlur = 0;
+      if (points.length) requestAnimationFrame(draw);
+      else running = false;
+    };
+
+    window.addEventListener("pointermove", (e) => {
+      if (e.pointerType !== "mouse") return;
+      points.push({ x: e.clientX, y: e.clientY, t: performance.now() });
+      if (points.length > 40) points.shift();
+      if (!running) { running = true; requestAnimationFrame(draw); }
+    }, { passive: true });
+    document.addEventListener("mouseleave", () => { points.length = 0; });
+  }
 })();

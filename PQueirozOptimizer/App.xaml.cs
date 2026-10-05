@@ -170,6 +170,15 @@ public partial class App : Application
         ActiveLicense = activeLicense;
         Services.StartupProfiler.Mark("license");
 
+        // Modo de energia faz parte dos planos completos: nos outros, o atalho só explica como liberar
+        if (powerMode && !Services.PlanAccess.Allows(activeLicense, Services.PlanAccess.PowerMode))
+        {
+            powerMode = false;
+            MessageBox.Show(Services.Translator.Tr("O Modo de energia está disponível a partir do plano Avançado. Em Configurações → Minha licença você pede o upgrade."),
+                "PQueiroz Optimizer", MessageBoxButton.OK, MessageBoxImage.Information);
+            Shutdown();
+            return;
+        }
         if (powerMode)
         {
             var picker = new PowerModeWindow(Log, closeAfterChoice: true);

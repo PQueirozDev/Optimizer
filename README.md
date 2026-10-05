@@ -115,10 +115,10 @@ Ao abrir, o aplicativo consulta a release mais recente pela API do GitHub, sem l
 O jeito recomendado de emitir chaves é o **PQueiroz License Manager** (repositório separado), que lê o pedido do cliente, gera a chave e monta a mensagem de resposta. Como alternativa por linha de comando, mantenha a pasta `private/` fora do Git e execute:
 
 ```powershell
-.\tools\New-OptimizerAccessKey.ps1 -Licensee "Nome do cliente" -MachineId "ID-DO-COMPUTADOR"
+.\tools\New-OptimizerAccessKey.ps1 -Licensee "Nome do cliente" -MachineId "ID-DO-COMPUTADOR" -Plan Avançado
 ```
 
-O comando imprime a chave a ser enviada ao cliente. Para uma licença com validade, acrescente `-ExpiresAtUtc "2027-12-31"`. A chave privada usada para assinar fica em `private/optimizer-license-rsa-private.blob`; faça uma cópia segura dela. Sem essa chave não é possível emitir novas licenças.
+O comando imprime a chave a ser enviada ao cliente. `-Plan` é obrigatório (`Base`, `Intermediário`, `Avançado`, `Vitalício` ou `Personalizado`); os planos mensais valem 30 dias se `-ExpiresAtUtc` não for informado, e o Personalizado exige `-ExpiresAtUtc "2027-12-31"`. A chave privada usada para assinar fica em `private/optimizer-license-rsa-private.blob`; faça uma cópia segura dela. Sem essa chave não é possível emitir novas licenças.
 
 ## Estrutura
 

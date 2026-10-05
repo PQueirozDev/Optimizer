@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="PQueiroz Optimizer: Modo Jogo, perfil NVIDIA, plano de energia de baixa latência, editor de BIOS e otimizações do Windows com backup e reversão. Planos Mensal e Vitalício, e edições personalizadas do Windows 11.">
+  <meta name="description" content="PQueiroz Optimizer: Modo Jogo, perfil NVIDIA, plano de energia de baixa latência, editor de BIOS e otimizações do Windows com backup e reversão. Planos Base, Intermediário, Avançado e Vitalício, e, em breve, edições personalizadas do Windows 11.">
   <meta name="theme-color" content="#060709">
   <meta property="og:title" content="PQueiroz Optimizer · Mais FPS com controle total">
-  <meta property="og:description" content="Otimização do Windows com backup e reversão. Plano Mensal a R$ 19,90 ou Vitalício a R$ 50.">
+  <meta property="og:description" content="Otimização do Windows com backup e reversão. Planos a partir de R$ 15 por mês, ou o app completo para sempre por R$ 59,99.">
   <meta property="og:image" content="https://pqoptimizer.vercel.app/assets/shots/visao-geral.jpg">
   <meta property="og:url" content="https://pqoptimizer.vercel.app/">
   <title>PQueiroz · Optimizer & Windows</title>
@@ -42,6 +42,7 @@
       <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/></symbol>
       <symbol id="i-infinity" viewBox="0 0 24 24"><path d="M12 12c-2-2.7-4-4-6-4a4 4 0 0 0 0 8c2 0 4-1.3 6-4Zm0 0c2 2.7 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.3-6 4Z"/></symbol>
       <symbol id="i-pix" viewBox="0 0 24 24"><path d="m12 3 4 4-4 4-4-4 4-4Z"/><path d="m12 13 4 4-4 4-4-4 4-4Z"/><path d="m3 12 4-4 4 4-4 4-4-4Z"/><path d="m13 12 4-4 4 4-4 4-4-4Z"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></symbol>
       <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
     </defs>
   </svg>
@@ -65,6 +66,7 @@
         <a href="#suporte">Suporte</a>
       </nav>
       <div class="topbar-actions">
+        <a class="btn btn-outline btn-sm" href="#baixar"><svg class="icon"><use href="#i-download"/></svg>Baixar</a>
         <a class="btn btn-primary btn-sm btn-shine" href="#comprar">Ver planos</a>
         <button class="menu-toggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="nav"><svg class="icon"><use href="#i-menu"/></svg></button>
       </div>
@@ -82,8 +84,8 @@
           <h1 class="reveal" style="--d: 60ms">Extraia mais FPS<br>com <span class="accent rotator" data-words="controle total|menos input lag|backup em tudo|um clique por vez">controle total</span>.</h1>
           <p class="lead reveal" style="--d: 120ms">Modo Jogo, perfil NVIDIA, plano de energia de baixa latência, editor de BIOS e otimizações revisadas item por item — em um painel bonito, com monitor ao vivo e reversão em um clique.</p>
           <div class="hero-actions reveal" style="--d: 180ms">
-            <a class="btn btn-primary btn-lg btn-shine" href="#comprar">Ver planos · a partir de R$ 19,90</a>
-            <a class="btn btn-outline btn-lg" href="#recursos">Ver os recursos</a>
+            <a class="btn btn-primary btn-lg btn-shine" href="#comprar">Ver planos · a partir de R$ 15</a>
+            <a class="btn btn-outline btn-lg" href="#baixar"><svg class="icon"><use href="#i-download"/></svg>Baixar o app</a>
           </div>
           <ul class="trust reveal" style="--d: 240ms" aria-label="Garantias">
             <li><svg class="icon"><use href="#i-shield"/></svg>Ponto de restauração antes de otimizar</li>
@@ -233,78 +235,137 @@
       <button class="lb-next" type="button" aria-label="Próxima"><svg class="icon"><use href="#i-arrow"/></svg></button>
     </div>
 
+    <!-- Download -->
+    <section id="baixar" class="section">
+      <div class="container download reveal">
+        <div class="download-copy">
+          <p class="kicker">Download</p>
+          <h2>Baixe agora, ative com a sua chave</h2>
+          <p class="section-lead">O instalador é gratuito e sempre a versão mais recente. Na primeira abertura, o app mostra o ID do seu computador e copia o pedido de ativação para você mandar no Discord.</p>
+          <div class="download-actions">
+            <a class="btn btn-primary btn-lg btn-shine" href="https://github.com/PQueirozDev/Optimizer/releases/latest" data-download-link rel="noreferrer">
+              <svg class="icon"><use href="#i-download"/></svg>Baixar instalador <span class="download-version" data-version>v1.8.0</span>
+            </a>
+            <a class="btn btn-outline btn-lg" href="#comprar">Escolher um plano</a>
+          </div>
+          <p class="download-meta"><span data-download-file>PQueirozOptimizer-Setup.exe</span> · Windows 10 e 11 (64 bits) · <a href="https://github.com/PQueirozDev/Optimizer/releases" target="_blank" rel="noreferrer">todas as versões ↗</a></p>
+        </div>
+        <ol class="download-steps">
+          <li><span class="step-dot">1</span><div><h3>Instale</h3><p>Execute o instalador; ele cria os atalhos e se atualiza sozinho depois.</p></div></li>
+          <li><span class="step-dot">2</span><div><h3>Copie o pedido</h3><p>A tela de ativação mostra o ID do PC. Clique em <b>Copiar pedido</b>.</p></div></li>
+          <li><span class="step-dot">3</span><div><h3>Ative a chave</h3><p>Envie o pedido no ticket do Discord, pague via Pix e cole a chave recebida.</p></div></li>
+        </ol>
+      </div>
+    </section>
+
     <!-- Planos -->
     <section id="comprar" class="section">
       <div class="container narrow center">
         <p class="kicker reveal">Planos e preços</p>
         <h2 class="reveal">Escolha seu próximo nível</h2>
-        <p class="section-lead reveal">Teste com o plano Mensal ou pague uma vez e use para sempre. A compra é feita no nosso servidor do Discord, onde você recebe sua chave.</p>
+        <p class="section-lead reveal">Pague só pelo que vai usar: do essencial no Base ao app completo no Avançado, ou pague uma vez e use para sempre. A compra é feita no nosso servidor do Discord, onde você recebe sua chave.</p>
       </div>
 
       <div class="tabs reveal" role="tablist" aria-label="Produtos">
         <button class="tab is-active" type="button" role="tab" id="tab-optimizer" aria-selected="true" aria-controls="panel-optimizer">Optimizer</button>
-        <button class="tab" type="button" role="tab" id="tab-windows" aria-selected="false" aria-controls="panel-windows" tabindex="-1">Windows personalizado</button>
+        <button class="tab" type="button" role="tab" id="tab-windows" aria-selected="false" aria-controls="panel-windows" tabindex="-1">Windows personalizado <span class="soon-tag">Em breve</span></button>
         <span class="tab-indicator" aria-hidden="true"></span>
       </div>
 
       <div class="tab-panel is-active" id="panel-optimizer" role="tabpanel" aria-labelledby="tab-optimizer">
-        <div class="container plans plans-2">
+        <div class="container plans plans-4">
           <article class="plan tilt reveal">
-            <span class="plan-icon"><svg class="icon"><use href="#i-refresh"/></svg></span>
-            <p class="plan-tag">Optimizer</p>
-            <h3>Mensal</h3>
-            <p class="price"><small>R$</small>19,90<span>/mês</span></p>
-            <p class="price-note">30 dias de acesso · renovação via Pix</p>
+            <span class="plan-icon"><svg class="icon"><use href="#i-broom"/></svg></span>
+            <p class="plan-tag">Mensal</p>
+            <h3>Base</h3>
+            <p class="price"><small>R$</small>15<span>/mês</span></p>
+            <p class="price-note">O essencial para deixar o PC leve</p>
+            <div class="plan-meter" style="--fill: 40%" role="img" aria-label="Libera cerca de 40% do app"><span></span></div>
             <ul class="checks">
-              <li><svg class="icon"><use href="#i-check"/></svg>Optimizer completo, todos os recursos</li>
-              <li><svg class="icon"><use href="#i-check"/></svg>Atualizações automáticas enquanto ativo</li>
-              <li><svg class="icon"><use href="#i-check"/></svg>O app avisa 7 dias antes de vencer</li>
-              <li><svg class="icon"><use href="#i-check"/></svg>Renove por ticket no Discord: os 30 dias somam à validade atual</li>
-              <li><svg class="icon"><use href="#i-check"/></svg>Suporte no Discord</li>
+              <li><svg class="icon"><use href="#i-check"/></svg>Otimizações revisadas item por item (Versão Padrão)</li>
+              <li><svg class="icon"><use href="#i-check"/></svg>Inicialização, Correções e Ferramentas</li>
+              <li><svg class="icon"><use href="#i-check"/></svg>Limpeza rápida e monitor ao vivo</li>
+              <li><svg class="icon"><use href="#i-check"/></svg>Backup, pontos de restauração e reversão</li>
             </ul>
-            <a class="btn btn-outline btn-block" href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Assinar o Mensal</a>
+            <a class="btn btn-outline btn-block" href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Assinar o Base</a>
           </article>
-          <article class="plan featured tilt reveal" style="--d: 60ms">
+          <article class="plan tilt reveal" style="--d: 60ms">
+            <span class="plan-icon"><svg class="icon"><use href="#i-layers"/></svg></span>
+            <p class="plan-tag">Mensal</p>
+            <h3>Intermediário</h3>
+            <p class="price"><small>R$</small>25<span>/mês</span></p>
+            <p class="price-note">Tudo do Base, mais o segundo plano</p>
+            <div class="plan-meter" style="--fill: 70%" role="img" aria-label="Libera cerca de 70% do app"><span></span></div>
+            <ul class="checks">
+              <li><svg class="icon"><use href="#i-check"/></svg>Tudo do Base</li>
+              <li><svg class="icon"><use href="#i-check"/></svg>Serviços, Apps e Debloat e privacidade</li>
+              <li><svg class="icon"><use href="#i-check"/></svg>Drivers com instalação limpa (DDU)</li>
+              <li><svg class="icon"><use href="#i-check"/></svg>Rede, Recursos e Central de diagnóstico</li>
+            </ul>
+            <a class="btn btn-outline btn-block" href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Assinar o Intermediário</a>
+          </article>
+          <article class="plan tilt reveal" style="--d: 120ms">
+            <span class="plan-badge plan-badge-alt">App completo</span>
+            <span class="plan-icon"><svg class="icon"><use href="#i-zap"/></svg></span>
+            <p class="plan-tag">Mensal</p>
+            <h3>Avançado</h3>
+            <p class="price"><small>R$</small>29,99<span>/mês</span></p>
+            <p class="price-note">Todo o app de otimização</p>
+            <div class="plan-meter" style="--fill: 100%" role="img" aria-label="Libera o app inteiro"><span></span></div>
+            <ul class="checks">
+              <li><svg class="icon"><use href="#i-check"/></svg>Tudo do Intermediário</li>
+              <li><svg class="icon"><use href="#i-check"/></svg><span><b>Modo Jogo</b>, perfil NVIDIA e presets dos jogos</span></li>
+              <li><svg class="icon"><use href="#i-check"/></svg>Editor de BIOS / UEFI e Personalizar Windows</li>
+              <li><svg class="icon"><use href="#i-check"/></svg>Versão Avançada (jogos) e Modo de energia</li>
+            </ul>
+            <a class="btn btn-outline btn-block" href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Assinar o Avançado</a>
+          </article>
+          <article class="plan featured tilt reveal" style="--d: 180ms">
             <span class="plan-badge">Pague uma vez</span>
             <span class="plan-icon"><svg class="icon"><use href="#i-infinity"/></svg></span>
-            <p class="plan-tag">Optimizer</p>
+            <p class="plan-tag">Para sempre</p>
             <h3>Vitalício</h3>
-            <p class="price"><small>R$</small>50<span>único</span></p>
-            <p class="price-note">Sem vencimento · custa o mesmo que 2,5 meses do Mensal</p>
+            <p class="price"><small>R$</small>59,99<span>único</span></p>
+            <p class="price-note">App completo, sem vencimento · o preço de 2 meses do Avançado</p>
+            <div class="plan-meter" style="--fill: 100%" role="img" aria-label="Libera o app inteiro"><span></span></div>
             <ul class="checks">
-              <li><svg class="icon"><use href="#i-check"/></svg>Optimizer completo, sem data de vencimento</li>
+              <li><svg class="icon"><use href="#i-check"/></svg>Tudo do Avançado, sem data de vencimento</li>
               <li><svg class="icon"><use href="#i-check"/></svg>Todas as atualizações futuras</li>
               <li><svg class="icon"><use href="#i-check"/></svg><span><b>Reemissão da chave</b> se você formatar o PC</span></li>
               <li><svg class="icon"><use href="#i-check"/></svg><span><b>Suporte prioritário</b> no Discord</span></li>
-              <li><svg class="icon"><use href="#i-check"/></svg>Nada de renovar</li>
             </ul>
             <a class="btn btn-primary btn-block btn-shine" href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Quero o Vitalício</a>
           </article>
         </div>
 
-        <div class="container narrow compare-plans reveal">
+        <div class="container compare-plans reveal">
           <table>
-            <caption class="sr-only">Comparação entre os planos Mensal e Vitalício</caption>
-            <thead><tr><th scope="col">Plano</th><th scope="col">Mensal</th><th scope="col" class="hl">Vitalício</th></tr></thead>
+            <caption class="sr-only">Comparação entre os planos Base, Intermediário, Avançado e Vitalício</caption>
+            <thead><tr><th scope="col">Recurso</th><th scope="col">Base</th><th scope="col">Interm.</th><th scope="col">Avançado</th><th scope="col" class="hl">Vitalício</th></tr></thead>
             <tbody>
-              <tr><th scope="row">Todos os recursos do Optimizer</th><td><svg class="icon yes"><use href="#i-check"/></svg></td><td class="hl"><svg class="icon yes"><use href="#i-check"/></svg></td></tr>
-              <tr><th scope="row">Atualizações</th><td>Enquanto ativo</td><td class="hl">Para sempre</td></tr>
-              <tr><th scope="row">Validade</th><td>30 dias</td><td class="hl">Sem vencimento</td></tr>
-              <tr><th scope="row">Reemissão após formatar</th><td><svg class="icon no"><use href="#i-x"/></svg></td><td class="hl"><svg class="icon yes"><use href="#i-check"/></svg></td></tr>
-              <tr><th scope="row">Suporte prioritário</th><td><svg class="icon no"><use href="#i-x"/></svg></td><td class="hl"><svg class="icon yes"><use href="#i-check"/></svg></td></tr>
-              <tr><th scope="row">Pagamento</th><td>R$ 19,90 por mês, via Pix</td><td class="hl">R$ 50, uma vez</td></tr>
+              <tr><th scope="row">Otimizações (Versão Padrão), Inicialização, Correções e Ferramentas</th><td><svg class="icon yes"><use href="#i-check"/></svg></td><td><svg class="icon yes"><use href="#i-check"/></svg></td><td><svg class="icon yes"><use href="#i-check"/></svg></td><td class="hl"><svg class="icon yes"><use href="#i-check"/></svg></td></tr>
+              <tr><th scope="row">Backup, pontos de restauração e reversão</th><td><svg class="icon yes"><use href="#i-check"/></svg></td><td><svg class="icon yes"><use href="#i-check"/></svg></td><td><svg class="icon yes"><use href="#i-check"/></svg></td><td class="hl"><svg class="icon yes"><use href="#i-check"/></svg></td></tr>
+              <tr><th scope="row">Serviços, Apps e Debloat</th><td><svg class="icon no"><use href="#i-x"/></svg></td><td><svg class="icon yes"><use href="#i-check"/></svg></td><td><svg class="icon yes"><use href="#i-check"/></svg></td><td class="hl"><svg class="icon yes"><use href="#i-check"/></svg></td></tr>
+              <tr><th scope="row">Drivers, Rede, Recursos e diagnóstico</th><td><svg class="icon no"><use href="#i-x"/></svg></td><td><svg class="icon yes"><use href="#i-check"/></svg></td><td><svg class="icon yes"><use href="#i-check"/></svg></td><td class="hl"><svg class="icon yes"><use href="#i-check"/></svg></td></tr>
+              <tr><th scope="row">Modo Jogo, perfil NVIDIA e Versão Avançada</th><td><svg class="icon no"><use href="#i-x"/></svg></td><td><svg class="icon no"><use href="#i-x"/></svg></td><td><svg class="icon yes"><use href="#i-check"/></svg></td><td class="hl"><svg class="icon yes"><use href="#i-check"/></svg></td></tr>
+              <tr><th scope="row">BIOS / UEFI, Personalizar Windows e Modo de energia</th><td><svg class="icon no"><use href="#i-x"/></svg></td><td><svg class="icon no"><use href="#i-x"/></svg></td><td><svg class="icon yes"><use href="#i-check"/></svg></td><td class="hl"><svg class="icon yes"><use href="#i-check"/></svg></td></tr>
+              <tr><th scope="row">Reemissão após formatar e suporte prioritário</th><td><svg class="icon no"><use href="#i-x"/></svg></td><td><svg class="icon no"><use href="#i-x"/></svg></td><td><svg class="icon no"><use href="#i-x"/></svg></td><td class="hl"><svg class="icon yes"><use href="#i-check"/></svg></td></tr>
+              <tr><th scope="row">Validade</th><td>30 dias</td><td>30 dias</td><td>30 dias</td><td class="hl">Não vence</td></tr>
+              <tr><th scope="row">Pagamento (Pix)</th><td>R$ 15/mês</td><td>R$ 25/mês</td><td>R$ 29,99/mês</td><td class="hl">R$ 59,99 único</td></tr>
             </tbody>
           </table>
         </div>
+        <p class="container narrow center plan-footnote reveal">Comece pelo plano que precisa e suba quando quiser: no app, em <b>Configurações → Minha licença</b>, o botão de upgrade copia o pedido para o ticket.</p>
       </div>
 
       <div class="tab-panel" id="panel-windows" role="tabpanel" aria-labelledby="tab-windows" hidden>
+        <p class="container narrow center soon-note"><span class="soon-tag">Em breve</span> As edições personalizadas do Windows 11 estão em preparação e ainda não estão à venda. <a href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Entre no Discord</a> para ser avisado no lançamento.</p>
         <div class="container plans plans-3">
-          <article class="plan tilt">
+          <article class="plan tilt is-soon">
             <span class="plan-icon"><svg class="icon"><use href="#i-broom"/></svg></span>
             <p class="plan-tag">Uso geral</p>
             <h3>Windows 11 Optimized</h3>
-            <p class="price"><small>R$</small>100<span>único</span></p>
+            <p class="price price-soon">Em breve</p>
             <p class="price-note">Leve e limpo, sem mexer pesado em serviços</p>
             <ul class="checks">
               <li><svg class="icon"><use href="#i-check"/></svg>Sem bloatware: Teams, Clipchamp, Bing, Widgets, Outlook novo e outros</li>
@@ -312,14 +373,14 @@
               <li><svg class="icon"><use href="#i-check"/></svg>Telemetria no mínimo e mais privacidade</li>
               <li><svg class="icon"><use href="#i-check"/></svg>Store, Xbox, Windows Update e drivers preservados</li>
             </ul>
-            <a class="btn btn-outline btn-block" href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Comprar no Discord</a>
+            <span class="btn btn-outline btn-block is-disabled" aria-disabled="true">Em breve</span>
           </article>
-          <article class="plan featured tilt">
+          <article class="plan featured tilt is-soon">
             <span class="plan-badge">Mais desempenho</span>
             <span class="plan-icon"><svg class="icon"><use href="#i-zap"/></svg></span>
             <p class="plan-tag">Jogos e desempenho</p>
             <h3>Windows 11 Advanced</h3>
-            <p class="price"><small>R$</small>150<span>único</span></p>
+            <p class="price price-soon">Em breve</p>
             <p class="price-note">Tudo do Optimized, com perfil forte</p>
             <ul class="checks">
               <li><svg class="icon"><use href="#i-check"/></svg>Menos serviços, tarefas e atividade em segundo plano</li>
@@ -327,14 +388,14 @@
               <li><svg class="icon"><use href="#i-check"/></svg>Boot, rede, áudio, Bluetooth, Store e Update preservados</li>
               <li><svg class="icon"><use href="#i-check"/></svg>Tema escuro PQueiroz e barra de tarefas limpa</li>
             </ul>
-            <a class="btn btn-primary btn-block btn-shine" href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Comprar no Discord</a>
+            <span class="btn btn-outline btn-block is-disabled" aria-disabled="true">Em breve</span>
           </article>
-          <article class="plan tilt">
+          <article class="plan tilt is-soon">
             <span class="plan-badge plan-badge-alt">Para devs</span>
             <span class="plan-icon"><svg class="icon"><use href="#i-cpu"/></svg></span>
             <p class="plan-tag">Programação</p>
             <h3>Windows 11 Developer</h3>
-            <p class="price"><small>R$</small>175<span>único</span></p>
+            <p class="price price-soon">Em breve</p>
             <p class="price-note">Perfil forte da Advanced + ambiente de desenvolvimento</p>
             <ul class="checks">
               <li><svg class="icon"><use href="#i-check"/></svg>WSL 2, Hyper-V e virtualização prontos</li>
@@ -342,7 +403,7 @@
               <li><svg class="icon"><use href="#i-check"/></svg>.NET SDK 10, PowerShell 7, Windows Terminal e 7-Zip</li>
               <li><svg class="icon"><use href="#i-check"/></svg>Ferramentas instaladas no 1º login via winget (fontes oficiais)</li>
             </ul>
-            <a class="btn btn-outline btn-block" href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Comprar no Discord</a>
+            <span class="btn btn-outline btn-block is-disabled" aria-disabled="true">Em breve</span>
           </article>
         </div>
       </div>
@@ -366,14 +427,14 @@
     <!-- Renovação -->
     <section id="renovar" class="section">
       <div class="container narrow center">
-        <p class="kicker reveal">Plano Mensal</p>
+        <p class="kicker reveal">Planos mensais</p>
         <h2 class="reveal">Como renovar</h2>
         <p class="section-lead reveal">A renovação não é automática: você só paga se quiser continuar. Quando o plano estiver acabando, é assim:</p>
       </div>
       <ol class="container timeline">
         <li class="reveal"><span class="timeline-dot"><svg class="icon"><use href="#i-clock"/></svg></span><div><h3>O Optimizer avisa</h3><p>Nos últimos 7 dias, o painel mostra quantos dias faltam e o botão <b>Renovar pelo Discord</b>.</p></div></li>
         <li class="reveal" style="--d: 80ms"><span class="timeline-dot"><svg class="icon"><use href="#i-chat"/></svg></span><div><h3>Abra um ticket de renovação</h3><p>O botão copia o seu pedido de renovação e abre o Discord. Abra um ticket de renovação e cole o pedido.</p></div></li>
-        <li class="reveal" style="--d: 160ms"><span class="timeline-dot"><svg class="icon"><use href="#i-pix"/></svg></span><div><h3>Pague via Pix</h3><p>R$ 19,90 no Pix, direto no ticket. Se preferir, faça o upgrade para o Vitalício e nunca mais renove.</p></div></li>
+        <li class="reveal" style="--d: 160ms"><span class="timeline-dot"><svg class="icon"><use href="#i-pix"/></svg></span><div><h3>Pague via Pix</h3><p>O valor do seu plano (R$ 15, R$ 25 ou R$ 29,99) no Pix, direto no ticket. Se preferir, faça o upgrade para o Vitalício e nunca mais renove.</p></div></li>
         <li class="reveal" style="--d: 240ms"><span class="timeline-dot"><svg class="icon"><use href="#i-key"/></svg></span><div><h3>Receba a chave nova</h3><p>Renovando antes de vencer, os 30 dias são somados à validade atual: você não perde nenhum dia.</p></div></li>
       </ol>
     </section>
@@ -399,13 +460,13 @@
     <!-- Windows -->
     <section id="windows" class="section">
       <div class="container narrow center">
-        <p class="kicker reveal">Imagem personalizada · 25H2 · build 26200</p>
+        <p class="kicker reveal"><span class="soon-tag">Em breve</span> Imagem personalizada · 25H2 · build 26200</p>
         <h2 class="reveal">Um Windows mais silencioso</h2>
-        <p class="section-lead reveal">Três edições do Windows 11 Pro já limpas e configuradas, para começar do zero com uma base consistente. Escolha pelo uso: dia a dia, desempenho ou programação.</p>
+        <p class="section-lead reveal">Três edições do Windows 11 Pro já limpas e configuradas, para começar do zero com uma base consistente: dia a dia, desempenho ou programação. Ainda estão em preparação; entre no Discord para ser avisado no lançamento.</p>
         <div class="pills reveal">
-          <span class="pill"><i class="pill-dot"></i>Optimized · R$ 100</span>
-          <span class="pill"><i class="pill-dot alt"></i>Advanced · R$ 150</span>
-          <span class="pill"><i class="pill-dot dev"></i>Developer · R$ 175</span>
+          <span class="pill"><i class="pill-dot"></i>Optimized · em breve</span>
+          <span class="pill"><i class="pill-dot alt"></i>Advanced · em breve</span>
+          <span class="pill"><i class="pill-dot dev"></i>Developer · em breve</span>
         </div>
       </div>
 
@@ -439,7 +500,7 @@
       </div>
       <div class="container cards-3">
         <article class="card step spotlight reveal"><span class="step-num">01</span><h3>Entre no Discord</h3><p>Acesse o servidor oficial do PQueiroz. Toda venda é feita por lá.</p></article>
-        <article class="card step spotlight reveal" style="--d: 60ms"><span class="step-num">02</span><h3>Escolha e pague</h3><p>Escolha o plano Mensal ou Vitalício (ou uma edição do Windows) e combine o pagamento com a equipe.</p></article>
+        <article class="card step spotlight reveal" style="--d: 60ms"><span class="step-num">02</span><h3>Escolha e pague</h3><p>Escolha o Base, o Intermediário, o Avançado ou o Vitalício e combine o pagamento com a equipe.</p></article>
         <article class="card step spotlight reveal" style="--d: 120ms"><span class="step-num">03</span><h3>Receba e ative</h3><p>No Optimizer, clique em <b>Copiar pedido</b> e envie. A chave chega pelo Discord e é colada sozinha na tela de ativação.</p></article>
       </div>
     </section>
@@ -451,7 +512,7 @@
         <div class="recover-body">
           <p class="kicker">Perdeu sua chave?</p>
           <h2>Formatou ou trocou de PC?</h2>
-          <p class="muted">A chave é vinculada ao computador. Se você formatou o PC, abra o Optimizer, clique em <b>Copiar pedido</b> e envie em um ticket no Discord junto com o comprovante da compra. No plano <b>Vitalício</b>, a reemissão da chave está incluída; no Mensal, fale com o suporte no mesmo ticket.</p>
+          <p class="muted">A chave é vinculada ao computador. Se você formatou o PC, abra o Optimizer, clique em <b>Copiar pedido</b> e envie em um ticket no Discord junto com o comprovante da compra. No plano <b>Vitalício</b>, a reemissão da chave está incluída; nos planos mensais, fale com o suporte no mesmo ticket.</p>
         </div>
         <a class="btn btn-primary btn-lg btn-shine" href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer"><svg class="icon"><use href="#i-chat"/></svg>Abrir ticket</a>
       </div>
@@ -466,7 +527,15 @@
       </div>
       <div class="container narrow releases">
         <article class="release current reveal">
-          <div class="release-head"><b>v1.8.0</b><span class="tag">Atual</span></div>
+          <div class="release-head"><b>v1.9.0</b><span class="tag">Atual</span></div>
+          <ul>
+            <li>Planos Base, Intermediário, Avançado e Vitalício: páginas fora do plano mostram o botão de upgrade, e a reversão fica liberada em todos.</li>
+            <li>Personalizar Windows → Efeitos visuais: as Opções de desempenho do Windows dentro do app, com um interruptor por efeito.</li>
+            <li>Abertura sem a janela aparecendo por trás e modo translúcido aplicado ao abrir.</li>
+          </ul>
+        </article>
+        <article class="release reveal" style="--d: 20ms">
+          <div class="release-head"><b>v1.8.0</b><span class="tag muted-tag">Anterior</span></div>
           <ul>
             <li>Modo Jogo: fecha programas, pausa serviços e ativa o plano de desempenho enquanto você joga; tudo volta ao desativar.</li>
             <li>Perfil NVIDIA gravado no driver, plano de energia Qrz e presets para Fortnite, Apex, CS2 e Rocket League.</li>
@@ -509,10 +578,10 @@
         <p class="section-lead reveal">Leia estas orientações antes de comprar. Toda a venda é feita no nosso servidor do Discord.</p>
       </div>
       <ol class="container narrow rules reveal">
-        <li>Confira o produto e o valor escolhido: Optimizer Mensal R$ 19,90 (30 dias) ou Vitalício R$ 50, Windows 11 Optimized R$ 100, Windows 11 Advanced R$ 150 ou Windows 11 Developer R$ 175.</li>
+        <li>Confira o produto e o valor escolhido: Optimizer Base R$ 15, Intermediário R$ 25 ou Avançado R$ 29,99 (30 dias cada) ou Vitalício R$ 59,99. As edições personalizadas do Windows 11 ainda não estão à venda (em breve).</li>
         <li>Entre no servidor oficial do Discord: <a href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">discord.gg/pHJ4Waxft</a>. A compra é feita lá.</li>
         <li>Fale com a equipe no servidor para escolher o produto e combinar o pagamento. Guarde o comprovante.</li>
-        <li>Após a confirmação do pagamento, seu acesso é entregue pelo Discord. O plano Mensal não é renovado automaticamente: para renovar, abra um ticket de renovação e pague via Pix.</li>
+        <li>Após a confirmação do pagamento, seu acesso é entregue pelo Discord. Os planos mensais não são renovados automaticamente: para renovar, abra um ticket de renovação e pague via Pix.</li>
         <li>Você pode desistir da compra em até 7 dias com reembolso integral e conta com 90 dias de garantia legal, conforme a <a href="#reembolso">Política de reembolso e garantia</a>. Recomendamos conferir os requisitos antes da compra.</li>
       </ol>
     </section>
@@ -541,14 +610,16 @@
         <h2 class="reveal">Antes de comprar</h2>
       </div>
       <div class="container narrow faq reveal">
-        <details><summary>Qual a diferença entre o Mensal e o Vitalício?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Os dois liberam o Optimizer completo. O Mensal vale 30 dias e custa R$ 19,90; o Vitalício custa R$ 50 uma única vez, não vence e inclui reemissão da chave se você formatar o PC e suporte prioritário.</p></div></details>
-        <details><summary>Como renovo o plano Mensal?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Quando estiver acabando, o app avisa. Clique em <b>Renovar pelo Discord</b>, abra um ticket de renovação, cole o pedido e pague via Pix. Os 30 dias novos são somados à validade atual. Veja <a href="#renovar">Como renovar</a>.</p></div></details>
-        <details><summary>O Mensal é cobrado automaticamente?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Não. Não existe cobrança recorrente: se você não renovar, a licença simplesmente expira ao fim dos 30 dias.</p></div></details>
+        <details><summary>Qual a diferença entre os planos?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>O <b>Base</b> (R$ 15/mês) libera as otimizações revisadas, Inicialização, Correções, Ferramentas e a Limpeza rápida. O <b>Intermediário</b> (R$ 25/mês) soma Serviços, Apps e Debloat, Drivers, Rede, Recursos e a Central de diagnóstico. O <b>Avançado</b> (R$ 29,99/mês) libera o app inteiro, com Modo Jogo, perfil NVIDIA, BIOS / UEFI e Personalizar Windows. O <b>Vitalício</b> (R$ 59,99 uma vez) é o app completo sem vencimento, com reemissão da chave se você formatar o PC e suporte prioritário. Em todos, a reversão do que foi aplicado fica sempre disponível. Veja a <a href="#comprar">tabela</a>.</p></div></details>
+        <details><summary>Posso mudar de plano depois?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Pode. No app, em <b>Configurações → Minha licença</b>, cada plano acima do seu tem um botão de upgrade que copia o pedido; cole no ticket do Discord, pague a diferença via Pix e ative a chave nova. As páginas fora do seu plano também mostram o botão de upgrade.</p></div></details>
+        <details><summary>Preciso de chave para usar o app?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Sim. Você pode <a href="#baixar">baixar o instalador</a> antes de comprar: na primeira abertura, o app mostra o ID do computador e um botão para copiar o pedido. Envie o pedido no ticket do Discord e a chave chega vinculada ao seu PC.</p></div></details>
+        <details><summary>Como renovo um plano mensal?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Quando estiver acabando, o app avisa. Clique em <b>Renovar pelo Discord</b>, abra um ticket de renovação, cole o pedido e pague via Pix. Os 30 dias novos são somados à validade atual. Veja <a href="#renovar">Como renovar</a>.</p></div></details>
+        <details><summary>Os planos mensais são cobrados automaticamente?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Não. Não existe cobrança recorrente: se você não renovar, a licença simplesmente expira ao fim dos 30 dias.</p></div></details>
         <details><summary>Formatei o PC. Perco a licença?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>A chave é vinculada ao computador, então depois de formatar é preciso uma chave nova. No Vitalício, a reemissão está incluída: abra o Optimizer, copie o pedido e envie em um ticket no Discord.</p></div></details>
         <details><summary>Posso usar em mais de um computador?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Cada chave vale para um computador. Para outro PC, é preciso outra licença.</p></div></details>
         <details><summary>O Optimizer altera o Windows automaticamente?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Não. Os fluxos avançados mostram as etapas e permitem selecionar exatamente o que será aplicado.</p></div></details>
         <details><summary>Posso desfazer as alterações?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Configurações de registro, energia e serviços têm backup. Remoções de arquivos e aplicativos exigem reinstalação ou backup próprio, e o app avisa antes quais etapas não são reversíveis.</p></div></details>
-        <details><summary>Qual edição do Windows personalizado escolher?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p><b>Optimized</b> (R$ 100) para o dia a dia: limpo, sem desligar serviços de forma agressiva. <b>Advanced</b> (R$ 150) para jogos e desempenho: menos serviços e atividade em segundo plano. <b>Developer</b> (R$ 175) para programar: o perfil da Advanced com WSL 2, Hyper-V e as ferramentas de desenvolvimento já instaladas. Todas desativam o Defender e fazem instalação limpa; veja <a href="#windows">os detalhes</a>.</p></div></details>
+        <details><summary>Quando sai o Windows personalizado?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>As edições ainda estão em preparação e não estão à venda; entre no <a href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Discord</a> para ser avisado no lançamento. Serão três: <b>Optimized</b> para o dia a dia: limpo, sem desligar serviços de forma agressiva. <b>Advanced</b> para jogos e desempenho: menos serviços e atividade em segundo plano. <b>Developer</b> para programar: o perfil da Advanced com WSL 2, Hyper-V e as ferramentas de desenvolvimento já instaladas. Todas desativam o Defender e fazem instalação limpa; veja <a href="#windows">os detalhes</a>.</p></div></details>
         <details><summary>Qual versão do Windows é compatível?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Windows 10 (versão 1809 ou mais nova) e Windows 11 em computadores x64. O editor de BIOS funciona em placas com BIOS AMI, e o perfil NVIDIA exige uma placa NVIDIA com driver instalado.</p></div></details>
         <details><summary>Posso pedir reembolso?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Sim. Você pode desistir da compra em até 7 dias corridos e receber o valor pago integralmente. Além disso, há garantia legal de 90 dias contra defeitos. Veja os detalhes na <a href="#reembolso">Política de reembolso e garantia</a>.</p></div></details>
         <details><summary>O que preciso enviar no suporte?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Informe seu nome, o produto comprado, o comprovante e uma descrição do problema. Nunca envie sua chave publicamente.</p></div></details>

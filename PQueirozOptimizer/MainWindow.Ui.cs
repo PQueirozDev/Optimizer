@@ -50,6 +50,7 @@ public static class Glyphs
     public static readonly string SpeedLow = G(0xEC48);
     public static readonly string SpeedMedium = G(0xEC49);
     public static readonly string OpenInNew = G(0xE8A7);
+    public static readonly string Lock = G(0xE72E);
     public static readonly string Search = G(0xE721);
     public static readonly string Person = G(0xE77B);
     public static readonly string Globe = G(0xE774);

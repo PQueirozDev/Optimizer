@@ -41,6 +41,9 @@ public static class StartupSplash
     private static double _shownProgress;
     private static readonly Stopwatch Clock = new();
 
+    /// <summary>A tela de abertura foi aberta e ainda não sumiu.</summary>
+    public static bool Active { get { lock (Gate) return _started && !Closed.Task.IsCompleted; } }
+
     public static Palette CurrentPalette()
     {
         var resources = Application.Current.Resources;

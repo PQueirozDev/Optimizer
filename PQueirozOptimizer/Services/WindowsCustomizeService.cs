@@ -125,6 +125,83 @@ public sealed class WindowsCustomizeService
                 var flags = ParseLong(key.GetValue("Flags") as string ?? "510");
                 key.SetValue("Flags", (on ? flags | 4 : flags & ~4L).ToString(), RegistryValueKind.String);
             }, Recommended: false);
+
+        foreach (var effect in VisualEffects()) yield return effect;
+    }
+
+    // ================= Efeitos visuais (Sistema → Opções de desempenho) =================
+    public const string VisualEffectsCategory = "Efeitos visuais";
+    private const string VisualFx = @"Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects";
+    private const string Dwm = @"Software\Microsoft\Windows\DWM";
+    private const uint SpifSave = 0x01 | 0x02; // SPIF_UPDATEINIFILE | SPIF_SENDCHANGE: vale na hora e fica salvo no perfil
+
+    [StructLayout(LayoutKind.Sequential)] private struct AnimationInfo { public uint Size; public int MinAnimate; }
+    [DllImport("user32.dll", SetLastError = true)] private static extern bool SystemParametersInfo(uint action, uint param, IntPtr value, uint flags);
+    [DllImport("user32.dll", SetLastError = true)] private static extern bool SystemParametersInfo(uint action, uint param, ref int value, uint flags);
+    [DllImport("user32.dll", SetLastError = true)] private static extern bool SystemParametersInfo(uint action, uint param, ref AnimationInfo value, uint flags);
+
+    /// <summary>
+    /// Os mesmos itens da aba Efeitos visuais do Windows, na mesma ordem. Os que o Windows guarda via SystemParametersInfo
+    /// são aplicados por ela (valem na hora); os demais ficam no registro do Explorer/DWM.
+    /// <see cref="WindowsSetting.Recommended"/> segue a otimização do app: só a fonte suavizada, as miniaturas e o conteúdo ao arrastar ficam ligados.
+    /// </summary>
+    private static IEnumerable<WindowsSetting> VisualEffects()
+    {
+        // Ordem e nomes da janela do Windows; Spi(get, set) usa o BOOL no pvParam (padrão das ações 0x10xx)
+        yield return Spi("Animar controles e elementos dentro das janelas", "Botões, barras e listas com transições animadas.", 0x1042, 0x1043);
+        yield return Effect("Animar janelas ao minimizar e maximizar", "A janela \"voa\" até a barra de tarefas em vez de sumir na hora.",
+            () => { var info = new AnimationInfo { Size = 8 }; return SystemParametersInfo(0x0048, 8, ref info, 0) && info.MinAnimate != 0; },
+            on => { var info = new AnimationInfo { Size = 8, MinAnimate = on ? 1 : 0 }; Check(SystemParametersInfo(0x0049, 8, ref info, SpifSave)); });
+        yield return Effect("Animações na barra de tarefas", "Ícones da barra deslizam e piscam ao abrir e fechar apps.",
+            () => Dword(Registry.CurrentUser, Advanced, "TaskbarAnimations", 1) == 1, on => SetDword(Registry.CurrentUser, Advanced, "TaskbarAnimations", on ? 1 : 0), restart: true);
+        yield return Effect("Ativar Espiar", "Passar o mouse no canto da barra deixa as janelas transparentes para ver a área de trabalho.",
+            () => Dword(Registry.CurrentUser, Dwm, "EnableAeroPeek", 1) == 1, on => SetDword(Registry.CurrentUser, Dwm, "EnableAeroPeek", on ? 1 : 0), restart: true);
+        yield return Spi("Esmaecer ou deslizar menus", "Menus aparecem com fade ou deslizando, em vez de abrir na hora.", 0x1002, 0x1003);
+        yield return Spi("Esmaecer ou deslizar dicas de ferramenta", "As dicas ao passar o mouse aparecem com animação.", 0x1016, 0x1017);
+        yield return Spi("Esmaecer itens de menu após clicar", "O item clicado some aos poucos depois que o menu fecha.", 0x1014, 0x1015);
+        yield return Effect("Salvar visualizações de miniaturas da barra de tarefas", "Guarda a prévia das janelas minimizadas na memória.",
+            () => Dword(Registry.CurrentUser, Dwm, "AlwaysHibernateThumbnails", 0) == 1, on => SetDword(Registry.CurrentUser, Dwm, "AlwaysHibernateThumbnails", on ? 1 : 0), restart: true);
+        yield return Effect("Mostrar retângulo de seleção translúcido", "O retângulo ao selecionar arquivos com o mouse fica azul translúcido.",
+            () => Dword(Registry.CurrentUser, Advanced, "ListviewAlphaSelect", 1) == 1, on => SetDword(Registry.CurrentUser, Advanced, "ListviewAlphaSelect", on ? 1 : 0), restart: true);
+        yield return Effect("Mostrar conteúdo da janela ao arrastar", "A janela inteira acompanha o mouse ao ser arrastada, e não só o contorno.",
+            () => { var value = 0; return SystemParametersInfo(0x0026, 0, ref value, 0) && value != 0; },
+            on => Check(SystemParametersInfo(0x0025, on ? 1u : 0u, IntPtr.Zero, SpifSave)), recommended: true);
+        yield return Spi("Mostrar sombras sob janelas", "Sombra suave em volta das janelas abertas.", 0x1024, 0x1025);
+        yield return Effect("Mostrar miniaturas em vez de ícones", "O Explorador mostra a prévia de fotos e vídeos; desligado, só o ícone do tipo de arquivo.",
+            () => Dword(Registry.CurrentUser, Advanced, "IconsOnly", 0) == 0, on => SetDword(Registry.CurrentUser, Advanced, "IconsOnly", on ? 0 : 1), recommended: true, restart: true);
+        yield return Spi("Mostrar sombras sob o ponteiro do mouse", "Sombra embaixo da seta do mouse.", 0x101A, 0x101B);
+        yield return Effect("Usar sombras subjacentes para rótulos de ícones na área de trabalho", "Sombra atrás do nome dos ícones da área de trabalho.",
+            () => Dword(Registry.CurrentUser, Advanced, "ListviewShadow", 1) == 1, on => SetDword(Registry.CurrentUser, Advanced, "ListviewShadow", on ? 1 : 0), restart: true);
+        yield return Effect("Suavizar bordas das fontes de tela", "Deixa o texto nítido (ClearType). Desligado, as letras ficam serrilhadas.",
+            () => { var value = 0; return SystemParametersInfo(0x004A, 0, ref value, 0) && value != 0; },
+            on => Check(SystemParametersInfo(0x004B, on ? 1u : 0u, IntPtr.Zero, SpifSave)), recommended: true);
+        yield return Spi("Rolagem suave de caixas de listagem", "Listas rolam com animação em vez de pular de linha em linha.", 0x1006, 0x1007);
+        yield return Spi("Deslizar caixas de combinação ao abrir", "Listas suspensas abrem deslizando.", 0x1004, 0x1005);
+    }
+
+    private static WindowsSetting Spi(string title, string description, uint get, uint set) => Effect(title, description,
+        () => { var value = 0; return SystemParametersInfo(get, 0, ref value, 0) && value != 0; },
+        on => Check(SystemParametersInfo(set, 0, (IntPtr)(on ? 1 : 0), SpifSave)));
+
+    // Mexer num item vira "Personalizado" na janela do Windows (VisualFXSetting 3), como quando se marca uma caixa lá
+    private static WindowsSetting Effect(string title, string description, Func<bool> read, Action<bool> write, bool recommended = false, bool restart = false) =>
+        new(VisualEffectsCategory, title, description, read, on => { write(on); SetDword(Registry.CurrentUser, VisualFx, "VisualFXSetting", 3); }, recommended, restart);
+
+    private static void Check(bool ok)
+    {
+        if (!ok) throw new System.IO.IOException($"O Windows recusou a alteração (erro {Marshal.GetLastWin32Error()}).");
+    }
+
+    /// <summary>
+    /// Os botões "Melhor desempenho" e "Melhor aparência" da janela do Windows: desliga ou liga todos os efeitos
+    /// e deixa a mesma opção marcada lá (VisualFXSetting 2 ou 1).
+    /// </summary>
+    public void ApplyVisualPreset(bool bestPerformance)
+    {
+        foreach (var effect in VisualEffects()) effect.Write(!bestPerformance);
+        SetDword(Registry.CurrentUser, VisualFx, "VisualFXSetting", bestPerformance ? 2 : 1);
+        SendMessageTimeout((IntPtr)0xFFFF, 0x001A, UIntPtr.Zero, null, 0x0002, 1000, out _);
+        _log.Write("SUCCESS", $"Efeitos visuais: {(bestPerformance ? "melhor desempenho" : "melhor aparência")}");
     }
 
     private static WindowsSetting DesktopIcon(string title, string clsid, bool shownByDefault) => new("Área de trabalho", title, "Mostra ou esconde o ícone na área de trabalho.",

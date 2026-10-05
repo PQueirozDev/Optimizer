@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using PQueirozOptimizer.Services;
@@ -9,6 +10,7 @@ public partial class MainWindow
 {
     private WindowsCustomizeService? _customize;
     private WindowsCustomizeService Customize => _customize ??= new WindowsCustomizeService(_log);
+    private bool _explorerRestartPending;
 
     private void ShowCustomize()
     {
@@ -26,8 +28,9 @@ public partial class MainWindow
         var restartText = Label("Algumas mudanças só aparecem depois de reiniciar o Explorer (a barra de tarefas some e volta; janelas de pastas abertas fecham).", 12.5, true);
         restartText.Margin = new Thickness(0); restartText.VerticalAlignment = VerticalAlignment.Center;
         restartBar.Children.Add(restartText);
-        var restartCard = Surface(restartBar); restartCard.Visibility = Visibility.Collapsed;
-        restart.Click += (_, _) => { Customize.RestartExplorer(); restartCard.Visibility = Visibility.Collapsed; ShowToast("Personalizar Windows", "Explorer reiniciado: a barra de tarefas volta em alguns segundos."); };
+        // Um preset de efeitos visuais remonta a página: o aviso continua aparecendo até o Explorer reiniciar
+        var restartCard = Surface(restartBar); restartCard.Visibility = _explorerRestartPending ? Visibility.Visible : Visibility.Collapsed;
+        restart.Click += (_, _) => { Customize.RestartExplorer(); _explorerRestartPending = false; restartCard.Visibility = Visibility.Collapsed; ShowToast("Personalizar Windows", "Explorer reiniciado: a barra de tarefas volta em alguns segundos."); };
 
         var switches = new List<(WindowsSetting Setting, CheckBox Check)>();
         var applying = false;
@@ -49,7 +52,7 @@ public partial class MainWindow
                 applying = true;
                 try { check.IsChecked = setting.Read(); }
                 finally { applying = false; }
-                if (setting.NeedsExplorerRestart && restartCard.Visibility != Visibility.Visible) ShowKeepingScroll(restartCard);
+                if (setting.NeedsExplorerRestart) { _explorerRestartPending = true; if (restartCard.Visibility != Visibility.Visible) ShowKeepingScroll(restartCard); }
             }
             catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException)
             {
@@ -83,7 +86,8 @@ public partial class MainWindow
         foreach (var group in settings.GroupBy(s => s.Category))
         {
             var panel = new StackPanel();
-            panel.Children.Add(SectionHeader(group.Key));
+            if (group.Key == WindowsCustomizeService.VisualEffectsCategory) panel.Children.Add(VisualEffectsHeader());
+            else panel.Children.Add(SectionHeader(group.Key));
             foreach (var setting in group)
             {
                 bool current;
@@ -133,5 +137,59 @@ public partial class MainWindow
 
         ContentHost.Children.Clear();
         ContentHost.Children.Add(root);
+    }
+
+    /// <summary>
+    /// Cabeçalho dos efeitos visuais: os mesmos atalhos da janela "Opções de desempenho" do Windows,
+    /// aplicados de uma vez e refletidos nos interruptores da seção.
+    /// </summary>
+    private FrameworkElement VisualEffectsHeader()
+    {
+        var head = new DockPanel();
+        var buttons = new WrapPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(16, 0, 0, 0) };
+        var performance = IconButton(Glyphs.Lightning, "Melhor desempenho", primary: true);
+        var appearance = IconButton(Glyphs.Personalize, "Melhor aparência");
+        appearance.Margin = new Thickness(8, 0, 0, 0);
+        var system = IconButton(Glyphs.OpenInNew, "Abrir no Windows");
+        system.Margin = new Thickness(8, 0, 0, 0);
+        system.Click += (_, _) => { try { Process.Start(new ProcessStartInfo("SystemPropertiesPerformance.exe") { UseShellExecute = true }); } catch (System.ComponentModel.Win32Exception ex) { ShowToast("Não foi possível abrir", ex.Message, "Danger"); } };
+        buttons.Children.Add(performance); buttons.Children.Add(appearance); buttons.Children.Add(system);
+        DockPanel.SetDock(buttons, Dock.Right); head.Children.Add(buttons);
+        head.Children.Add(SectionHeader(WindowsCustomizeService.VisualEffectsCategory,
+            "As Opções de desempenho do Windows, direto aqui. \"Melhor desempenho\" desliga todas as animações e sombras; cada interruptor ajusta um efeito sozinho."));
+
+        async void Preset(bool best)
+        {
+            if (_operationRunning || PendingSystemMutations > 0) { ShowToast("Efeitos visuais", "Aguarde a alteração em andamento terminar.", "Warning"); return; }
+            performance.IsEnabled = appearance.IsEnabled = false;
+            Interlocked.Increment(ref _pendingSystemMutations);
+            await _systemTweakGate.WaitAsync();
+            try
+            {
+                await Task.Run(() => Customize.ApplyVisualPreset(best));
+                _explorerRestartPending = true; // barra de tarefas, Espiar e ícones da área de trabalho só mudam com o Explorer reiniciado
+                ShowToast("Efeitos visuais", best ? "Ajustado para melhor desempenho." : "Ajustado para melhor aparência.");
+            }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException)
+            {
+                _log.Write("ERROR", $"Efeitos visuais: {ex.Message}");
+                ShowToast("Não foi possível alterar", ex.Message, "Danger");
+            }
+            finally
+            {
+                _systemTweakGate.Release();
+                Interlocked.Decrement(ref _pendingSystemMutations);
+                performance.IsEnabled = appearance.IsEnabled = true;
+            }
+            // A página é montada de novo para os interruptores mostrarem o estado real de cada efeito
+            if (_currentPage != "customize") return;
+            var offset = ContentScroll.VerticalOffset;
+            RenderPage("customize");
+            ContentScroll.UpdateLayout();
+            ContentScroll.ScrollToVerticalOffset(offset);
+        }
+        performance.Click += (_, _) => Preset(true);
+        appearance.Click += (_, _) => Preset(false);
+        return head;
     }
 }

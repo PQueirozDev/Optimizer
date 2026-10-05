@@ -84,7 +84,6 @@ public partial class MainWindow : Window
         Action onAppearance = () => Dispatcher.BeginInvoke(OnAppearanceChanged);
         AppearanceService.Changed += onAppearance;
         Closed += (_, _) => AppearanceService.Changed -= onAppearance;
-        ApplyBackdrop();
         UpdatePageHeader(_currentPage);
         _loc.SetLanguage(_configService.Config.Language ?? "pt");
         UpdateLanguageUi();
@@ -100,6 +99,7 @@ public partial class MainWindow : Window
         NavIsos.Visibility = IsAdminLicense ? Visibility.Visible : Visibility.Collapsed;
         LicenseLabel.Text = license is null ? "Sem licença ativa" : $"{(license.IsAdmin ? "Admin" : license.PlanName)} · {license.Licensee}";
         LicenseLabel.ToolTip = license?.ExpiresAtUtc is { } expires ? $"Válida até {expires.ToLocalTime():dd/MM/yyyy}" : "Licença sem data de expiração";
+        UpdateNavLocks();
     }
 
     #region Window & Language Controls
@@ -230,6 +230,7 @@ public partial class MainWindow : Window
             firstFrame.TrySetResult();
             // A janela já desenhou: a tela de abertura termina a sequência e só então a interface entra
             await StartupSplash.Close();
+            SetCloaked(false);
             PlayIntroAnimation();
         };
         try
@@ -283,13 +284,15 @@ public partial class MainWindow : Window
         ContentScroll.ScrollToTop();
         RenderPage(page);
         AnimatePageIn();
-        MaybeShowPageTutorial(page);
+        if (PageAllowed(page)) MaybeShowPageTutorial(page);
     }
 
     /// <summary>Monta o conteúdo de uma página, sem rolar ao topo nem animar a entrada.</summary>
     private void RenderPage(string page)
     {
         _tutorialMarks.Clear();
+        // Página fora do plano: mostra o que falta e como fazer o upgrade, sem montar a página
+        if (!PageAllowed(page)) { ShowLockedPage(page); return; }
         switch (page)
         {
             case "dashboard": _ = ShowDashboardAsync(); break;

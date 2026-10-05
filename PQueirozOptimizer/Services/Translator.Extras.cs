@@ -28,6 +28,12 @@ public static partial class Translator
         ["Jogos"] = "Games", ["NVIDIA"] = "NVIDIA",
 
         // ---------- Patch notes ----------
+        ["Novos planos: Base (R$ 15/mês), Intermediário (R$ 25/mês), Avançado (R$ 29,99/mês, app completo) e Vitalício (R$ 59,99, para sempre). Chaves Mensal já emitidas continuam com o app completo."] = "New plans: Base (R$ 15/month), Intermediate (R$ 25/month), Advanced (R$ 29.99/month, full app) and Lifetime (R$ 59.99, forever). Monthly keys already issued keep the full app.",
+        ["Páginas fora do plano mostram o que falta e um botão de upgrade; Atividade e reversão e Pontos de restauração ficam liberados em todos os planos."] = "Pages outside your plan show what's missing and an upgrade button; Activity and restore and Restore points stay available on every plan.",
+        ["Configurações → Minha licença mostra o que o plano libera e um botão de upgrade para cada plano acima do seu."] = "Settings → My license shows what your plan includes and an upgrade button for each plan above yours.",
+        ["Personalizar Windows → Efeitos visuais: as Opções de desempenho do Windows dentro do app, com \"Melhor desempenho\", \"Melhor aparência\" e um interruptor por efeito."] = "Customize Windows → Visual effects: Windows Performance Options inside the app, with \"Best performance\", \"Best appearance\" and one switch per effect.",
+        ["A abertura agora aparece sozinha: a janela principal só surge quando a animação termina."] = "The opening animation now shows on its own: the main window only appears when it finishes.",
+        ["Corrigido o modo translúcido, que não era aplicado ao abrir o app."] = "Fixed translucent mode, which wasn't applied when the app opened.",
         ["Corrigido o layout espremido numa coluna estreita, com cartões cortados, na janela normal e maximizada."] = "Fixed the layout squeezed into a narrow column with clipped cards, in both normal and maximized windows.",
         ["Janela maximizada não passa mais por trás da barra de tarefas: a barra de status volta a aparecer, inclusive com dois monitores."] = "The maximized window no longer goes behind the taskbar: the status bar shows again, including with two monitors.",
         ["Painel inicial: os cartões ficam lado a lado em telas largas e empilham só quando falta espaço."] = "Overview: cards sit side by side on wide screens and only stack when space runs out.",

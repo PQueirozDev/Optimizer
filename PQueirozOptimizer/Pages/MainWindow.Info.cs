@@ -25,6 +25,15 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.9.0", "05/10/2026", new[]
+        {
+            "Novos planos: Base (R$ 15/mês), Intermediário (R$ 25/mês), Avançado (R$ 29,99/mês, app completo) e Vitalício (R$ 59,99, para sempre). Chaves Mensal já emitidas continuam com o app completo.",
+            "Páginas fora do plano mostram o que falta e um botão de upgrade; Atividade e reversão e Pontos de restauração ficam liberados em todos os planos.",
+            "Configurações → Minha licença mostra o que o plano libera e um botão de upgrade para cada plano acima do seu.",
+            "Personalizar Windows → Efeitos visuais: as Opções de desempenho do Windows dentro do app, com \"Melhor desempenho\", \"Melhor aparência\" e um interruptor por efeito.",
+            "A abertura agora aparece sozinha: a janela principal só surge quando a animação termina.",
+            "Corrigido o modo translúcido, que não era aplicado ao abrir o app.",
+        }),
         ("v1.8.18", "04/10/2026", new[]
         {
             "Corrigido o layout espremido numa coluna estreita, com cartões cortados, na janela normal e maximizada.",

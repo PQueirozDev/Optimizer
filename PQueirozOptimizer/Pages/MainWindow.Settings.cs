@@ -402,6 +402,7 @@ public partial class MainWindow
         {
             ("Titular", license.Licensee, false),
             ("Plano", license.PlanName, false),
+            ("Libera", TierFeatures(license.Tier), false),
             ("Validade", validity, false),
             ("Tipo", license.IsAdmin ? "Admin" : "Standard", false),
             ("ID do computador", new LicenseService().DisplayMachineId, true),
@@ -412,7 +413,7 @@ public partial class MainWindow
             var name = Label(rows[i].Label, 12.5, true); name.Margin = new Thickness(0, 3, 24, 3);
             var value = Label(rows[i].Value, 12.5); value.FontWeight = FontWeights.SemiBold; value.Margin = new Thickness(0, 3, 0, 3);
             // Nome e ID vêm da chave, não do app: não passam pelo tradutor
-            if (i is 0 or 4) value.Tag = Translator.SystemDataTag;
+            if (i is 0 or 5) value.Tag = Translator.SystemDataTag;
             if (rows[i].Mono) value.SetResourceReference(TextBlock.FontFamilyProperty, "MonoFont");
             Grid.SetRow(name, i); Grid.SetRow(value, i); Grid.SetColumn(value, 1);
             info.Children.Add(name); info.Children.Add(value);
@@ -420,20 +421,20 @@ public partial class MainWindow
         stack.Children.Add(info);
 
         var actions = new WrapPanel();
-        void CopyRequest(string request, string done)
-        {
-            try { Clipboard.SetText(request); OperationStatus.Text = done; }
-            catch (System.Runtime.InteropServices.COMException) { OperationStatus.Text = "A área de transferência está ocupada. Tente novamente."; }
-        }
         if (!license.IsLifetime)
         {
             var renew = IconButton(Glyphs.OpenInNew, "Renovar pelo Discord", primary: true);
             renew.ToolTip = "Copia o pedido de renovação e abre o Discord: abra um ticket de renovação, cole o pedido e pague via Pix";
             renew.Click += (_, _) => RenewViaDiscord(license);
-            var upgrade = IconButton(Glyphs.Lightning, "Quero o Vitalício");
-            upgrade.ToolTip = "Copia um pedido de upgrade: pague uma vez e não precisa mais renovar";
-            upgrade.Click += (_, _) => CopyRequest(new LicenseService().BuildActivationRequest(license.Licensee, LicensePlans.Lifetime), "Pedido de upgrade para o Vitalício copiado. No Discord, abra um ticket, cole o pedido e pague via Pix.");
-            actions.Children.Add(renew); actions.Children.Add(upgrade);
+            actions.Children.Add(renew);
+        }
+        // Um botão por plano acima do atual (o Vitalício aparece para todo plano com validade)
+        foreach (var (name, _, price) in license.Upgrades)
+        {
+            var upgrade = IconButton(Glyphs.Lightning, $"{string.Format(Translator.Tr("Quero o {0}"), Translator.Tr(name))} · {Translator.Tr(price)}");
+            upgrade.ToolTip = name == LicensePlans.Lifetime ? "Copia um pedido de upgrade: pague uma vez e não precisa mais renovar" : "Copia o pedido de upgrade e abre o Discord: abra um ticket, cole o pedido e pague via Pix";
+            upgrade.Click += (_, _) => RequestUpgrade(name);
+            actions.Children.Add(upgrade);
         }
         var activate = IconButton(Glyphs.Key, "Ativar outra chave");
         activate.Click += (_, _) => ActivateAdminLicense();

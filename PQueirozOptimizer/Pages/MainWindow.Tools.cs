@@ -101,6 +101,14 @@ public partial class MainWindow
         var pmOpen = IconButton(Glyphs.Battery, "Abrir seletor", primary: powerShortcut);
         pmOpen.Click += (_, _) => new PowerModeWindow(_log, closeAfterChoice: false) { Owner = this }.ShowDialog();
         pmButtons.Children.Add(pmShortcut); pmButtons.Children.Add(pmOpen);
+        // Modo de energia é dos planos completos: no Base e no Intermediário o cartão vira o pedido de upgrade
+        if (!PageAllowed(PlanAccess.PowerMode))
+        {
+            pmButtons.Children.Clear();
+            var pmUpgrade = IconButton(Glyphs.Lock, string.Format(Translator.Tr("Disponível a partir do plano {0}"), Translator.Tr(LicensePlans.Advanced)), primary: true);
+            pmUpgrade.Click += (_, _) => RequestUpgrade(LicensePlans.Advanced);
+            pmButtons.Children.Add(pmUpgrade);
+        }
         DockPanel.SetDock(pmButtons, Dock.Bottom); power.Children.Add(pmButtons);
         var (pmStatus, pmTone) = powerShortcut ? ("Atalho criado", "Success") : powerSource.HasBattery ? ("Recomendado para este PC", "Accent") : ("Recomendado para notebooks", "Info");
         power.Children.Add(FeatureHeader(Glyphs.Battery, "Success", "Atalho de modo de energia",

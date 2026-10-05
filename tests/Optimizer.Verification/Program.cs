@@ -20,6 +20,8 @@ internal static class Program
         var key = typeof(Application).GetField("EVENT_STARTUP", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!;
         var events = (System.ComponentModel.EventHandlerList)typeof(Application).GetProperty("Events", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(app)!;
         events[key] = null;
+        // Plano completo: as telas renderizadas e a checagem --i18n mostram as páginas de verdade, não a tela de upgrade
+        app.SetActiveLicense(new LicenseInfo("Teste", null, "TESTE", "Standard", LicensePlans.Lifetime));
         return app;
     }
 
@@ -546,6 +548,24 @@ internal static class Program
                 && new LicenseInfo("A", null, "X", "Standard").PlanName == "Vitalício"
                 && new LicenseInfo("A", DateTime.UtcNow.AddDays(30), "X", "Standard").PlanName == "Personalizado"
                 && new LicenseInfo("A", null, "X", "Standard", "Inventado").PlanName == "Vitalício", "Nome do plano da licença");
+            // Níveis: Base < Intermediário < completo; Mensal, Personalizado e chaves sem plano continuam com tudo
+            LicenseInfo Plan(string? plan, string role = "Standard") => new("A", plan == "Vitalício" ? null : DateTime.UtcNow.AddDays(30), "X", role, plan);
+            Assert(Plan("Base").Tier == PlanTier.Base && Plan("Intermediário").Tier == PlanTier.Intermediate && Plan("Avançado").Tier == PlanTier.Full
+                && Plan("Vitalício").Tier == PlanTier.Full && Plan("Mensal").Tier == PlanTier.Full && Plan("Personalizado").Tier == PlanTier.Full
+                && Plan(null).Tier == PlanTier.Full && Plan("Inventado").Tier == PlanTier.Base && Plan("Base", "Admin").Tier == PlanTier.Full, "Nível liberado por plano");
+            Assert(PlanAccess.Allows(Plan("Base"), "optimization") && !PlanAccess.Allows(Plan("Base"), "services") && !PlanAccess.Allows(Plan("Base"), "gaming")
+                && PlanAccess.Allows(Plan("Intermediário"), "services") && !PlanAccess.Allows(Plan("Intermediário"), "customize")
+                && PlanAccess.Allows(Plan("Avançado"), "bios") && PlanAccess.Allows(Plan("Avançado"), PlanAccess.PowerMode) && !PlanAccess.Allows(Plan("Intermediário"), PlanAccess.PowerMode)
+                && new[] { "dashboard", "history", "restore", "settings", "patchnotes", "about" }.All(p => PlanAccess.Allows(Plan("Base"), p))
+                && !PlanAccess.Allows(null, "dashboard"), "Páginas liberadas por plano (reversão sempre disponível)");
+            Assert(PlanAccess.Allows(Plan("Base"), PlanAccess.OperationPage("padrao")) && PlanAccess.Allows(Plan("Base"), PlanAccess.OperationPage("quickclean"))
+                && !PlanAccess.Allows(Plan("Base"), PlanAccess.OperationPage("debloat")) && PlanAccess.Allows(Plan("Intermediário"), PlanAccess.OperationPage("debloat"))
+                && !PlanAccess.Allows(Plan("Intermediário"), PlanAccess.OperationPage("gamer")) && !PlanAccess.Allows(Plan("Intermediário"), PlanAccess.OperationPage("inteligente"))
+                && !PlanAccess.Allows(Plan("Base"), PlanAccess.OperationPage("gamerservicos"))
+                && PlanAccess.Allows(Plan("Avançado"), PlanAccess.OperationPage("gamer")), "Operações em lote seguem o plano dos ajustes que aplicam");
+            Assert(Plan("Base").Upgrades.Select(u => u.Name).SequenceEqual(new[] { "Intermediário", "Avançado", "Vitalício" })
+                && Plan("Avançado").Upgrades.Select(u => u.Name).SequenceEqual(new[] { "Vitalício" })
+                && Plan("Mensal").Upgrades.Select(u => u.Name).SequenceEqual(new[] { "Vitalício" }) && !Plan("Vitalício").Upgrades.Any(), "Upgrades oferecidos por plano");
             Translator.IsEnglish = true;
             Assert(Translator.Tr("Sua licença expirou em 12/09/2026.") == "Your license expired on 12/09/2026." && Translator.Tr("Sua licença vence em 5 dias") == "Your license expires in 5 days"
                 && Translator.Tr("A chave atual vale até 03/10/2026. Para renovar, abra um ticket de renovação no Discord e pague via Pix.").StartsWith("The current key is valid until 03/10/2026."), "Avisos de licença traduzidos");
@@ -750,6 +770,13 @@ internal static class Program
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "gaming" });
                 Render("gaming-games-tall", 1320, 2000);
                 typeof(MainWindow).GetField("_gamingTab", flags)!.SetValue(window, 0);
+                // Efeitos visuais (fim de Personalizar Windows) e a tela de upgrade de um plano Base
+                typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "customize" });
+                Render("customize-tall", 1320, 3600);
+                ((App)Application.Current).SetActiveLicense(new LicenseInfo("Teste", DateTime.UtcNow.AddDays(30), "TESTE", "Standard", LicensePlans.Base));
+                typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "gaming" });
+                Render("locked-gaming-dark", 1320, 860);
+                ((App)Application.Current).SetActiveLicense(new LicenseInfo("Teste", null, "TESTE", "Standard", LicensePlans.Lifetime));
                 // Página exclusiva de licença admin: chamada direto, sem a checagem da navegação
                 typeof(MainWindow).GetMethod("ShowIsos", flags)!.Invoke(window, null);
                 Render("isos-dark", 1320, 860);

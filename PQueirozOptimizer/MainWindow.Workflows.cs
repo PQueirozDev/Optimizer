@@ -217,6 +217,12 @@ public partial class MainWindow
         {
             if (operation == "quickclean") { await ShowCleanPreviewAsync(); return; }
             if (operation == "reverter") { NavigateTo("history"); return; }
+            if (PlanAccess.OperationPage(operation) is var gate && !PageAllowed(gate))
+            {
+                ShowLockedPage(gate, OperationTitles.GetValueOrDefault(operation));
+                AnimatePageIn();
+                return;
+            }
             var steps = _powershell.GetSteps(operation);
             if (steps.Count == 0)
             {

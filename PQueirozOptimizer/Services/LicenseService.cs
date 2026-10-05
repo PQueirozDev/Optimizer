@@ -6,14 +6,81 @@ using System.Text.RegularExpressions;
 
 namespace PQueirozOptimizer.Services;
 
+/// <summary>Quanto do app o plano libera: cada nível inclui tudo do anterior.</summary>
+public enum PlanTier { Base = 1, Intermediate = 2, Full = 3 }
+
 /// <summary>Planos vendidos. O nome vai dentro da chave assinada (campo Plan); chaves antigas não têm o campo.</summary>
 public static class LicensePlans
 {
-    public const string Monthly = "Mensal";
+    public const string Base = "Base";
+    public const string Intermediate = "Intermediário";
+    public const string Advanced = "Avançado";
     public const string Lifetime = "Vitalício";
     public const string Custom = "Personalizado";
+    /// <summary>Plano único antigo (antes da 1.9.0): liberava o app completo, então continua liberando.</summary>
+    public const string Monthly = "Mensal";
     public const string DiscordUrl = "https://discord.gg/pHJ4Waxft";
     public const string SiteUrl = "https://pqoptimizer.vercel.app/#comprar";
+
+    /// <summary>Planos à venda, do menor para o maior, com o preço exibido no app e no site.</summary>
+    public static readonly IReadOnlyList<(string Name, PlanTier Tier, string Price)> ForSale =
+    [
+        (Base, PlanTier.Base, "R$ 15/mês"),
+        (Intermediate, PlanTier.Intermediate, "R$ 25/mês"),
+        (Advanced, PlanTier.Full, "R$ 29,99/mês"),
+        (Lifetime, PlanTier.Full, "R$ 59,99 único"),
+    ];
+
+    public static bool IsKnown(string? plan) => plan is Base or Intermediate or Advanced or Lifetime or Custom or Monthly;
+
+    /// <summary>Nível de um plano conhecido. Mensal, Personalizado e os planos completos liberam tudo.</summary>
+    public static PlanTier TierOf(string plan) => plan switch
+    {
+        Base => PlanTier.Base,
+        Intermediate => PlanTier.Intermediate,
+        _ => PlanTier.Full,
+    };
+
+    public static string TierName(PlanTier tier) => tier switch
+    {
+        PlanTier.Base => Base,
+        PlanTier.Intermediate => Intermediate,
+        _ => Advanced,
+    };
+}
+
+/// <summary>
+/// O que cada nível libera, por página. Páginas fora da lista (Visão geral, Atividade e reversão, Pontos de restauração,
+/// Configurações, Patch notes, Sobre) ficam em todos os planos: ninguém pode ficar sem desfazer o que já aplicou.
+/// </summary>
+public static class PlanAccess
+{
+    private static readonly Dictionary<string, PlanTier> PageTier = new(StringComparer.Ordinal)
+    {
+        ["optimization"] = PlanTier.Base, ["startup"] = PlanTier.Base, ["fixes"] = PlanTier.Base, ["tools"] = PlanTier.Base,
+        ["services"] = PlanTier.Intermediate, ["apps"] = PlanTier.Intermediate, ["drivers"] = PlanTier.Intermediate,
+        ["network"] = PlanTier.Intermediate, ["resources"] = PlanTier.Intermediate, ["diagnostics"] = PlanTier.Intermediate,
+        ["gaming"] = PlanTier.Full, ["customize"] = PlanTier.Full, ["bios"] = PlanTier.Full,
+    };
+
+    /// <summary>Modo de energia (atalho e janela própria): faz parte do Modo Jogo, então só nos planos completos.</summary>
+    public const string PowerMode = "powermode";
+
+    public static PlanTier Required(string page) => page == PowerMode ? PlanTier.Full : PageTier.GetValueOrDefault(page, PlanTier.Base);
+
+    /// <summary>
+    /// Operações em lote (página Otimizações, Ctrl+K, Apps, Resolver tudo) passam pelo mesmo nível das páginas
+    /// cujos ajustes aplicam: o Debloat desliga serviços e remove apps; a Versão Avançada (com ou sem serviços) e a Inteligente aplicam o Modo Jogo.
+    /// Devolve a página equivalente para conferir o acesso e montar a tela de upgrade.
+    /// </summary>
+    public static string OperationPage(string operation) => operation switch
+    {
+        "debloat" => "services",
+        "gamer" or "gamerservicos" or "inteligente" => "gaming",
+        _ => "optimization",
+    };
+
+    public static bool Allows(LicenseInfo? license, string page) => license is not null && license.Tier >= Required(page);
 }
 
 public sealed record LicenseInfo(string Licensee, DateTime? ExpiresAtUtc, string MachineId, string Role, string? Plan = null)
@@ -21,7 +88,14 @@ public sealed record LicenseInfo(string Licensee, DateTime? ExpiresAtUtc, string
     public bool IsAdmin => string.Equals(Role, "Admin", StringComparison.Ordinal);
     public bool IsLifetime => ExpiresAtUtc is null;
     /// <summary>Plano para exibir: o da chave ou, nas chaves antigas, deduzido da validade.</summary>
-    public string PlanName => Plan is LicensePlans.Monthly or LicensePlans.Lifetime or LicensePlans.Custom ? Plan : IsLifetime ? LicensePlans.Lifetime : LicensePlans.Custom;
+    public string PlanName => LicensePlans.IsKnown(Plan) ? Plan! : IsLifetime ? LicensePlans.Lifetime : LicensePlans.Custom;
+    /// <summary>Nível liberado. Admin sempre tem tudo; um plano desconhecido (chave de uma versão futura) fica no Base até atualizar.</summary>
+    public PlanTier Tier => IsAdmin ? PlanTier.Full
+        : Plan is null ? PlanTier.Full
+        : LicensePlans.IsKnown(Plan) ? LicensePlans.TierOf(Plan) : PlanTier.Base;
+    /// <summary>Planos maiores que o atual, para os botões de upgrade.</summary>
+    public IEnumerable<(string Name, PlanTier Tier, string Price)> Upgrades =>
+        LicensePlans.ForSale.Where(p => !IsLifetime && (p.Tier > Tier || p.Name == LicensePlans.Lifetime) && p.Name != PlanName);
     /// <summary>Dias de calendário até o vencimento (0 = vence hoje); null para licença vitalícia.</summary>
     public int? DaysLeft => ExpiresAtUtc is { } expires ? (expires.ToLocalTime().Date - DateTime.Today).Days : null;
     /// <summary>Mesma janela de aviso do License Manager ("vencem em 7 dias").</summary>

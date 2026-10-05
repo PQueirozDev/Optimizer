@@ -98,7 +98,7 @@ public static partial class Translator
     /// <summary>Texto exato nos dicionários de inglês.</summary>
     private static bool Lookup(string text, out string translated) =>
         Exact.TryGetValue(text, out translated!) || GamingExact.TryGetValue(text, out translated!) || ExtrasExact.TryGetValue(text, out translated!)
-            || ParagonExact.TryGetValue(text, out translated!) || CustomizeExact.TryGetValue(text, out translated!);
+            || ParagonExact.TryGetValue(text, out translated!) || CustomizeExact.TryGetValue(text, out translated!) || PlansExact.TryGetValue(text, out translated!);
 
     private static string? TranslateTrimmed(string core)
     {

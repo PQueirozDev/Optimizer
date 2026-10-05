@@ -38,7 +38,29 @@ public partial class MainWindow
 
     [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr hwnd, out NativeRect rect);
 
+    private const int DwmCloak = 13;
+
     private bool _settingsHooked;
+
+    /// <summary>
+    /// Enquanto a tela de abertura toca, a janela principal fica oculta pelo DWM (cloak): ela continua
+    /// desenhando normalmente por trás, mas só aparece quando a abertura termina. Também aplica o fundo translúcido.
+    /// </summary>
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        if (StartupSplash.Active) SetCloaked(true);
+        // Primeiro momento em que a janela tem handle: no construtor o fundo translúcido ainda não pode ser aplicado
+        ApplyBackdrop();
+    }
+
+    private void SetCloaked(bool cloaked)
+    {
+        var hwnd = new WindowInteropHelper(this).Handle;
+        if (hwnd == IntPtr.Zero) return;
+        var value = cloaked ? 1 : 0;
+        DwmSetWindowAttribute(hwnd, DwmCloak, ref value, sizeof(int));
+    }
 
     /// <summary>
     /// Maximizada sem a moldura do Windows, a janela pode passar da área útil do monitor (bordas cortadas e a
