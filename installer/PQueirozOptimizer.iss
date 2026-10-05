@@ -1,6 +1,6 @@
 ﻿#define MyAppName "Qrztweaks"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.9.1"
+  #define MyAppVersion "1.9.2"
 #endif
 #ifndef MyAppPublisher
   #define MyAppPublisher "Pedro Queiroz"
@@ -15,7 +15,7 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-AppPublisherURL=https://pqoptimizer.vercel.app/
+AppPublisherURL=https://qrztwk.vercel.app/
 AppSupportURL=https://discord.gg/pHJ4Waxft
 AppUpdatesURL=https://github.com/PQueirozDev/Optimizer/releases/latest
 AppCopyright=Copyright (c) {#MyAppPublisher}

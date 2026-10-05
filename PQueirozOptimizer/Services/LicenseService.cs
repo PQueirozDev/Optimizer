@@ -20,7 +20,7 @@ public static class LicensePlans
     /// <summary>Plano único antigo (antes da 1.9.0): liberava o app completo, então continua liberando.</summary>
     public const string Monthly = "Mensal";
     public const string DiscordUrl = "https://discord.gg/pHJ4Waxft";
-    public const string SiteUrl = "https://pqoptimizer.vercel.app/#comprar";
+    public const string SiteUrl = "https://qrztwk.vercel.app/#comprar";
 
     /// <summary>Planos à venda, do menor para o maior, com o preço exibido no app e no site.</summary>
     public static readonly IReadOnlyList<(string Name, PlanTier Tier, string Price)> ForSale =

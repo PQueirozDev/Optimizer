@@ -28,6 +28,7 @@ public static partial class Translator
         ["Jogos"] = "Games", ["NVIDIA"] = "NVIDIA",
 
         // ---------- Patch notes ----------
+        ["O site oficial agora é qrztwk.vercel.app. Os links de compra e suporte do aplicativo usam o novo endereço."] = "The official website is now qrztwk.vercel.app. The app purchase and support links use the new address.",
         ["O PQueiroz Optimizer agora se chama Qrztweaks, com logo nova. Licenças, configurações e backups continuam valendo."] = "PQueiroz Optimizer is now called Qrztweaks, with a new logo. Licenses, settings and backups keep working.",
         ["O instalador passa a se chamar Qrztweaks-Setup e troca os atalhos antigos pelos novos."] = "The installer is now named Qrztweaks-Setup and replaces the old shortcuts with new ones.",
         ["Novos planos: Base (R$ 15/mês), Intermediário (R$ 25/mês), Avançado (R$ 29,99/mês, app completo) e Vitalício (R$ 59,99, para sempre). Chaves Mensal já emitidas continuam com o app completo."] = "New plans: Base (R$ 15/month), Intermediate (R$ 25/month), Advanced (R$ 29.99/month, full app) and Lifetime (R$ 59.99, forever). Monthly keys already issued keep the full app.",

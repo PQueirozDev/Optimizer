@@ -25,6 +25,10 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.9.2", "05/10/2026", new[]
+        {
+            "O site oficial agora é qrztwk.vercel.app. Os links de compra e suporte do aplicativo usam o novo endereço.",
+        }),
         ("v1.9.1", "05/10/2026", new[]
         {
             "O PQueiroz Optimizer agora se chama Qrztweaks, com logo nova. Licenças, configurações e backups continuam valendo.",
