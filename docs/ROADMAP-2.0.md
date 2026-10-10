@@ -42,9 +42,10 @@ Muitas fases do plano 2.0 já têm uma base no app. A regra é **evoluir o que e
 ## Etapas
 
 - **A: Auditoria e segurança** (fases 1, 3 e 6): concluída nesta branch. Ver `docs/auditoria/ETAPA-A.md`.
-- **Pedidos extras do usuário, antes da Etapa B**:
-  1. Atualizador: com mais de uma versão nova, instalar direto a mais recente em vez de uma por uma.
-  2. Novo ícone do app.
+- **Pedidos extras do usuário, antes da Etapa B** (concluídos):
+  1. Atualizador: com mais de uma versão nova, instala direto a mais recente em vez de uma por uma
+     (confere de novo na hora de instalar). Versões já instaladas recebem a correção na próxima atualização.
+  2. Novo ícone do app, desenhado em vetor e renderizado por tamanho (`tools/Create-AppIcon.ps1`).
 - **B: Motor de otimização** (fases 2, 4 e 5): catálogo de ajustes com metadados, leitura de estado,
   conflitos, recomendações por objetivo e Optimization Lab.
 - **C: Medição e diagnóstico** (fases 7 e 8).
