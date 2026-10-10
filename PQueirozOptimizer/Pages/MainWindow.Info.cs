@@ -25,6 +25,13 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.10.2", "10/10/2026", new[]
+        {
+            "Modo Jogo preserva os itens que não puderam ser restaurados e permite tentar novamente, sem informar sucesso indevido.",
+            "Estado de recuperação salvo antes das alterações, com gravação atômica da sessão.",
+            "Histórico com lista virtualizada, busca mais leve e atualização automática de novos registros.",
+            "Indicadores de restauração pendente, busca adaptável à largura e níveis de atividade destacados.",
+        }),
         ("v1.10.1", "05/10/2026", new[]
         {
             "BIOS Advisor agora lê os valores atuais pelo SCEWIN escolhido pelo usuário, sem gravar alterações na BIOS, e mostra o nome exato da opção, o valor e as opções disponíveis.",

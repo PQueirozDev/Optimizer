@@ -17,7 +17,7 @@ public partial class MainWindow
         PageTitle.Text = "Modo Jogo";
         var session = GamingService.ActiveSession();
         PageBadge.Visibility = session is null ? Visibility.Collapsed : Visibility.Visible;
-        PageBadgeText.Text = "Modo Jogo ativo";
+        PageBadgeText.Text = session?.RecoveryPending == true ? "Restauração pendente" : "Modo Jogo ativo";
         UpdateGameModeBadge();
         var root = new StackPanel();
         root.Children.Add(Mark(Tabs(new[] { (Glyphs.Game, "Modo Jogo"), (Glyphs.Settings, "Jogos"), (Glyphs.Monitor, "NVIDIA"), (Glyphs.Lightning, "Sistema") }, _gamingTab, tab =>
@@ -135,20 +135,21 @@ public partial class MainWindow
     {
         var panel = new StackPanel();
         var since = session.StartedAtUtc.ToLocalTime();
-        panel.Children.Add(FeatureHeader(Glyphs.Game, "Success", "Modo Jogo ativo",
+        panel.Children.Add(FeatureHeader(Glyphs.Game, session.RecoveryPending ? "Warning" : "Success", session.RecoveryPending ? "Restauração pendente" : "Modo Jogo ativo",
+            session.RecoveryPending ? "Alguns itens não foram restaurados. Tente novamente para concluir a restauração." :
             $"Ativo desde {since:HH:mm} de {since:dd/MM}. Ao terminar de jogar, desative para reiniciar os serviços e voltar ao plano de energia anterior. Os programas fechados podem ser abertos de novo normalmente.",
-            "Ativo", "Success"));
+            session.RecoveryPending ? "Restauração pendente" : "Ativo", session.RecoveryPending ? "Warning" : "Success"));
         var details = new WrapPanel { Margin = new Thickness(0, 14, 0, 0) };
         foreach (var name in session.ClosedApps) { var p = Pill("Fechado: " + name, "Warning"); p.Margin = new Thickness(0, 0, 6, 6); details.Children.Add(p); }
         foreach (var name in session.StoppedServices)
         {
             var title = GamingService.PausableServices.FirstOrDefault(s => s.Name == name)?.Title ?? name;
-            var p = Pill("Pausado: " + title, "Info"); p.Margin = new Thickness(0, 0, 6, 6); details.Children.Add(p);
+            var p = Pill((session.RecoveryPending ? "Pendente: " : "Pausado: ") + title, session.RecoveryPending ? "Warning" : "Info"); p.Margin = new Thickness(0, 0, 6, 6); details.Children.Add(p);
         }
-        if (session.PreviousPowerPlan != null) { var p = Pill("Plano Alto desempenho", "Accent"); p.Margin = new Thickness(0, 0, 6, 6); details.Children.Add(p); }
+        if (session.PreviousPowerPlan != null) { var p = Pill("Plano de energia a restaurar", session.RecoveryPending ? "Warning" : "Accent"); p.Margin = new Thickness(0, 0, 6, 6); details.Children.Add(p); }
         if (details.Children.Count > 0) panel.Children.Add(details);
 
-        var stop = IconButton(Glyphs.Stop, "Desativar Modo Jogo", primary: true);
+        var stop = IconButton(session.RecoveryPending ? Glyphs.Undo : Glyphs.Stop, session.RecoveryPending ? "Tentar novamente" : "Desativar Modo Jogo", primary: true);
         stop.Click += async (_, _) =>
         {
             var progress = new Progress<string>(line => { OperationStatus.Text = line; _log.Write("INFO", line); });
@@ -164,7 +165,7 @@ public partial class MainWindow
 
         var card = Surface(panel);
         card.SetResourceReference(Border.BackgroundProperty, "HeroBrush");
-        card.SetResourceReference(Border.BorderBrushProperty, "SuccessSoftBrush");
+        card.SetResourceReference(Border.BorderBrushProperty, session.RecoveryPending ? "WarningSoftBrush" : "SuccessSoftBrush");
         return card;
     }
 

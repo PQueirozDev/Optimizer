@@ -156,44 +156,62 @@ public partial class MainWindow
         activityHead.Children.Add(SectionHeader("Atividade recente", "Tudo o que o aplicativo executou, incluindo falhas."));
         activityPanel.Children.Add(activityHead);
         var logTools = new DockPanel { Margin = new Thickness(0, 8, 0, 10) };
-        var logSearch = new TextBox { Width = 240, Height = 32, Padding = new Thickness(10, 6, 10, 6), ToolTip = "Buscar na atividade" };
+        var logSearch = new TextBox { MinWidth = 100, Height = 32, Padding = new Thickness(10, 6, 10, 6), ToolTip = "Buscar na atividade" };
+        System.Windows.Automation.AutomationProperties.SetName(logSearch, Translator.Tr("Buscar na atividade"));
         logSearch.SetResourceReference(Control.BackgroundProperty, "CardBgBrush");
         logSearch.SetResourceReference(Control.ForegroundProperty, "TextBrush");
         var logFilter = new ComboBox { Width = 130, Height = 32, Margin = new Thickness(8, 0, 0, 0) };
         foreach (var option in new[] { "Todos", "Sucesso", "Avisos", "Erros", "Informações" }) logFilter.Items.Add(option);
         logFilter.SelectedIndex = 0;
-        logTools.Children.Add(logSearch); logTools.Children.Add(logFilter);
+        DockPanel.SetDock(logFilter, Dock.Right);
+        logTools.Children.Add(logFilter); logTools.Children.Add(logSearch);
         activityPanel.Children.Add(logTools);
-        var logRows = new StackPanel();
-        activityPanel.Children.Add(new ScrollViewer { Height = 320, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = logRows });
+        var logRows = new ListBox { Height = 320, BorderThickness = new Thickness(0), Background = Brushes.Transparent };
+        VirtualizingPanel.SetIsVirtualizing(logRows, true);
+        VirtualizingPanel.SetVirtualizationMode(logRows, VirtualizationMode.Recycling);
+        ScrollViewer.SetCanContentScroll(logRows, true);
+        ScrollViewer.SetHorizontalScrollBarVisibility(logRows, ScrollBarVisibility.Disabled);
+        var itemStyle = new Style(typeof(ListBoxItem), (Style)FindResource(typeof(ListBoxItem)));
+        itemStyle.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch));
+        itemStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(6)));
+        logRows.ItemContainerStyle = itemStyle;
+        logRows.ItemTemplate = (DataTemplate)System.Windows.Markup.XamlReader.Parse("""
+            <DataTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+              <Border x:Name="row" BorderThickness="3,0,0,0" BorderBrush="{DynamicResource InfoBrush}" Padding="10,2" Margin="0,0,0,4" ToolTip="{Binding Raw}">
+                <StackPanel>
+                  <TextBlock Text="{Binding Heading}" FontSize="11" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,4"/>
+                  <TextBlock Text="{Binding Message}" FontSize="12" Foreground="{DynamicResource TextBrush}" TextWrapping="Wrap"/>
+                </StackPanel>
+              </Border>
+              <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Level}" Value="ERROR"><Setter TargetName="row" Property="BorderBrush" Value="{DynamicResource DangerBrush}"/></DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="WARN"><Setter TargetName="row" Property="BorderBrush" Value="{DynamicResource WarningBrush}"/></DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="SUCCESS"><Setter TargetName="row" Property="BorderBrush" Value="{DynamicResource SuccessBrush}"/></DataTrigger>
+              </DataTemplate.Triggers>
+            </DataTemplate>
+            """);
+        var emptyLogs = Label("Nenhum registro corresponde aos filtros.", 12, true);
+        activityPanel.Children.Add(logRows);
+        activityPanel.Children.Add(emptyLogs);
         void RenderLogs()
         {
-            logRows.Children.Clear();
             var query = logSearch.Text.Trim();
-            var filter = logFilter.SelectedItem?.ToString() ?? "Todos";
-            foreach (var line in _activity.Reverse().Where(line => MatchesLog(line, query, filter)))
-            {
-                var match = Regex.Match(line, @"^\[(?<time>[^\]]+)\]\s*\[(?<level>[^\]]+)\]\s*(?<message>.*)$");
-                var level = match.Success ? match.Groups["level"].Value : "INFO";
-                var message = match.Success ? match.Groups["message"].Value : line;
-                var tone = level == "ERROR" ? "Danger" : level == "WARN" ? "Warning" : level == "SUCCESS" ? "Success" : "Info";
-                var row = new DockPanel { Margin = new Thickness(0, 0, 0, 6), ToolTip = line };
-                row.Children.Add(IconChip(level switch { "ERROR" => Glyphs.Error, "WARN" => Glyphs.Warning, "SUCCESS" => Glyphs.Check, _ => Glyphs.Info }, tone, 28));
-                var text = new StackPanel { Margin = new Thickness(10, 0, 0, 0) };
-                text.Children.Add(Label(match.Success ? match.Groups["time"].Value : "Agora", 10.5, true));
-                var friendly = Label(Translator.Tr(message), 12); friendly.TextWrapping = TextWrapping.Wrap;
-                text.Children.Add(friendly); row.Children.Add(text); logRows.Children.Add(row);
-            }
-            if (logRows.Children.Count == 0) logRows.Children.Add(Label("Nenhum registro corresponde aos filtros.", 12, true));
+            var category = logFilter.SelectedIndex switch { 1 => "SUCCESS", 2 => "WARN", 3 => "ERROR", 4 => "INFO", _ => "" };
+            var entries = _activity.Reverse().Select(ActivityEntry.Parse)
+                .Where(entry => entry.Matches(query, category)).ToArray();
+            logRows.ItemsSource = entries;
+            emptyLogs.Visibility = entries.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+            logRows.Visibility = entries.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
         }
-        bool MatchesLog(string line, string query, string filter)
-        {
-            var level = Regex.Match(line, @"\[(ERROR|WARN|SUCCESS|INFO)\]").Groups[1].Value;
-            var category = filter switch { "Erros" => "ERROR", "Avisos" => "WARN", "Sucesso" => "SUCCESS", "Informações" => "INFO", _ => "" };
-            return (category.Length == 0 || level == category) && (query.Length == 0 || line.Contains(query, StringComparison.OrdinalIgnoreCase));
-        }
-        logSearch.TextChanged += (_, _) => RenderLogs();
-        logFilter.SelectionChanged += (_, _) => RenderLogs();
+        var searchTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+        void ScheduleRefresh() { searchTimer.Stop(); searchTimer.Start(); }
+        searchTimer.Tick += (_, _) => { searchTimer.Stop(); RenderLogs(); };
+        logSearch.TextChanged += (_, _) => ScheduleRefresh();
+        logFilter.SelectionChanged += (_, _) => { searchTimer.Stop(); RenderLogs(); };
+        System.Collections.Specialized.NotifyCollectionChangedEventHandler activityChanged = (_, _) => ScheduleRefresh();
+        root.Loaded += (_, _) => { _activity.CollectionChanged += activityChanged; RenderLogs(); };
+        root.Unloaded += (_, _) => { searchTimer.Stop(); _activity.CollectionChanged -= activityChanged; };
         RenderLogs();
         root.Children.Add(Surface(activityPanel));
         ContentHost.Children.Clear(); ContentHost.Children.Add(root);

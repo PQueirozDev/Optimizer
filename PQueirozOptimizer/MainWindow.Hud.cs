@@ -170,6 +170,16 @@ public partial class MainWindow
         }
     }
 
-    private void UpdateGameModeBadge() =>
-        NavGamingBadge.Visibility = GamingService.ActiveSession() is null ? Visibility.Collapsed : Visibility.Visible;
+    private void UpdateGameModeBadge()
+    {
+        var session = GamingService.ActiveSession();
+        NavGamingBadge.Visibility = session is null ? Visibility.Collapsed : Visibility.Visible;
+        var pending = session?.RecoveryPending == true;
+        NavGamingBadge.SetResourceReference(Border.BackgroundProperty, pending ? "WarningSoftBrush" : "SuccessSoftBrush");
+        if (NavGamingBadge.Child is TextBlock label)
+        {
+            label.Text = Translator.Tr(pending ? "Pendente" : "ATIVO");
+            label.SetResourceReference(TextBlock.ForegroundProperty, pending ? "WarningBrush" : "SuccessBrush");
+        }
+    }
 }

@@ -440,11 +440,13 @@ internal static class Program
         {
             var root = Path.GetFullPath(args.FirstOrDefault() ?? "artifacts/verification");
             Directory.CreateDirectory(root);
+            if (args.Contains("--recovery")) { RecoveryTests.Run(); return 0; }
             // Fotos e vídeo do site (não rodam os testes)
             if (args.Contains("--shots")) return Media.Shots(root);
             if (args.Contains("--tour")) return Media.Tour(root);
             if (args.Contains("--switches")) return Switches();
             if (args.Contains("--videoshots")) return Media.VideoShots(root);
+            RecoveryTests.Run();
             var log = new ActivityLog(Path.Combine(root, "verification.log"));
             BiosAdvisorTests.Run();
             if (args.Contains("--bios-advisor-live")) return BiosAdvisorTests.Live(log);

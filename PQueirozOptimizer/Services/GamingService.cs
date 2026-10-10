@@ -105,6 +105,7 @@ public sealed class GamingService
         public List<string> StoppedServices { get; set; } = new();
         public string? PreviousPowerPlan { get; set; }
         public List<string> ClosedApps { get; set; } = new();
+        public bool RecoveryPending { get; set; }
     }
 
     public static GameSession? ActiveSession()
@@ -153,10 +154,11 @@ public sealed class GamingService
                 {
                     using var controller = new ServiceController(service.Name);
                     if (controller.Status != ServiceControllerStatus.Running) continue;
-                    controller.Stop();
-                    controller.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(20));
+                    // Registra antes de parar: uma interrupção ou timeout não pode perder a recuperação.
                     session.StoppedServices.Add(service.Name);
                     SaveSession(session);
+                    controller.Stop();
+                    controller.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(20));
                     progress?.Report($"Pausado: {service.Title}");
                 }
                 catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or System.ServiceProcess.TimeoutException)
@@ -171,10 +173,12 @@ public sealed class GamingService
                 var qrz = PowerPlanService.IsQrzInstalled();
                 var target = qrz ? PowerPlanService.QrzGuid.ToString() : HighPerformancePlan;
                 var current = ActivePowerPlan();
-                if (current != null && !current.Equals(target, StringComparison.OrdinalIgnoreCase) && RunTool("powercfg.exe", "/setactive", target) == 0)
+                if (current != null && !current.Equals(target, StringComparison.OrdinalIgnoreCase))
                 {
                     session.PreviousPowerPlan = current;
-                    progress?.Report(qrz ? "Plano de energia: Qrz" : "Plano de energia: Alto desempenho");
+                    SaveSession(session);
+                    if (RunTool("powercfg.exe", "/setactive", target) == 0)
+                        progress?.Report(qrz ? "Plano de energia: Qrz" : "Plano de energia: Alto desempenho");
                 }
             }
             SaveSession(session);
@@ -193,40 +197,70 @@ public sealed class GamingService
     {
         var session = ActiveSession();
         if (session is null) return 0;
-        var restored = 0;
-        await Task.Run(() =>
+        var restored = await Task.Run(() => RestoreSession(session, name =>
         {
-            // Só reinicia serviços da lista do app: o arquivo da sessão não decide o que roda como administrador
-            var allowed = PausableServices.Select(s => s.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            foreach (var name in session.StoppedServices.Where(allowed.Contains))
-            {
-                try
-                {
-                    using var controller = new ServiceController(name);
-                    if (controller.Status == ServiceControllerStatus.Running) { restored++; continue; }
-                    // DoSvc e outros com início sob demanda podem estar desativados por política; não é erro do Modo Jogo
-                    controller.Start();
-                    controller.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(20));
-                    restored++;
-                    progress?.Report($"Reiniciado: {name}");
-                }
-                catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or System.ServiceProcess.TimeoutException)
-                {
-                    progress?.Report($"{name} não reiniciou agora; o Windows o inicia quando precisar.");
-                }
-            }
-            if (session.PreviousPowerPlan is { } plan && Guid.TryParse(plan, out _) && RunTool("powercfg.exe", "/setactive", plan) == 0)
-                progress?.Report("Plano de energia anterior restaurado");
-        });
+            using var controller = new ServiceController(name);
+            if (controller.Status == ServiceControllerStatus.Running) return;
+            if (controller.Status == ServiceControllerStatus.StopPending)
+                controller.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(20));
+            controller.Refresh();
+            if (controller.Status is not (ServiceControllerStatus.StartPending or ServiceControllerStatus.Running)) controller.Start();
+            controller.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(20));
+        }, plan => RunTool("powercfg.exe", "/setactive", plan) == 0, SaveSession, progress));
+        if (session.StoppedServices.Count > 0 || session.PreviousPowerPlan != null)
+        {
+            const string message = "Restauração incompleta. As pendências foram salvas; tente novamente no Modo Jogo.";
+            _log.Write("WARN", message);
+            throw new InvalidOperationException(message);
+        }
         File.Delete(SessionPath);
         _log.Write("SUCCESS", "Modo Jogo desativado: serviços e plano de energia restaurados");
+        return restored;
+    }
+
+    internal static int RestoreSession(GameSession session, Action<string> restoreService,
+        Func<string, bool> restorePlan, Action<GameSession> save, IProgress<string>? progress = null)
+    {
+        session.RecoveryPending = true;
+        save(session);
+        var restored = 0;
+        var allowed = PausableServices.Select(s => s.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in session.StoppedServices.Distinct(StringComparer.OrdinalIgnoreCase).ToArray())
+        {
+            if (!allowed.Contains(name)) continue;
+            try { restoreService(name); }
+            catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or System.ServiceProcess.TimeoutException)
+            {
+                progress?.Report($"Restauração pendente: {name}: {ex.Message}");
+                continue;
+            }
+            session.StoppedServices.RemoveAll(n => n.Equals(name, StringComparison.OrdinalIgnoreCase));
+            save(session);
+            restored++;
+            progress?.Report($"Reiniciado: {name}");
+        }
+        if (session.PreviousPowerPlan is { } plan && Guid.TryParse(plan, out _))
+        {
+            var success = false;
+            try { success = restorePlan(plan); }
+            catch (Exception ex) when (ex is InvalidOperationException or Win32Exception)
+            { progress?.Report("Restauração do plano pendente: " + ex.Message); }
+            if (success)
+            {
+                session.PreviousPowerPlan = null;
+                save(session);
+                progress?.Report("Plano de energia anterior restaurado");
+            }
+        }
         return restored;
     }
 
     private static void SaveSession(GameSession session)
     {
         if (!Directory.Exists(DataDirectory)) { Directory.CreateDirectory(DataDirectory); RegistryTweakStore.ProtectDirectory(DataDirectory); }
-        File.WriteAllText(SessionPath, JsonSerializer.Serialize(session));
+        var temp = SessionPath + ".tmp";
+        File.WriteAllText(temp, JsonSerializer.Serialize(session));
+        File.Move(temp, SessionPath, overwrite: true);
     }
 
     private const string HighPerformancePlan = "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c";

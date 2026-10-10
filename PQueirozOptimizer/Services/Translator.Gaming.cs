@@ -7,6 +7,16 @@ public static partial class Translator
 {
     private static readonly Dictionary<string, string> GamingExact = new(StringComparer.Ordinal)
     {
+        ["Restauração pendente"] = "Recovery pending",
+        ["Modo Jogo preserva os itens que não puderam ser restaurados e permite tentar novamente, sem informar sucesso indevido."] = "Game Mode keeps items that could not be restored and lets you retry without incorrectly reporting success.",
+        ["Estado de recuperação salvo antes das alterações, com gravação atômica da sessão."] = "Recovery state is saved before changes, with atomic session writes.",
+        ["Histórico com lista virtualizada, busca mais leve e atualização automática de novos registros."] = "History has a virtualized list, more responsive search and automatic updates for new entries.",
+        ["Indicadores de restauração pendente, busca adaptável à largura e níveis de atividade destacados."] = "Pending recovery indicators, responsive search width and highlighted activity levels.",
+        ["Tentar novamente"] = "Try again",
+        ["Pendente"] = "Pending",
+        ["Plano de energia a restaurar"] = "Power plan to restore",
+        ["Alguns itens não foram restaurados. Tente novamente para concluir a restauração."] = "Some items could not be restored. Try again to complete recovery.",
+        ["Restauração incompleta. As pendências foram salvas; tente novamente no Modo Jogo."] = "Recovery incomplete. Pending items were saved; try again in Game Mode.",
         // ---------- Navegação e HUD ----------
         ["JOGOS E REDE"] = "GAMING & NETWORK", ["Modo Jogo"] = "Game Mode", ["Rede"] = "Network", ["ATIVO"] = "ON",
         ["Monitor ao vivo"] = "Live monitor", ["Latência até 1.1.1.1"] = "Latency to 1.1.1.1",
