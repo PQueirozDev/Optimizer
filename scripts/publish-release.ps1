@@ -27,8 +27,10 @@ Invoke-Checked dotnet @('run', '--project', 'tests/Optimizer.Verification', '--n
 Invoke-Checked git @('diff', '--check')
 Invoke-Checked powershell @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', 'scripts/release-notes.ps1', '-Version', $version, '-Output', 'artifacts/verification/release-notes.md')
 
-Invoke-Checked git @('add', '.github/workflows/release.yml', 'Directory.Build.props', 'PQueirozOptimizer', 'README.md', 'installer', 'scripts', 'site', 'tests/Optimizer.Verification', 'tools/logo/README.md')
-Invoke-Checked git @('commit', '-m', "Release ${tag}: Qrztweaks branding and new icon")
+Invoke-Checked git @('add', '.github/workflows/release.yml', 'Directory.Build.props', 'PQueirozOptimizer', 'README.md', 'CHANGELOG.md', 'docs', 'installer', 'scripts', 'site', 'tests/Optimizer.Verification', 'tools')
+# Só cria o commit de release se houver algo novo (a versão pode já ter sido commitada antes)
+git diff --cached --quiet
+if ($LASTEXITCODE -ne 0) { Invoke-Checked git @('commit', '-m', "Release ${tag}") }
 Invoke-Checked git @('tag', '-a', $tag, '-m', "Qrztweaks $tag")
 Invoke-Checked git @('push', '--atomic', 'origin', 'HEAD:main', "refs/tags/$tag")
 
