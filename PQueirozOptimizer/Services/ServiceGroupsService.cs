@@ -32,20 +32,30 @@ public sealed class ServiceGroupsService
         new("xbox", "Recursos do Windows", "Desligar os serviços do Xbox", "Para a Xbox Live e o salvamento na nuvem de jogos do app Xbox. Controles continuam funcionando.", new[] { "XblAuthManager", "XblGameSave", "XboxNetApiSvc" }, "Jogos do Game Pass/Xbox app podem não abrir com eles desligados."),
     };
 
-    private static Dictionary<string, Dictionary<string, string>> LoadBackup()
+    /// <summary>
+    /// Backup dos tipos de início originais. Ilegível = null: tratar como vazio faria o próximo "desligar"
+    /// gravar como original o estado já desativado, e a reversão nunca mais voltaria ao padrão.
+    /// </summary>
+    private static Dictionary<string, Dictionary<string, string>>? TryLoadBackup()
     {
         try { return File.Exists(BackupPath) ? JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(File.ReadAllText(BackupPath)) ?? new() : new(); }
-        catch (Exception ex) when (ex is IOException or JsonException) { return new(); }
+        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException) { return null; }
     }
+
+    private static Dictionary<string, Dictionary<string, string>> LoadBackup() =>
+        TryLoadBackup() ?? throw new InvalidDataException($"O backup dos serviços ({BackupPath}) está corrompido. Nada foi alterado; restaure os serviços em Serviços → Estado dos serviços.");
 
     private static void SaveBackup(Dictionary<string, Dictionary<string, string>> backup)
     {
         var dir = Path.GetDirectoryName(BackupPath)!;
-        if (!Directory.Exists(dir)) { Directory.CreateDirectory(dir); RegistryTweakStore.ProtectDirectory(dir); }
-        File.WriteAllText(BackupPath, JsonSerializer.Serialize(backup));
+        RegistryTweakStore.EnsureProtectedDirectory(dir);
+        // Grava ao lado e troca: uma queda no meio não apaga o backup que já existia
+        var temp = BackupPath + ".tmp";
+        File.WriteAllText(temp, JsonSerializer.Serialize(backup));
+        File.Move(temp, BackupPath, overwrite: true);
     }
 
-    public static bool IsDisabled(ServiceGroup group) => LoadBackup().ContainsKey(group.Id);
+    public static bool IsDisabled(ServiceGroup group) => TryLoadBackup()?.ContainsKey(group.Id) == true;
 
     /// <summary>Serviços do grupo que existem neste Windows.</summary>
     public static string[] Existing(ServiceGroup group) =>

@@ -67,20 +67,30 @@ public sealed class ServiceStateService
 
     public Task StartAsync(string name, CancellationToken token = default) => Task.Run(() =>
     {
-        if (StartType(name) == "disabled")
+        var wasDisabled = StartType(name) == "disabled";
+        if (wasDisabled)
         {
             var start = DefaultStart.TryGetValue(name, out var s) ? s : "demand";
-            using var sc = Process.Start(new ProcessStartInfo("sc.exe", $"config \"{name}\" start= {start}") { CreateNoWindow = true, UseShellExecute = false })!;
-            sc.WaitForExit(15000);
-            if (sc.ExitCode != 0) throw new InvalidOperationException($"O Windows não deixou reativar {name} (código {sc.ExitCode}).");
+            var code = GamingService.RunTool("sc.exe", "config", name, "start=", start);
+            if (code != 0) throw new InvalidOperationException($"O Windows não deixou reativar {name} (código {code}).");
             _log.Write("INFO", $"Serviço {name}: tipo de início voltou ao padrão ({start})");
         }
         using var service = new ServiceController(name);
-        if (service.Status != ServiceControllerStatus.Running)
+        try
         {
-            try { service.Start(); }
-            catch (InvalidOperationException ex) when (ex.InnerException is Win32Exception { NativeErrorCode: 1056 }) { } // já está rodando
-            service.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
+            if (service.Status != ServiceControllerStatus.Running)
+            {
+                try { service.Start(); }
+                catch (InvalidOperationException ex) when (ex.InnerException is Win32Exception { NativeErrorCode: 1056 }) { } // já está rodando
+                service.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
+            }
+        }
+        catch (Exception ex) when (wasDisabled && ex is InvalidOperationException or System.ServiceProcess.TimeoutException)
+        {
+            // Não iniciou (dependência, erro do serviço): volta a ficar desativado como o usuário tinha deixado
+            GamingService.RunTool("sc.exe", "config", name, "start=", "disabled");
+            _log.Write("WARN", $"Serviço {name} não iniciou; o tipo de início voltou a desativado");
+            throw;
         }
         _log.Write("SUCCESS", $"Serviço iniciado: {service.DisplayName} ({name})");
     }, token);

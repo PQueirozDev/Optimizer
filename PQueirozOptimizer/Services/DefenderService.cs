@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text.Json;
 
 namespace PQueirozOptimizer.Services;
@@ -51,8 +52,43 @@ public sealed class DefenderService
         _log.Write(on ? "SUCCESS" : "WARN", on ? "Proteção em tempo real do Defender ligada" : "Proteção em tempo real do Defender desligada (o Windows a religa sozinho depois de um tempo)");
     }
 
+    /// <summary>
+    /// Motivo para recusar a exclusão, ou null se a pasta é específica o bastante. A exclusão é permanente
+    /// (vale até ser removida), então uma unidade inteira, o Windows, Program Files ou a pasta do usuário
+    /// deixariam boa parte do PC sem verificação de vírus. Downloads e Temp são onde arquivos baixados caem.
+    /// </summary>
+    public static string? ExclusionProblem(string folder)
+    {
+        if (string.IsNullOrWhiteSpace(folder)) return "Escolha uma pasta.";
+        string full;
+        try { full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder)); }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException) { return "Caminho inválido."; }
+        if (full.StartsWith(@"\\", StringComparison.Ordinal)) return "Pastas de rede não podem ser excluídas.";
+        if (Path.GetPathRoot(full) is { } root && string.Equals(Path.TrimEndingDirectorySeparator(root), full, StringComparison.OrdinalIgnoreCase))
+            return "Não é possível excluir uma unidade inteira. Escolha a pasta do jogo.";
+
+        static string? Known(Environment.SpecialFolder f) { var p = Environment.GetFolderPath(f); return string.IsNullOrEmpty(p) ? null : Path.TrimEndingDirectorySeparator(p); }
+        var profile = Known(Environment.SpecialFolder.UserProfile);
+        // Pastas que nunca podem ser excluídas, nem nada dentro delas
+        var forbiddenTrees = new[] { Known(Environment.SpecialFolder.Windows), profile is null ? null : Path.Combine(profile, "Downloads"), Path.TrimEndingDirectorySeparator(Path.GetTempPath()) };
+        foreach (var tree in forbiddenTrees.OfType<string>())
+            if (string.Equals(full, tree, StringComparison.OrdinalIgnoreCase) || full.StartsWith(tree + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                return "Esta pasta é do Windows ou recebe arquivos baixados; excluí-la abre espaço para vírus. Escolha a pasta do jogo.";
+        // Pastas amplas: só uma subpasta delas (ex.: Program Files\Jogo) é aceita
+        var broad = new[]
+        {
+            Known(Environment.SpecialFolder.ProgramFiles), Known(Environment.SpecialFolder.ProgramFilesX86), Known(Environment.SpecialFolder.CommonApplicationData),
+            profile, profile is null ? null : Path.GetDirectoryName(profile), Known(Environment.SpecialFolder.ApplicationData), Known(Environment.SpecialFolder.LocalApplicationData),
+            Known(Environment.SpecialFolder.Desktop), Known(Environment.SpecialFolder.MyDocuments),
+        };
+        if (broad.OfType<string>().Any(b => string.Equals(full, b, StringComparison.OrdinalIgnoreCase)))
+            return "Esta pasta é ampla demais: excluí-la tira muitos programas da verificação. Escolha a pasta do jogo dentro dela.";
+        return null;
+    }
+
     public async Task AddExclusionAsync(string folder)
     {
+        if (ExclusionProblem(folder) is { } problem) throw new InvalidOperationException(problem);
         await PowerShellBridge.RunScriptAsync("Add-MpPreference -ExclusionPath $env:PQO_PATH", new Dictionary<string, string> { ["PQO_PATH"] = folder });
         var status = await ReadStatusAsync();
         if (!status.Available || !status.Exclusions.Any(p => string.Equals(p, folder, StringComparison.OrdinalIgnoreCase)))

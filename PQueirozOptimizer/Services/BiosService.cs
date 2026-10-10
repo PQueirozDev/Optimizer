@@ -51,28 +51,54 @@ public sealed class BiosService
     };
 
     // ---------- Ferramenta ----------
+    /// <summary>
+    /// Cópia do SCEWIN na pasta só de administradores. O app roda elevado: executar direto da pasta escolhida
+    /// (Downloads, área de trabalho) deixaria qualquer programa sem privilégio trocar o .exe ou o driver dele
+    /// entre a escolha e a próxima leitura/gravação da BIOS.
+    /// </summary>
+    private static string StagedDirectory => Path.Combine(DataDirectory, "SCEWIN");
+    private const long MaxStagedBytes = 64L * 1024 * 1024;
+
     public static string? ToolPath()
     {
         try
         {
             var saved = File.Exists(ToolPathFile) ? File.ReadAllText(ToolPathFile).Trim() : null;
-            if (saved != null && File.Exists(saved)) return saved;
+            if (saved != null && File.Exists(saved))
+            {
+                if (IsInside(saved, StagedDirectory)) return saved;
+                // Configurado por uma versão anterior (pasta do usuário): passa a usar a cópia protegida
+                SetToolPath(saved);
+                return File.ReadAllText(ToolPathFile).Trim();
+            }
         }
-        catch (IOException) { }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { }
         var local = Path.Combine(AppContext.BaseDirectory, "SCEWIN", "SCEWIN_64.exe");
         return File.Exists(local) ? local : null;
     }
 
+    private static bool IsInside(string path, string directory) =>
+        Path.GetFullPath(path).StartsWith(Path.TrimEndingDirectorySeparator(Path.GetFullPath(directory)) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+
     public static void SetToolPath(string exePath)
     {
-        if (!Path.GetFileName(exePath).StartsWith("SCEWIN", StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("Escolha o arquivo SCEWIN_64.exe.");
+        if (!Path.GetFileName(exePath).StartsWith("SCEWIN", StringComparison.OrdinalIgnoreCase) || !exePath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("Escolha o arquivo SCEWIN_64.exe.");
+        var source = new DirectoryInfo(Path.GetDirectoryName(Path.GetFullPath(exePath))!);
+        if (IsInside(exePath, StagedDirectory)) { File.WriteAllText(ToolPathFile, Path.GetFullPath(exePath)); return; }
+        // O SCEWIN precisa do driver (amifldrv64.sys) e das DLLs da mesma pasta: copia só os arquivos dela
+        var files = source.GetFiles().Where(f => !f.Attributes.HasFlag(FileAttributes.ReparsePoint)).ToList();
+        if (files.Sum(f => f.Length) > MaxStagedBytes) throw new InvalidOperationException("A pasta do SCEWIN tem arquivos demais. Coloque o SCEWIN_64.exe e os arquivos dele numa pasta separada.");
         EnsureDirectory();
-        File.WriteAllText(ToolPathFile, exePath);
+        if (Directory.Exists(StagedDirectory)) Directory.Delete(StagedDirectory, recursive: true);
+        Directory.CreateDirectory(StagedDirectory);
+        foreach (var file in files) file.CopyTo(Path.Combine(StagedDirectory, file.Name));
+        var staged = Path.Combine(StagedDirectory, Path.GetFileName(exePath));
+        File.WriteAllText(ToolPathFile, staged);
     }
 
     private static void EnsureDirectory()
     {
-        if (!Directory.Exists(DataDirectory)) { Directory.CreateDirectory(DataDirectory); RegistryTweakStore.ProtectDirectory(DataDirectory); }
+        RegistryTweakStore.EnsureProtectedDirectory(DataDirectory);
     }
 
     private static async Task<(int Code, string Output)> RunToolAsync(params string[] args)
@@ -95,10 +121,47 @@ public sealed class BiosService
         EnsureDirectory();
         if (File.Exists(CurrentPath)) File.Delete(CurrentPath);
         var (code, output) = await RunToolAsync("/o", "/s", CurrentPath);
-        if (!File.Exists(CurrentPath)) throw new InvalidOperationException($"O SCEWIN não exportou as configurações (código {code}). {Explain(output)}");
-        if (!File.Exists(OriginalPath)) File.Copy(CurrentPath, OriginalPath);
+        // Export com erro pode deixar um arquivo pela metade: nunca vira a cópia original nem base para gravar
+        if (code != 0 || !File.Exists(CurrentPath))
+        {
+            try { File.Delete(CurrentPath); } catch (IOException) { }
+            throw new InvalidOperationException($"O SCEWIN não exportou as configurações (código {code}). {Explain(output)}");
+        }
+        var text = File.ReadAllText(CurrentPath, Encoding.Latin1);
+        var settings = Parse(text, out _);
+        if (settings.Count == 0) throw new InvalidOperationException("O arquivo exportado pelo SCEWIN não tem nenhuma configuração; a leitura foi descartada.");
+        if (!File.Exists(OriginalPath))
+        {
+            var temp = OriginalPath + ".tmp";
+            File.Copy(CurrentPath, temp, overwrite: true);
+            File.Move(temp, OriginalPath);
+        }
         _log.Write("SUCCESS", "Configurações da BIOS lidas pelo SCEWIN");
-        return Parse(File.ReadAllText(CurrentPath, Encoding.Latin1), out _);
+        return settings;
+    }
+
+    /// <summary>
+    /// Identificação do layout da BIOS no export (linha HIICrc32). Muda quando a BIOS é atualizada: gravar um
+    /// arquivo de outra versão poderia mandar valores para opções que agora significam outra coisa.
+    /// </summary>
+    public static string? FirmwareFingerprint(IEnumerable<string> header) =>
+        header.Select(l => Regex.Match(l, @"^\s*HIICrc32\s*=\s*(\S+)", RegexOptions.IgnoreCase)).FirstOrDefault(m => m.Success)?.Groups[1].Value;
+
+    /// <summary>Motivo para recusar um valor numérico digitado, ou null se ele cabe no campo.</summary>
+    public static string? NumericProblem(BiosSetting setting)
+    {
+        if (setting.Options.Count > 0 || setting.NumericValue is not { } value) return null;
+        var hex = setting.OriginalNumeric is { } original && Regex.IsMatch(original, "[A-Fa-f]");
+        if (!Regex.IsMatch(value, hex ? "^[0-9A-Fa-f]{1,16}$" : "^[0-9]{1,19}$")) return $"{setting.Question}: valor inválido ({value}).";
+        // Width = quantos bytes o campo ocupa na NVRAM: o valor não pode passar disso
+        var widthLine = setting.Lines.FirstOrDefault(l => Regex.IsMatch(l, @"^Width\s*="));
+        if (widthLine is not null && int.TryParse(Regex.Replace(widthLine[(widthLine.IndexOf('=') + 1)..], @"\s*//.*$", "").Trim(), System.Globalization.NumberStyles.HexNumber, null, out var width) && width is > 0 and < 8)
+        {
+            var max = (1UL << (8 * width)) - 1;
+            var parsed = ulong.TryParse(value, hex ? System.Globalization.NumberStyles.HexNumber : System.Globalization.NumberStyles.None, null, out var v);
+            if (!parsed || v > max) return $"{setting.Question}: {value} não cabe no campo (máximo {(hex ? max.ToString("X") : max.ToString())}).";
+        }
+        return null;
     }
 
     /// <summary>Grava somente os itens alterados. Vale após reiniciar.</summary>
@@ -107,6 +170,8 @@ public sealed class BiosService
         var header = ParseHeader(File.ReadAllText(CurrentPath, Encoding.Latin1));
         var changed = settings.Where(s => s.Changed).ToList();
         if (changed.Count == 0) return 0;
+        var invalid = changed.Select(NumericProblem).OfType<string>().ToList();
+        if (invalid.Count > 0) throw new InvalidOperationException("Nada foi gravado. Corrija: " + string.Join(" ", invalid));
         var path = Path.Combine(DataDirectory, "bios-alteracoes.txt");
         File.WriteAllText(path, Serialize(header, changed), Encoding.Latin1);
         var (code, output) = await RunToolAsync("/i", "/s", path);
@@ -120,6 +185,14 @@ public sealed class BiosService
     public async Task RestoreOriginalAsync()
     {
         if (!File.Exists(OriginalPath)) throw new FileNotFoundException("Não há cópia original da BIOS. Leia as configurações pelo menos uma vez antes.");
+        var originalHeader = ParseHeader(File.ReadAllText(OriginalPath, Encoding.Latin1));
+        if (Parse(File.ReadAllText(OriginalPath, Encoding.Latin1), out _).Count == 0) throw new InvalidDataException("A cópia original da BIOS está vazia ou corrompida; a restauração foi cancelada.");
+        // Lê a BIOS de agora para conferir se ainda é a mesma versão da cópia
+        await ExportAsync();
+        var currentPrint = FirmwareFingerprint(ParseHeader(File.ReadAllText(CurrentPath, Encoding.Latin1)));
+        var originalPrint = FirmwareFingerprint(originalHeader);
+        if (currentPrint is null || originalPrint is null || !string.Equals(currentPrint, originalPrint, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("A BIOS mudou desde a cópia original (atualização de BIOS ou outra placa). Restaurar esse arquivo poderia gravar valores nas opções erradas; use \"Load Optimized Defaults\" na própria BIOS.");
         var (code, output) = await RunToolAsync("/i", "/s", OriginalPath);
         if (code != 0) throw new InvalidOperationException($"O SCEWIN recusou a restauração (código {code}). {Explain(output)}");
         _log.Write("SUCCESS", "BIOS: configurações originais gravadas — reinicie para aplicar");

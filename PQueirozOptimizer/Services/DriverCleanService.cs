@@ -79,10 +79,12 @@ public sealed class DriverCleanService
         var ddu = DduPath()!;
 
         progress?.Report("Copiando o instalador do driver...");
-        if (!Directory.Exists(DataDirectory)) { Directory.CreateDirectory(DataDirectory); RegistryTweakStore.ProtectDirectory(DataDirectory); }
+        RegistryTweakStore.EnsureProtectedDirectory(DataDirectory);
         // Cópia numa pasta só de administradores: o que roda elevado no logon não pode ser trocado por outro usuário
         var installer = Path.Combine(DataDirectory, "driver-novo.exe");
-        File.Copy(installerPath, installer, overwrite: true);
+        // Arquivo antigo pode ter outro dono (e permissões próprias): apaga e cria um novo, herdando a proteção da pasta
+        File.Delete(installer);
+        File.Copy(installerPath, installer);
 
         progress?.Report("Criando ponto de restauração...");
         try { await PowerShellBridge.RunScriptAsync("Checkpoint-Computer -Description 'Qrztweaks - antes da instalação limpa de driver' -RestorePointType MODIFY_SETTINGS", timeout: TimeSpan.FromMinutes(5)); }
@@ -96,32 +98,51 @@ public sealed class DriverCleanService
             key.SetValue("SearchOrderConfig", 0, RegistryValueKind.DWord);
         }
 
-        // Script do próximo logon: abre o instalador, espera terminar e devolve a busca de drivers como estava
-        var script = Path.Combine(DataDirectory, "apos-ddu.ps1");
-        var restore = previousSearch is { } v
-            ? $"Set-ItemProperty -Path 'HKLM:\\{DriverSearchingKey}' -Name SearchOrderConfig -Value {v} -Type DWord"
-            : $"Remove-ItemProperty -Path 'HKLM:\\{DriverSearchingKey}' -Name SearchOrderConfig -ErrorAction SilentlyContinue";
-        File.WriteAllText(script,
-            "$ErrorActionPreference = 'Continue'\r\n" +
-            $"Start-Process -FilePath '{installer}' -Wait\r\n" +
-            restore + "\r\n" +
-            $"Remove-Item -LiteralPath '{installer}' -Force -ErrorAction SilentlyContinue\r\n");
-        using (var runOnce = Registry.LocalMachine.CreateSubKey(RunOnceKey, writable: true))
-            runOnce.SetValue("PQueirozDriverLimpo", $"powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{script}\"");
-
-        var clean = vendor switch { GpuVendor.Nvidia => "-cleannvidia", GpuVendor.Amd => "-cleanamd", _ => "-cleanintel" };
-        _log.Write("INFO", $"Instalação limpa: DDU {clean}, instalador agendado para o próximo logon");
-        progress?.Report("Removendo o driver atual com o DDU (o PC reinicia sozinho)...");
-        var code = await Task.Run(() => GamingService.RunTool(ddu, "-silent", clean, "-nosafemodemsg", "-restart"));
-        if (code != 0)
+        // Desfaz o agendamento e a trava de drivers: usado se qualquer passo antes do DDU reiniciar o PC falhar
+        void Rollback()
         {
-            // DDU falhou antes de reiniciar: desfaz o agendamento e a trava de drivers
-            using (var runOnce = Registry.LocalMachine.OpenSubKey(RunOnceKey, writable: true)) runOnce?.DeleteValue("PQueirozDriverLimpo", false);
-            using (var key = Registry.LocalMachine.CreateSubKey(DriverSearchingKey, writable: true))
+            try
             {
+                using (var runOnce = Registry.LocalMachine.OpenSubKey(RunOnceKey, writable: true)) runOnce?.DeleteValue("PQueirozDriverLimpo", false);
+                using var key = Registry.LocalMachine.CreateSubKey(DriverSearchingKey, writable: true);
                 if (previousSearch is { } p) key.SetValue("SearchOrderConfig", p, RegistryValueKind.DWord);
                 else key.DeleteValue("SearchOrderConfig", false);
             }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or System.Security.SecurityException)
+            { _log.Write("ERROR", "Não foi possível desfazer a trava de drivers do Windows Update: " + ex.Message); }
+        }
+
+        int code;
+        try
+        {
+            // Script do próximo logon: abre o instalador, espera terminar e devolve a busca de drivers como estava
+            var script = Path.Combine(DataDirectory, "apos-ddu.ps1");
+            File.Delete(script);
+            var restore = previousSearch is { } v
+                ? $"Set-ItemProperty -Path 'HKLM:\\{DriverSearchingKey}' -Name SearchOrderConfig -Value {v} -Type DWord"
+                : $"Remove-ItemProperty -Path 'HKLM:\\{DriverSearchingKey}' -Name SearchOrderConfig -ErrorAction SilentlyContinue";
+            File.WriteAllText(script,
+                "$ErrorActionPreference = 'Continue'\r\n" +
+                $"Start-Process -FilePath '{installer}' -Wait\r\n" +
+                restore + "\r\n" +
+                $"Remove-Item -LiteralPath '{installer}' -Force -ErrorAction SilentlyContinue\r\n");
+            using (var runOnce = Registry.LocalMachine.CreateSubKey(RunOnceKey, writable: true))
+                runOnce.SetValue("PQueirozDriverLimpo", $"\"{SystemTools.PowerShell}\" -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{script}\"");
+
+            var clean = vendor switch { GpuVendor.Nvidia => "-cleannvidia", GpuVendor.Amd => "-cleanamd", _ => "-cleanintel" };
+            _log.Write("INFO", $"Instalação limpa: DDU {clean}, instalador agendado para o próximo logon");
+            progress?.Report("Removendo o driver atual com o DDU (o PC reinicia sozinho)...");
+            code = await Task.Run(() => GamingService.RunTool(ddu, "-silent", clean, "-nosafemodemsg", "-restart"));
+        }
+        catch
+        {
+            Rollback();
+            throw;
+        }
+        if (code != 0)
+        {
+            // DDU falhou antes de reiniciar
+            Rollback();
             throw new InvalidOperationException($"O DDU terminou com o código {code}; nada foi agendado.");
         }
     }

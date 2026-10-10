@@ -164,6 +164,32 @@ public sealed class AppOptimizerService
         return list.OrderBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
     }
 
+    /// <summary>
+    /// Separa o executável e os argumentos de um UninstallString. Null se o executável não existe: nada é
+    /// passado a um shell, então operadores como "&amp;" ou "|" chegam ao desinstalador apenas como texto.
+    /// </summary>
+    public static (string Exe, string Arguments)? SplitUninstallCommand(string? command)
+    {
+        if (string.IsNullOrWhiteSpace(command)) return null;
+        command = Environment.ExpandEnvironmentVariables(command.Trim());
+        string exe, rest;
+        if (command.StartsWith('"'))
+        {
+            var end = command.IndexOf('"', 1);
+            if (end <= 1) return null;
+            exe = command[1..end]; rest = command[(end + 1)..];
+        }
+        else
+        {
+            var at = command.IndexOf(".exe", StringComparison.OrdinalIgnoreCase);
+            exe = at > 0 ? command[..(at + 4)] : command.Split(' ')[0];
+            rest = command[exe.Length..];
+        }
+        var resolved = StartupService.ResolveImage(exe);
+        if (resolved is null || !Path.IsPathFullyQualified(resolved) || !File.Exists(resolved) || !resolved.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) return null;
+        return (resolved, rest.Trim());
+    }
+
     /// <summary>Desinstala: apps da Loja pelo PowerShell; programas abrem o desinstalador do próprio fabricante.</summary>
     public async Task UninstallAsync(InstalledApp app)
     {
@@ -172,8 +198,10 @@ public sealed class AppOptimizerService
         else
             await Task.Run(() =>
             {
-                // O comando vem do registro do próprio programa (como faz o Painel de Controle)
-                using var p = Process.Start(new ProcessStartInfo("cmd.exe", "/c \"" + app.Uninstall + "\"") { UseShellExecute = false, CreateNoWindow = true });
+                // O comando vem do registro do próprio programa (como faz o Painel de Controle), mas roda sem
+                // cmd: entradas de HKCU podem ser escritas sem administrador, e "&" ali encadearia outro comando elevado
+                var (exe, arguments) = SplitUninstallCommand(app.Uninstall) ?? throw new InvalidOperationException($"O desinstalador de {app.Name} não foi encontrado.");
+                using var p = Process.Start(new ProcessStartInfo(exe, arguments) { UseShellExecute = false, CreateNoWindow = true });
                 p?.WaitForExit(30 * 60 * 1000);
             });
         _log.Write("SUCCESS", $"Desinstalação iniciada: {app.Name}");

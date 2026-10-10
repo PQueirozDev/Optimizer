@@ -594,6 +594,7 @@ public static partial class Translator
         P(@"^Item de backup nao reconhecido ou fora da lista permitida: (.*)$", m => $"Unrecognized backup item or outside the allowlist: {m.Groups[1].Value}"),
         P(@"^Arquivo de backup de origem desconhecida isolado: (.+)$", m => $"Backup file of unknown origin quarantined: {m.Groups[1].Value}"),
         P(@"^Backup anterior ilegivel; arquivado em (.+)$", m => $"Previous backup unreadable; archived at {m.Groups[1].Value}"),
+        P(@"^Plano Qrz: (\d+) valor\(es\) nao existem neste PC e ficaram no padrao do Windows\.$", m => $"Qrz plan: {m.Groups[1].Value} value(s) don't exist on this PC and kept the Windows default."),
         P(@"^Comando retornou codigo (-?\d+)$", m => $"Command returned code {m.Groups[1].Value}"),
         P(@"^Comando terminou com codigo (-?\d+)\. Consulte a saida para detalhes\.$", m => $"Command ended with code {m.Groups[1].Value}. See the output for details."),
         P(@"^A execução terminou com falhas \(código (-?\d+)\)\. Consulte a atividade e a reversão para alterações parciais\.$", m => $"The run finished with failures (code {m.Groups[1].Value}). Check activity and restore for partial changes."),

@@ -124,7 +124,7 @@ public static partial class Translator
         ["Desligar a proteção em tempo real deixa o PC sem verificação de vírus até ela ser religada (o Windows a religa sozinho depois de um tempo). Continuar?"] = "Turning off real-time protection leaves the PC without virus scanning until it's back on (Windows turns it back on by itself after a while). Continue?",
         ["Desligando a proteção em tempo real"] = "Turning off real-time protection", ["Ligando a proteção em tempo real"] = "Turning on real-time protection",
         ["Adicionar pasta"] = "Add folder", ["Escolha a pasta do jogo"] = "Choose the game folder", ["Pastas excluídas"] = "Excluded folders",
-        ["O Defender não escaneia esses arquivos enquanto o jogo carrega."] = "Defender doesn't scan these files while the game loads.",
+        ["O Defender deixa de escanear essas pastas até você remover a exclusão. Use só na pasta do jogo."] = "Defender stops scanning these folders until you remove the exclusion. Use it only on the game folder.",
         ["Nenhuma pasta excluída."] = "No excluded folders.", ["Remover exclusão"] = "Remove exclusion",
         ["Adicionando exclusão no Defender"] = "Adding Defender exclusion", ["Removendo exclusão do Defender"] = "Removing Defender exclusion",
         ["O Windows não aplicou a mudança na proteção em tempo real."] = "Windows didn't apply the real-time protection change.",
@@ -177,6 +177,21 @@ public static partial class Translator
         ["Bloqueando drivers do Windows Update até o driver novo ser instalado..."] = "Blocking Windows Update drivers until the new driver is installed...",
         ["Removendo o driver atual com o DDU (o PC reinicia sozinho)..."] = "Removing the current driver with DDU (the PC restarts by itself)...",
         ["DDU (Display Driver Uninstaller) instalado"] = "DDU (Display Driver Uninstaller) installed",
+
+        // ---------- Segurança (Etapa A) ----------
+        ["Escolha uma pasta."] = "Choose a folder.",
+        ["Caminho inválido."] = "Invalid path.",
+        ["Pastas de rede não podem ser excluídas."] = "Network folders can't be excluded.",
+        ["Não é possível excluir uma unidade inteira. Escolha a pasta do jogo."] = "You can't exclude an entire drive. Choose the game folder.",
+        ["Esta pasta é do Windows ou recebe arquivos baixados; excluí-la abre espaço para vírus. Escolha a pasta do jogo."] = "This folder belongs to Windows or receives downloaded files; excluding it opens the door to viruses. Choose the game folder.",
+        ["Esta pasta é ampla demais: excluí-la tira muitos programas da verificação. Escolha a pasta do jogo dentro dela."] = "This folder is too broad: excluding it removes many programs from scanning. Choose the game folder inside it.",
+        ["O arquivo exportado pelo SCEWIN não tem nenhuma configuração; a leitura foi descartada."] = "The file exported by SCEWIN has no settings; the reading was discarded.",
+        ["A cópia original da BIOS está vazia ou corrompida; a restauração foi cancelada."] = "The original BIOS copy is empty or corrupted; the restore was cancelled.",
+        ["A BIOS mudou desde a cópia original (atualização de BIOS ou outra placa). Restaurar esse arquivo poderia gravar valores nas opções erradas; use \"Load Optimized Defaults\" na própria BIOS."] = "The BIOS changed since the original copy (BIOS update or another board). Restoring that file could write values to the wrong options; use \"Load Optimized Defaults\" in the BIOS itself.",
+        ["A pasta do SCEWIN tem arquivos demais. Coloque o SCEWIN_64.exe e os arquivos dele numa pasta separada."] = "The SCEWIN folder has too many files. Put SCEWIN_64.exe and its files in a separate folder.",
+        ["Confirmar ajustes"] = "Confirm tweaks",
+        ["Operação interrompida"] = "Interrupted operation",
+        ["Reversão da otimização"] = "Optimization rollback",
     };
 
     private static readonly (Regex Regex, Func<Match, string> Build)[] ExtrasPatterns =
@@ -210,5 +225,20 @@ public static partial class Translator
         P(@"^(Ligada|Desligada)\. A Proteção contra Adulteração está ativa: desative-a na Segurança do Windows para mudar por aqui\.$", m => $"{Tr(m.Groups[1].Value + ".")} Tamper Protection is on: turn it off in Windows Security to change it from here."),
         P(@"^(\d+) quadros$", m => $"{m.Groups[1].Value} frames"),
         P(@"^Valor (.+)$", m => $"Value {m.Groups[1].Value}"),
+
+        // ---------- Segurança (Etapa A) ----------
+        P(@"^O backup dos serviços \((.+)\) está corrompido\. Nada foi alterado; restaure os serviços em Serviços → Estado dos serviços\.$", m => $"The services backup ({m.Groups[1].Value}) is corrupted. Nothing was changed; restore the services in Services → Service status."),
+        P(@"^Serviço (.+) não iniciou; o tipo de início voltou a desativado$", m => $"Service {m.Groups[1].Value} did not start; its startup type was set back to disabled"),
+        P(@"^A pasta (.+) é um link para outro local; por segurança, ela não será usada\.$", m => $"The folder {m.Groups[1].Value} is a link to another location; for safety, it won't be used."),
+        P(@"^O desinstalador de (.+) não foi encontrado\.$", m => $"The uninstaller for {m.Groups[1].Value} was not found."),
+        P(@"^Não foi possível desfazer a trava de drivers do Windows Update: (.+)$", m => $"Could not undo the Windows Update driver block: {m.Groups[1].Value}"),
+        P(@"^(?s)Nada foi gravado\. Corrija: (.+)$", m => "Nothing was written. Fix: " + Regex.Replace(Regex.Replace(m.Groups[1].Value, @": valor inválido \(([^)]*)\)\.", ": invalid value ($1)."), @": (\S+) não cabe no campo \(máximo (\S+)\)\.", ": $1 doesn't fit the field (maximum $2).")),
+        P(@"^(?s)(.+)\n\nAplicar mesmo assim\?$", m => Regex.Replace(m.Groups[1].Value
+                .Replace("Arriscados (podem desligar algo que você usa):", "Risky (may turn off something you use):")
+                .Replace("Não reversíveis (a reversão não desfaz):", "Not reversible (rollback does not undo them):"),
+            @"(?m)^• (.+)$", s => "• " + Tr(s.Groups[1].Value)) + "\n\nApply anyway?"),
+        P(@"^(?s)A operação ""(.+)"", iniciada em (.+), não terminou: o Qrztweaks fechou durante a execução\.\n\nO que foi aplicado até ali tem backup\. Abrir Atividade e reversão para conferir ou reverter\?$",
+            m => $"The operation \"{Tr(m.Groups[1].Value)}\", started at {m.Groups[2].Value}, did not finish: Qrztweaks closed while it was running.\n\nWhat was applied up to that point has a backup. Open Activity and rollback to review or revert?"),
+        P(@"^Operação interrompida detectada: (.+) \(iniciada em (.+)\)$", m => $"Interrupted operation detected: {Tr(m.Groups[1].Value)} (started at {m.Groups[2].Value})"),
     };
 }

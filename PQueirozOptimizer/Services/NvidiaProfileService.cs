@@ -170,7 +170,7 @@ public sealed class NvidiaProfileService
     private static void SaveBackup(Dictionary<uint, uint?> backup)
     {
         var dir = Path.GetDirectoryName(BackupPath)!;
-        if (!Directory.Exists(dir)) { Directory.CreateDirectory(dir); RegistryTweakStore.ProtectDirectory(dir); }
+        RegistryTweakStore.EnsureProtectedDirectory(dir);
         File.WriteAllText(BackupPath, JsonSerializer.Serialize(backup));
     }
 }

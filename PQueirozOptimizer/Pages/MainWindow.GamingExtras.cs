@@ -256,11 +256,12 @@ public partial class MainWindow
         {
             var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Escolha a pasta do jogo" };
             if (dialog.ShowDialog(this) != true) return;
+            if (DefenderService.ExclusionProblem(dialog.FolderName) is { } problem) { ShowToast("Windows Defender", problem, "Warning"); return; }
             await ExecuteTrackedAsync("Adicionando exclusão no Defender", async _ => await defender.AddExclusionAsync(dialog.FolderName));
             await FillDefenderAsync(body);
         };
         DockPanel.SetDock(add, Dock.Right); exHead.Children.Add(add);
-        exHead.Children.Add(BoostText("Pastas excluídas", "O Defender não escaneia esses arquivos enquanto o jogo carrega."));
+        exHead.Children.Add(BoostText("Pastas excluídas", "O Defender deixa de escanear essas pastas até você remover a exclusão. Use só na pasta do jogo."));
         body.Children.Add(exHead);
         if (status.Exclusions.Length == 0) body.Children.Add(Label("Nenhuma pasta excluída.", 12, true));
         foreach (var folder in status.Exclusions)

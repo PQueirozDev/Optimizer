@@ -185,7 +185,7 @@ public sealed class NetworkService
     private static void SaveDnsBackup(Dictionary<string, string[]> backup)
     {
         var dir = Path.GetDirectoryName(DnsBackupPath)!;
-        if (!Directory.Exists(dir)) { Directory.CreateDirectory(dir); RegistryTweakStore.ProtectDirectory(dir); }
+        RegistryTweakStore.EnsureProtectedDirectory(dir);
         File.WriteAllText(DnsBackupPath, JsonSerializer.Serialize(backup));
     }
 

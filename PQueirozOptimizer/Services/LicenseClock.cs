@@ -32,7 +32,13 @@ public sealed class LicenseClock
         }
     }
 
-    public bool IsRolledBack(DateTime nowUtc) => nowUtc < LastSeenUtc - Tolerance;
+    public bool IsRolledBack(DateTime nowUtc)
+    {
+        // Sem registro anterior (primeira ativação, arquivos apagados) não há com o que comparar.
+        // MinValue - Tolerance estouraria com ArgumentOutOfRangeException.
+        var last = LastSeenUtc;
+        return last > DateTime.MinValue + Tolerance && nowUtc < last - Tolerance;
+    }
 
     /// <summary>"Agora" para conferir a validade: nunca antes da última vez em que o app rodou.</summary>
     public DateTime EffectiveNowUtc(DateTime nowUtc) { var last = LastSeenUtc; return nowUtc > last ? nowUtc : last; }

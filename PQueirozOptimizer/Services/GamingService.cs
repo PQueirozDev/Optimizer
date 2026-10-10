@@ -257,7 +257,7 @@ public sealed class GamingService
 
     private static void SaveSession(GameSession session)
     {
-        if (!Directory.Exists(DataDirectory)) { Directory.CreateDirectory(DataDirectory); RegistryTweakStore.ProtectDirectory(DataDirectory); }
+        RegistryTweakStore.EnsureProtectedDirectory(DataDirectory);
         var temp = SessionPath + ".tmp";
         File.WriteAllText(temp, JsonSerializer.Serialize(session));
         File.Move(temp, SessionPath, overwrite: true);
@@ -412,7 +412,7 @@ public sealed class GamingService
     // ================= Utilitários =================
     internal static int RunTool(string file, params string[] args)
     {
-        var psi = new ProcessStartInfo(file) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
+        var psi = new ProcessStartInfo(SystemTools.Resolve(file)) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (var a in args) psi.ArgumentList.Add(a);
         using var p = Process.Start(psi) ?? throw new InvalidOperationException("Não foi possível iniciar " + file);
         p.StandardOutput.ReadToEndAsync(); p.StandardError.ReadToEndAsync();
@@ -422,7 +422,7 @@ public sealed class GamingService
 
     internal static string RunToolOutput(string file, params string[] args)
     {
-        var psi = new ProcessStartInfo(file) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
+        var psi = new ProcessStartInfo(SystemTools.Resolve(file)) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (var a in args) psi.ArgumentList.Add(a);
         try
         {
@@ -430,7 +430,10 @@ public sealed class GamingService
             if (p is null) return "";
             var output = p.StandardOutput.ReadToEndAsync();
             p.StandardError.ReadToEndAsync();
-            return p.WaitForExit(30_000) ? output.GetAwaiter().GetResult() : "";
+            if (p.WaitForExit(30_000)) return output.GetAwaiter().GetResult();
+            // Ferramenta travada: encerra em vez de deixar o processo e a leitura pendurados
+            try { p.Kill(true); } catch (InvalidOperationException) { }
+            return "";
         }
         catch (Win32Exception) { return ""; }
     }

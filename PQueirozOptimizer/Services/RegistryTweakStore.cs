@@ -185,14 +185,24 @@ public sealed class RegistryTweakStore
 
     private void Save(string path, Backup backup)
     {
-        if (!Directory.Exists(_directory))
-        {
-            Directory.CreateDirectory(_directory);
-            ProtectDirectory(_directory);
-        }
+        EnsureProtectedDirectory(_directory);
         var temp = path + ".tmp";
         File.WriteAllText(temp, JsonSerializer.Serialize(backup, new JsonSerializerOptions { WriteIndented = true }));
         File.Move(temp, path, overwrite: true);
+    }
+
+    /// <summary>
+    /// Cria a pasta de dados elevados ou, se já existe, confere e reprotege. Uma pasta criada antes por outra
+    /// conta (ou um junction apontando para outro lugar) não pode ser usada do jeito que está: quem a criou
+    /// poderia trocar os arquivos que o app depois executa ou restaura como administrador.
+    /// </summary>
+    internal static void EnsureProtectedDirectory(string directory)
+    {
+        var info = new DirectoryInfo(directory);
+        if (info.Exists && info.Attributes.HasFlag(FileAttributes.ReparsePoint))
+            throw new InvalidOperationException($"A pasta {directory} é um link para outro local; por segurança, ela não será usada.");
+        if (!info.Exists) info.Create();
+        ProtectDirectory(directory);
     }
 
     /// <summary>Só administradores e o sistema alteram os backups; usuários comuns apenas leem.</summary>
@@ -211,6 +221,15 @@ public sealed class RegistryTweakStore
             new DirectoryInfo(directory).SetAccessControl(security);
         }
         // Sem administrador (ex.: testes) a pasta continua funcionando com as permissões herdadas
+        catch (Exception ex) when (ex is UnauthorizedAccessException or InvalidOperationException or IOException) { }
+        try
+        {
+            // O dono sempre pode mudar as permissões: a pasta passa a ser dos Administradores. Separado das
+            // permissões acima para que, se o Windows recusar a troca de dono, a ACL continue aplicada.
+            var owner = new DirectorySecurity();
+            owner.SetOwner(new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null));
+            new DirectoryInfo(directory).SetAccessControl(owner);
+        }
         catch (Exception ex) when (ex is UnauthorizedAccessException or InvalidOperationException or IOException) { }
     }
 
