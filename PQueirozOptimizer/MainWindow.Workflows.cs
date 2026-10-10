@@ -281,12 +281,28 @@ public partial class MainWindow
             apply.Click += async (_, _) =>
             {
                 var selected = checks.Where(c => c.IsChecked == true).Select(c => (string)c.Tag).ToArray();
+                // Arriscados e não reversíveis pedem confirmação própria, mesmo vindo de "Selecionar todos"
+                if (ConfirmationSummary(steps.Where(s => selected.Contains(s.Name))) is { } summary &&
+                    Msg(summary, "Confirmar ajustes", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
                 await RunLiveAsync(operation, selected);
             };
             root.Children.Add(ActionBar(selectedLabel, selectAll, apply));
             ContentHost.Children.Clear(); ContentHost.Children.Add(root);
         }
         catch (Exception ex) { _log.Write("ERROR", ex.Message); OperationStatus.Text = ex.Message; }
+    }
+
+    /// <summary>Texto da confirmação extra, ou null se nenhum ajuste escolhido é arriscado ou sem volta.</summary>
+    internal static string? ConfirmationSummary(IEnumerable<OperationStep> selected)
+    {
+        var list = selected.ToList();
+        var risky = list.Where(s => s.Risk == StepRisk.High).Select(s => s.Name).ToList();
+        var permanent = list.Where(s => s.Effect == StepEffect.Irreversible).Select(s => s.Name).ToList();
+        if (risky.Count == 0 && permanent.Count == 0) return null;
+        var parts = new List<string>();
+        if (risky.Count > 0) parts.Add("Arriscados (podem desligar algo que você usa):\n• " + string.Join("\n• ", risky));
+        if (permanent.Count > 0) parts.Add("Não reversíveis (a reversão não desfaz):\n• " + string.Join("\n• ", permanent));
+        return string.Join("\n\n", parts) + "\n\nAplicar mesmo assim?";
     }
 
     private async Task ShowCleanPreviewAsync()

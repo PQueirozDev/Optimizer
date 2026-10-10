@@ -442,12 +442,14 @@ internal static class Program
             Directory.CreateDirectory(root);
             if (args.Contains("--branding")) { BrandingTests.Run(); return 0; }
             if (args.Contains("--recovery")) { RecoveryTests.Run(); return 0; }
+            if (args.Contains("--safety")) { SafetyTests.Run(Path.Combine(root, "safety")); return 0; }
             // Fotos e vídeo do site (não rodam os testes)
             if (args.Contains("--shots")) return Media.Shots(root);
             if (args.Contains("--tour")) return Media.Tour(root);
             if (args.Contains("--switches")) return Switches();
             if (args.Contains("--videoshots")) return Media.VideoShots(root);
             RecoveryTests.Run();
+            SafetyTests.Run(Path.Combine(root, "safety"));
             var log = new ActivityLog(Path.Combine(root, "verification.log"));
             BiosAdvisorTests.Run();
             if (args.Contains("--bios-advisor-live")) return BiosAdvisorTests.Live(log);
@@ -462,7 +464,7 @@ internal static class Program
             Assert(standardSteps.Any(s => s.Name == "Plano de energia Qrz") == SystemConditions.IsDesktop &&
                 advancedSteps.Any(s => s.Name == "Plano de energia Qrz") == SystemConditions.IsDesktop,
                 "Plano Qrz só aparece em desktops nos dois planos");
-            Assert(PowerShellBridge.ClassifyRisk("@{ Nome = \"X\"; Risco = \"alto\"; Acao = {") == StepRisk.High && PowerShellBridge.ClassifyRisk("{\n    # risco: moderado\n") == StepRisk.Moderate && PowerShellBridge.ClassifyRisk("{ ipconfig /flushdns }") == StepRisk.Safe, "Risco lido da tabela, do comentário ou seguro por padrão");
+            Assert(PowerShellBridge.ClassifyRisk("@{ Nome = \"X\"; Risco = \"alto\"; Acao = {") == StepRisk.High && PowerShellBridge.ClassifyRisk("{\n    # risco: moderado\n") == StepRisk.Moderate && PowerShellBridge.ClassifyRisk("{ ipconfig /flushdns }") == StepRisk.Moderate, "Risco lido da tabela, do comentário ou moderado por padrão");
             Assert(!bridge.GetSteps("gamer").Any(s => s.Name.Contains("MSI")), "Modo MSI não é aplicado automaticamente");
             Assert(SystemConditions.Satisfies(null) && SystemConditions.Satisfies("desconhecida") && SystemConditions.Satisfies("win10") != SystemConditions.Satisfies("win11"), "Condições: vazia e desconhecida liberam; Windows 10 e 11 se excluem");
             var keepServices = bridge.GetSteps("gamerservicos");

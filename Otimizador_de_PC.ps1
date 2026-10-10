@@ -615,11 +615,23 @@ function Criar-PontoDeRestauracao {
 # ---------------------------------------------------------------
 # 2. Limpeza de arquivos temporarios (usada nas duas versoes)
 # ---------------------------------------------------------------
+# $env:TEMP vem do ambiente de quem abriu o script: so e apagado se for mesmo uma pasta Temp
+# (nunca a raiz de uma unidade, um link ou outra pasta qualquer, ja que o script roda como administrador)
+function Obter-PastaTempSegura {
+    $pasta = [IO.Path]::GetFullPath("$env:TEMP").TrimEnd('\')
+    $item = Get-Item -LiteralPath $pasta -Force -ErrorAction Stop
+    if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "A pasta TEMP ($pasta) e um link; limpeza cancelada." }
+    if ($pasta -eq [IO.Path]::GetPathRoot($pasta).TrimEnd('\') -or (Split-Path $pasta -Leaf) -notmatch '^(Temp|Tmp)$') {
+        throw "A pasta TEMP ($pasta) nao parece uma pasta temporaria; limpeza cancelada."
+    }
+    return $pasta
+}
+
 function Limpar-Temporarios {
     if ($UiMode) { Write-Host 'Limpeza de arquivos: use a analise e selecao na Limpeza Rapida.'; return }
     Write-Secao "Limpando arquivos temporarios e cache"
     $etapas = @(
-        @{ Nome = "Pasta TEMP do usuario";              Acao = { Remove-Item "$env:TEMP\*" -Recurse -Force } }
+        @{ Nome = "Pasta TEMP do usuario";              Acao = { Remove-Item "$(Obter-PastaTempSegura)\*" -Recurse -Force } }
         @{ Nome = "Pasta TEMP do Windows";               Acao = { Remove-Item "$env:SystemRoot\Temp\*" -Recurse -Force } }
         @{ Nome = "Lixeira";                              Acao = { Clear-RecycleBin -Force } }
         @{ Nome = "Cache de miniaturas";                 Acao = { Remove-Item "$env:LOCALAPPDATA\Microsoft\Windows\Explorer\thumbcache_*.db" -Force } }
@@ -672,12 +684,12 @@ function Otimizar-Padrao {
                 Capturar-PlanoEnergia
                 Aplicar-PlanoQrz
             } }
-        @{ Nome = "Otimizando/TRIM das unidades de disco"; Acao = {
+        @{ Nome = "Otimizando/TRIM das unidades de disco"; Risco = "seguro"; Acao = {
                 Otimizar-Unidades
             } }
-        @{ Nome = "Limpando cache DNS";                  Acao = { ipconfig /flushdns } }
-        @{ Nome = "Executando limpeza de disco (cleanmgr)"; Acao = { Executar-Cleanmgr } }
-        @{ Nome = "Desativando sugestoes, anuncios e apps instalados automaticamente"; Acao = {
+        @{ Nome = "Limpando cache DNS"; Risco = "seguro";                  Acao = { ipconfig /flushdns } }
+        @{ Nome = "Executando limpeza de disco (cleanmgr)"; Risco = "seguro"; Acao = { Executar-Cleanmgr } }
+        @{ Nome = "Desativando sugestoes, anuncios e apps instalados automaticamente"; Risco = "seguro"; Acao = {
                 # Impede o Windows de instalar jogos/apps promocionais e mostrar anuncios no Iniciar e no Explorer
                 $cdm = "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
                 foreach ($nome in @("SilentInstalledAppsEnabled", "PreInstalledAppsEnabled", "OemPreInstalledAppsEnabled", "SystemPaneSuggestionsEnabled",
@@ -687,11 +699,11 @@ function Otimizar-Padrao {
                 }
                 Set-PoliticaDword "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "ShowSyncProviderNotifications" 0
             } }
-        @{ Nome = "Limitando o upload de atualizacoes a rede local (Delivery Optimization)"; Acao = {
+        @{ Nome = "Limitando o upload de atualizacoes a rede local (Delivery Optimization)"; Risco = "seguro"; Acao = {
                 # 1 = compartilha atualizacoes somente com PCs da mesma rede, nunca com a internet
                 Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization" "DODownloadMode" 1
             } }
-        @{ Nome = "Desativando a inicializacao rapida (Fast Startup)"; Acao = {
+        @{ Nome = "Desativando a inicializacao rapida (Fast Startup)"; Risco = "seguro"; Acao = {
                 # Com ela ligada o "Desligar" so hiberna o kernel: drivers e atualizacoes nao reiniciam de verdade
                 Set-PoliticaDword "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" "HiberbootEnabled" 0
             } }
@@ -890,13 +902,20 @@ function Aplicar-PlanoQrz {
     powercfg /duplicatescheme $script:PlanoEquilibrado $qrz | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "Nao foi possivel criar o plano Qrz." }
     powercfg /changename $qrz "Qrz" | Out-Null
+    # Algumas configuracoes nao existem em todo hardware (ex.: opcoes de CPU de outro fabricante):
+    # nao impedem o plano, mas aparecem no registro em vez de sumir em silencio
+    $naoAplicadas = 0
     foreach ($linha in Get-Content -LiteralPath $arquivo) {
         $dados = ($linha -split '#', 2)[0].Trim() -split '\s+'
         if ($dados.Count -ne 4) { continue }
         $sub = $dados[0]; $setting = $dados[1]; $ac = $dados[2]; $dc = $dados[3]
         powercfg /setacvalueindex $qrz $sub $setting $ac | Out-Null
+        if ($LASTEXITCODE -ne 0) { $naoAplicadas++ }
         powercfg /setdcvalueindex $qrz $sub $setting $dc | Out-Null
+        if ($LASTEXITCODE -ne 0) { $naoAplicadas++ }
     }
+    if ($naoAplicadas -gt 0) { Write-Host "[AVISO] Plano Qrz: $naoAplicadas valor(es) nao existem neste PC e ficaram no padrao do Windows." }
+    $global:LASTEXITCODE = 0
     powercfg /setactive $qrz | Out-Null
     if ($LASTEXITCODE -ne 0 -or (Obter-PlanoAtivo) -ne $qrz) { throw "Nao foi possivel ativar o plano Qrz." }
 }
@@ -932,7 +951,7 @@ function Otimizar-Gamer {
                 Capturar-PlanoEnergia
                 if (Pode-AplicarPlanoQrz) { Aplicar-PlanoQrz } else { Write-Host "[INFO] Plano atual mantido neste equipamento." }
             } }
-        @{ Nome = "Priorizando CPU para o jogo em foco";  Acao = {
+        @{ Nome = "Priorizando CPU para o jogo em foco"; Risco = "seguro";  Acao = {
                 # 38 (0x26) = quantum curto, variavel, 3x para a janela em foco. No Windows cliente o
                 # padrao (2) ja equivale a isso; o ajuste corrige PCs configurados para "servicos em segundo plano".
                 $atual = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" -Name Win32PrioritySeparation -ErrorAction SilentlyContinue).Win32PrioritySeparation
@@ -970,7 +989,7 @@ function Otimizar-Gamer {
                 Garantir-Chave "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR"
                 Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" "AllowGameDVR" 0
             } }
-        @{ Nome = "Ativando Modo de Jogo do Windows";     Acao = {
+        @{ Nome = "Ativando Modo de Jogo do Windows"; Risco = "seguro";     Acao = {
                 Set-PoliticaDword "HKCU:\Software\Microsoft\GameBar" "AllowAutoGameMode" 1
                 Set-PoliticaDword "HKCU:\Software\Microsoft\GameBar" "AutoGameModeEnabled" 1
             } }
@@ -982,7 +1001,7 @@ function Otimizar-Gamer {
                 Capturar-Registro "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" "HwSchMode"
                 Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" "HwSchMode" 2 -Type DWord
             } }
-        @{ Nome = "Ajustando efeitos visuais p/ desempenho"; Acao = { Aplicar-EfeitosVisuaisDesempenho } }
+        @{ Nome = "Ajustando efeitos visuais p/ desempenho"; Risco = "seguro"; Acao = { Aplicar-EfeitosVisuaisDesempenho } }
         @{ Nome = "Desativando aceleracao do ponteiro do mouse"; Risco = "moderado"; Acao = {
                 $mousePath = "HKCU:\Control Panel\Mouse"
                 Capturar-Registro $mousePath "MouseSpeed"
@@ -996,11 +1015,11 @@ function Otimizar-Gamer {
                     Set-ItemProperty $mousePath "MouseThreshold2" "0" -Type String
                 }
             } }
-        @{ Nome = "Limpando cache DNS";                   Acao = { ipconfig /flushdns } }
-        @{ Nome = "Otimizando unidades de disco";         Acao = {
+        @{ Nome = "Limpando cache DNS"; Risco = "seguro";                   Acao = { ipconfig /flushdns } }
+        @{ Nome = "Otimizando unidades de disco"; Risco = "seguro";         Acao = {
                 Otimizar-Unidades
             } }
-        @{ Nome = "Desativando experiencias personalizadas com dados de diagnostico"; Acao = {
+        @{ Nome = "Desativando experiencias personalizadas com dados de diagnostico"; Risco = "seguro"; Acao = {
                 Set-PoliticaDword "HKCU:\Software\Microsoft\Windows\CurrentVersion\Privacy" "TailoredExperiencesWithDiagnosticDataEnabled" 0
             } }
         @{ Nome = "Aplicando politicas do Editor de Politica de Grupo (diagnostico, nuvem, IA e Push)"; Risco = "moderado"; Acao = { Aplicar-PoliticasAvancadas } }
@@ -1110,6 +1129,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Remover componentes relacionados a Cortana?" `
         "Cortana removida" `
         {
+            # risco: moderado
             Registrar-Irreversivel "Cortana (app removido - reinstale pela Microsoft Store se precisar)"
             Get-AppxPackage -AllUsers -Name "*Microsoft.549981C3F5F10*" | Remove-AppxPackage -AllUsers
         } $modoRapido
@@ -1118,6 +1138,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Remover Widgets / Windows Web Experience?" `
         "Widgets removidos" `
         {
+            # risco: moderado
             # requer: win11
             Registrar-Irreversivel "Widgets/Web Experience (app removido - reinstale pela Microsoft Store se precisar)"
             Get-AppxPackage -AllUsers | Where-Object {
@@ -1149,6 +1170,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Desativar o servico de Fax?" `
         "Servico de Fax desativado" `
         {
+            # risco: seguro
             Desativar-Servico "Fax"
         } $modoRapido
 
@@ -1156,6 +1178,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Desativar o servico de Registro Remoto (Remote Registry)?" `
         "Remote Registry desativado" `
         {
+            # risco: seguro
             Desativar-Servico "RemoteRegistry"
         } $modoRapido
 
@@ -1163,6 +1186,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Desativar a Assistencia Remota (Remote Assistance)?" `
         "Assistencia Remota desativada" `
         {
+            # risco: seguro
             Capturar-Registro "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance" "fAllowToGetHelp"
             Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance" "fAllowToGetHelp" -Type DWord -Value 0
         } $modoRapido
@@ -1171,6 +1195,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Desativar o servico de Mapas (Maps Broker)?" `
         "Servico de Mapas desativado" `
         {
+            # risco: seguro
             Desativar-Servico "MapsBroker"
         } $modoRapido
 
@@ -1186,6 +1211,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Desativar tarefas opcionais de CEIP e feedback?" `
         "Desativando tarefas opcionais de CEIP e feedback" `
         {
+            # risco: seguro
             $tasks = @(
                 "\Microsoft\Windows\Customer Experience Improvement Program\Consolidator",
                 "\Microsoft\Windows\Customer Experience Improvement Program\UsbCeip",
@@ -1225,6 +1251,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Desativar o ID de publicidade (anuncios personalizados)?" `
         "ID de publicidade desativado" `
         {
+            # risco: seguro
             Set-PoliticaDword "HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo" "Enabled" 0
             Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo" "DisabledByGroupPolicy" 1
         } $modoRapido
@@ -1232,18 +1259,21 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Desativar experiencias personalizadas com dados de diagnostico?" `
         "Desativando experiencias personalizadas com dados de diagnostico" `
         {
+            # risco: seguro
             Set-PoliticaDword "HKCU:\Software\Microsoft\Windows\CurrentVersion\Privacy" "TailoredExperiencesWithDiagnosticDataEnabled" 0
         } $modoRapido
 
     Executar-Se-Confirmado "Remover resultados da web (Bing) da pesquisa do menu Iniciar?" `
         "Pesquisa na web removida do menu Iniciar" `
         {
+            # risco: seguro
             Set-PoliticaDword "HKCU:\Software\Policies\Microsoft\Windows\Explorer" "DisableSearchBoxSuggestions" 1
         } $modoRapido
 
     Executar-Se-Confirmado "Desativar o historico de atividades (linha do tempo)?" `
         "Historico de atividades desativado" `
         {
+            # risco: seguro
             $sistema = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System"
             Set-PoliticaDword $sistema "EnableActivityFeed" 0
             Set-PoliticaDword $sistema "PublishUserActivities" 0
@@ -1265,6 +1295,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Desativar o Recall (capturas da tela para a IA)?" `
         "Recall desativado" `
         {
+            # risco: seguro
             # requer: win11-24h2
             Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI" "DisableAIDataAnalysis" 1
             Set-PoliticaDword "HKCU:\Software\Policies\Microsoft\Windows\WindowsAI" "DisableAIDataAnalysis" 1
@@ -1275,6 +1306,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Desativar o Click To Do?" `
         "Click To Do desativado" `
         {
+            # risco: seguro
             # requer: win11-24h2
             Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI" "DisableClickToDo" 1
             Set-PoliticaDword "HKCU:\Software\Policies\Microsoft\Windows\WindowsAI" "DisableClickToDo" 1
@@ -1284,6 +1316,7 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Ajustar efeitos visuais para melhor desempenho?" `
         "Efeitos visuais ajustados" `
         {
+            # risco: seguro
             Aplicar-EfeitosVisuaisDesempenho
         } $modoRapido
 
@@ -1291,8 +1324,9 @@ function Otimizar-Debloat {
     Executar-Se-Confirmado "Executar limpeza final de arquivos temporarios?" `
         "Arquivos temporarios removidos" `
         {
+            # risco: seguro
             if ($UiMode) { throw 'Use a Limpeza Rapida para analisar e selecionar arquivos.' }
-            Remove-Item "$env:TEMP\*" -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item "$(Obter-PastaTempSegura)\*" -Recurse -Force -ErrorAction SilentlyContinue
             Remove-Item "$env:SystemRoot\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
         } $modoRapido
 
@@ -2240,19 +2274,19 @@ function Otimizar-Inteligente {
                 Capturar-PlanoEnergia
                 if (($perfil -eq "Jogos" -or $perfil -eq "Misto") -and (Pode-AplicarPlanoQrz)) { Aplicar-PlanoQrz }
             } }
-        @{ Nome = "Limpando cache DNS"; Acao = { ipconfig /flushdns } }
-        @{ Nome = "Otimizando/TRIM das unidades de disco"; Acao = {
+        @{ Nome = "Limpando cache DNS"; Risco = "seguro"; Acao = { ipconfig /flushdns } }
+        @{ Nome = "Otimizando/TRIM das unidades de disco"; Risco = "seguro"; Acao = {
                 Otimizar-Unidades
             } }
-        @{ Nome = "Limpeza de disco (cleanmgr)"; Acao = { Executar-Cleanmgr } }
+        @{ Nome = "Limpeza de disco (cleanmgr)"; Risco = "seguro"; Acao = { Executar-Cleanmgr } }
     )
     if ($perfil -eq "Jogos" -or $perfil -eq "Misto") {
-        $etapas += @{ Nome = "Ativando Modo de Jogo do Windows"; Acao = {
+        $etapas += @{ Nome = "Ativando Modo de Jogo do Windows"; Risco = "seguro"; Acao = {
                 Set-PoliticaDword "HKCU:\Software\Microsoft\GameBar" "AllowAutoGameMode" 1
                 Set-PoliticaDword "HKCU:\Software\Microsoft\GameBar" "AutoGameModeEnabled" 1
             } }
     }
-    $etapas += @{ Nome = "Verificando arquivos do sistema (sfc /verifyonly)"; Acao = { sfc /verifyonly } }
+    $etapas += @{ Nome = "Verificando arquivos do sistema (sfc /verifyonly)"; Risco = "seguro"; Acao = { sfc /verifyonly } }
 
     Executar-Etapas "Otimizacao Inteligente" $etapas
     Salvar-Snapshot

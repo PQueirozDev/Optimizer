@@ -18,8 +18,9 @@ public sealed record OperationStep(string Name, StepEffect Effect, StepRisk Risk
 public sealed class PowerShellBridge
 {
     private readonly ActivityLog _log;
+    private readonly OperationJournal _journal;
     private readonly string _scriptPath = Path.Combine(AppContext.BaseDirectory, "Otimizador_de_PC.ps1");
-    public PowerShellBridge(ActivityLog log) => _log = log;
+    public PowerShellBridge(ActivityLog log, OperationJournal? journal = null) { _log = log; _journal = journal ?? OperationJournal.Default; }
 
     /// <summary>
     /// Executa um script curto via -EncodedCommand. Valores externos (caminhos, nomes) devem
@@ -29,7 +30,7 @@ public sealed class PowerShellBridge
     public static async Task<string> RunScriptAsync(string script, IReadOnlyDictionary<string, string>? variables = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
         var wrapped = "$ErrorActionPreference='Stop'; [Console]::OutputEncoding=[Text.Encoding]::UTF8;\n" + script;
-        var psi = new ProcessStartInfo("powershell.exe")
+        var psi = new ProcessStartInfo(SystemTools.PowerShell)
         {
             UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true,
@@ -121,11 +122,12 @@ public sealed class PowerShellBridge
         return !match.Success ? null : (match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value).Trim();
     }
 
+    /// <summary>Etapa sem marcador conta como Moderada: só o que foi revisado e marcado "seguro" aparece como Seguro.</summary>
     public static StepRisk ClassifyRisk(string code) => Marker(code, "risco")?.ToLowerInvariant() switch
     {
         "alto" => StepRisk.High,
-        "moderado" => StepRisk.Moderate,
-        _ => StepRisk.Safe,
+        "seguro" => StepRisk.Safe,
+        _ => StepRisk.Moderate,
     };
 
     public static StepEffect ClassifyStep(string code) =>
@@ -137,8 +139,17 @@ public sealed class PowerShellBridge
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (!File.Exists(_scriptPath)) throw new FileNotFoundException("Script de operações não encontrado.", _scriptPath);
+        // O registro só some quando o script termina: se o app cair no meio, a próxima abertura avisa
+        var journaled = OperationJournal.Tracked.Contains(operation);
+        if (journaled) _journal.Begin(operation, selectedSteps);
+        try { await RunScriptFileAsync(operation, selectedSteps, progress, cancellationToken); }
+        finally { if (journaled) _journal.End(); }
+    }
+
+    private async Task RunScriptFileAsync(string operation, IReadOnlyList<string>? selectedSteps, IProgress<string>? progress, CancellationToken cancellationToken)
+    {
         _log.Write("INFO", $"Iniciando: {operation}");
-        var psi = new ProcessStartInfo("powershell.exe")
+        var psi = new ProcessStartInfo(SystemTools.PowerShell)
         {
             UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true,

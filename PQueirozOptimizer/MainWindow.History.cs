@@ -18,6 +18,26 @@ public partial class MainWindow
 {
     private void History_Click(object sender, RoutedEventArgs e) => NavigateTo("history");
 
+    /// <summary>
+    /// Avisa, na abertura, que uma otimização começou e o app fechou antes de ela terminar. Os itens já
+    /// aplicados estão no backup (gravado antes de cada mudança); o usuário decide se confere ou reverte.
+    /// </summary>
+    private void ShowInterruptedOperationNotice()
+    {
+        if (OperationJournal.Default.FindInterrupted() is not { } entry) return;
+        var name = entry.Operation switch
+        {
+            "padrao" => "Versão Padrão",
+            "reverter" => "Reversão da otimização",
+            _ => OperationTitles.GetValueOrDefault(entry.Operation, "Otimização"),
+        };
+        _log.Write("WARN", $"Operação interrompida detectada: {name} (iniciada em {entry.StartedAtUtc.ToLocalTime():dd/MM/yyyy HH:mm})");
+        OperationJournal.Default.Acknowledge();
+        if (Msg($"A operação \"{name}\", iniciada em {entry.StartedAtUtc.ToLocalTime():dd/MM/yyyy HH:mm}, não terminou: o Qrztweaks fechou durante a execução.\n\nO que foi aplicado até ali tem backup. Abrir Atividade e reversão para conferir ou reverter?",
+                "Operação interrompida", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.Yes) == MessageBoxResult.Yes)
+            NavigateTo("history");
+    }
+
     /// <summary>Linha de um ajuste no backup pendente: nome, itens alterados e o botão Desfazer.</summary>
     private Border BackupStepRow(string? step, JsonElement[] items)
     {
