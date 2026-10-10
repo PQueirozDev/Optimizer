@@ -1,34 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Ícone do Qrztweaks: um "Q" geométrico cuja perna é um raio (desempenho, plano de energia Qrz).
-       Formas simples de propósito: precisa continuar legível em 16 px (barra de tarefas e favicon). -->
+  <!-- Ícone do Qrztweaks: "Q" geométrico cuja perna é um raio. Gerado por tools/Create-AppIcon.ps1 (versão grande). -->
   <defs>
-    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#121a2c"/>
-      <stop offset="1" stop-color="#06080e"/>
-    </linearGradient>
-    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#7fb0ff"/>
-      <stop offset="0.45" stop-color="#2f7bff"/>
-      <stop offset="1" stop-color="#1b4fd1"/>
-    </linearGradient>
-    <linearGradient id="bolt" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#b9c6dc"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="0.42" cy="0.4" r="0.6">
-      <stop offset="0" stop-color="#2f7bff" stop-opacity="0.28"/>
-      <stop offset="1" stop-color="#2f7bff" stop-opacity="0"/>
-    </radialGradient>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#262036"/><stop offset="1" stop-color="#101016"/></linearGradient>
+    <linearGradient id="ring" x1="0.15" y1="0" x2="0.85" y2="1"><stop offset="0" stop-color="#C4B5FD"/><stop offset="1" stop-color="#6D28D9"/></linearGradient>
+    <linearGradient id="bolt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#DDD6FE"/></linearGradient>
+    <radialGradient id="glow" cx="0.47" cy="0.47" r="0.5"><stop offset="0" stop-color="#7C3AED" stop-opacity="0.43"/><stop offset="1" stop-color="#7C3AED" stop-opacity="0"/></radialGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.13"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <mask id="gap"><rect width="512" height="512" fill="#fff"/><polygon transform="translate(346 350) rotate(-62) scale(0.86)" points="-18,-112 58,-112 16,-14 68,-14 -40,114 -8,12 -60,12" fill="#000" stroke="#000" stroke-width="35" stroke-linejoin="round"/></mask>
+    <clipPath id="clip"><rect x="24" y="24" width="464" height="464" rx="112"/></clipPath>
   </defs>
-
-  <rect x="16" y="16" width="480" height="480" rx="116" fill="url(#tile)"/>
-  <rect x="16" y="16" width="480" height="480" rx="116" fill="url(#glow)"/>
-  <rect x="19" y="19" width="474" height="474" rx="113" fill="none" stroke="#5c9bff" stroke-opacity="0.35" stroke-width="6"/>
-
-  <!-- Anel do Q, aberto embaixo à direita para o raio passar -->
-  <path d="M 324.9 320.9 A 120 120 0 1 1 357.4 260.9" fill="none" stroke="url(#ring)" stroke-width="60" stroke-linecap="round"/>
-
-  <!-- Raio: a perna do Q -->
-  <path d="M 290 226 L 366 226 L 334 286 L 404 286 L 292 430 L 320 338 L 256 338 Z"
-        fill="url(#bolt)" stroke="#06080e" stroke-width="14" stroke-linejoin="round" paint-order="stroke"/>
+  <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#tile)"/>
+  <g clip-path="url(#clip)">
+    <circle cx="240" cy="240" r="230" fill="url(#glow)"/>
+    <rect x="0" y="0" width="512" height="200" fill="url(#shine)"/>
+    <circle cx="240" cy="240" r="124" fill="none" stroke="url(#ring)" stroke-width="68" mask="url(#gap)"/>
+    <polygon transform="translate(346 350) rotate(-62) scale(0.86)" points="-18,-112 58,-112 16,-14 68,-14 -40,114 -8,12 -60,12" fill="url(#bolt)"/>
+  </g>
+  <rect x="26" y="26" width="460" height="460" rx="110" fill="none" stroke="#7C3AED" stroke-opacity="0.55" stroke-width="4"/>
 </svg>

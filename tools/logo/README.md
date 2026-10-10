@@ -1,9 +1,18 @@
 # Ícone Qrztweaks
 
-Fonte atual: `../../PQueirozOptimizer/Assets/app.png`, gerada com a ferramenta integrada imagegen.
-O arquivo `qrztweaks-icon.svg` é a arte anterior, mantida como referência histórica.
+Um "Q" geométrico cuja perna é um raio (desempenho), violeta sobre um bloco grafite, nas cores do app
+(#7C3AED, #A78BFA, #F5F3FF sobre #1C1A25 → #101016).
 
-Prompt usado:
-> Create one polished Windows desktop application icon for Qrztweaks, a Windows optimization app whose UI uses deep charcoal and violet. A single bold geometric letter Q integrated with a subtle lightning-shaped diagonal tail, luminous violet to lavender enamel on a dark charcoal rounded-square tile. Minimal premium product identity, flat frontal view, crisp silhouette, broad simple shapes readable at 16x16, ample internal padding, no small details, no words, no extra letters, no watermark, no surrounding props. Tile fills 88 percent of square canvas, transparent background outside rounded corners. Output as a square high-resolution app icon.
+A fonte é o desenho em vetor dentro de `tools/Create-AppIcon.ps1`. O script desenha cada tamanho direto na
+resolução final, em vez de reduzir uma imagem grande:
 
-`tools/Create-AppIcon.ps1` converte o PNG em ICO com tamanhos 16, 24, 32, 48, 64, 128 e 256. `tools/Create-InstallerArt.ps1` atualiza as imagens do instalador. Os ícones do site usam a mesma fonte.
+- **16 a 32 px**: anel mais grosso, raio maior, sem borda nem brilho, para continuar nítido na barra de tarefas.
+- **48 px ou mais**: brilho violeta e fio de borda, sempre por dentro do bloco (fora dele o fundo é transparente).
+- O vão entre o anel e o raio é recortado do anel, então só aparece onde os dois se cruzam.
+
+```powershell
+powershell -File .\tools\Create-AppIcon.ps1      # app.png, app.ico, ícones do site e qrztweaks-icon.svg
+powershell -File .\tools\Create-InstallerArt.ps1 # imagens do instalador, a partir do app.png
+```
+
+`qrztweaks-icon.svg` é gerado pelo script (versão grande) e serve para referência ou para abrir num editor.
