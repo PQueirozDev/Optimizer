@@ -4,6 +4,23 @@ Aplicativo desktop para Windows, feito em C# + WPF (.NET 8), para otimização, 
 
 **Download:** [release mais recente](https://github.com/PQueirozDev/Optimizer/releases/latest) · **Site:** [qrztwk.vercel.app](https://qrztwk.vercel.app/) · **Compra e suporte:** [servidor do Discord](https://discord.gg/pHJ4Waxft)
 
+## Novidades da 2.0
+
+- **Smart Optimize**: lê o hardware e o estado real de cada ajuste, recomenda pelo objetivo (gaming competitivo,
+  notebook, programação, uso diário ou personalizado), mostra risco, reversão e evidência, bloqueia conflitos e
+  confere no Windows o que foi aplicado.
+- **Performance Lab**: FPS médio, mínimo, 1% low, 0,1% low e frametime P95/P99 pelo PresentMon, sensores por segundo,
+  histórico, comparação antes/depois e exportação CSV/JSON/PDF. Nada é estimado.
+- **Optimization Lab**: mede um ajuste por vez com várias gravações e teste estatístico.
+- **Diagnóstico inteligente**, **Command Center**, **modo compacto** para segundo monitor e **perfis** por jogo.
+- **Segurança**: atualizações com hash assinado, operações elevadas endurecidas, aviso de operação interrompida e
+  modo demonstração sem licença (só leitura).
+
+Documentação: [manual](docs/MANUAL.md) · [Smart Optimize](docs/guias/SMART-OPTIMIZE.md) ·
+[Performance Lab](docs/guias/PERFORMANCE-LAB.md) · [segurança](docs/guias/SEGURANCA.md) ·
+[licenças](docs/guias/LICENCAS.md) · [arquitetura](docs/ARQUITETURA.md) · [desenvolvimento](docs/DESENVOLVIMENTO.md) ·
+[changelog](CHANGELOG.md).
+
 ## Principais funcionalidades
 
 - Visão geral com as informações do sistema e uma nota de saúde do PC.
@@ -62,7 +79,7 @@ dotnet run --project .\PQueirozOptimizer\PQueirozOptimizer.csproj
 dotnet run --project .\tests\Optimizer.Verification
 ```
 
-O projeto de verificação também aceita `--render`, que gera imagens das telas, e `--i18n`, que confere se a interface em inglês está toda traduzida (o esperado é 0 textos em português). O teste que ativa e desativa serviços só roda com o terminal aberto como administrador; no GitHub Actions ele sempre roda.
+O projeto de verificação também aceita `--render`, que gera imagens das telas, `--i18n`, que confere se a interface em inglês está toda traduzida, `--safety` (segurança e reversão) e `--v2` (Smart Optimize, Performance Lab, diagnóstico, perfis, atualizações assinadas e modo demonstração). Detalhes em [docs/DESENVOLVIMENTO.md](docs/DESENVOLVIMENTO.md). O teste que ativa e desativa serviços só roda com o terminal aberto como administrador; no GitHub Actions ele sempre roda.
 
 ## Banco do BIOS Advisor
 
@@ -102,7 +119,8 @@ artifacts\installer\Qrztweaks-Setup-v1.5.0.exe
 ## Publicar uma versão
 
 1. Atualize a versão em `Directory.Build.props` e em `installer/PQueirozOptimizer.iss` (`MyAppVersion`).
-2. Escreva as notas da versão em `PQueirozOptimizer/Pages/MainWindow.Info.cs` e as traduções em inglês em `PQueirozOptimizer/Services/Translator.Strings.cs`.
+2. Escreva as notas da versão em `PQueirozOptimizer/Pages/MainWindow.Info.cs` e as traduções em inglês em `PQueirozOptimizer/Services/Translator.V2.cs`.
+   O secret `UPDATE_SIGNING_KEY` precisa existir no GitHub: sem ele o workflow não publica (veja [assinatura das releases](docs/DESENVOLVIMENTO.md#chaves-e-assinaturas)).
 3. Rode os [testes](#testes), incluindo a checagem `--i18n`.
 4. Faça o commit, crie a tag e envie (exemplo para a 1.6.0):
 
@@ -114,11 +132,11 @@ git push origin main
 git push origin v1.6.0
 ```
 
-Ao receber a tag, o GitHub Actions roda os testes, compila o aplicativo, gera o instalador, publica o `SHA256SUMS.txt` e cria a Release com notas automáticas. Pull requests também rodam os testes.
+Ao receber a tag, o GitHub Actions roda os testes, compila o aplicativo, gera o instalador, publica o `SHA256SUMS.txt` assinado (`SHA256SUMS.txt.sig`) e cria a Release com notas automáticas. Pull requests também rodam os testes.
 
 ## Atualizações automáticas
 
-Ao abrir, o aplicativo consulta a release mais recente pela API do GitHub, sem login; por isso este repositório precisa continuar público. Quando a release contém o `SHA256SUMS.txt`, o instalador é baixado para uma pasta protegida em `ProgramData`, conferido pelo hash e executado em modo silencioso, e o aplicativo reabre sozinho ao terminar. Releases sem o arquivo de hash abrem apenas a página de download.
+Ao abrir, o aplicativo consulta a release mais recente pela API do GitHub, sem login; por isso este repositório precisa continuar público. Quando a release contém o `SHA256SUMS.txt` e a assinatura dele (`SHA256SUMS.txt.sig`, conferida com a chave de releases embutida no app), o instalador é baixado para uma pasta protegida em `ProgramData`, conferido pelo hash e executado em modo silencioso, e o aplicativo reabre sozinho ao terminar. Com mais de uma versão nova, instala direto a mais recente. Releases sem hash assinado abrem apenas a página de download.
 
 ## Emitir chaves de acesso (mantenedor)
 

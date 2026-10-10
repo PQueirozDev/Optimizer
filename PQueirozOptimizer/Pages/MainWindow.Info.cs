@@ -26,6 +26,16 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v2.0.0", "10/10/2026", new[]
+        {
+            "Smart Optimize: analisa o PC, lê o estado de cada ajuste e recomenda pelo objetivo (gaming competitivo, notebook, programação, uso diário ou personalizado), com risco, reversão e evidência de cada item.",
+            "Depois de aplicar, o estado é lido de novo no Windows: um ajuste só aparece como concluído quando a mudança é confirmada.",
+            "Performance Lab: FPS médio, mínimo, 1% low, 0,1% low e frametime P95/P99 pelo PresentMon, sensores a cada segundo, histórico, comparação antes/depois e exportação em CSV, JSON e PDF.",
+            "Optimization Lab: testa um ajuste por vez com várias gravações; diferenças pequenas aparecem como sem diferença comprovada.",
+            "Diagnóstico inteligente com evidências e grau de confiança, Command Center com alertas e ações rápidas, modo compacto para segundo monitor e perfis por jogo.",
+            "Segurança: atualizações com hash assinado, exclusões amplas do Defender recusadas, BIOS validada antes de gravar e aviso de operação interrompida.",
+            "Modo demonstração sem licença (só leitura) e pedido de transferência para quem trocou de PC ou reinstalou o Windows.",
+        }),
         ("v1.10.4", "10/10/2026", new[]
         {
             "Executável e identificação do aplicativo no Windows atualizados para Qrztweaks, mantendo licenças, backups e atalhos antigos compatíveis.",

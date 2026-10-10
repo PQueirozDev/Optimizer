@@ -46,18 +46,27 @@ Muitas fases do plano 2.0 já têm uma base no app. A regra é **evoluir o que e
   1. Atualizador: com mais de uma versão nova, instala direto a mais recente em vez de uma por uma
      (confere de novo na hora de instalar). Versões já instaladas recebem a correção na próxima atualização.
   2. Novo ícone do app, desenhado em vetor e renderizado por tamanho (`tools/Create-AppIcon.ps1`).
-- **B: Motor de otimização** (fases 2, 4 e 5): catálogo de ajustes com metadados, leitura de estado,
-  conflitos, recomendações por objetivo e Optimization Lab.
-- **C: Medição e diagnóstico** (fases 7 e 8).
-- **D: Interface** (fases 9 a 14).
-- **E: Perfis** (fase 15).
-- **F: Produto** (fases 16 a 20).
-- **G: Qualidade** (fases 21 e 22): contínua em todas as etapas, fechada no final.
+- **B: Motor de otimização** (fases 2, 4 e 5): concluída. `Engine/TweakCatalog.cs`, `SmartOptimizer.cs`,
+  `OptimizationLab.cs`; página Smart Optimize.
+- **C: Medição e diagnóstico** (fases 7 e 8): concluída. Performance Lab (PresentMon, sensores, histórico,
+  comparação, CSV/JSON/PDF) e diagnóstico inteligente.
+- **D: Interface** (fases 9 a 14): concluída. Command Center, barra lateral compactável, tema Meia-noite, redução de
+  movimento opcional, transições de 200–250 ms, modo compacto e verificação na tela ao vivo.
+- **E: Perfis** (fase 15): concluída. Perfis só com dados, importação validada, ativação por jogo.
+- **F: Produto** (fases 16 a 20): concluída no que não exige infraestrutura paga. Tela de ativação com planos e
+  transferência, modo demonstração, atualizações assinadas, site 2.0. Checkout e painel administrativo planejados
+  em [guias/LICENCAS.md](guias/LICENCAS.md).
+- **G: Qualidade** (fases 21 e 22): testes `--safety` e `--v2`, i18n das telas novas e a documentação em `docs/`.
+- **Revisão independente** (Codex) das etapas B–F: 9 problemas confirmados e corrigidos.
 
-## Decisões que dependem do dono do projeto
+## Decisões e pendências do dono do projeto
 
-1. **Autenticidade das atualizações**: assinar o `SHA256SUMS.txt` com uma chave RSA dedicada (custo zero, exige
-   um secret no GitHub) ou comprar um certificado Authenticode.
+1. **Secret `UPDATE_SIGNING_KEY`**: a chave de releases foi criada em `private/` (fora do Git). Guarde uma cópia
+   segura e cadastre o secret no GitHub antes da próxima release (o workflow falha sem ele).
 2. **Servidor de licenças**: a trava do relógio e a revogação só ficam realmente fortes com um servidor (lease
    assinado). Isso é infraestrutura e precisa de autorização.
 3. **ID de máquina antigo**: continua aceito para não invalidar chaves. A migração exige reemitir as chaves antigas.
+4. **Certificado Authenticode** (pago): eliminaria o aviso do SmartScreen no download manual.
+5. **Testes manuais** em PCs reais: aplicar pelo Smart Optimize, capturar com o PresentMon e a ativação por jogo
+   (os testes automáticos não alteram o sistema).
+6. **Publicação**: release 2.0.0 e deploy do site ficam por conta do dono do projeto.
