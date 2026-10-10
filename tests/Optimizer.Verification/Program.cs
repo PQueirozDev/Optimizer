@@ -454,8 +454,13 @@ internal static class Program
             var bridge = new PowerShellBridge(log);
             // Algumas etapas só aparecem quando se aplicam ao PC (desktop, GPU AMD, Windows 11 24H2...)
             int If(string requirement) => SystemConditions.Satisfies(requirement) ? 1 : 0;
-            Assert(bridge.GetSteps("padrao").Count == 7 + If("desktop"), "Plano padrão contém as etapas atuais (+ hibernação em desktop)");
-            Assert(bridge.GetSteps("gamer").Count == 14 + If("win11") + If("desktop") + If("amd"), "Plano avançado contém Qrz e as políticas preservadas (+ Windows 11, Power Throttling e ULPS quando aplicáveis)");
+            var standardSteps = bridge.GetSteps("padrao");
+            var advancedSteps = bridge.GetSteps("gamer");
+            Assert(standardSteps.Count == 6 + 2 * If("desktop"), $"Plano padrão: {standardSteps.Count} etapas (+ Qrz e hibernação em desktop)");
+            Assert(advancedSteps.Count == 13 + If("win11") + 2 * If("desktop") + If("amd"), $"Plano avançado: {advancedSteps.Count} etapas (+ Qrz, Windows 11, Power Throttling e ULPS quando aplicáveis)");
+            Assert(standardSteps.Any(s => s.Name == "Plano de energia Qrz") == SystemConditions.IsDesktop &&
+                advancedSteps.Any(s => s.Name == "Plano de energia Qrz") == SystemConditions.IsDesktop,
+                "Plano Qrz só aparece em desktops nos dois planos");
             Assert(PowerShellBridge.ClassifyRisk("@{ Nome = \"X\"; Risco = \"alto\"; Acao = {") == StepRisk.High && PowerShellBridge.ClassifyRisk("{\n    # risco: moderado\n") == StepRisk.Moderate && PowerShellBridge.ClassifyRisk("{ ipconfig /flushdns }") == StepRisk.Safe, "Risco lido da tabela, do comentário ou seguro por padrão");
             Assert(!bridge.GetSteps("gamer").Any(s => s.Name.Contains("MSI")), "Modo MSI não é aplicado automaticamente");
             Assert(SystemConditions.Satisfies(null) && SystemConditions.Satisfies("desconhecida") && SystemConditions.Satisfies("win10") != SystemConditions.Satisfies("win11"), "Condições: vazia e desconhecida liberam; Windows 10 e 11 se excluem");

@@ -8,6 +8,7 @@ public static partial class Translator
     private static readonly Dictionary<string, string> GamingExact = new(StringComparer.Ordinal)
     {
         ["Restauração pendente"] = "Recovery pending",
+        ["Corrigida a validação dos planos de otimização em notebooks nos testes de publicação."] = "Fixed optimization plan validation on laptops in release tests.",
         ["Modo Jogo preserva os itens que não puderam ser restaurados e permite tentar novamente, sem informar sucesso indevido."] = "Game Mode keeps items that could not be restored and lets you retry without incorrectly reporting success.",
         ["Estado de recuperação salvo antes das alterações, com gravação atômica da sessão."] = "Recovery state is saved before changes, with atomic session writes.",
         ["Histórico com lista virtualizada, busca mais leve e atualização automática de novos registros."] = "History has a virtualized list, more responsive search and automatic updates for new entries.",

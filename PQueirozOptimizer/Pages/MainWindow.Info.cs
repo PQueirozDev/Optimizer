@@ -25,6 +25,14 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.10.3", "10/10/2026", new[]
+        {
+            "Modo Jogo preserva os itens que não puderam ser restaurados e permite tentar novamente, sem informar sucesso indevido.",
+            "Estado de recuperação salvo antes das alterações, com gravação atômica da sessão.",
+            "Histórico com lista virtualizada, busca mais leve e atualização automática de novos registros.",
+            "Indicadores de restauração pendente, busca adaptável à largura e níveis de atividade destacados.",
+            "Corrigida a validação dos planos de otimização em notebooks nos testes de publicação.",
+        }),
         ("v1.10.2", "10/10/2026", new[]
         {
             "Modo Jogo preserva os itens que não puderam ser restaurados e permite tentar novamente, sem informar sucesso indevido.",
