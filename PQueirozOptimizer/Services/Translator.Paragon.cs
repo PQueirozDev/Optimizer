@@ -259,9 +259,9 @@ public static partial class Translator
         // ---------- Janela de atualização ----------
         ["Nova versão disponível"] = "New version available", ["O que há de novo"] = "What's new", ["Atualizar agora"] = "Update now", ["Abrir download"] = "Open download",
         ["Depois"] = "Later", ["Ver no GitHub"] = "View on GitHub", ["Ver novidades"] = "See what's new", ["Baixando instalador..."] = "Downloading installer...",
-        ["O instalador é verificado por SHA256 antes de rodar e o app reabre sozinho ao terminar. Suas configurações e backups são mantidos."] = "The installer is verified by SHA256 before running and the app reopens by itself when done. Your settings and backups are kept.",
+        ["O instalador é verificado por SHA256 e pela assinatura do Qrztweaks antes de rodar, e o app reabre sozinho ao terminar. Suas configurações e backups são mantidos."] = "The installer is verified by SHA256 and by the Qrztweaks signature before running, and the app reopens by itself when done. Your settings and backups are kept.",
         ["Esta versão é baixada pela página de releases."] = "This version is downloaded from the releases page.",
-        ["Instalador verificado por SHA256. Instalando — o app reabre sozinho em instantes..."] = "Installer verified by SHA256. Installing — the app reopens by itself in a moment...",
+        ["Instalador verificado (SHA256 e assinatura). Instalando — o app reabre sozinho em instantes..."] = "Installer verified (SHA256 and signature). Installing — the app reopens by itself in a moment...",
         ["As animações dos interruptores aparecem de verdade (a página não é mais redesenhada no meio delas), com um pulso de brilho ao ligar."] = "Switch animations now actually show (the page is no longer redrawn in the middle of them), with a glow pulse when turning on.",
         ["Nova janela de atualização com as novidades da versão, o progresso do download e os botões Atualizar agora e Depois."] = "New update window with the version's changes, download progress and Update now / Later buttons.",
 

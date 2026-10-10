@@ -136,9 +136,19 @@ public partial class MainWindow
         duration.SelectedIndex = 1;
         var label = new TextBox { Width = 220, Margin = new Thickness(0, 0, 10, 10), Text = "", ToolTip = "Nome do teste (ex.: Antes do Smart Optimize)" };
         System.Windows.Automation.AutomationProperties.SetName(label, "Nome do teste");
-        row.Children.Add(process); row.Children.Add(refresh); row.Children.Add(duration); row.Children.Add(label);
+        // Cada campo com o rótulo em cima: sem isso as caixas vazias não diziam o que preencher
+        StackPanel Field(string caption, FrameworkElement input)
+        {
+            var field = new StackPanel { Margin = new Thickness(0, 0, 0, 0) };
+            var c = Label(caption, 11, true); c.Margin = new Thickness(0, 0, 0, 4); field.Children.Add(c);
+            field.Children.Add(input);
+            return field;
+        }
+        refresh.VerticalAlignment = VerticalAlignment.Bottom;
+        row.Children.Add(Field("Processo do jogo", process)); row.Children.Add(Field(" ", refresh)); row.Children.Add(Field("Duração", duration)); row.Children.Add(Field("Nome do teste (opcional)", label));
         setup.Children.Add(row);
         var start = IconButton(Glyphs.Play, _capture is null ? "Iniciar captura" : "Parar captura", primary: true);
+        start.HorizontalAlignment = HorizontalAlignment.Left;
         setup.Children.Add(start);
         body.Children.Add(Surface(setup));
 
@@ -474,6 +484,7 @@ public partial class MainWindow
             setup.Children.Add(row);
             if (PresentMonTool.ToolPath() is null) setup.Children.Add(Label("Sem o PresentMon, o Lab não mede FPS e o resultado fica limitado ao uso de CPU. Configure-o na aba Captura.", 12.5, true));
             var begin = IconButton(Glyphs.Play, "Começar experimento", primary: true);
+            begin.HorizontalAlignment = HorizontalAlignment.Left;
             begin.Click += (_, _) =>
             {
                 var name = (process.Text ?? "").Trim();

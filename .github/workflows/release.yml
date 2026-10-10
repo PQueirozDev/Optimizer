@@ -91,6 +91,21 @@ jobs:
           "$hash  $($installer.Name)`n$hash  PQueirozOptimizer-Setup-v$version.exe" | Out-File -FilePath "artifacts/installer/SHA256SUMS.txt" -Encoding ascii -NoNewline
           Get-Content "artifacts/installer/SHA256SUMS.txt"
 
+      # A partir da 2.0 o app só instala atualizações cujo SHA256SUMS.txt esteja assinado com a chave de releases.
+      # Sem o secret, a publicação falha de propósito: uma release sem assinatura não seria instalada pelo app.
+      - name: Sign checksums
+        shell: powershell
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+        run: |
+          if (-not $env:UPDATE_SIGNING_KEY) { throw "Secret UPDATE_SIGNING_KEY ausente: cadastre a chave privada de releases (base64) em Settings > Secrets > Actions." }
+          $key = Join-Path $env:RUNNER_TEMP "update-key.blob"
+          try {
+            [IO.File]::WriteAllBytes($key, [Convert]::FromBase64String($env:UPDATE_SIGNING_KEY))
+            ./tools/Sign-ReleaseChecksums.ps1 -File "artifacts/installer/SHA256SUMS.txt" -KeyPath $key
+            ./tools/Sign-ReleaseChecksums.ps1 -File "artifacts/installer/SHA256SUMS.txt" -Verify
+          } finally { Remove-Item -LiteralPath $key -Force -ErrorAction SilentlyContinue }
+
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
@@ -98,6 +113,7 @@ jobs:
           path: |
             artifacts/installer/Qrztweaks-Setup-v${{ steps.version.outputs.version }}.exe
             artifacts/installer/SHA256SUMS.txt
+            artifacts/installer/SHA256SUMS.txt.sig
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
@@ -113,6 +129,7 @@ jobs:
           gh release create $tag `
             "artifacts/installer/Qrztweaks-Setup-v$version.exe" `
             "artifacts/installer/SHA256SUMS.txt" `
+            "artifacts/installer/SHA256SUMS.txt.sig" `
             --title "Qrztweaks $tag" `
             --notes-file release-notes.md
           gh release upload $tag "artifacts/installer/PQueirozOptimizer-Setup-v$version.exe"

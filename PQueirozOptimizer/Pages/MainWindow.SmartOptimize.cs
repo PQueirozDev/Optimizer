@@ -138,7 +138,10 @@ public partial class MainWindow
             var analysis = SmartOptimizer.Analyze(reading.Machine, reading.Context, _smartGoal, CurrentLicense, op => steps[op]);
             _smartAnalysis = analysis;
             _smartSelection.Clear();
-            foreach (var item in analysis.Items.Where(i => i.Preselected)) _smartSelection.Add(item.Tweak.Id);
+            // Perfil aplicado: os ajustes dele (que ainda fazem sentido neste PC) no lugar da recomendação do objetivo
+            var chosen = _smartProfileSelection;
+            _smartProfileSelection = null;
+            foreach (var item in analysis.Items.Where(i => chosen is null ? i.Preselected : chosen.Contains(i.Tweak.Id) && i.Selectable)) _smartSelection.Add(item.Tweak.Id);
             SmartHistory.Default.RecordAnalysis(analysis);
             _log.Write("INFO", $"Smart Optimize: análise concluída ({analysis.Count(TweakState.Recommended)} recomendados, {analysis.Count(TweakState.Applied)} já aplicados)");
             if (_currentPage != "smart") return;
@@ -172,12 +175,13 @@ public partial class MainWindow
         grid.Children.Add(SystemCard("Processador", m.Cpu, Glyphs.Chip));
         grid.Children.Add(SystemCard("Placa de vídeo", m.Gpu + (m.GpuDriver.Length > 0 ? $" · driver {m.GpuDriver}" : ""), Glyphs.Video));
         grid.Children.Add(SystemCard("Memória", $"{m.RamGb:0.#} GB", Glyphs.Memory));
-        grid.Children.Add(SystemCard("Armazenamento", m.Storage, Glyphs.Drive));
+        grid.Children.Add(SystemCard("Armazenamento", Translator.Tr(m.Storage), Glyphs.Drive));
         grid.Children.Add(SystemCard("Placa-mãe", m.Board, Glyphs.Chip));
         grid.Children.Add(SystemCard("Windows", $"{m.Windows} · build {m.Build}", Glyphs.Monitor));
-        grid.Children.Add(SystemCard("Plano de energia", m.PowerPlan, Glyphs.Power));
-        grid.Children.Add(SystemCard("Tipo", m.IsLaptop ? "Notebook" : "Desktop", m.IsLaptop ? Glyphs.Laptop : Glyphs.Monitor));
-        grid.Children.Add(SystemCard("Virtualização", string.Join(", ", new[] { m.HypervisorPresent ? "Hipervisor ativo" : null, m.WslInstalled ? "WSL" : null, m.DockerInstalled ? "Docker" : null, m.HyperVInstalled ? "Hyper-V" : null }.OfType<string>().DefaultIfEmpty("Não detectada")), Glyphs.Library));
+        grid.Children.Add(SystemCard("Plano de energia", Translator.Tr(m.PowerPlan), Glyphs.Power));
+        grid.Children.Add(SystemCard("Tipo", Translator.Tr(m.IsLaptop ? "Notebook" : "Desktop"), m.IsLaptop ? Glyphs.Laptop : Glyphs.Monitor));
+        grid.Children.Add(SystemCard("Virtualização", string.Join(", ", new[] { m.HypervisorPresent ? "Hipervisor ativo" : null, m.WslInstalled ? "WSL" : null, m.DockerInstalled ? "Docker" : null, m.HyperVInstalled ? "Hyper-V" : null }
+            .OfType<string>().DefaultIfEmpty("Não detectada").Select(Translator.Tr)), Glyphs.Library));
         hw.Children.Add(grid);
         results.Children.Add(Surface(hw));
 
@@ -302,11 +306,10 @@ public partial class MainWindow
         var now = Label("Leitura atual: " + item.Detail, 12, true); now.Margin = new Thickness(0, 2, 0, 0);
         body.Children.Add(now);
 
+        // Texto simples "Rótulo: valor" (o tradutor traduz as duas partes; Runs não seriam traduzidos)
         void Detail(string label, string value)
         {
-            var line = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 12.5, Margin = new Thickness(0, 0, 0, 6) };
-            line.Inlines.Add(new System.Windows.Documents.Run(label + ": ") { FontWeight = FontWeights.SemiBold });
-            line.Inlines.Add(new System.Windows.Documents.Run(value));
+            var line = new TextBlock { Text = label + ": " + value, TextWrapping = TextWrapping.Wrap, FontSize = 12.5, Margin = new Thickness(0, 0, 0, 6) };
             line.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
             details.Children.Add(line);
         }

@@ -11,7 +11,7 @@ using System.Xml.Linq;
 
 namespace PQueirozOptimizer.Services;
 
-public sealed record UpdateInfo(bool IsAvailable, string CurrentVersion, string LatestVersion, string? DownloadUrl, string? AssetUrl, string? AssetName, string? ChecksumUrl, IReadOnlyList<string>? Notes = null);
+public sealed record UpdateInfo(bool IsAvailable, string CurrentVersion, string LatestVersion, string? DownloadUrl, string? AssetUrl, string? AssetName, string? ChecksumUrl, IReadOnlyList<string>? Notes = null, string? SignatureUrl = null);
 
 /// <summary>Instalador baixado, validado e travado contra escrita até ser executado.</summary>
 public sealed class VerifiedInstaller : IDisposable
@@ -38,6 +38,26 @@ public sealed class VerifiedInstaller : IDisposable
 public sealed class UpdateService
 {
     public const string ChecksumAssetName = "SHA256SUMS.txt";
+    public const string SignatureAssetName = "SHA256SUMS.txt.sig";
+
+    /// <summary>
+    /// Chave pública de atualização (RSA 3072, só para releases; diferente da chave das licenças e do banco da BIOS).
+    /// O SHA-256 prova que o instalador chegou inteiro; a assinatura do SHA256SUMS.txt prova quem o publicou.
+    /// A chave privada fica fora do Git (tools/Sign-ReleaseChecksums.ps1) e no secret UPDATE_SIGNING_KEY do GitHub.
+    /// </summary>
+    internal const string UpdatePublicKeyBlob = "BgIAAACkAABSU0ExAAwAAAEAAQD1JhoUvzZNkiyMhiEgbo1I8wRDxM9cysEpxuulqGsOLSZnXli7nDl8HiGlcd1OuGLW+o5MaafYePc6okeytW/K6XUkvJXK6ghyJytcbD/76LbXKjYIj+YAgzaRevcyJcgt3RAFT2PByCjEMcZLd0p/SjYjX9TLlE1YtzFgWTliIu+tVotZh3q7MqruDdsF0jhtWVFpDc4aG0ajZBmBXJOUXXuTZPWaURVL+Q23TzRFUSPbXwWBYP3jDBAfrYv37+UMhvMUIuG4wOAGX+QdgmlQdneWXA3QF/GIP0DAssqjkQyuft6NSAkLV8HZ/lpYCyJ1TfgWOBL2DzRN674W6pz4fyoITZs9R/Lc2t8TKEIie//Ozph08ySbF0GBDoHEzqipX0FIUjxCUyJ+3qFd/DpWMZxsaY2mkTNgHVJNV7ZdyMiTsZRLqM3JY2fuvmPHH6IsSGeB6oGlmKGNikIDrbwH0BrrtIgQKzNQnl5k+UISQkuZxSJOgFjBxzqP+z9QUJw=";
+
+    /// <summary>Confere a assinatura RSA-SHA256 dos bytes exatos do SHA256SUMS.txt.</summary>
+    public static bool VerifyChecksumSignature(byte[] sums, string signatureBase64, string publicKeyBlob = UpdatePublicKeyBlob)
+    {
+        try
+        {
+            using var rsa = new RSACryptoServiceProvider();
+            rsa.ImportCspBlob(Convert.FromBase64String(publicKeyBlob));
+            return rsa.VerifyData(sums, CryptoConfig.MapNameToOID("SHA256")!, Convert.FromBase64String(signatureBase64.Trim()));
+        }
+        catch (Exception ex) when (ex is FormatException or CryptographicException) { return false; }
+    }
     private static readonly HttpClient Client = CreateClient();
     private static readonly string UpdatesFolder = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "PQueirozOptimizer", "Updates");
 
@@ -63,7 +83,7 @@ public sealed class UpdateService
         if (string.IsNullOrWhiteSpace(tag)) return new(false, current, current, null, null, null, null);
         var latest = Normalize(tag);
         var url = json.RootElement.TryGetProperty("html_url", out var urlElement) ? urlElement.GetString() : null;
-        string? assetUrl = null, assetName = null, checksumUrl = null;
+        string? assetUrl = null, assetName = null, checksumUrl = null, signatureUrl = null;
         if (json.RootElement.TryGetProperty("assets", out var assets))
         {
             foreach (var asset in assets.EnumerateArray())
@@ -72,10 +92,11 @@ public sealed class UpdateService
                 var download = asset.TryGetProperty("browser_download_url", out var a) ? a.GetString() : null;
                 if (assetUrl is null && name?.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) == true) { assetName = name; assetUrl = download; }
                 else if (string.Equals(name, ChecksumAssetName, StringComparison.OrdinalIgnoreCase)) checksumUrl = download;
+                else if (string.Equals(name, SignatureAssetName, StringComparison.OrdinalIgnoreCase)) signatureUrl = download;
             }
         }
         var body = json.RootElement.TryGetProperty("body", out var bodyElement) ? bodyElement.GetString() : null;
-        return new(Compare(latest, current) > 0, current, latest, url, assetUrl, assetName, checksumUrl, ReleaseNotes(body));
+        return new(Compare(latest, current) > 0, current, latest, url, assetUrl, assetName, checksumUrl, ReleaseNotes(body), signatureUrl);
     }
 
     /// <summary>
@@ -103,7 +124,8 @@ public sealed class UpdateService
             $"{baseUrl}/{assetName}",
             assetName,
             $"{baseUrl}/{ChecksumAssetName}",
-            Array.Empty<string>());
+            Array.Empty<string>(),
+            $"{baseUrl}/{SignatureAssetName}");
     }
 
     /// <summary>Novidades da release: os itens de lista do texto dela (as mesmas notas mostradas no app).</summary>
@@ -116,8 +138,8 @@ public sealed class UpdateService
             .Take(12)
             .ToList();
 
-    /// <summary>Indica se a release permite instalação automática (instalador + hash publicado).</summary>
-    public static bool CanAutoInstall(UpdateInfo update) => !string.IsNullOrWhiteSpace(update.AssetUrl) && !string.IsNullOrWhiteSpace(update.ChecksumUrl);
+    /// <summary>Indica se a release permite instalação automática (instalador + hash publicado + assinatura do hash).</summary>
+    public static bool CanAutoInstall(UpdateInfo update) => !string.IsNullOrWhiteSpace(update.AssetUrl) && !string.IsNullOrWhiteSpace(update.ChecksumUrl) && !string.IsNullOrWhiteSpace(update.SignatureUrl);
 
     /// <summary>
     /// Versão a instalar: a encontrada agora, se for mais nova que a encontrada ao abrir o app e já tiver
@@ -129,8 +151,8 @@ public sealed class UpdateService
 
     public async Task<VerifiedInstaller> DownloadAsync(UpdateInfo update, IProgress<(long read, long total)>? progress = null, CancellationToken token = default)
     {
-        if (!CanAutoInstall(update)) throw new InvalidOperationException("Esta versão não publica o hash do instalador. Baixe pela página de releases.");
-        if (!IsTrustedGitHubUrl(update.AssetUrl!) || !IsTrustedGitHubUrl(update.ChecksumUrl!)) throw new InvalidOperationException("Endereço de download inesperado.");
+        if (!CanAutoInstall(update)) throw new InvalidOperationException("Esta versão não publica o hash assinado do instalador. Baixe pela página de releases.");
+        if (!IsTrustedGitHubUrl(update.AssetUrl!) || !IsTrustedGitHubUrl(update.ChecksumUrl!) || !IsTrustedGitHubUrl(update.SignatureUrl!)) throw new InvalidOperationException("Endereço de download inesperado.");
 
         var expected = await GetExpectedHashAsync(update, token);
         var folder = PrepareUpdatesFolder();
@@ -170,12 +192,22 @@ public sealed class UpdateService
 
     private static async Task<string> GetExpectedHashAsync(UpdateInfo update, CancellationToken token)
     {
-        var sums = await Client.GetStringAsync(update.ChecksumUrl, token);
+        var bytes = await Client.GetByteArrayAsync(update.ChecksumUrl, token);
+        var signature = await Client.GetStringAsync(update.SignatureUrl, token);
+        // Sem assinatura válida, o hash pode ter sido publicado por quem conseguiu acesso à release: não instala
+        if (!VerifyChecksumSignature(bytes, signature))
+            throw new InvalidDataException("A assinatura do arquivo de hashes não confere com a chave do Qrztweaks. A atualização foi cancelada; baixe pela página oficial se tiver certeza da origem.");
+        return FindHash(System.Text.Encoding.UTF8.GetString(bytes), update.AssetName);
+    }
+
+    /// <summary>Hash do instalador no formato do sha256sum ("&lt;hash&gt;  &lt;arquivo&gt;", com '*' opcional no modo binário).</summary>
+    internal static string FindHash(string sums, string? assetName)
+    {
         foreach (var line in sums.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
             // Formato do sha256sum: "<hash>  <arquivo>" (o nome pode vir com '*' no modo binário)
             var parts = line.Split((char[])[' ', '\t'], 2, StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length == 2 && parts[0].Length == 64 && string.Equals(parts[1].Trim().TrimStart('*'), update.AssetName, StringComparison.OrdinalIgnoreCase))
+            if (parts.Length == 2 && parts[0].Length == 64 && string.Equals(parts[1].Trim().TrimStart('*'), assetName, StringComparison.OrdinalIgnoreCase))
                 return parts[0];
         }
         throw new InvalidDataException("O hash do instalador não foi encontrado na release.");

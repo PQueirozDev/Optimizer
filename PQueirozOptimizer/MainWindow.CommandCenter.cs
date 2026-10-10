@@ -40,6 +40,26 @@ public partial class MainWindow
         return alerts;
     }
 
+    /// <summary>Aviso do modo demonstração: o que dá para ver e como ativar.</summary>
+    private Border DemoBanner()
+    {
+        var dock = new DockPanel();
+        var activate = IconButton(Glyphs.Key, "Ativar licença", primary: true);
+        activate.Margin = new Thickness(12, 0, 0, 0);
+        activate.Click += (_, _) => ActivateAdminLicense();
+        DockPanel.SetDock(activate, Dock.Right); dock.Children.Add(activate);
+        var chip = IconChip(Glyphs.Info, "Info", 40); DockPanel.SetDock(chip, Dock.Left); dock.Children.Add(chip);
+        var text = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        var t = Label("Modo demonstração", 14); t.FontWeight = FontWeights.SemiBold; t.Margin = new Thickness(0);
+        text.Children.Add(t);
+        var d = Label("Veja o hardware, o monitor, o diagnóstico, o Performance Lab e as recomendações do Smart Optimize. Para aplicar qualquer ajuste, ative uma licença.", 12, true);
+        d.Margin = new Thickness(0, 2, 0, 0); text.Children.Add(d);
+        dock.Children.Add(text);
+        var card = Surface(dock);
+        card.SetResourceReference(Border.BorderBrushProperty, "InfoBrush");
+        return card;
+    }
+
     private UIElement CommandStatusRow(SystemSnapshot snapshot)
     {
         var grid = Responsive(new UniformGrid { Columns = 4, Margin = new Thickness(0, 0, -14, 2) }, 210, 4);

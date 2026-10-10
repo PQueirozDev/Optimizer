@@ -49,7 +49,8 @@ public sealed class LineChart : FrameworkElement
         for (var i = 1; i < 4; i++) dc.DrawLine(gridPen, new Point(0, Math.Round(h * i / 4) + 0.5), new Point(w, Math.Round(h * i / 4) + 0.5));
         var present = _values.Where(v => v.HasValue).Select(v => v!.Value).ToList();
         var max = Maximum ?? (present.Count == 0 ? 1 : Math.Max(1, present.Max() * 1.15));
-        if (ShowScale)
+        // Sem dados e sem teto fixo, a escala ("1") não significa nada
+        if (ShowScale && (Maximum is not null || present.Count > 0))
         {
             var text = new FormattedText($"{max:0}{Unit}", CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), 10, muted, VisualTreeHelper.GetDpi(this).PixelsPerDip);
             dc.DrawText(text, new Point(4, 2));

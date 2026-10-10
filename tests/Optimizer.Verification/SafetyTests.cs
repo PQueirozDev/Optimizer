@@ -37,7 +37,8 @@ internal static class SafetyTests
     {
         static UpdateInfo Release(string version, bool withChecksum = true) => new(true, "1.10.1", version,
             $"https://github.com/PQueirozDev/Optimizer/releases/tag/v{version}", $"https://github.com/PQueirozDev/Optimizer/releases/download/v{version}/Qrztweaks-Setup-v{version}.exe",
-            $"Qrztweaks-Setup-v{version}.exe", withChecksum ? $"https://github.com/PQueirozDev/Optimizer/releases/download/v{version}/SHA256SUMS.txt" : null);
+            $"Qrztweaks-Setup-v{version}.exe", withChecksum ? $"https://github.com/PQueirozDev/Optimizer/releases/download/v{version}/SHA256SUMS.txt" : null, null,
+            withChecksum ? $"https://github.com/PQueirozDev/Optimizer/releases/download/v{version}/SHA256SUMS.txt.sig" : null);
         var seenAtStartup = Release("1.10.2");
         Check(UpdateService.PickNewest(seenAtStartup, Release("1.10.4")).LatestVersion == "1.10.4", "Duas versões novas: instala direto a mais recente, não uma por uma");
         Check(UpdateService.PickNewest(seenAtStartup, Release("1.10.2")).LatestVersion == "1.10.2", "Mesma versão: continua a já encontrada");

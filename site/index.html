@@ -9,7 +9,29 @@
   <meta property="og:description" content="Otimização do Windows com backup e reversão. Planos a partir de R$ 15 por mês, ou o app completo para sempre por R$ 59,99.">
   <meta property="og:image" content="https://qrztwk.vercel.app/assets/shots/visao-geral.jpg">
   <meta property="og:url" content="https://qrztwk.vercel.app/">
-  <title>Qrztweaks · Otimizador de PC</title>
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="pt_BR">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://qrztwk.vercel.app/">
+  <title>Qrztweaks · Otimizador de PC com Smart Optimize e Performance Lab</title>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Qrztweaks",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Windows 10, Windows 11 (x64)",
+    "url": "https://qrztwk.vercel.app/",
+    "downloadUrl": "https://github.com/PQueirozDev/Optimizer/releases/latest",
+    "description": "Otimização do Windows com análise do PC, recomendações por objetivo, backup, reversão e medição real de FPS e frametime.",
+    "offers": [
+      { "@type": "Offer", "name": "Base (30 dias)", "price": "15.00", "priceCurrency": "BRL" },
+      { "@type": "Offer", "name": "Intermediário (30 dias)", "price": "25.00", "priceCurrency": "BRL" },
+      { "@type": "Offer", "name": "Avançado (30 dias)", "price": "29.99", "priceCurrency": "BRL" },
+      { "@type": "Offer", "name": "Vitalício", "price": "59.99", "priceCurrency": "BRL" }
+    ]
+  }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -22,6 +44,7 @@
   <script>document.documentElement.classList.add("js");</script>
 </head>
 <body>
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
       <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></symbol>
@@ -57,6 +80,9 @@
       </a>
       <nav class="nav" id="nav" aria-label="Navegação principal">
         <a href="#optimizer">Qrztweaks</a>
+        <a href="#smart-optimize">Smart Optimize</a>
+        <a href="#performance-lab">Performance Lab</a>
+        <a href="#seguranca">Segurança</a>
         <a href="#recursos">Recursos</a>
         <a href="#galeria">Galeria</a>
         <a href="#comprar">Planos</a>
@@ -74,13 +100,14 @@
   </header>
 
   <main id="inicio">
+    <span id="conteudo" tabindex="-1"></span>
     <!-- Hero -->
     <section class="hero">
       <canvas class="particles" aria-hidden="true"></canvas>
       <div class="hero-grid" aria-hidden="true"></div>
       <div class="container hero-inner hero-split">
         <div class="hero-copy">
-          <p class="kicker reveal"><span class="live-dot" aria-hidden="true"></span>Nova versão <span data-version>v1.8.0</span> · Modo Jogo, NVIDIA e BIOS</p>
+          <p class="kicker reveal"><span class="live-dot" aria-hidden="true"></span>Versão <span data-version>mais recente</span> · Smart Optimize, Performance Lab e Command Center</p>
           <h1 class="reveal" style="--d: 60ms">Extraia mais FPS<br>com <span class="accent rotator" data-words="controle total|menos input lag|backup em tudo|um clique por vez">controle total</span>.</h1>
           <p class="lead reveal" style="--d: 120ms">Modo Jogo, perfil NVIDIA, plano de energia de baixa latência, editor de BIOS e otimizações revisadas item por item — em um painel bonito, com monitor ao vivo e reversão em um clique.</p>
           <div class="hero-actions reveal" style="--d: 180ms">
@@ -140,7 +167,7 @@
             <svg class="i-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.6v10.8c0 .8.9 1.3 1.6.8l8.2-5.4c.6-.4.6-1.2 0-1.6L5.6 1.8C4.9 1.3 4 1.8 4 2.6z"/></svg>
           </button>
         </div>
-        <figcaption class="fine">Apresentação feita com telas reais do Qrztweaks v1.8.0; o movimento de câmera, as transições e as legendas foram adicionados na edição.</figcaption>
+        <figcaption class="fine">Apresentação feita com telas reais do Qrztweaks; o movimento de câmera, as transições e as legendas foram adicionados na edição.</figcaption>
       </figure>
 
       <div class="container cards-4">
@@ -152,10 +179,73 @@
     </section>
 
 
+    <!-- Smart Optimize -->
+    <section id="smart-optimize" class="section">
+      <div class="container narrow center">
+        <p class="kicker reveal">Novo na 2.0</p>
+        <h2 class="reveal">Smart Optimize: só o que faz sentido no seu PC</h2>
+        <p class="section-lead reveal">Escolha o objetivo e o Qrztweaks lê o hardware e o estado de cada ajuste antes de recomendar. O que já está aplicado, não se aplica ao seu PC ou conflita com outro ajuste aparece separado, com o motivo.</p>
+        <div class="pills reveal">
+          <span class="pill"><i class="pill-dot"></i>Gaming competitivo</span>
+          <span class="pill"><i class="pill-dot alt"></i>Notebook</span>
+          <span class="pill"><i class="pill-dot dev"></i>Programação</span>
+          <span class="pill"><i class="pill-dot"></i>Uso diário</span>
+          <span class="pill"><i class="pill-dot alt"></i>Personalizado</span>
+        </div>
+      </div>
+      <div class="container cards-3">
+        <article class="card step spotlight reveal"><span class="step-num">01</span><h3>Analisa</h3><p>Processador, placa de vídeo, memória, disco, Windows, plano de energia e virtualização. Cada ajuste é lido no registro, nos serviços e nos apps: <b>recomendado</b>, <b>já aplicado</b>, <b>não aplicável</b>, <b>incompatível</b>, <b>requer revisão</b> ou <b>falha na leitura</b>.</p></article>
+        <article class="card step spotlight reveal" style="--d: 60ms"><span class="step-num">02</span><h3>Você revisa</h3><p>Cada item mostra o risco (Seguro, Moderado ou Avançado), se precisa reiniciar, os efeitos colaterais, como reverter e a evidência do benefício. Conflitos bloqueiam a aplicação até você escolher.</p></article>
+        <article class="card step spotlight reveal" style="--d: 120ms"><span class="step-num">03</span><h3>Aplica e confere</h3><p>Ponto de restauração e backup de cada item antes de mudar. Depois, o estado é lido de novo no Windows: um ajuste só aparece como concluído se a mudança for confirmada.</p></article>
+      </div>
+      <p class="container narrow center fine reveal">No objetivo Programação, Docker, WSL e Hyper-V são preservados. Alterações de BIOS e desativação de proteções do Windows nunca entram no Smart Optimize.</p>
+    </section>
+
+    <!-- Performance Lab -->
+    <section id="performance-lab" class="section">
+      <div class="container narrow center">
+        <p class="kicker reveal">Novo na 2.0</p>
+        <h2 class="reveal">Performance Lab: meça em vez de adivinhar</h2>
+        <p class="section-lead reveal">FPS médio, mínimo, 1% low, 0,1% low e frametime P95/P99 calculados a partir da apresentação real dos quadros, com o <a href="https://github.com/GameTechDev/PresentMon" target="_blank" rel="noreferrer">PresentMon</a>. Uso de CPU e GPU, memória, clocks, potência e indícios de limitação gravados a cada segundo. Nada é estimado: sem dados reais, o campo fica vazio.</p>
+      </div>
+      <div class="container cards-4">
+        <article class="card spotlight reveal"><span class="card-icon"><svg class="icon"><use href="#i-chart"/></svg></span><h3>Ao vivo</h3><p>Gráficos de FPS, CPU, GPU e temperatura enquanto você joga, com a captura rodando em segundo plano.</p></article>
+        <article class="card spotlight reveal" style="--d: 60ms"><span class="card-icon"><svg class="icon"><use href="#i-layers"/></svg></span><h3>Antes e depois</h3><p>Diferença absoluta e percentual, com aviso quando driver, resolução, Windows ou plano de energia mudaram entre os testes.</p></article>
+        <article class="card spotlight reveal" style="--d: 120ms"><span class="card-icon"><svg class="icon"><use href="#i-zap"/></svg></span><h3>Optimization Lab</h3><p>Testa um ajuste por vez com várias gravações. Diferenças pequenas ou inconsistentes aparecem como <b>sem diferença comprovada</b>.</p></article>
+        <article class="card spotlight reveal" style="--d: 180ms"><span class="card-icon"><svg class="icon"><use href="#i-download"/></svg></span><h3>Relatórios</h3><p>Exportação em CSV, JSON e PDF, com hardware, drivers e versão do Windows de cada teste.</p></article>
+      </div>
+      <div class="container narrow">
+        <h3 class="reveal">Resultados publicados</h3>
+        <p class="muted reveal">Só publicamos resultados verificáveis, cada um com hardware, jogo, configurações, resolução, metodologia, FPS médio, 1% low e variação entre as gravações. Ainda não há resultados publicados; quando houver, eles aparecem aqui.</p>
+        <div class="compare bench reveal" role="table" aria-label="Resultados de desempenho publicados">
+          <div class="compare-head" role="row"><span role="columnheader">Hardware e jogo</span><span role="columnheader">Antes</span><span class="hl" role="columnheader">Depois</span></div>
+          <div class="compare-row" role="row"><span role="cell">Nenhum resultado publicado ainda.</span><span class="cell" role="cell">—</span><span class="cell hl" role="cell">—</span></div>
+        </div>
+        <p class="fine reveal">Metodologia: mesma cena do jogo, mesmas configurações e resolução, pelo menos 3 gravações de 60 s antes e depois, PC aquecido e sem outros programas abertos. O ganho só conta se for consistente (teste t de Welch, p &lt; 0,05) e maior que 3%.</p>
+      </div>
+    </section>
+
+    <!-- Segurança -->
+    <section id="seguranca" class="section">
+      <div class="container narrow center">
+        <p class="kicker reveal">Segurança</p>
+        <h2 class="reveal">Controle, transparência e reversão</h2>
+        <p class="section-lead reveal">Um otimizador roda como administrador. Por isso cada mudança é revisável, tem backup e pode ser desfeita, e o próprio app é protegido contra adulteração.</p>
+      </div>
+      <ol class="container narrow rules reveal">
+        <li><b>Nada sem revisão.</b> Ajustes arriscados ou que a reversão não desfaz pedem uma confirmação própria, com a lista exata do que vai acontecer.</li>
+        <li><b>Backup antes de cada mudança.</b> Registro, serviços, plano de energia e tarefas têm o valor original guardado numa pasta só de administradores. Se o app fechar no meio, a próxima abertura avisa.</li>
+        <li><b>Atualizações assinadas.</b> O instalador é conferido por SHA256 e o arquivo de hashes é assinado com a chave do Qrztweaks; sem assinatura válida, nada é instalado automaticamente.</li>
+        <li><b>BIOS nunca é alterada sozinha.</b> O BIOS Advisor só recomenda. O editor grava apenas o que você escolher, com cópia original, validação dos valores e bloqueio se a versão da BIOS mudou.</li>
+        <li><b>Proteções do Windows preservadas.</b> O Smart Optimize não desliga o Defender. Exclusões amplas (unidade inteira, pasta do Windows, Downloads) são recusadas.</li>
+        <li><b>Sem acesso remoto e sem injeção em jogos.</b> O modo compacto e a ativação por jogo só leem a lista de processos: nada é injetado no jogo, então não há conflito com anti-cheat.</li>
+      </ol>
+    </section>
+
     <!-- Recursos: telas reais em linhas alternadas -->
     <section id="recursos" class="section">
       <div class="container narrow center">
-        <p class="kicker reveal">Novo na v1.8</p>
+        <p class="kicker reveal">Recursos</p>
         <h2 class="reveal">Tudo o que você precisa<br>para jogar melhor</h2>
         <p class="section-lead reveal">Cada tela abaixo é o Qrztweaks de verdade. Os recursos novos se somam às otimizações revisáveis, à limpeza e à inicialização que você já conhece.</p>
       </div>
@@ -244,7 +334,7 @@
           <p class="section-lead">O instalador é gratuito e sempre a versão mais recente. Na primeira abertura, o app mostra o ID do seu computador e copia o pedido de ativação para você mandar no Discord.</p>
           <div class="download-actions">
             <a class="btn btn-primary btn-lg btn-shine" href="https://github.com/PQueirozDev/Optimizer/releases/latest" data-download-link rel="noreferrer">
-              <svg class="icon"><use href="#i-download"/></svg>Baixar instalador <span class="download-version" data-version>v1.8.0</span>
+              <svg class="icon"><use href="#i-download"/></svg>Baixar instalador <span class="download-version" data-version></span>
             </a>
             <a class="btn btn-outline btn-lg" href="#comprar">Escolher um plano</a>
           </div>
@@ -453,7 +543,7 @@
         <div class="compare-row"><span>Você vê e escolhe cada etapa antes de aplicar</span><span class="cell"><svg class="icon no"><use href="#i-x"/></svg></span><span class="cell hl"><svg class="icon yes"><use href="#i-check"/></svg></span></div>
         <div class="compare-row"><span>Ponto de restauração, backup e reversão</span><span class="cell"><svg class="icon no"><use href="#i-x"/></svg></span><span class="cell hl"><svg class="icon yes"><use href="#i-check"/></svg></span></div>
         <div class="compare-row"><span>Nada de colar comandos de terceiros no CMD</span><span class="cell"><svg class="icon no"><use href="#i-x"/></svg></span><span class="cell hl"><svg class="icon yes"><use href="#i-check"/></svg></span></div>
-        <div class="compare-row"><span>Atualizações automáticas verificadas por SHA256</span><span class="cell"><svg class="icon no"><use href="#i-x"/></svg></span><span class="cell hl"><svg class="icon yes"><use href="#i-check"/></svg></span></div>
+        <div class="compare-row"><span>Atualizações automáticas verificadas por SHA256 e assinatura</span><span class="cell"><svg class="icon no"><use href="#i-x"/></svg></span><span class="cell hl"><svg class="icon yes"><use href="#i-check"/></svg></span></div>
       </div>
     </section>
 
@@ -523,11 +613,11 @@
       <div class="container narrow center">
         <p class="kicker reveal">Histórico de versões</p>
         <h2 class="reveal">Patch notes</h2>
-        <p class="section-lead reveal">O Qrztweaks se atualiza sozinho: cada versão nova é baixada e verificada por SHA256 antes de instalar.</p>
+        <p class="section-lead reveal">O Qrztweaks se atualiza sozinho: cada versão nova é conferida por SHA256 e pela assinatura do Qrztweaks antes de instalar. A lista abaixo vem das releases oficiais no GitHub.</p>
       </div>
-      <div class="container narrow releases">
+      <div class="container narrow releases" id="release-list" aria-live="polite">
         <article class="release current reveal">
-          <div class="release-head"><b>v1.9.2</b><span class="tag">Atual</span></div>
+          <div class="release-head"><b>v1.9.2</b><span class="tag muted-tag">Anterior</span></div>
           <ul>
             <li>Site oficial: qrztwk.vercel.app, também nos links de compra do aplicativo.</li>
             <li>Novo nome e logo nova: o PQueiroz Optimizer agora é o Qrztweaks. Licenças, configurações e backups continuam valendo.</li>
@@ -619,10 +709,13 @@
       <div class="container narrow faq reveal">
         <details><summary>Qual a diferença entre os planos?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>O <b>Base</b> (R$ 15/mês) libera as otimizações revisadas, Inicialização, Correções, Ferramentas e a Limpeza rápida. O <b>Intermediário</b> (R$ 25/mês) soma Serviços, Apps e Debloat, Drivers, Rede, Recursos e a Central de diagnóstico. O <b>Avançado</b> (R$ 29,99/mês) libera o app inteiro, com Modo Jogo, perfil NVIDIA, BIOS / UEFI e Personalizar Windows. O <b>Vitalício</b> (R$ 59,99 uma vez) é o app completo sem vencimento, com reemissão da chave se você formatar o PC e suporte prioritário. Em todos, a reversão do que foi aplicado fica sempre disponível. Veja a <a href="#comprar">tabela</a>.</p></div></details>
         <details><summary>Posso mudar de plano depois?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Pode. No app, em <b>Configurações → Minha licença</b>, cada plano acima do seu tem um botão de upgrade que copia o pedido; cole no ticket do Discord, pague a diferença via Pix e ative a chave nova. As páginas fora do seu plano também mostram o botão de upgrade.</p></div></details>
-        <details><summary>Preciso de chave para usar o app?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Sim. Você pode <a href="#baixar">baixar o instalador</a> antes de comprar: na primeira abertura, o app mostra o ID do computador e um botão para copiar o pedido. Envie o pedido no ticket do Discord e a chave chega vinculada ao seu PC.</p></div></details>
+        <details><summary>Preciso de chave para usar o app?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Para aplicar ajustes, sim. Você pode <a href="#baixar">baixar o instalador</a> antes de comprar e usar o <b>modo demonstração</b>: veja o hardware, o monitor ao vivo, o diagnóstico, o Performance Lab e as recomendações do Smart Optimize, sem aplicar nada. Para ativar, o app mostra o ID do computador e um botão para copiar o pedido; envie no ticket do Discord e a chave chega vinculada ao seu PC.</p></div></details>
+        <details><summary>O Smart Optimize aplica tudo sozinho?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Não. Ele analisa e marca o que é recomendado para o seu objetivo, mas você revisa item por item antes de aplicar. Depois, o app lê o estado do Windows de novo e mostra o que foi confirmado.</p></div></details>
+        <details><summary>O que preciso para medir FPS?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>O Performance Lab usa o <a href="https://github.com/GameTechDev/PresentMon/releases" target="_blank" rel="noreferrer">PresentMon</a>, ferramenta aberta e gratuita da Intel: baixe no GitHub oficial e escolha o arquivo no app. Sem ele, o Performance Lab grava os sensores (CPU, GPU, memória), mas não mostra FPS, porque FPS não é estimado.</p></div></details>
+        <details><summary>O modo compacto funciona com anti-cheat?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Sim. É uma janela separada, para um segundo monitor, e não um overlay dentro do jogo: nada é injetado no processo do jogo.</p></div></details>
         <details><summary>Como renovo um plano mensal?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Quando estiver acabando, o app avisa. Clique em <b>Renovar pelo Discord</b>, abra um ticket de renovação, cole o pedido e pague via Pix. Os 30 dias novos são somados à validade atual. Veja <a href="#renovar">Como renovar</a>.</p></div></details>
         <details><summary>Os planos mensais são cobrados automaticamente?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Não. Não existe cobrança recorrente: se você não renovar, a licença simplesmente expira ao fim dos 30 dias.</p></div></details>
-        <details><summary>Formatei o PC. Perco a licença?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>A chave é vinculada ao computador, então depois de formatar é preciso uma chave nova. No Vitalício, a reemissão está incluída: abra o Qrztweaks, copie o pedido e envie em um ticket no Discord.</p></div></details>
+        <details><summary>Formatei o PC. Perco a licença?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>A chave é vinculada ao computador, então depois de formatar é preciso uma chave nova. Na tela de ativação, clique em <b>Troquei de PC / reinstalei o Windows</b>: o app copia um pedido de transferência com o novo ID; envie em um ticket no Discord. No Vitalício, a reemissão está incluída.</p></div></details>
         <details><summary>Posso usar em mais de um computador?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Cada chave vale para um computador. Para outro PC, é preciso outra licença.</p></div></details>
         <details><summary>O Qrztweaks altera o Windows automaticamente?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Não. Os fluxos avançados mostram as etapas e permitem selecionar exatamente o que será aplicado.</p></div></details>
         <details><summary>Posso desfazer as alterações?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Configurações de registro, energia e serviços têm backup. Remoções de arquivos e aplicativos exigem reinstalação ou backup próprio, e o app avisa antes quais etapas não são reversíveis.</p></div></details>

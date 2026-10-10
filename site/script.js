@@ -173,3 +173,57 @@ if (canvas && canvas.getContext) {
     }).observe(hero);
   }
 }
+
+// Versão, link de download e patch notes vêm das releases oficiais do GitHub (sem números fixos no HTML).
+// Sem conexão ou com o limite da API atingido, fica o conteúdo estático, que não afirma uma versão específica.
+(async () => {
+  const api = "https://api.github.com/repos/PQueirozDev/Optimizer/releases?per_page=6";
+  let releases;
+  try {
+    const response = await fetch(api, { headers: { Accept: "application/vnd.github+json" } });
+    if (!response.ok) return;
+    releases = (await response.json()).filter((r) => !r.draft && !r.prerelease);
+  } catch {
+    return;
+  }
+  if (!releases.length) return;
+  const latest = releases[0];
+  document.querySelectorAll("[data-version]").forEach((el) => { el.textContent = latest.tag_name; });
+  const installer = (latest.assets || []).find((a) => /^Qrztweaks-Setup-v.*\.exe$/i.test(a.name));
+  if (installer) {
+    document.querySelectorAll('a[href$="releases/latest"]').forEach((a) => {
+      if (a.closest("#baixar")) a.href = installer.browser_download_url;
+    });
+  }
+
+  const list = document.getElementById("release-list");
+  if (!list) return;
+  const notes = (body) => (body || "").split("\n").map((l) => l.trim())
+    .filter((l) => (l.startsWith("- ") || l.startsWith("* ")) && !/full changelog/i.test(l))
+    .map((l) => l.slice(2).trim()).filter(Boolean).slice(0, 6);
+  const all = list.querySelector(".releases-all");
+  list.querySelectorAll("article.release").forEach((a) => a.remove());
+  releases.forEach((r, i) => {
+    const article = document.createElement("article");
+    article.className = "release in" + (i === 0 ? " current" : "");
+    const head = document.createElement("div");
+    head.className = "release-head";
+    const tag = document.createElement("b");
+    tag.textContent = r.tag_name;
+    const badge = document.createElement("span");
+    badge.className = i === 0 ? "tag" : "tag muted-tag";
+    badge.textContent = i === 0 ? "Atual" : "Anterior";
+    const date = document.createElement("span");
+    date.className = "muted release-date";
+    date.textContent = r.published_at ? new Date(r.published_at).toLocaleDateString("pt-BR") : "";
+    head.append(tag, badge, date);
+    article.append(head);
+    const items = notes(r.body);
+    if (items.length) {
+      const ul = document.createElement("ul");
+      items.forEach((text) => { const li = document.createElement("li"); li.textContent = text; ul.append(li); });
+      article.append(ul);
+    }
+    list.insertBefore(article, all);
+  });
+})();

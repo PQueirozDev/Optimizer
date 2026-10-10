@@ -87,7 +87,7 @@ public partial class MainWindow
         var bannerText = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
         var bt = Label($"Nova versão disponível · {info.LatestVersion}", 16); bt.FontWeight = FontWeights.Bold; bt.Margin = new Thickness(0);
         bannerText.Children.Add(bt);
-        var bs = Label(UpdateService.CanAutoInstall(info) ? "Instalador seguro, verificado por SHA256 e pronto para atualizar." : "Baixe a versão pela página oficial do GitHub.", 12, true); bs.Margin = new Thickness(0, 4, 0, 0);
+        var bs = Label(UpdateService.CanAutoInstall(info) ? "Instalador verificado por SHA256 e pela assinatura do Qrztweaks, pronto para atualizar." : "Baixe a versão pela página oficial do GitHub.", 12, true); bs.Margin = new Thickness(0, 4, 0, 0);
         bannerText.Children.Add(bs);
         banner.Children.Add(bannerText);
         var bannerCard = Surface(banner); bannerCard.Padding = new Thickness(20, 16, 20, 16);
@@ -99,6 +99,39 @@ public partial class MainWindow
     }
 
     private bool _installingUpdate;
+
+    private sealed record PendingUpdate(string From, string To, DateTime At);
+    private static string PendingUpdatePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PQueirozOptimizer", "update-pending.json");
+
+    /// <summary>Marca a atualização em andamento: na próxima abertura o app confere se ela terminou.</summary>
+    private void RecordPendingUpdate(string target)
+    {
+        try { Directory.CreateDirectory(Path.GetDirectoryName(PendingUpdatePath)!); File.WriteAllText(PendingUpdatePath, JsonSerializer.Serialize(new PendingUpdate(AppVersion, target, DateTime.Now))); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+    }
+
+    /// <summary>
+    /// Recuperação após atualização: se a versão aberta é a esperada, confirma; se não, avisa que a instalação não
+    /// terminou (o instalador desfaz o que copiou ao falhar) e oferece tentar de novo.
+    /// </summary>
+    private void CheckUpdateOutcome()
+    {
+        PendingUpdate? pending;
+        try { pending = File.Exists(PendingUpdatePath) ? JsonSerializer.Deserialize<PendingUpdate>(File.ReadAllText(PendingUpdatePath)) : null; }
+        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException) { pending = null; }
+        if (pending is null) return;
+        try { File.Delete(PendingUpdatePath); } catch (IOException) { }
+        if (string.Equals(pending.To, AppVersion, StringComparison.OrdinalIgnoreCase))
+        {
+            _log.Write("SUCCESS", $"Atualizado de {pending.From} para {pending.To}");
+            ShowToast("Atualização concluída", $"Qrztweaks {pending.To} instalado.", "Success");
+        }
+        else if (DateTime.Now - pending.At > TimeSpan.FromMinutes(2))
+        {
+            _log.Write("WARN", $"A atualização para {pending.To} não foi concluída (versão atual {AppVersion})");
+            ShowToast("Atualização não concluída", $"O app continua na versão {AppVersion}. Tente atualizar de novo em Configurações → Atualizações ou baixe pelo site.", "Warning");
+        }
+    }
 
     private async Task InstallUpdateAsync(UpdateInfo info, Button? button)
     {
@@ -120,8 +153,9 @@ public partial class MainWindow
             using var installer = await _updates.DownloadAsync(info, new Progress<(long read, long total)>(p => ReportUpdateProgress(
                 p.total > 0 ? $"Baixando instalador... {p.read * 100d / p.total:N0}% ({p.read / 1048576d:N1} de {p.total / 1048576d:N1} MB)" : $"Baixando instalador... {p.read / 1048576d:N1} MB",
                 p.total > 0 ? p.read * 100d / p.total : null)));
-            ReportUpdateProgress("Instalador verificado por SHA256. Instalando — o app reabre sozinho em instantes...", 100);
-            _log.Write("INFO", $"Atualização {info.LatestVersion} verificada por SHA256; iniciando instalação silenciosa.");
+            ReportUpdateProgress("Instalador verificado (SHA256 e assinatura). Instalando — o app reabre sozinho em instantes...", 100);
+            _log.Write("INFO", $"Atualização {info.LatestVersion} verificada (SHA256 e assinatura); iniciando instalação silenciosa.");
+            RecordPendingUpdate(info.LatestVersion);
             installer.LaunchSilent();
             await Task.Delay(500);
             Application.Current.Shutdown();

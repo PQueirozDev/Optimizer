@@ -155,10 +155,21 @@ public partial class App : Application
         {
             _ = StartupSplash.Close(immediate: true);
             // Com uma chave salva que não vale mais (expirou, outro PC...), a tela de ativação explica o motivo
-            var activation = new ActivationWindow(licenseService, licenseService.HasStoredKey ? licenseError : null);
+            var activation = new ActivationWindow(licenseService, licenseService.HasStoredKey ? licenseError : null, allowDemo: !powerMode && !quickClean);
             if (activation.ShowDialog() != true)
             {
                 Shutdown();
+                return;
+            }
+            if (activation.DemoChosen)
+            {
+                // Modo demonstração: sem licença; só as páginas de leitura abrem e nada pode ser aplicado
+                Services.PlanAccess.DemoMode = true;
+                Log.Write("INFO", "Aberto em modo demonstração (sem licença)");
+                if (showSplash) StartupSplash.Report(Services.Translator.Tr("Montando a interface..."), 0.6);
+                MainWindow = new MainWindow();
+                ShutdownMode = ShutdownMode.OnMainWindowClose;
+                MainWindow.Show();
                 return;
             }
         }

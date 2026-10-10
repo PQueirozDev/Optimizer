@@ -67,7 +67,7 @@ public partial class MainWindow
         secure.SetResourceReference(TextBlock.ForegroundProperty, UpdateService.CanAutoInstall(info) ? "SuccessBrush" : "WarningBrush");
         DockPanel.SetDock(secure, Dock.Left); summaryRow.Children.Add(secure);
         var summaryText = Label(UpdateService.CanAutoInstall(info)
-            ? "Instalador verificado por SHA256 e configurações preservadas."
+            ? "Instalador verificado por SHA256 e assinatura; configurações preservadas."
             : "Você será direcionado à página oficial da release.", 11.5, true);
         summaryText.Margin = new Thickness(12, 0, 0, 0);
         summaryRow.Children.Add(summaryText);
@@ -108,7 +108,7 @@ public partial class MainWindow
         body.Children.Add(progressArea);
 
         var safety = Label(UpdateService.CanAutoInstall(info)
-            ? "O instalador é verificado por SHA256 antes de rodar e o app reabre sozinho ao terminar. Suas configurações e backups são mantidos."
+            ? "O instalador é verificado por SHA256 e pela assinatura do Qrztweaks antes de rodar, e o app reabre sozinho ao terminar. Suas configurações e backups são mantidos."
             : "Esta versão é baixada pela página de releases.", 11.5, true);
         safety.Margin = new Thickness(0, 0, 0, 22);
         body.Children.Add(safety);

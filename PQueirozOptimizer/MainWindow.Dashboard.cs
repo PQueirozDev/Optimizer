@@ -80,6 +80,7 @@ public partial class MainWindow
             root.Children.Add(_updateSlot);
             ShowUpdateBanner();
             if ((Application.Current as App)?.ActiveLicense is { IsExpiringSoon: true } expiring) root.Children.Add(LicenseRenewalBanner(expiring));
+            if (PlanAccess.DemoMode && CurrentLicense is null) root.Children.Add(DemoBanner());
 
             // Destaque: pontuação de saúde + ações principais
             var (score, headline, tone) = HealthScore(snapshot);

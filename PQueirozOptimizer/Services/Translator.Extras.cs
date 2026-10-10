@@ -233,10 +233,14 @@ public static partial class Translator
         P(@"^O desinstalador de (.+) não foi encontrado\.$", m => $"The uninstaller for {m.Groups[1].Value} was not found."),
         P(@"^Não foi possível desfazer a trava de drivers do Windows Update: (.+)$", m => $"Could not undo the Windows Update driver block: {m.Groups[1].Value}"),
         P(@"^(?s)Nada foi gravado\. Corrija: (.+)$", m => "Nothing was written. Fix: " + Regex.Replace(Regex.Replace(m.Groups[1].Value, @": valor inválido \(([^)]*)\)\.", ": invalid value ($1)."), @": (\S+) não cabe no campo \(máximo (\S+)\)\.", ": $1 doesn't fit the field (maximum $2).")),
-        P(@"^(?s)(.+)\n\nAplicar mesmo assim\?$", m => Regex.Replace(m.Groups[1].Value
-                .Replace("Arriscados (podem desligar algo que você usa):", "Risky (may turn off something you use):")
-                .Replace("Não reversíveis (a reversão não desfaz):", "Not reversible (rollback does not undo them):"),
-            @"(?m)^• (.+)$", s => "• " + Tr(s.Groups[1].Value)) + "\n\nApply anyway?"),
+        // Confirmação de ajustes (tela de revisão e Smart Optimize): cada linha é traduzida, inclusive os itens "• nome"
+        P(@"^(?s)(.+)\n\nAplicar mesmo assim\?$", m => string.Join("\n", m.Groups[1].Value.Split('\n').Select(line => line switch
+            {
+                "Arriscados (podem desligar algo que você usa):" => "Risky (may turn off something you use):",
+                "Não reversíveis (a reversão não desfaz):" => "Not reversible (rollback does not undo them):",
+                _ when line.StartsWith("• ", StringComparison.Ordinal) => "• " + Tr(line[2..]),
+                _ => Tr(line),
+            })) + "\n\nApply anyway?"),
         P(@"^(?s)A operação ""(.+)"", iniciada em (.+), não terminou: o Qrztweaks fechou durante a execução\.\n\nO que foi aplicado até ali tem backup\. Abrir Atividade e reversão para conferir ou reverter\?$",
             m => $"The operation \"{Tr(m.Groups[1].Value)}\", started at {m.Groups[2].Value}, did not finish: Qrztweaks closed while it was running.\n\nWhat was applied up to that point has a backup. Open Activity and rollback to review or revert?"),
         P(@"^Operação interrompida detectada: (.+) \(iniciada em (.+)\)$", m => $"Interrupted operation detected: {Tr(m.Groups[1].Value)} (started at {m.Groups[2].Value})"),

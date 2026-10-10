@@ -443,6 +443,7 @@ internal static class Program
             if (args.Contains("--branding")) { BrandingTests.Run(); return 0; }
             if (args.Contains("--recovery")) { RecoveryTests.Run(); return 0; }
             if (args.Contains("--safety")) { SafetyTests.Run(Path.Combine(root, "safety")); return 0; }
+            if (args.Contains("--v2")) { V2Tests.Run(Path.Combine(root, "v2")); return 0; }
             // Fotos e vídeo do site (não rodam os testes)
             if (args.Contains("--shots")) return Media.Shots(root);
             if (args.Contains("--tour")) return Media.Tour(root);
@@ -450,6 +451,7 @@ internal static class Program
             if (args.Contains("--videoshots")) return Media.VideoShots(root);
             RecoveryTests.Run();
             SafetyTests.Run(Path.Combine(root, "safety"));
+            V2Tests.Run(Path.Combine(root, "v2"));
             var log = new ActivityLog(Path.Combine(root, "verification.log"));
             BiosAdvisorTests.Run();
             if (args.Contains("--bios-advisor-live")) return BiosAdvisorTests.Live(log);
@@ -653,7 +655,7 @@ internal static class Program
                 var flags = BindingFlags.NonPublic | BindingFlags.Instance;
                 void Wait(int ms) { var frame = new DispatcherFrame(); var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(ms) }; timer.Tick += (_, _) => { timer.Stop(); frame.Continue = false; }; timer.Start(); Dispatcher.PushFrame(frame); }
                 var portuguese = new System.Text.RegularExpressions.Regex(@"[áàâãéêíóôõúçÁÉÍÓÚÇÃÕ]|\b(de|do|da|dos|das|para|com|seu|sua|você|não|nao|um|uma|os|pelo|pela|ou|está|são|ativo|ativa|ativar|desativado|pronto|salvar|excluir|abrir|revisar|baixar|voltar|copiar|sair|limpar|todos|todas|nenhum|nenhuma|\w+ando|\w+endo|\w+cao|\w+coes)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-                var ignore = new System.Text.RegularExpressions.Regex(@"Pedro Queiroz|PQueiroz|pqueiroz|\\|NVIDIA|Intel|AMD|Microsoft Windows|GeForce|Ryzen|Radeon|https?://|\.exe|\.lnk");
+                var ignore = new System.Text.RegularExpressions.Regex(@"Pedro Queiroz|PQueiroz|pqueiroz|\\|NVIDIA|Intel|AMD|Microsoft Windows|GeForce|Ryzen|Radeon|Click To Do|https?://|\.exe|\.lnk");
                 var found = new SortedSet<string>();
                 void Collect(DependencyObject node)
                 {
@@ -695,12 +697,57 @@ internal static class Program
                 foreach (var page in new[] { "resources", "gaming", "network", "services", "bios" })
                     if (typeof(MainWindow).GetMethod("PageTutorial", flags)!.Invoke(window, new object[] { page }) is System.Collections.IList pageSteps) WalkTutorial("pagina-" + page, page, pageSteps);
                 PrepareBiosAdvisor(window);
-                foreach (var page in new[] { "dashboard", "optimization", "startup", "drivers", "tools", "gaming", "network", "restore", "resources", "fixes", "services", "apps", "history", "settings", "about", "patchnotes", "bios", "biosadvisor" })
+                foreach (var page in new[] { "dashboard", "optimization", "startup", "drivers", "tools", "gaming", "network", "restore", "resources", "fixes", "services", "apps", "history", "settings", "about", "patchnotes", "bios", "biosadvisor", "smart", "perflab", "profiles", "diagnostics" })
                 {
                     typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { page });
                     Wait(page == "dashboard" ? 4000 : page == "startup" ? 8000 : 600);
                     Collect(window); Snap("en-" + page);
                 }
+                // 2.0: análise real do Smart Optimize (lê o PC, não aplica nada) e as abas do Performance Lab
+                typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "smart" });
+                typeof(MainWindow).GetMethod("RunSmartAnalysisAsync", flags)!.Invoke(window, new object[] { true });
+                Wait(25000);
+                typeof(MainWindow).GetField("_smartShowAll", flags)!.SetValue(window, true);
+                typeof(MainWindow).GetMethod("ShowSmartOptimize", flags)!.Invoke(window, null);
+                Wait(800); Collect(window); Snap("en-smart-analysis");
+                // Um resultado de captura (FPS real e sem FPS) para o cartão de resultado
+                var conditions = new PQueirozOptimizer.Engine.CaptureConditions("CPU", "GPU", "1.0", "Windows 11", 26200, "Equilibrado", "1920x1080", 144, "2.0.0");
+                var sampleResult = PQueirozOptimizer.Engine.PerfMetrics.Build(new PQueirozOptimizer.Engine.PerfResult { Label = "Test", Process = "game.exe", Source = "PresentMon", Conditions = conditions },
+                    Enumerable.Repeat(8.0, 1200).ToList(), Enumerable.Range(0, 30).Select(i => new PQueirozOptimizer.Engine.PerfSample(i, 120, 8, 40, 95, 60, 70, 1800, 200, 4000, 0)).ToList(), new[] { "Limite de energia (power cap)" });
+                foreach (var tab in new[] { "capture", "history", "compare", "lab" })
+                {
+                    typeof(MainWindow).GetField("_lastPerfResult", flags)!.SetValue(window, tab == "capture" ? sampleResult : null);
+                    typeof(MainWindow).GetField("_perfTab", flags)!.SetValue(window, tab);
+                    typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "perflab" });
+                    Wait(600); Collect(window); Snap("en-perflab-" + tab);
+                }
+                typeof(MainWindow).GetField("_lastPerfResult", flags)!.SetValue(window, sampleResult with { AverageFps = null, Source = "Só sensores" });
+                typeof(MainWindow).GetField("_perfTab", flags)!.SetValue(window, "capture");
+                typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "perflab" });
+                Wait(600); Collect(window);
+                typeof(MainWindow).GetField("_lastPerfResult", flags)!.SetValue(window, null);
+                // Diagnóstico com dados que disparam as regras (texto de cada achado traduzido)
+                var heavy = sampleResult with { DurationSeconds = 90, GpuAvg = 98, CpuAvg = 50, LimitedSeconds = 50 };
+                var inputs = new PQueirozOptimizer.Engine.DiagnosticInputs
+                {
+                    LastCapture = heavy, RamTotalGb = 8, SystemDriveFreeGb = 5, SystemDriveTotalGb = 250,
+                    MonitorHistory = Enumerable.Range(0, 30).Select(_ => new HardwareSample(30, 94, 7.5, 8, 50, 0, 0, 20)).ToList(),
+                    Disks = new[] { new PQueirozOptimizer.Engine.DiskReading("Disk", "HDD", "Warning", true) }, ProblemDevices = new[] { "Device" },
+                    GpuDriverDate = DateTime.Now.AddYears(-2), GpuName = "GPU", ProcessCount = 400, StartupItems = 30, PowerPlan = "Economia de energia",
+                    TopProcesses = new[] { new PQueirozOptimizer.Engine.ProcessLoad("app", 30) }, CpuPerformanceLimitNow = 20, Uptime = TimeSpan.FromDays(30), PagefileUsedPercent = 80,
+                };
+                typeof(MainWindow).GetField("_lastDiagnosis", flags)!.SetValue(window, PQueirozOptimizer.Engine.DiagnosticsEngine.Run(inputs));
+                typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "diagnostics" });
+                Wait(800); Collect(window); Snap("en-diagnostics-smart");
+                typeof(MainWindow).GetField("_lastDiagnosis", flags)!.SetValue(window, PQueirozOptimizer.Engine.DiagnosticsEngine.Run(new PQueirozOptimizer.Engine.DiagnosticInputs { LastCapture = heavy with { GpuAvg = 60, AverageFps = 97 } }));
+                typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "diagnostics" });
+                Wait(600); Collect(window);
+                typeof(MainWindow).GetField("_lastDiagnosis", flags)!.SetValue(window, null);
+                // Editor de perfil
+                typeof(MainWindow).GetField("_editingProfile", flags)!.SetValue(window, PQueirozOptimizer.Engine.ProfileTemplates.All().First());
+                typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "profiles" });
+                Wait(600); Collect(window); Snap("en-profile-editor");
+                typeof(MainWindow).GetField("_editingProfile", flags)!.SetValue(window, null);
                 typeof(MainWindow).GetField("_servicesTab", flags)!.SetValue(window, 1);
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "services" });
                 Wait(800); Collect(window); Snap("en-services-status");

@@ -16,6 +16,7 @@ public partial class MainWindow
         if (activation.ShowDialog() == true && service.TryGetActiveLicense(out var license, out _) && license is not null)
         {
             (Application.Current as App)?.SetActiveLicense(license);
+            PlanAccess.DemoMode = false;
             UpdateLicenseUi();
             // A mesma tela serve para liberar os recursos de administrador e para renovar a licença
             Msg(license.IsAdmin ? "Chave ativada. Os recursos de administrador já estão disponíveis." : "Chave ativada. Sua licença foi atualizada.", "Ativação concluída", MessageBoxButton.OK, MessageBoxImage.Information);

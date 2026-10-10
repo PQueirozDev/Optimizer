@@ -19,6 +19,7 @@ public partial class MainWindow
     {
         ["dashboard"] = ("MONITORAR", Glyphs.Home, "Saúde, desempenho e atividade do seu PC em tempo real."),
         ["perflab"] = ("MONITORAR", Glyphs.Speed, "FPS, frametime e sensores reais, histórico e comparação antes/depois."),
+        ["profiles"] = ("JOGOS E REDE", Glyphs.Person, "Perfis por jogo ou uso, com ativação automática do Modo Jogo."),
         ["smart"] = ("OTIMIZAÇÕES", Glyphs.Lightning, "Análise do PC e ajustes recomendados pelo objetivo, com risco e reversão."),
         ["restore"] = ("MANUTENÇÃO", Glyphs.Restore2, "Crie e restaure pontos de restauração para proteger o sistema."),
         ["resources"] = ("MANUTENÇÃO", Glyphs.Library, "Automação, atalhos, downloads e testes para preparar qualquer PC."),
@@ -138,6 +139,7 @@ public partial class MainWindow
     {
         new("Command Center", "Monitorar", Glyphs.Home, "dashboard inicio painel saude monitor visao geral", () => NavigateTo("dashboard")),
         new("Performance Lab", "Monitorar", Glyphs.Speed, "fps frametime benchmark presentmon teste comparar 1% low", () => NavigateTo("perflab")),
+        new("Perfis", "Jogos e rede", Glyphs.Person, "perfil valorant cs2 fortnite streaming importar exportar automatico", () => NavigateTo("profiles")),
         new("Smart Optimize", "Otimizações", Glyphs.Lightning, "inteligente recomendacoes objetivo analise perfil gaming notebook programacao", () => NavigateTo("smart")),
         new("Optimization Lab", "Monitorar", Glyphs.Diagnostic, "experimento medir ajuste antes depois", () => { _perfTab = "lab"; NavigateTo("perflab"); }),
         new("Modo compacto", "Monitorar", Glyphs.Pin, "hud segundo monitor janela pequena compacto", OpenCompactMonitor),

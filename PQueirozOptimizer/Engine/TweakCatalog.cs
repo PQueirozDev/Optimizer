@@ -125,11 +125,11 @@ public static class TweakCatalog
         return active.Count == 0 ? Applied("Serviços já desativados.") : Pending("Ativos: " + string.Join(", ", active));
     };
 
-    private static Func<TweakContext, TweakReading> AppxAbsent(string label, params string[] patterns) => c =>
+    private static Func<TweakContext, TweakReading> AppxAbsent(string appliedText, params string[] patterns) => c =>
     {
         if (c.System.AppxPackages is not { } packages) return new(TweakState.ReadFailed, "Não foi possível consultar os apps da Loja.");
         var found = packages.Where(p => patterns.Any(pattern => Like(p, pattern))).ToList();
-        return found.Count == 0 ? Applied($"{label} não está instalado.") : Pending($"Instalado: {string.Join(", ", found.Take(6))}" + (found.Count > 6 ? $" e mais {found.Count - 6}" : ""));
+        return found.Count == 0 ? Applied(appliedText) : Pending($"Instalado: {string.Join(", ", found.Take(6))}" + (found.Count > 6 ? $" e mais {found.Count - 6}" : ""));
     };
 
     /// <summary>Mesmo curinga do -like do PowerShell, só com '*'.</summary>
@@ -484,13 +484,13 @@ public static class TweakCatalog
             SideEffects = "Os apps somem para todos os usuários. A reversão não reinstala: use a Microsoft Store.", Verification = "Nenhum dos pacotes da lista continua instalado.",
             Revert = "Não reversível pelo backup; reinstale pela Microsoft Store.", Evidence = "Libera espaço e tarefas em segundo plano desses apps.", Goals = GoalSet.Gaming,
             AvoidFor = new Dictionary<OptimizationGoal, string> { [OptimizationGoal.Development] = "Remove o Teams e o Vincular ao Celular, usados em trabalho.", [OptimizationGoal.DailyUse] = "Pode remover apps que você usa (Teams, Clima, Celular)." },
-            Read = AppxAbsent("Nenhum app da lista", BloatAppPatterns),
+            Read = AppxAbsent("Nenhum app da lista está instalado.", BloatAppPatterns),
         },
         new()
         {
             Id = "app.cortana", Operation = "debloat", Step = "Cortana removida", Name = "Remover a Cortana", Description = "Remove o app Cortana.", Category = "Apps", Risk = StepRisk.Moderate,
             SideEffects = "Não reversível pelo backup; reinstale pela Microsoft Store.", Verification = "O pacote Microsoft.549981C3F5F10 não está instalado.", Revert = "Reinstale pela Microsoft Store.",
-            Evidence = "A Cortana foi descontinuada pela Microsoft.", Goals = GoalSet.Gaming | GoalSet.Daily, Read = AppxAbsent("A Cortana", "*Microsoft.549981C3F5F10*"),
+            Evidence = "A Cortana foi descontinuada pela Microsoft.", Goals = GoalSet.Gaming | GoalSet.Daily, Read = AppxAbsent("A Cortana não está instalada.", "*Microsoft.549981C3F5F10*"),
         },
         new()
         {
@@ -498,7 +498,7 @@ public static class TweakCatalog
             SideEffects = "O painel de Widgets e o clima da barra de tarefas somem. Não reversível pelo backup.", Verification = "O pacote WebExperience não está instalado.", Revert = "Reinstale pela Microsoft Store.",
             Evidence = "O painel carrega conteúdo da web em segundo plano.", Goals = GoalSet.Gaming,
             AvoidFor = new Dictionary<OptimizationGoal, string> { [OptimizationGoal.DailyUse] = "Remove o clima e as notícias da barra de tarefas." },
-            Read = AppxAbsent("Os Widgets", "*WebExperience*", "*WindowsWidgets*"),
+            Read = AppxAbsent("Os Widgets não estão instalados.", "*WebExperience*", "*WindowsWidgets*"),
         },
         new()
         {

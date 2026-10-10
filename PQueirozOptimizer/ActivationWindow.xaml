@@ -39,9 +39,24 @@
       </DockPanel>
       <TextBlock Text="Copie o pedido e envie para receber sua chave. Ao copiar a chave recebida, ela é colada aqui automaticamente." TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource MutedBrush}" Margin="2,6,0,0"/>
 
+      <!-- Planos e preços (os mesmos do site); a compra e a ativação são feitas pelo suporte -->
+      <Border CornerRadius="12" Padding="14,12" Margin="0,18,0,0" Background="{DynamicResource CardBgBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1">
+        <StackPanel>
+          <TextBlock Text="Planos" FontSize="12.5" FontWeight="SemiBold"/>
+          <TextBlock x:Name="PlansText" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,8"/>
+          <WrapPanel>
+            <Button Content="Ver planos no site" Height="34" Padding="12,0" Margin="0,0,8,0" Style="{StaticResource GhostButton}" Click="Plans_Click"/>
+            <Button x:Name="TransferButton" Content="Troquei de PC / reinstalei o Windows" Height="34" Padding="12,0" Margin="0,0,8,0" Style="{StaticResource GhostButton}" Click="Transfer_Click"
+                    ToolTip="Copia um pedido de transferência com o novo ID deste computador"/>
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+
       <TextBlock x:Name="StatusText" Foreground="{DynamicResource DangerBrush}" TextWrapping="Wrap" MinHeight="22" FontSize="12.5" Margin="0,16,0,0"/>
       <DockPanel Margin="0,14,0,0">
         <Button Content="Sair" Width="96" Height="42" Padding="0" Margin="0" Style="{StaticResource GhostButton}" Click="Exit_Click"/>
+        <Button x:Name="DemoButton" Content="Explorar sem licença" Height="42" Padding="14,0" Margin="8,0,0,0" Style="{StaticResource GhostButton}" Click="Demo_Click"
+                ToolTip="Modo demonstração: veja o hardware, o monitor, o diagnóstico e as recomendações. Nada é aplicado sem licença."/>
         <Button Content="Ativar e continuar" Width="180" Height="42" Padding="0" Margin="0" HorizontalAlignment="Right" DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" IsDefault="True" Click="Activate_Click"/>
       </DockPanel>
     </StackPanel>

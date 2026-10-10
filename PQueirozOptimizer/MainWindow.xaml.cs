@@ -98,10 +98,12 @@ public partial class MainWindow : Window
     {
         var license = (Application.Current as App)?.ActiveLicense;
         NavIsos.Visibility = IsAdminLicense ? Visibility.Visible : Visibility.Collapsed;
-        LicenseLabel.Text = license is null ? "Sem licença ativa" : $"{(license.IsAdmin ? "Admin" : license.PlanName)} · {license.Licensee}";
+        LicenseLabel.Text = license is null ? (PlanAccess.DemoMode ? "Modo demonstração" : "Sem licença ativa") : $"{(license.IsAdmin ? "Admin" : license.PlanName)} · {license.Licensee}";
         LicenseLabel.ToolTip = license?.ExpiresAtUtc is { } expires ? $"Válida até {expires.ToLocalTime():dd/MM/yyyy}" : "Licença sem data de expiração";
         UpdateNavLocks();
         InitSidebar();
+        if (Engine.ProfileStore.Default.WatchGames) StartGameWatcher();
+        Closed += (_, _) => StopGameWatcher();
     }
 
     #region Window & Language Controls
@@ -248,6 +250,7 @@ public partial class MainWindow : Window
             // Tutorial e aviso de atualização só depois que a tela de abertura saiu (senão ficam atrás dela)
             await StartupSplash.Close();
             ShowInterruptedOperationNotice();
+            CheckUpdateOutcome();
             MaybeShowWelcomeTour();
             await CheckForUpdateAsync(showPrompt: _promptForUpdates);
         }
@@ -303,6 +306,7 @@ public partial class MainWindow : Window
             case "optimization": ShowOptimization(); break;
             case "smart": ShowSmartOptimize(); break;
             case "perflab": ShowPerformanceLab(); break;
+            case "profiles": ShowProfiles(); break;
             case "drivers": ShowDrivers(); break;
             case "isos": ShowIsos(); break;
             case "tools": ShowTools(); break;
@@ -326,7 +330,7 @@ public partial class MainWindow : Window
 
     private void UpdateActiveNavButton(string page)
     {
-        var buttons = new[] { NavDashboard, NavPerfLab, NavSmart, NavOpt, NavStartup, NavDrivers, NavIsos, NavTools, NavCustomize, NavGaming, NavNetwork, NavRestore, NavResources, NavFixes, NavDiagnostics, NavServices, NavApps, NavSettings, NavAbout, NavHistory, NavPatchNotes, NavBios, NavBiosAdvisor, NavAdmin };
+        var buttons = new[] { NavDashboard, NavPerfLab, NavSmart, NavProfiles, NavOpt, NavStartup, NavDrivers, NavIsos, NavTools, NavCustomize, NavGaming, NavNetwork, NavRestore, NavResources, NavFixes, NavDiagnostics, NavServices, NavApps, NavSettings, NavAbout, NavHistory, NavPatchNotes, NavBios, NavBiosAdvisor, NavAdmin };
         foreach (var b in buttons) b.IsChecked = b.Tag?.ToString() == page;
     }
 

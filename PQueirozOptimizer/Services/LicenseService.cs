@@ -61,7 +61,7 @@ public static class PlanAccess
         ["services"] = PlanTier.Intermediate, ["apps"] = PlanTier.Intermediate, ["drivers"] = PlanTier.Intermediate,
         ["network"] = PlanTier.Intermediate, ["resources"] = PlanTier.Intermediate, ["diagnostics"] = PlanTier.Intermediate,
         // Smart Optimize abre no Base; cada ajuste confere o nível da operação que o aplica (Debloat e Avançada)
-        ["smart"] = PlanTier.Base, ["perflab"] = PlanTier.Intermediate,
+        ["smart"] = PlanTier.Base, ["perflab"] = PlanTier.Intermediate, ["profiles"] = PlanTier.Full,
         ["gaming"] = PlanTier.Full, ["customize"] = PlanTier.Full, ["bios"] = PlanTier.Full, ["biosadvisor"] = PlanTier.Full,
     };
 
@@ -82,7 +82,14 @@ public static class PlanAccess
         _ => "optimization",
     };
 
-    public static bool Allows(LicenseInfo? license, string page) => license is not null && license.Tier >= Required(page);
+    /// <summary>
+    /// Modo demonstração (sem licença): só páginas de leitura abrem. Tudo que altera o sistema continua passando
+    /// por <see cref="Allows"/> com licença nula, que nega — então a demonstração não aplica nada.
+    /// </summary>
+    public static bool DemoMode { get; set; }
+    public static readonly IReadOnlySet<string> DemoPages = new HashSet<string>(StringComparer.Ordinal) { "smart", "diagnostics", "perflab" };
+
+    public static bool Allows(LicenseInfo? license, string page) => license is null ? DemoMode && DemoPages.Contains(page) : license.Tier >= Required(page);
 }
 
 public sealed record LicenseInfo(string Licensee, DateTime? ExpiresAtUtc, string MachineId, string Role, string? Plan = null)
@@ -154,6 +161,35 @@ public sealed class LicenseService
         lines.Add($"ID do computador: {DisplayMachineId}");
         lines.Add($"Computador: {Environment.MachineName}");
         return string.Join("\n", lines);
+    }
+
+    /// <summary>
+    /// Pedido de transferência (troca de PC ou Windows reinstalado): o ID muda, então o emissor reemite a chave
+    /// para o titular. Só gera o texto; nenhuma validação é afrouxada.
+    /// </summary>
+    public string BuildTransferRequest(string? previousLicensee)
+    {
+        var lines = new List<string> { "Pedido de transferência - Qrztweaks", "Motivo: troca de computador ou reinstalação do Windows" };
+        if (!string.IsNullOrWhiteSpace(previousLicensee)) lines.Add($"Titular: {previousLicensee}");
+        lines.Add($"Novo ID do computador: {DisplayMachineId}");
+        lines.Add($"Computador: {Environment.MachineName}");
+        return string.Join("\n", lines);
+    }
+
+    /// <summary>Titular da chave salva quando a assinatura é válida, mesmo que seja de outro PC ou esteja vencida (para o pedido de transferência).</summary>
+    public string? StoredKeyLicensee()
+    {
+        try
+        {
+            if (!File.Exists(LicensePath)) return null;
+            var parts = File.ReadAllText(LicensePath).Trim().Split('.', 2);
+            if (parts.Length != 2 || !parts[0].StartsWith("PQO1-", StringComparison.Ordinal)) return null;
+            var data = FromBase64Url(parts[0][5..]);
+            using var rsa = new RSACryptoServiceProvider(); rsa.ImportCspBlob(Convert.FromBase64String(PublicKeyBlob));
+            if (!rsa.VerifyData(data, CryptoConfig.MapNameToOID("SHA256")!, FromBase64Url(parts[1]))) return null;
+            return JsonSerializer.Deserialize<LicensePayload>(data) is { Product: "PQueirozOptimizer" } p && !string.IsNullOrWhiteSpace(p.Licensee) ? p.Licensee : null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FormatException or CryptographicException or JsonException) { return null; }
     }
 
     // Localiza a chave dentro de qualquer texto colado, mesmo quebrada em linhas ou junto de uma mensagem.
