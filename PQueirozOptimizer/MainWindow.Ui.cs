@@ -71,6 +71,13 @@ public static class Glyphs
     public static readonly string Tag = G(0xE8EC);
     public static readonly string Rocket2 = G(0xE945);
     public static readonly string Personalize = G(0xE771);
+    public static readonly string Code = G(0xE943);
+    public static readonly string Laptop = G(0xE7F8);
+    public static readonly string Save = G(0xE74E);
+    public static readonly string Edit = G(0xE70F);
+    public static readonly string Upload = G(0xE898);
+    public static readonly string Filter = G(0xE71C);
+    public static readonly string Pin = G(0xE718);
 
     private static string G(int code) => char.ConvertFromUtf32(code);
 }

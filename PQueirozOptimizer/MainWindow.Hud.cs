@@ -160,13 +160,14 @@ public partial class MainWindow
         foreach (UIElement block in page.Children)
         {
             if (index >= 10) break; // o que está fora da tela não precisa de animação
-            var delay = TimeSpan.FromMilliseconds(index++ * 55);
+            // Transições curtas (150–250 ms): a página aparece rápido e a cascata só sugere a ordem
+            var delay = TimeSpan.FromMilliseconds(index++ * 35);
             // Reaproveita o deslocamento do efeito de "subir ao passar o mouse" dos cartões
             var slide = block.RenderTransform as TranslateTransform ?? new TranslateTransform();
             block.RenderTransform = slide;
             block.Opacity = 0; // invisível até a vez dele na cascata
-            block.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(320)) { BeginTime = delay, EasingFunction = ease });
-            slide.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(18, 0, TimeSpan.FromMilliseconds(420)) { BeginTime = delay, EasingFunction = ease, FillBehavior = FillBehavior.Stop });
+            block.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200)) { BeginTime = delay, EasingFunction = ease });
+            slide.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(12, 0, TimeSpan.FromMilliseconds(250)) { BeginTime = delay, EasingFunction = ease, FillBehavior = FillBehavior.Stop });
         }
     }
 

@@ -45,6 +45,20 @@ public partial class MainWindow
         animations.Unchecked += (_, _) => Update(s => s.Animations = false);
         const string animationsHint = "Entrada das páginas e transições. O monitor ao vivo e os gráficos continuam atualizando.";
         panel.Children.Add(SettingRow("Animações da interface", animationsHint, animations));
+        panel.Children.Add(SettingRow("Seguir a redução de movimento do Windows",
+            "Desliga as animações quando \"Mostrar animações no Windows\" estiver desligado. Fica desligado por padrão porque o ajuste de efeitos visuais do próprio app desliga essa opção do Windows.",
+            Switch(current.FollowSystemMotion, on => Update(s => s.FollowSystemMotion = on))));
+        panel.Children.Add(SettingRow("Barra lateral compacta", "Mostra só os ícones; o nome de cada página aparece ao passar o mouse. Também alterna com Ctrl+B.",
+            Switch(current.CompactSidebar, on => Update(s => s.CompactSidebar = on))));
+
+        var dashTitle = Label("Command Center", 13.5); dashTitle.FontWeight = FontWeights.SemiBold; dashTitle.Margin = new Thickness(0, 8, 0, 2);
+        panel.Children.Add(dashTitle);
+        panel.Children.Add(Label("Escolha o que aparece na página inicial.", 12, true));
+        panel.Children.Add(SettingRow("Status e alertas", "Otimizações ativas, última análise, último teste e alertas.", Switch(current.DashboardStatus, on => Update(s => s.DashboardStatus = on))));
+        panel.Children.Add(SettingRow("Ações rápidas", "Smart Optimize, Modo Jogo, Performance Lab, Restaurar e Diagnóstico.", Switch(current.DashboardQuickActions, on => Update(s => s.DashboardQuickActions = on))));
+        panel.Children.Add(SettingRow("Monitor em tempo real", "Gráficos de CPU, GPU, memória e rede.", Switch(current.DashboardLive, on => Update(s => s.DashboardLive = on))));
+        panel.Children.Add(SettingRow("Cards de hardware", "Processador, memória, disco, placa de vídeo e temperaturas.", Switch(current.DashboardHardware, on => Update(s => s.DashboardHardware = on))));
+        panel.Children.Add(SettingRow("Atividade recente", "Leitura rápida e as últimas operações.", Switch(current.DashboardActivity, on => Update(s => s.DashboardActivity = on))));
 
         var translucent = new CheckBox { IsChecked = current.Translucent && ThemeService.TranslucencySupported, Content = "", IsEnabled = ThemeService.TranslucencySupported };
         translucent.SetResourceReference(StyleProperty, "SwitchCheckBox");
@@ -109,6 +123,15 @@ public partial class MainWindow
         return false;
     }
 
+    private CheckBox Switch(bool value, Action<bool> changed)
+    {
+        var box = new CheckBox { IsChecked = value, Content = "" };
+        box.SetResourceReference(StyleProperty, "SwitchCheckBox");
+        box.Checked += (_, _) => changed(true);
+        box.Unchecked += (_, _) => changed(false);
+        return box;
+    }
+
     private static bool IsDefaultAppearance(AppearanceSettings s) =>
         s.Theme == ThemeMode.Dark && s.Accent == AccentIntensity.Default && s.Density == Density.Default && s.CardSize == CardSize.Medium && s.Animations && !s.Translucent
         && string.IsNullOrEmpty(s.AccentColor) && string.IsNullOrEmpty(s.SecondaryColor);
@@ -118,7 +141,7 @@ public partial class MainWindow
     internal static readonly (ThemeMode Mode, string Name)[] Themes =
     {
         (ThemeMode.Dark, "Escuro"), (ThemeMode.Oled, "OLED"), (ThemeMode.Light, "Claro"), (ThemeMode.Graphite, "Grafite"),
-        (ThemeMode.Ocean, "Oceano"), (ThemeMode.Forest, "Floresta"), (ThemeMode.Plum, "Ameixa"), (ThemeMode.Sand, "Areia"), (ThemeMode.Auto, "Automático"),
+        (ThemeMode.Ocean, "Oceano"), (ThemeMode.Forest, "Floresta"), (ThemeMode.Plum, "Ameixa"), (ThemeMode.Midnight, "Meia-noite"), (ThemeMode.Sand, "Areia"), (ThemeMode.Auto, "Automático"),
     };
 
     // A primeira de cada lista (null) é a cor original do app

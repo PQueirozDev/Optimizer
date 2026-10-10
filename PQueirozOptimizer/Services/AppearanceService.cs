@@ -18,7 +18,7 @@ public static class AppearanceService
     /// Animações decorativas, conforme a preferência do app. A opção de animações do Windows não é usada: a
     /// própria otimização de efeitos visuais do app a desliga (mesma decisão da animação de abertura na 1.7.2).
     /// </summary>
-    public static bool AnimationsEnabled => Current.Animations;
+    public static bool AnimationsEnabled => Current.Animations && !(Current.FollowSystemMotion && !SystemParameters.ClientAreaAnimation);
 
     public static double DensityFactor => Current.Density switch { Density.Compact => 0.78, Density.Comfortable => 1.22, _ => 1.0 };
 

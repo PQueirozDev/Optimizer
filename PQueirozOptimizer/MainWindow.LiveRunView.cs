@@ -21,6 +21,8 @@ public sealed record LiveMarker(string Kind, string Activity, IReadOnlyList<stri
 public partial class MainWindow
 {
     private enum LiveStepState { Pending, Running, Done, Failed, NotRun }
+    /// <summary>Como uma execução terminou (o Smart Optimize para a sequência se o usuário cancelar).</summary>
+    private enum LiveOutcome { NotStarted, Completed, CompletedWithFailures, Cancelled }
 
     private sealed class LiveStep
     {
@@ -106,9 +108,9 @@ public partial class MainWindow
     }
 
     /// <summary>Executa uma operação do script mostrando as etapas ao vivo e o registro completo.</summary>
-    private async Task RunLiveAsync(string operation, IReadOnlyList<string>? selectedSteps = null)
+    private async Task<LiveOutcome> RunLiveAsync(string operation, IReadOnlyList<string>? selectedSteps = null)
     {
-        if (_operationRunning) { OperationStatus.Text = "Aguarde a operação em andamento."; return; }
+        if (_operationRunning) { OperationStatus.Text = "Aguarde a operação em andamento."; return LiveOutcome.NotStarted; }
         var (title, icon, description) = OperationInfo(operation);
         PageTitle.Text = title;
         PageBadge.Visibility = Visibility.Collapsed;
@@ -429,5 +431,9 @@ public partial class MainWindow
         var back = IconButton(Glyphs.ChevronRight, "Voltar às otimizações", primary: true);
         back.Click += (_, _) => NavigateTo("optimization");
         actions.Children.Add(back);
+        // Verificação: o que o catálogo sabe ler é conferido no Windows, não só pela saída do script
+        if (!cancelled && selectedSteps is { Count: > 0 } && operation is "padrao" or "gamer" or "debloat")
+            await AppendLiveVerificationAsync(root, operation, selectedSteps);
+        return cancelled ? LiveOutcome.Cancelled : failed || failCount > 0 || stepFailures > 0 ? LiveOutcome.CompletedWithFailures : LiveOutcome.Completed;
     }
 }

@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace PQueirozOptimizer.Models;
 
 /// <summary>Temas (gravados pelo nome, então a lista pode crescer sem quebrar preferências salvas).</summary>
-public enum ThemeMode { Dark, Oled, Auto, Light, Graphite, Ocean, Forest, Sand, Plum }
+public enum ThemeMode { Dark, Oled, Auto, Light, Graphite, Ocean, Forest, Sand, Plum, Midnight }
 public enum AccentIntensity { Soft, Default, Vibrant }
 public enum Density { Compact, Default, Comfortable }
 public enum CardSize { Compact, Medium, Large }
@@ -22,6 +22,16 @@ public sealed class AppearanceSettings
     [JsonPropertyName("accentColor")] public string? AccentColor { get; set; }
     /// <summary>Cor secundária, usada nos gradientes e indicadores (#RRGGBB); vazio = ciano padrão.</summary>
     [JsonPropertyName("secondaryColor")] public string? SecondaryColor { get; set; }
+    /// <summary>Desliga as animações quando "Mostrar animações no Windows" estiver desligado (redução de movimento).</summary>
+    [JsonPropertyName("followSystemMotion")] public bool FollowSystemMotion { get; set; }
+    /// <summary>Barra lateral só com ícones (os nomes aparecem nas dicas).</summary>
+    [JsonPropertyName("compactSidebar")] public bool CompactSidebar { get; set; }
+    // Seções do Command Center
+    [JsonPropertyName("dashStatus")] public bool DashboardStatus { get; set; } = true;
+    [JsonPropertyName("dashQuickActions")] public bool DashboardQuickActions { get; set; } = true;
+    [JsonPropertyName("dashLive")] public bool DashboardLive { get; set; } = true;
+    [JsonPropertyName("dashHardware")] public bool DashboardHardware { get; set; } = true;
+    [JsonPropertyName("dashActivity")] public bool DashboardActivity { get; set; } = true;
 
     public AppearanceSettings Clone() => (AppearanceSettings)MemberwiseClone();
 }

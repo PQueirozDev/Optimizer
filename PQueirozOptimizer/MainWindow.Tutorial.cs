@@ -44,7 +44,8 @@ public partial class MainWindow
     private List<TutorialStep> WelcomeTour() => new()
     {
         new(() => null, "Bem-vindo ao Qrztweaks!", "Em menos de um minuto você conhece o essencial. Use Próximo para avançar ou Pular para começar a usar agora."),
-        new(() => NavDashboard, "Visão geral", "A saúde do PC, o monitor ao vivo e os atalhos para limpar e otimizar ficam aqui."),
+        new(() => NavDashboard, "Command Center", "A saúde do PC, o monitor ao vivo, os alertas e as ações rápidas ficam aqui."),
+        new(() => NavSmart, "Smart Optimize", "Escolha o objetivo do PC: o app lê o estado de cada ajuste e recomenda só o que se aplica, com risco e reversão."),
         new(() => NavResources, "Recursos — comece por aqui", "Verificação de arquivos corrompidos do Windows, instalação de runtimes para jogos e reinstalação limpa do driver de vídeo."),
         new(() => NavFixes, "Correções", "Soluções rápidas para problemas comuns: Windows Update travado, Loja, áudio, pesquisa, ícones e mais."),
         new(() => NavRestore, "Pontos de restauração", "Crie um ponto de restauração antes de grandes mudanças e volte a ele quando quiser."),

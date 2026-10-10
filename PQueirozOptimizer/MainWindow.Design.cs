@@ -18,6 +18,8 @@ public partial class MainWindow
     private static readonly Dictionary<string, (string Eyebrow, string Glyph, string Subtitle)> PageHeaders = new()
     {
         ["dashboard"] = ("MONITORAR", Glyphs.Home, "Saúde, desempenho e atividade do seu PC em tempo real."),
+        ["perflab"] = ("MONITORAR", Glyphs.Speed, "FPS, frametime e sensores reais, histórico e comparação antes/depois."),
+        ["smart"] = ("OTIMIZAÇÕES", Glyphs.Lightning, "Análise do PC e ajustes recomendados pelo objetivo, com risco e reversão."),
         ["restore"] = ("MANUTENÇÃO", Glyphs.Restore2, "Crie e restaure pontos de restauração para proteger o sistema."),
         ["resources"] = ("MANUTENÇÃO", Glyphs.Library, "Automação, atalhos, downloads e testes para preparar qualquer PC."),
         ["fixes"] = ("MANUTENÇÃO", Glyphs.Repair, "Correções rápidas para problemas comuns do Windows."),
@@ -134,7 +136,11 @@ public partial class MainWindow
 
     private List<PaletteEntry> PaletteEntries() => _palette ??= new List<PaletteEntry>
     {
-        new("Visão geral", "Monitorar", Glyphs.Home, "dashboard inicio painel saude monitor", () => NavigateTo("dashboard")),
+        new("Command Center", "Monitorar", Glyphs.Home, "dashboard inicio painel saude monitor visao geral", () => NavigateTo("dashboard")),
+        new("Performance Lab", "Monitorar", Glyphs.Speed, "fps frametime benchmark presentmon teste comparar 1% low", () => NavigateTo("perflab")),
+        new("Smart Optimize", "Otimizações", Glyphs.Lightning, "inteligente recomendacoes objetivo analise perfil gaming notebook programacao", () => NavigateTo("smart")),
+        new("Optimization Lab", "Monitorar", Glyphs.Diagnostic, "experimento medir ajuste antes depois", () => { _perfTab = "lab"; NavigateTo("perflab"); }),
+        new("Modo compacto", "Monitorar", Glyphs.Pin, "hud segundo monitor janela pequena compacto", OpenCompactMonitor),
         new("Otimizações", "Otimizações", Glyphs.Lightning, "ajustes perfil", () => NavigateTo("optimization")),
         new("Versão Padrão", "Otimizações", Glyphs.Speed, "otimizar padrao basico", () => _ = PrepareOperationAsync("padrao")),
         new("Versão Avançada (jogos)", "Otimizações", Glyphs.Game, "gamer latencia fps avancada", () => _ = PrepareOperationAsync("gamer")),

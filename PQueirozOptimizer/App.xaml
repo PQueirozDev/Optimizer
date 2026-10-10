@@ -205,7 +205,7 @@
         <Setter.Value>
           <ControlTemplate TargetType="RadioButton">
             <Grid>
-              <Border x:Name="bg" CornerRadius="10" Background="Transparent"/>
+              <Border x:Name="bg" CornerRadius="10" Background="Transparent" BorderThickness="1.5" BorderBrush="Transparent"/>
               <Border x:Name="indicator" Width="3" Height="18" CornerRadius="2" HorizontalAlignment="Left"
                       Background="{DynamicResource AccentBrush}" Opacity="0"/>
               <ContentPresenter x:Name="content" Margin="{TemplateBinding Padding}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
@@ -214,6 +214,10 @@
               <Trigger Property="IsMouseOver" Value="True">
                 <Setter TargetName="bg" Property="Background" Value="{DynamicResource PanelHoverBrush}"/>
                 <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+              </Trigger>
+              <!-- Foco pelo teclado visível (Tab e setas) -->
+              <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter TargetName="bg" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
               </Trigger>
               <Trigger Property="IsChecked" Value="True">
                 <Setter TargetName="bg" Property="Background" Value="{DynamicResource NavSelectedBrush}"/>

@@ -12,14 +12,14 @@
 
 
    <!-- ============ BARRA LATERAL ============ -->
-   <Border Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,1,0">
+   <Border x:Name="SidebarBorder" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,1,0">
     <DockPanel>
      <!-- Logo (faz parte da área de arrastar a janela) -->
-     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="20,18,16,14">
+     <StackPanel x:Name="SidebarLogo" DockPanel.Dock="Top" Orientation="Horizontal" Margin="20,18,16,14">
       <Border Width="36" Height="36">
        <Image Source="pack://application:,,,/Qrztweaks;component/Assets/app.png" Width="36" Height="36" RenderOptions.BitmapScalingMode="HighQuality"/>
       </Border>
-      <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+      <StackPanel x:Name="SidebarLogoText" Margin="12,0,0,0" VerticalAlignment="Center">
        <TextBlock Text="Qrztweaks" FontSize="14" FontWeight="Bold" FontFamily="{StaticResource DisplayFont}"/>
        <TextBlock Text="PC OPTIMIZER" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" Margin="0,1,0,0"/>
       </StackPanel>
@@ -54,14 +54,20 @@
       </StackPanel>
      </Border>
 
-     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="12,0,12,0">
-      <StackPanel>
+     <ScrollViewer x:Name="SidebarScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="12,0,12,0">
+      <StackPanel x:Name="NavStack" KeyboardNavigation.DirectionalNavigation="Cycle">
        <TextBlock x:Name="NavSecMonitor" Text="MONITORAR" Style="{StaticResource SectionHeaderStyle}" Margin="12,6,0,6"/>
        <RadioButton x:Name="NavDashboard" Tag="dashboard" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE80F;" Style="{StaticResource NavIcon}"/><TextBlock x:Name="NavDashboardText" Text="Visão geral" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE80F;" Style="{StaticResource NavIcon}"/><TextBlock x:Name="NavDashboardText" Text="Command Center" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+       </RadioButton>
+       <RadioButton x:Name="NavPerfLab" Tag="perflab" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
+        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xEC4A;" Style="{StaticResource NavIcon}"/><TextBlock Text="Performance Lab" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
        </RadioButton>
 
        <TextBlock x:Name="NavSecOptimizations" Text="OTIMIZAÇÕES" Style="{StaticResource SectionHeaderStyle}"/>
+       <RadioButton x:Name="NavSmart" Tag="smart" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
+        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE945;" Style="{StaticResource NavIcon}"/><TextBlock Text="Smart Optimize" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+       </RadioButton>
        <RadioButton x:Name="NavOpt" Tag="optimization" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
         <DockPanel>
          <Border x:Name="NavOptBadge" DockPanel.Dock="Right" Padding="7,1" CornerRadius="8" Background="{DynamicResource AccentSoftBrush}" VerticalAlignment="Center">

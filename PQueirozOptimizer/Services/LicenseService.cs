@@ -60,6 +60,8 @@ public static class PlanAccess
         ["optimization"] = PlanTier.Base, ["startup"] = PlanTier.Base, ["fixes"] = PlanTier.Base, ["tools"] = PlanTier.Base,
         ["services"] = PlanTier.Intermediate, ["apps"] = PlanTier.Intermediate, ["drivers"] = PlanTier.Intermediate,
         ["network"] = PlanTier.Intermediate, ["resources"] = PlanTier.Intermediate, ["diagnostics"] = PlanTier.Intermediate,
+        // Smart Optimize abre no Base; cada ajuste confere o nível da operação que o aplica (Debloat e Avançada)
+        ["smart"] = PlanTier.Base, ["perflab"] = PlanTier.Intermediate,
         ["gaming"] = PlanTier.Full, ["customize"] = PlanTier.Full, ["bios"] = PlanTier.Full, ["biosadvisor"] = PlanTier.Full,
     };
 

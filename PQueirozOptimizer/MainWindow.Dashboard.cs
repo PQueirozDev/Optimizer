@@ -48,7 +48,7 @@ public partial class MainWindow
 
     private async Task RenderDashboardAsync()
     {
-        PageTitle.Text = "Visão geral";
+        PageTitle.Text = "Command Center";
         PageBadge.Visibility = Visibility.Collapsed;
         var root = new StackPanel();
         ContentHost.Children.Clear(); ContentHost.Children.Add(root);
@@ -96,7 +96,12 @@ public partial class MainWindow
             headlineText.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
             heroText.Children.Add(headlineText);
             var facts = new WrapPanel { Margin = new Thickness(0, 10, 0, AppearanceService.Space(18)) };
-            foreach (var (glyph, label, value) in new[] { (Glyphs.Monitor, "Sistema", $"{snapshot.OperatingSystem} · Build {snapshot.Build}"), (Glyphs.Clock, "Tempo ligado", snapshot.UptimeText) })
+            var lastGoal = Engine.SmartHistory.Default.LastAnalysis?.Goal;
+            foreach (var (glyph, label, value) in new[]
+            {
+                (Glyphs.Monitor, "Computador", Environment.MachineName), (Glyphs.Monitor, "Sistema", $"{snapshot.OperatingSystem} · Build {snapshot.Build}"),
+                (Glyphs.Clock, "Tempo ligado", snapshot.UptimeText), (Glyphs.Lightning, "Perfil ativo", lastGoal is { } g ? Translator.Tr(GoalTitle(g)) : Translator.Tr("Nenhum objetivo analisado")),
+            })
             {
                 var fact = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 22, 4) };
                 var icon = GlyphIcon(glyph, 12, "MutedBrush"); icon.Margin = new Thickness(0, 0, 7, 0);
@@ -112,7 +117,8 @@ public partial class MainWindow
             var clean = IconButton(Glyphs.Broom, "Analisar limpeza", primary: true); clean.Tag = "quickclean"; clean.Click += RunOperation_Click;
             clean.ToolTip = "Mostra quanto espaço dá para liberar antes de apagar qualquer coisa";
             var tune = IconButton(Glyphs.Lightning, "Revisar ajustes"); tune.Tag = "padrao"; tune.Click += RunOperation_Click;
-            foreach (var b in new[] { clean, tune }) { b.IsEnabled = !_operationRunning; actions.Children.Add(b); }
+            var settings = IconButton(Glyphs.Settings, "Configurações"); settings.Click += (_, _) => NavigateTo("settings");
+            foreach (var b in new[] { clean, tune, settings }) { b.IsEnabled = !_operationRunning; b.Margin = new Thickness(0, 0, 8, 0); actions.Children.Add(b); }
             heroText.Children.Add(actions);
             hero.Children.Add(heroText);
             var ring = ScoreRing(score, "SAÚDE", 112 * AppearanceService.CardScale); ring.Margin = new Thickness(24, 0, 4, 0);
@@ -122,16 +128,21 @@ public partial class MainWindow
             heroCard.Padding = new Thickness(AppearanceService.Space(26), AppearanceService.Space(22), AppearanceService.Space(26), AppearanceService.Space(22));
             heroCard.SetResourceReference(Border.BackgroundProperty, "HeroBrush");
             root.Children.Add(heroCard);
+            var prefs = AppearanceService.Current;
+            // Status (otimizações ativas, última análise, último teste, alertas) e ações rápidas
+            if (prefs.DashboardStatus) root.Children.Add(CommandStatusRow(snapshot));
+            if (prefs.DashboardQuickActions) root.Children.Add(QuickActionsPanel());
             // 3. Monitor em tempo real
-            root.Children.Add(BuildLivePanel());
+            if (prefs.DashboardLive) root.Children.Add(BuildLivePanel());
 
             // 4. Hardware
-            var stats = Responsive(new UniformGrid { Columns = 4, Margin = new Thickness(0, 0, -14, 2) }, 210, 4);
+            var stats = Responsive(new UniformGrid { Columns = 5, Margin = new Thickness(0, 0, -14, 2) }, 200, 5);
             stats.Children.Add(Card("PROCESSADOR", snapshot.Processor, Glyphs.Chip, "MutedBrush"));
             stats.Children.Add(Card("MEMÓRIA", snapshot.Memory, Glyphs.Memory, "MutedBrush"));
             stats.Children.Add(Card("ESPAÇO LIVRE", $"{snapshot.FreeSpace} de {snapshot.Storage}", Glyphs.Drive, "MutedBrush"));
             stats.Children.Add(Card("PLACA DE VÍDEO", snapshot.Graphics, Glyphs.Monitor, "MutedBrush"));
-            root.Children.Add(stats);
+            stats.Children.Add(TemperatureCard());
+            if (prefs.DashboardHardware) root.Children.Add(stats);
 
             var columns = new Grid();
             columns.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -187,7 +198,7 @@ public partial class MainWindow
             ContentScroll.ScrollChanged += onResize;
             columns.Loaded += (_, _) => Arrange();
             columns.Unloaded += (_, _) => ContentScroll.ScrollChanged -= onResize;
-            root.Children.Add(columns);
+            if (prefs.DashboardActivity) root.Children.Add(columns);
             // 6. Recursos secundários: o passo a passo completo
             root.Children.Add(FixAllCard());
 

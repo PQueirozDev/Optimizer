@@ -15,7 +15,7 @@ public partial class MainWindow
     {
         ["optimization"] = "Otimizações", ["startup"] = "Inicialização", ["fixes"] = "Correções", ["tools"] = "Ferramentas",
         ["services"] = "Serviços", ["apps"] = "Apps", ["drivers"] = "Drivers", ["network"] = "Rede", ["resources"] = "Recursos",
-        ["diagnostics"] = "Central de diagnóstico", ["gaming"] = "Modo Jogo", ["customize"] = "Personalizar Windows", ["bios"] = "BIOS / UEFI", ["biosadvisor"] = "BIOS Advisor",
+        ["diagnostics"] = "Central de diagnóstico", ["smart"] = "Smart Optimize", ["perflab"] = "Performance Lab", ["gaming"] = "Modo Jogo", ["customize"] = "Personalizar Windows", ["bios"] = "BIOS / UEFI", ["biosadvisor"] = "BIOS Advisor",
     };
 
     private static bool PageAllowed(string page) => PlanAccess.Allows(CurrentLicense, page);
@@ -31,7 +31,7 @@ public partial class MainWindow
     /// <summary>Itens do menu fora do plano ficam esmaecidos com um aviso; o clique abre a tela de upgrade.</summary>
     private void UpdateNavLocks()
     {
-        foreach (var button in new[] { NavOpt, NavStartup, NavDrivers, NavTools, NavCustomize, NavGaming, NavNetwork, NavResources, NavFixes, NavDiagnostics, NavServices, NavApps, NavBios, NavBiosAdvisor })
+        foreach (var button in new[] { NavPerfLab, NavSmart, NavOpt, NavStartup, NavDrivers, NavTools, NavCustomize, NavGaming, NavNetwork, NavResources, NavFixes, NavDiagnostics, NavServices, NavApps, NavBios, NavBiosAdvisor })
         {
             var page = button.Tag?.ToString() ?? "";
             var allowed = PageAllowed(page);

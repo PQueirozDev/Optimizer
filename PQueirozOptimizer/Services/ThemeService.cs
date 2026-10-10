@@ -52,6 +52,10 @@ public static class ThemeService
     private static readonly Palette Plum = new("#140A16", "#F21A0E1D", "#22132A", "#2D1A36", "#F21D1023", "#45294F", "#301C38",
         "#F7F1F8", "#D2C3D6", "#9C8BA3", "#34D399", "#FBBF24", "#FB7185", "#000000");
 
+    // Meia-noite: a paleta do Qrztweaks 2.0 (fundo #101016, cards #1C1A25, texto #F5F3FF, verde #22C55E, amarelo #F59E0B)
+    private static readonly Palette Midnight = new("#101016", "#F213121A", "#17151F", "#211E2C", "#F21C1A25", "#2E2A3B", "#24212F",
+        "#F5F3FF", "#CFC8E6", "#9A92B5", "#22C55E", "#F59E0B", "#F87171", "#000000");
+
     /// <summary>Temas de fundo claro; os demais (fora o Automático) são escuros.</summary>
     public static bool IsLightTheme(ThemeMode mode) => mode is ThemeMode.Light or ThemeMode.Sand;
 
@@ -65,6 +69,7 @@ public static class ThemeService
     private static Palette PaletteFor(ThemeMode mode, bool dark) => !dark ? (mode == ThemeMode.Sand ? Sand : Light) : mode switch
     {
         ThemeMode.Plum => Plum,
+        ThemeMode.Midnight => Midnight,
         ThemeMode.Oled => Oled,
         ThemeMode.Graphite => Graphite,
         ThemeMode.Ocean => Ocean,
@@ -90,7 +95,10 @@ public static class ThemeService
     /// </summary>
     private static (Color Accent, Color AccentHover, Color Info, byte SoftAlpha, double Glow) AccentFor(AppearanceSettings settings, bool light)
     {
-        var standard = AccentFor(settings.Accent, light);
+        // Meia-noite usa o roxo #7C3AED e o lilás #A78BFA do Qrztweaks 2.0 quando o usuário não escolheu outra cor
+        (Color Accent, Color AccentHover, Color Info, byte SoftAlpha, double Glow) standard = settings.Theme == ThemeMode.Midnight && !light && settings.Accent == AccentIntensity.Default
+            ? (C("#7C3AED"), C("#A78BFA"), C("#A78BFA"), (byte)0x2B, 0.35)
+            : AccentFor(settings.Accent, light);
         var customAccent = ParseColor(settings.AccentColor);
         var customInfo = ParseColor(settings.SecondaryColor);
         if (customAccent is null && customInfo is null) return standard;

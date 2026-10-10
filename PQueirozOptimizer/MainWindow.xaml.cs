@@ -84,6 +84,7 @@ public partial class MainWindow : Window
         Action onAppearance = () => Dispatcher.BeginInvoke(OnAppearanceChanged);
         AppearanceService.Changed += onAppearance;
         Closed += (_, _) => AppearanceService.Changed -= onAppearance;
+        Closed += (_, _) => { _compact?.Close(); _capture?.Dispose(); _capture = null; };
         UpdatePageHeader(_currentPage);
         _loc.SetLanguage(_configService.Config.Language ?? "pt");
         UpdateLanguageUi();
@@ -100,6 +101,7 @@ public partial class MainWindow : Window
         LicenseLabel.Text = license is null ? "Sem licença ativa" : $"{(license.IsAdmin ? "Admin" : license.PlanName)} · {license.Licensee}";
         LicenseLabel.ToolTip = license?.ExpiresAtUtc is { } expires ? $"Válida até {expires.ToLocalTime():dd/MM/yyyy}" : "Licença sem data de expiração";
         UpdateNavLocks();
+        InitSidebar();
     }
 
     #region Window & Language Controls
@@ -299,6 +301,8 @@ public partial class MainWindow : Window
         {
             case "dashboard": _ = ShowDashboardAsync(); break;
             case "optimization": ShowOptimization(); break;
+            case "smart": ShowSmartOptimize(); break;
+            case "perflab": ShowPerformanceLab(); break;
             case "drivers": ShowDrivers(); break;
             case "isos": ShowIsos(); break;
             case "tools": ShowTools(); break;
@@ -322,7 +326,7 @@ public partial class MainWindow : Window
 
     private void UpdateActiveNavButton(string page)
     {
-        var buttons = new[] { NavDashboard, NavOpt, NavStartup, NavDrivers, NavIsos, NavTools, NavCustomize, NavGaming, NavNetwork, NavRestore, NavResources, NavFixes, NavDiagnostics, NavServices, NavApps, NavSettings, NavAbout, NavHistory, NavPatchNotes, NavBios, NavBiosAdvisor, NavAdmin };
+        var buttons = new[] { NavDashboard, NavPerfLab, NavSmart, NavOpt, NavStartup, NavDrivers, NavIsos, NavTools, NavCustomize, NavGaming, NavNetwork, NavRestore, NavResources, NavFixes, NavDiagnostics, NavServices, NavApps, NavSettings, NavAbout, NavHistory, NavPatchNotes, NavBios, NavBiosAdvisor, NavAdmin };
         foreach (var b in buttons) b.IsChecked = b.Tag?.ToString() == page;
     }
 
@@ -358,6 +362,7 @@ public partial class MainWindow : Window
         _darkTheme = ThemeService.IsDark;
         ApplyBackdrop(); // liga ou desliga o fundo translúcido
         UpdateThemeButton();
+        ApplySidebarMode();
         if (Application.Current.TryFindResource("ShadowColor") is Color shadow) RefreshThemedVisuals(this, shadow);
         if (_operationRunning || !IsLoaded) return;
         if (_currentPage == "dashboard") { _ = RenderDashboardAsync(); return; }

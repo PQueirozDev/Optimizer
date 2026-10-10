@@ -21,6 +21,7 @@ public partial class MainWindow
         var intro = new DockPanel { Margin = new Thickness(0, 0, 0, AppearanceService.Space(16)) };
         DockPanel.SetDock(run, Dock.Right); intro.Children.Add(run);
         intro.Children.Add(SectionHeader("Diagnóstico do PC", "Verifique sistema, drivers, serviços, rede, Bluetooth e integridade do Windows."));
+        root.Children.Add(SmartDiagnosticsPanel());
         root.Children.Add(Surface(intro));
         root.Children.Add(results);
         ContentHost.Children.Clear();
