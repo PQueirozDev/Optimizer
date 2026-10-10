@@ -119,6 +119,14 @@ public sealed class UpdateService
     /// <summary>Indica se a release permite instalação automática (instalador + hash publicado).</summary>
     public static bool CanAutoInstall(UpdateInfo update) => !string.IsNullOrWhiteSpace(update.AssetUrl) && !string.IsNullOrWhiteSpace(update.ChecksumUrl);
 
+    /// <summary>
+    /// Versão a instalar: a encontrada agora, se for mais nova que a encontrada ao abrir o app e já tiver
+    /// instalador e hash publicados. Sem isso, com duas versões lançadas enquanto o app estava aberto, ele
+    /// instalava a que tinha visto primeiro e só depois a mais recente (uma por uma).
+    /// </summary>
+    public static UpdateInfo PickNewest(UpdateInfo pending, UpdateInfo? fresh) =>
+        fresh is { IsAvailable: true } && CanAutoInstall(fresh) && Compare(Normalize(fresh.LatestVersion), Normalize(pending.LatestVersion)) > 0 ? fresh : pending;
+
     public async Task<VerifiedInstaller> DownloadAsync(UpdateInfo update, IProgress<(long read, long total)>? progress = null, CancellationToken token = default)
     {
         if (!CanAutoInstall(update)) throw new InvalidOperationException("Esta versão não publica o hash do instalador. Baixe pela página de releases.");

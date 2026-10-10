@@ -109,9 +109,14 @@ public partial class MainWindow
         _installingUpdate = true;
         if (button != null) button.IsEnabled = false;
         OperationProgress.Visibility = Visibility.Visible;
-        ReportUpdateProgress("Baixando instalador...", null);
         try
         {
+            // A verificação pode ser de quando o app abriu: confere de novo para ir direto à versão mais recente
+            ReportUpdateProgress("Procurando a versão mais recente...", null);
+            try { info = UpdateService.PickNewest(info, await _updates.CheckAsync(AppVersion)); }
+            catch (Exception ex) { _log.Write("WARN", "Não foi possível confirmar a versão mais recente; instalando a já encontrada: " + ex.Message); }
+            _pendingUpdate = info;
+            ReportUpdateProgress("Baixando instalador...", null);
             using var installer = await _updates.DownloadAsync(info, new Progress<(long read, long total)>(p => ReportUpdateProgress(
                 p.total > 0 ? $"Baixando instalador... {p.read * 100d / p.total:N0}% ({p.read / 1048576d:N1} de {p.total / 1048576d:N1} MB)" : $"Baixando instalador... {p.read / 1048576d:N1} MB",
                 p.total > 0 ? p.read * 100d / p.total : null)));

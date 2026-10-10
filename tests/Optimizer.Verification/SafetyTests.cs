@@ -30,6 +30,20 @@ internal static class SafetyTests
         Bios();
         ProtectedDirectory(root);
         Translations();
+        Updates();
+    }
+
+    static void Updates()
+    {
+        static UpdateInfo Release(string version, bool withChecksum = true) => new(true, "1.10.1", version,
+            $"https://github.com/PQueirozDev/Optimizer/releases/tag/v{version}", $"https://github.com/PQueirozDev/Optimizer/releases/download/v{version}/Qrztweaks-Setup-v{version}.exe",
+            $"Qrztweaks-Setup-v{version}.exe", withChecksum ? $"https://github.com/PQueirozDev/Optimizer/releases/download/v{version}/SHA256SUMS.txt" : null);
+        var seenAtStartup = Release("1.10.2");
+        Check(UpdateService.PickNewest(seenAtStartup, Release("1.10.4")).LatestVersion == "1.10.4", "Duas versões novas: instala direto a mais recente, não uma por uma");
+        Check(UpdateService.PickNewest(seenAtStartup, Release("1.10.2")).LatestVersion == "1.10.2", "Mesma versão: continua a já encontrada");
+        Check(UpdateService.PickNewest(seenAtStartup, null).LatestVersion == "1.10.2", "Sem conseguir verificar de novo: usa a já encontrada");
+        Check(UpdateService.PickNewest(seenAtStartup, Release("1.10.4", withChecksum: false)).LatestVersion == "1.10.2", "Versão nova ainda sem hash publicado não é escolhida");
+        Check(UpdateService.PickNewest(Release("1.10.10"), Release("1.10.9")).LatestVersion == "1.10.10", "Versões comparadas como números (1.10.10 > 1.10.9)");
     }
 
     static void Tools()

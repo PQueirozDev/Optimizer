@@ -61,6 +61,7 @@ public static partial class Translator
 
         // ---------- Atualização ----------
         ["Baixando instalador..."] = "Downloading installer...", ["Atualização disponível"] = "Update available",
+        ["Procurando a versão mais recente..."] = "Looking for the latest version...",
         ["O instalador é verificado por SHA256 e o aplicativo reabre sozinho ao terminar."] = "The installer is verified with SHA256 and the app reopens by itself when done.",
         ["Esta versão será baixada pela página de releases."] = "This version will be downloaded from the releases page.",
         ["Instalador verificado. Atualizando — o aplicativo será reaberto automaticamente..."] = "Installer verified. Updating — the app will reopen automatically...",
@@ -594,6 +595,7 @@ public static partial class Translator
         P(@"^Item de backup nao reconhecido ou fora da lista permitida: (.*)$", m => $"Unrecognized backup item or outside the allowlist: {m.Groups[1].Value}"),
         P(@"^Arquivo de backup de origem desconhecida isolado: (.+)$", m => $"Backup file of unknown origin quarantined: {m.Groups[1].Value}"),
         P(@"^Backup anterior ilegivel; arquivado em (.+)$", m => $"Previous backup unreadable; archived at {m.Groups[1].Value}"),
+        P(@"^Não foi possível confirmar a versão mais recente; instalando a já encontrada: (.+)$", m => $"Could not confirm the latest version; installing the one already found: {m.Groups[1].Value}"),
         P(@"^Plano Qrz: (\d+) valor\(es\) nao existem neste PC e ficaram no padrao do Windows\.$", m => $"Qrz plan: {m.Groups[1].Value} value(s) don't exist on this PC and kept the Windows default."),
         P(@"^Comando retornou codigo (-?\d+)$", m => $"Command returned code {m.Groups[1].Value}"),
         P(@"^Comando terminou com codigo (-?\d+)\. Consulte a saida para detalhes\.$", m => $"Command ended with code {m.Groups[1].Value}. See the output for details."),
