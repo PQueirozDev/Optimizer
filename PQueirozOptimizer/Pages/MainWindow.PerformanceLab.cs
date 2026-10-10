@@ -187,22 +187,29 @@ public partial class MainWindow
             gpu.Value.Text = s.Gpu is { } g ? $"{g:0}%" : "—"; temp.Value.Text = s.GpuTemp is { } t ? $"{t:0} °C" : "indisponível";
         }
         if (_capture is not null) foreach (var s in _capture.Samples.TakeLast(60)) Feed(s);
+        // A captura escreve sempre nos controles da página que está na tela (ela é redesenhada ao iniciar e ao voltar)
+        _liveFeed = Feed; _liveStatus = status; _liveResultHost = resultHost;
 
         start.Click += async (_, _) =>
         {
-            if (_capture is not null) { await StopCaptureAsync(label.Text, resultHost, status); start.IsEnabled = true; ShowPerformanceLab(); return; }
+            if (_capture is not null) { await StopCaptureAsync(_captureLabel); start.IsEnabled = true; ShowPerformanceLab(); return; }
             var name = (process.Text ?? "").Trim();
             if (name.Length > 0 && !name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) name += ".exe";
             if (name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0) { ShowToast("Performance Lab", "Nome de processo inválido.", "Warning"); return; }
             var seconds = (int)((ComboBoxItem)duration.SelectedItem).Tag;
             start.IsEnabled = false;
-            await StartCaptureAsync(name.Length == 0 ? null : name, seconds, label.Text, Feed, status, resultHost);
+            await StartCaptureAsync(name.Length == 0 ? null : name, seconds, label.Text);
             start.IsEnabled = true;
             ShowPerformanceLab();
         };
     }
 
-    private async Task StartCaptureAsync(string? process, int seconds, string label, Action<PerfSample>? feed, TextBlock? status, Panel? resultHost, Action<PerfResult>? finished = null)
+    private Action<PerfSample>? _liveFeed;
+    private TextBlock? _liveStatus;
+    private Panel? _liveResultHost;
+    private string _captureLabel = "";
+
+    private async Task StartCaptureAsync(string? process, int seconds, string label, Action<PerfResult>? finished = null)
     {
         try
         {
@@ -211,17 +218,18 @@ public partial class MainWindow
             HardwareMonitorService.Shared.Sampled += KeepMonitorAlive;
             _log.Write("INFO", $"Performance Lab: captura iniciada ({process ?? "só sensores"}, {seconds} s)");
             var started = DateTime.Now;
+            _captureLabel = label;
             _captureTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _captureTimer.Tick += async (_, _) =>
             {
                 if (_capture is null) return;
                 var sample = _capture.Tick();
-                if (_currentPage == "perflab") feed?.Invoke(sample);
+                if (_currentPage == "perflab") _liveFeed?.Invoke(sample);
                 var elapsed = (DateTime.Now - started).TotalSeconds;
-                if (status != null && _currentPage == "perflab") status.Text = $"Gravando {elapsed:0} de {seconds} s" + (_capture.CapturingFrames ? (sample.Fps is null ? " · aguardando quadros do processo" : "") : " · só sensores (sem PresentMon ou sem processo)");
+                if (_liveStatus != null && _currentPage == "perflab") _liveStatus.Text = $"Gravando {elapsed:0} de {seconds} s" + (_capture.CapturingFrames ? (sample.Fps is null ? " · aguardando quadros do processo" : "") : " · só sensores (sem PresentMon ou sem processo)");
                 if (elapsed >= seconds + 2 || _capture.PresentMonExited && elapsed > 3)
                 {
-                    var result = await StopCaptureAsync(label, resultHost, status);
+                    var result = await StopCaptureAsync(label);
                     if (result is not null) finished?.Invoke(result);
                 }
             };
@@ -236,8 +244,10 @@ public partial class MainWindow
 
     private static void KeepMonitorAlive(HardwareSample _) { }
 
-    private async Task<PerfResult?> StopCaptureAsync(string label, Panel? resultHost, TextBlock? status)
+    private async Task<PerfResult?> StopCaptureAsync(string label)
     {
+        var status = _liveStatus;
+        var resultHost = _currentPage == "perflab" && _perfTab == "capture" ? _liveResultHost : null;
         var session = _capture;
         if (session is null) return null;
         _captureTimer?.Stop(); _captureTimer = null;
@@ -380,12 +390,11 @@ public partial class MainWindow
         if (dialog.ShowDialog(this) != true) return;
         try
         {
-            var metrics = BiosAdvisor.Benchmark.FrametimeAnalyzer.ParseFile(dialog.FileName);
-            var tail = new FrameCsvTail(dialog.FileName, metrics.Application);
-            tail.ReadNew();
+            // Mesmo leitor do BIOS Advisor: cabeçalhos com aspas ou outra caixa e só o fluxo principal (processo + swapchain)
+            var (application, frames) = BiosAdvisor.Benchmark.FrametimeAnalyzer.BestStream(await File.ReadAllTextAsync(dialog.FileName));
             var conditions = await CaptureConditionsAsync();
-            var result = PerfMetrics.Build(new PerfResult { Label = Path.GetFileNameWithoutExtension(dialog.FileName), Process = metrics.Application, Source = "CSV importado", Conditions = conditions, DurationSeconds = metrics.DurationSeconds },
-                tail.Frametimes.Count >= 100 ? tail.Frametimes : null, Array.Empty<PerfSample>());
+            var result = PerfMetrics.Build(new PerfResult { Label = Path.GetFileNameWithoutExtension(dialog.FileName), Process = application, Source = "CSV importado", Conditions = conditions },
+                frames.Count >= 100 ? frames : null, Array.Empty<PerfSample>());
             if (!result.HasFrames) throw new FormatException("O log não tem quadros suficientes do processo principal.");
             PerfLabStore.Default.Save(result);
             ShowToast("Performance Lab", $"Importado: {result.AverageFps:0} FPS médio.", "Success");
@@ -468,7 +477,14 @@ public partial class MainWindow
         if (_lab is null)
         {
             var setup = new StackPanel();
-            var tweaks = TweakCatalog.All.Where(t => !t.OneOff && !t.Revert.StartsWith("Não reversível", StringComparison.Ordinal) && !t.Revert.StartsWith("Reinstale", StringComparison.Ordinal) && PlanAccess.Allows(CurrentLicense, PlanAccess.OperationPage(t.Operation))).ToList();
+            // Só ajustes reversíveis, que valem sem reiniciar (o experimento fica na memória e não sobrevive a um reinício)
+            var tweaks = TweakCatalog.All.Where(t => !t.OneOff && !t.RequiresReboot && !t.Revert.StartsWith("Não reversível", StringComparison.Ordinal) && !t.Revert.StartsWith("Reinstale", StringComparison.Ordinal) && PlanAccess.Allows(CurrentLicense, PlanAccess.OperationPage(t.Operation))).ToList();
+            if (tweaks.Count == 0)
+            {
+                setup.Children.Add(Label(CurrentLicense is null ? "No modo demonstração nenhum ajuste pode ser aplicado, então o Optimization Lab fica indisponível. Ative uma licença para usar." : "Nenhum ajuste do seu plano pode ser testado aqui.", 13, true));
+                body.Children.Add(Surface(setup));
+                return;
+            }
             var tweakBox = new ComboBox { Width = 360, Margin = new Thickness(0, 0, 12, 10) };
             System.Windows.Automation.AutomationProperties.SetName(tweakBox, "Ajuste a testar");
             foreach (var t in tweaks) tweakBox.Items.Add(new ComboBoxItem { Content = t.Name, Tag = t.Id });
@@ -490,7 +506,8 @@ public partial class MainWindow
                 var name = (process.Text ?? "").Trim();
                 if (name.Length == 0) { ShowToast("Optimization Lab", "Escolha o processo do jogo.", "Warning"); return; }
                 if (!name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) name += ".exe";
-                _lab = new LabExperiment { TweakId = (string)((ComboBoxItem)tweakBox.SelectedItem).Tag, Process = name, Seconds = (int)((ComboBoxItem)duration.SelectedItem).Tag };
+                if (tweakBox.SelectedItem is not ComboBoxItem { Tag: string tweakId }) { ShowToast("Optimization Lab", "Escolha o ajuste a testar.", "Warning"); return; }
+                _lab = new LabExperiment { TweakId = tweakId, Process = name, Seconds = (int)((ComboBoxItem)duration.SelectedItem).Tag };
                 ShowPerformanceLab();
             };
             setup.Children.Add(begin);
@@ -510,6 +527,7 @@ public partial class MainWindow
         panel.Children.Add(progress);
         var status = Label(_capture is null ? "" : "Gravando... volte ao jogo.", 12.5, true);
         panel.Children.Add(status);
+        _liveFeed = null; _liveStatus = status; _liveResultHost = null;
         var actions = new WrapPanel();
         void Act(string glyph, string text, bool primary, bool enabled, Func<Task> click) { var b = IconButton(glyph, text, primary); b.IsEnabled = enabled && _capture is null; b.Margin = new Thickness(0, 0, 8, 8); b.Click += async (_, _) => await click(); actions.Children.Add(b); }
         Act(Glyphs.Play, "Gravar referência", !lab.Applied && lab.Before.Count < OptimizationLab.MinimumRuns, !lab.Applied, () => RecordLabRunAsync(status));
@@ -517,8 +535,12 @@ public partial class MainWindow
         {
             if (Msg($"Aplicar \"{tweak.Name}\"? Ele fica no backup e pode ser revertido no fim do experimento.", "Optimization Lab", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes) return;
             var outcome = await RunLiveAsync(tweak.Operation, new[] { tweak.Step });
-            if (outcome is LiveOutcome.Completed or LiveOutcome.CompletedWithFailures) lab.Applied = true;
-            if (tweak.RequiresReboot) Msg("Este ajuste só vale depois de reiniciar. Reinicie, abra o app e continue o experimento (ele fica guardado enquanto o app estiver aberto; gravações já feitas ficam no histórico).", "Optimization Lab", MessageBoxButton.OK, MessageBoxImage.Information);
+            // Só conta como aplicado se o Windows confirmar o novo estado; senão, as gravações "depois" não mediriam nada
+            if (outcome is LiveOutcome.Completed or LiveOutcome.CompletedWithFailures)
+            {
+                if (await TweakStateAsync(tweak) == TweakState.Applied) lab.Applied = true;
+                else ShowToast("Optimization Lab", "O ajuste não foi confirmado no Windows. Veja o registro da execução; o experimento continua sem o ajuste.", "Warning");
+            }
             _perfTab = "lab"; NavigateTo("perflab");
         });
         Act(Glyphs.Play, "Gravar depois", lab.Applied && lab.After.Count < OptimizationLab.MinimumRuns, lab.Applied, () => RecordLabRunAsync(status));
@@ -558,7 +580,10 @@ public partial class MainWindow
                 revert.Click += async (_, _) =>
                 {
                     var o = await RunLiveAsync("reverter", new[] { tweak.Step });
-                    if (o is LiveOutcome.Completed or LiveOutcome.CompletedWithFailures) { _log.Write("INFO", $"Optimization Lab: ajuste revertido ({tweak.Name})"); _lab = null; }
+                    // Revertido = o estado deixou de ser o do ajuste; se continuar aplicado, o experimento fica aberto
+                    if (o is LiveOutcome.Completed or LiveOutcome.CompletedWithFailures && await TweakStateAsync(tweak) != TweakState.Applied)
+                    { _log.Write("INFO", $"Optimization Lab: ajuste revertido ({tweak.Name})"); _lab = null; }
+                    else ShowToast("Optimization Lab", "A reversão não foi confirmada. Confira em Atividade e reversão.", "Warning");
                     _perfTab = "lab"; NavigateTo("perflab");
                 };
                 var decision = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 0) };
@@ -569,13 +594,20 @@ public partial class MainWindow
         }
     }
 
+    /// <summary>Estado atual de um ajuste, lido no Windows.</summary>
+    private static async Task<TweakState> TweakStateAsync(TweakDefinition tweak)
+    {
+        try { return tweak.Read(MachineReader.QuickContext(await LiveSystemState.LoadAsync())).State; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException) { return TweakState.ReadFailed; }
+    }
+
     private async Task RecordLabRunAsync(TextBlock status)
     {
         var lab = _lab!;
         var phase = lab.Applied ? "Depois" : "Antes";
         var label = $"Lab {lab.Id} · {TweakCatalog.Find(lab.TweakId)?.Name} · {phase} {(lab.Applied ? lab.After.Count : lab.Before.Count) + 1}";
         status.Text = "Gravando... volte ao jogo e repita a mesma cena.";
-        await StartCaptureAsync(lab.Process, lab.Seconds, label, null, status, null, result =>
+        await StartCaptureAsync(lab.Process, lab.Seconds, label, result =>
         {
             if (_lab != lab) return;
             (lab.Applied ? lab.After : lab.Before).Add(result);

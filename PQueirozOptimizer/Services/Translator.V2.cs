@@ -63,6 +63,12 @@ public static partial class Translator
         ["Alguns ajustes só passam a valer depois de reiniciar o Windows."] = "Some tweaks only take effect after restarting Windows.",
         ["O backup de cada item está em Atividade e reversão."] = "Each item's backup is in Activity and rollback.",
         ["Ação pontual executada (não fica registrada como estado)."] = "One-off action executed (not recorded as a state).",
+        ["A execução teve falhas; confira no registro se esta ação pontual foi concluída."] = "The run had failures; check the log to see whether this one-off action finished.",
+        ["Escolha o ajuste a testar."] = "Choose the tweak to test.",
+        ["No modo demonstração nenhum ajuste pode ser aplicado, então o Optimization Lab fica indisponível. Ative uma licença para usar."] = "In demo mode no tweak can be applied, so the Optimization Lab is unavailable. Activate a license to use it.",
+        ["Nenhum ajuste do seu plano pode ser testado aqui."] = "No tweak in your plan can be tested here.",
+        ["O ajuste não foi confirmado no Windows. Veja o registro da execução; o experimento continua sem o ajuste."] = "The tweak wasn't confirmed in Windows. See the run log; the experiment continues without the tweak.",
+        ["A reversão não foi confirmada. Confira em Atividade e reversão."] = "The rollback wasn't confirmed. Check Activity and rollback.",
         ["Estado lido no Windows depois da execução. Ajustes de ação pontual (limpeza, TRIM) não entram aqui."] = "State read from Windows after the run. One-off actions (cleanup, TRIM) are not included here.",
 
         // ---------- Catálogo: nomes e categorias ----------
@@ -451,6 +457,15 @@ public static partial class Translator
         ["Copia um pedido de transferência com o novo ID deste computador"] = "Copies a transfer request with this computer's new ID",
         ["Modo demonstração: veja o hardware, o monitor, o diagnóstico e as recomendações. Nada é aplicado sem licença."] = "Demo mode: see the hardware, the monitor, diagnostics and the recommendations. Nothing is applied without a license.",
         ["Aberto em modo demonstração (sem licença)"] = "Opened in demo mode (no license)",
+
+        // ---------- Patch notes 2.0.0 ----------
+        ["Smart Optimize: analisa o PC, lê o estado de cada ajuste e recomenda pelo objetivo (gaming competitivo, notebook, programação, uso diário ou personalizado), com risco, reversão e evidência de cada item."] = "Smart Optimize: analyzes the PC, reads the state of each tweak and recommends by goal (competitive gaming, laptop, development, daily use or custom), with the risk, rollback and evidence of each item.",
+        ["Depois de aplicar, o estado é lido de novo no Windows: um ajuste só aparece como concluído quando a mudança é confirmada."] = "After applying, the state is read again from Windows: a tweak only shows as done when the change is confirmed.",
+        ["Performance Lab: FPS médio, mínimo, 1% low, 0,1% low e frametime P95/P99 pelo PresentMon, sensores a cada segundo, histórico, comparação antes/depois e exportação em CSV, JSON e PDF."] = "Performance Lab: average, minimum, 1% low and 0.1% low FPS and P95/P99 frametime through PresentMon, per-second sensors, history, before/after comparison and CSV, JSON and PDF export.",
+        ["Optimization Lab: testa um ajuste por vez com várias gravações; diferenças pequenas aparecem como sem diferença comprovada."] = "Optimization Lab: tests one tweak at a time with several recordings; small differences show as no proven difference.",
+        ["Diagnóstico inteligente com evidências e grau de confiança, Command Center com alertas e ações rápidas, modo compacto para segundo monitor e perfis por jogo."] = "Smart diagnostics with evidence and confidence level, Command Center with alerts and quick actions, compact mode for a second monitor and per-game profiles.",
+        ["Segurança: atualizações com hash assinado, exclusões amplas do Defender recusadas, BIOS validada antes de gravar e aviso de operação interrompida."] = "Security: updates with a signed hash, broad Defender exclusions refused, BIOS validated before writing and a notice for interrupted operations.",
+        ["Modo demonstração sem licença (só leitura) e pedido de transferência para quem trocou de PC ou reinstalou o Windows."] = "Demo mode without a license (read-only) and a transfer request for anyone who changed PCs or reinstalled Windows.",
 
         // ---------- Atualizações ----------
         ["Instalador verificado por SHA256 e pela assinatura do Qrztweaks, pronto para atualizar."] = "Installer verified by SHA256 and the Qrztweaks signature, ready to update.",

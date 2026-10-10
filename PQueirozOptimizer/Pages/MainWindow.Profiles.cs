@@ -188,13 +188,16 @@ public partial class MainWindow
 
     private async Task OnProfileGameStarted(UserProfile profile)
     {
-        if (GamingService.ActiveSession() is not null || _operationRunning) return; // sessão manual em andamento: não mexe
+        if (GamingService.ActiveSession() is not null || _operationRunning || _autoSessionProfile is not null) return; // sessão manual em andamento: não mexe
+        // A posse é registrada antes de esperar: se o jogo fechar enquanto o Modo Jogo liga, a saída não se perde
+        _autoSessionProfile = profile.Id;
+        _autoSessionStarting = true;
+        _autoSessionExitPending = false;
         try
         {
             var apps = profile.CloseBackgroundApps ? GamingService.RunningBackgroundApps().ToList() : new List<string>();
             var services = profile.PauseServices ? GamingService.PausableServices.Where(s => s.Default).Select(s => s.Name).ToList() : new List<string>();
             await Gaming.StartSessionAsync(apps, services, profile.HighPerformancePlan, profile.PurgeStandby);
-            _autoSessionProfile = profile.Id;
             UpdateGameModeBadge();
             _log.Write("SUCCESS", $"Perfil {profile.Name}: Modo Jogo ativado ao abrir o jogo");
             ShowToast(profile.Name, "Modo Jogo temporário ativado. Ele é restaurado quando o jogo fechar.", "Success");
@@ -203,11 +206,22 @@ public partial class MainWindow
         {
             _log.Write("WARN", $"Perfil {profile.Name}: não foi possível ativar o Modo Jogo: {ex.Message}");
         }
+        finally { _autoSessionStarting = false; }
+        // O jogo fechou durante a ativação: restaura agora (a sessão pode ter sido criada parcialmente)
+        if (_autoSessionExitPending || GamingService.ActiveSession() is null)
+        {
+            if (GamingService.ActiveSession() is not null) await OnProfileGameExited(profile.Id);
+            else _autoSessionProfile = null;
+        }
     }
+
+    private bool _autoSessionStarting, _autoSessionExitPending;
 
     private async Task OnProfileGameExited(string profileId)
     {
-        if (_autoSessionProfile != profileId || GamingService.ActiveSession() is null) return; // só restaura o que ele mesmo ativou
+        if (_autoSessionProfile != profileId) return; // só restaura o que ele mesmo ativou
+        if (_autoSessionStarting) { _autoSessionExitPending = true; return; } // termina quando a ativação acabar
+        if (GamingService.ActiveSession() is null) { _autoSessionProfile = null; return; }
         try
         {
             var restored = await Gaming.EndSessionAsync();

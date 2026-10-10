@@ -19,6 +19,13 @@ public static class FrametimeAnalyzer
 
     public static FrameMetrics ParseCsv(string text)
     {
+        var (app, frames) = BestStream(text);
+        return Compute(frames, app);
+    }
+
+    /// <summary>Frametimes do fluxo principal (programa + processo + swapchain com mais quadros).</summary>
+    public static (string? App, List<double> Frames) BestStream(string text)
+    {
         var lines = text.Replace("\r\n", "\n").Split('\n', StringSplitOptions.RemoveEmptyEntries);
         var headerIndex = Array.FindIndex(lines, l => FrametimeColumns.Any(c => SplitCsv(l).Contains(c, StringComparer.OrdinalIgnoreCase)));
         if (headerIndex < 0) throw new FormatException("Arquivo sem coluna de frametime (MsBetweenPresents ou FrameTime). Use um CSV do PresentMon ou CapFrameX.");
@@ -44,7 +51,7 @@ public static class FrametimeAnalyzer
             stream.Frames.Add(ms);
         }
         var best = streams.Values.OrderByDescending(s => s.Frames.Count).FirstOrDefault();
-        return Compute(best.Frames ?? new List<double>(), string.IsNullOrEmpty(best.App) ? null : best.App);
+        return (string.IsNullOrEmpty(best.App) ? null : best.App, best.Frames ?? new List<double>());
     }
 
     public static FrameMetrics Compute(IReadOnlyList<double> frametimesMs, string? application = null)
@@ -67,7 +74,7 @@ public static class FrametimeAnalyzer
         return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
     }
 
-    private static string[] SplitCsv(string line) => line.Split(',').Select(c => c.Trim().Trim('"')).ToArray();
+    internal static string[] SplitCsv(string line) => line.Split(',').Select(c => c.Trim().Trim('"')).ToArray();
 
     public static FrameMetrics ParseFile(string path) => ParseCsv(File.ReadAllText(path));
 }

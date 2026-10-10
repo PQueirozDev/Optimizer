@@ -143,6 +143,8 @@ internal static class V2Tests
         s.Set(RegistryHive.CurrentUser, @"System\GameConfigStore", "GameDVR_Enabled", 0);
         verify = SmartOptimizer.Verify(new[] { "game.dvr", "maint.dns" }, Context(s));
         Check(verify.All(v => v.Verified), "Verificação: estado confirmado no registro e ação pontual registrada como executada");
+        var failedRun = SmartOptimizer.Verify(new[] { "maint.dns" }, Context(s), new HashSet<string> { "debloat" });
+        Check(!failedRun.Single().Verified, "Verificação: ação pontual de uma execução com falhas não é dada como concluída");
         Check(SmartOptimizer.IsDualCcdX3d("AMD Ryzen 9 7950X3D 16-Core Processor") && !SmartOptimizer.IsDualCcdX3d("AMD Ryzen 7 7800X3D 8-Core Processor"), "X3D com dois CCDs reconhecido pelo nome");
     }
 
@@ -183,6 +185,15 @@ internal static class V2Tests
         File.AppendAllText(path, "2.0\ncs2.exe,1,8.0\n");
         var second = tail.ReadNew();
         Check(first.SequenceEqual(new[] { 10.0 }) && second.SequenceEqual(new[] { 12.0, 8.0 }) && tail.Frametimes.Count == 3, "PresentMon: leitura incremental só de linhas completas e do processo escolhido");
+        // Dois fluxos do mesmo jogo (outro processo/swapchain) não se misturam; cabeçalho com aspas e outra caixa é aceito
+        var multi = Path.Combine(root, "pm-multi.csv");
+        File.WriteAllText(multi, "\"application\",\"processid\",\"swapchainaddress\",\"msbetweenpresents\"\n" +
+            string.Concat(Enumerable.Range(0, 5).Select(_ => "game.exe,1,0xA,10\n")) + string.Concat(Enumerable.Range(0, 2).Select(_ => "game.exe,2,0xB,99\n")));
+        var multiTail = new FrameCsvTail(multi, "game.exe");
+        multiTail.ReadNew();
+        Check(multiTail.Frametimes.Count == 5 && multiTail.Frametimes.All(ms => ms == 10), "PresentMon: só o fluxo principal (processo + swapchain) entra nas métricas; cabeçalho com aspas aceito");
+        var (app, best) = PQueirozOptimizer.BiosAdvisor.Benchmark.FrametimeAnalyzer.BestStream(File.ReadAllText(multi));
+        Check(app == "game.exe" && best.Count == 5, "Importação de CSV usa o mesmo fluxo principal");
         Check(PresentMonTool.Arguments("cs2.exe", "out.csv", 60).SequenceEqual(new[] { "--process_name", "cs2.exe", "--output_file", "out.csv", "--timed", "60", "--terminate_after_timed", "--stop_existing_session", "--no_console_stats", "--session_name", "QrztweaksPerfLab" }),
             "PresentMon: argumentos do PresentMon 2.x");
     }
@@ -294,6 +305,13 @@ internal static class V2Tests
 
     static void Demo()
     {
+        // Arquivo criado sem elevação (dono = usuário) não pode ser executado como ferramenta elevada
+        var userFile = Path.Combine(Path.GetTempPath(), $"qrz-trust-{Guid.NewGuid():N}.exe");
+        File.WriteAllText(userFile, "x");
+        var elevated = new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent()).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+        try { if (!elevated) Check(!RegistryTweakStore.IsTrustedFile(userFile), "Ferramenta: arquivo de outro dono (não Administradores) é recusado"); }
+        finally { File.Delete(userFile); }
+        Check(!RegistryTweakStore.IsTrustedFile(Path.Combine(Path.GetTempPath(), "nao-existe.exe")), "Ferramenta: arquivo inexistente é recusado");
         try
         {
             PlanAccess.DemoMode = false;

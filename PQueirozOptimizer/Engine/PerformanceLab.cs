@@ -207,14 +207,20 @@ public static class PresentMonTool
     private static string Directory_ => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "PQueirozOptimizer", "PresentMon");
     private static string PathFile => Path.Combine(Directory_, "presentmon.txt");
 
+    /// <summary>
+    /// Cópia protegida, se for confiável: a pasta é reprotegida (recusa links) e o executável precisa ser de
+    /// Administradores/SYSTEM. Uma pasta ou arquivo criados antes por outra conta não são executados.
+    /// </summary>
     public static string? ToolPath()
     {
         try
         {
-            var saved = File.Exists(PathFile) ? File.ReadAllText(PathFile).Trim() : null;
-            return saved != null && File.Exists(saved) && Path.GetFullPath(saved).StartsWith(Directory_ + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ? saved : null;
+            if (!Directory.Exists(Directory_)) return null;
+            RegistryTweakStore.EnsureProtectedDirectory(Directory_);
+            var staged = Path.Combine(Directory_, "PresentMon.exe");
+            return File.Exists(PathFile) && RegistryTweakStore.IsTrustedFile(staged) ? staged : null;
         }
-        catch (IOException) { return null; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { return null; }
     }
 
     public static void SetToolPath(string exePath)
@@ -247,17 +253,20 @@ public sealed class FrameCsvTail
     private readonly string _path;
     private long _position;
     private string _partial = "";
-    private int _frametimeColumn = -1, _appColumn = -1;
+    private int _frametimeColumn = -1, _appColumn = -1, _pidColumn = -1, _swapColumn = -1;
     private readonly string? _process;
-    public List<double> Frametimes { get; } = new();
+    // Um fluxo = processo + swapchain (o mesmo jogo pode ter mais de uma janela/processo); vale o com mais quadros,
+    // como no FrametimeAnalyzer, para não misturar frametimes de fluxos diferentes
+    private readonly Dictionary<string, List<double>> _streams = new(StringComparer.OrdinalIgnoreCase);
+    public List<double> Frametimes => _streams.Values.OrderByDescending(s => s.Count).FirstOrDefault() ?? new List<double>();
 
     public FrameCsvTail(string path, string? process) { _path = path; _process = process is null ? null : Path.GetFileName(process); }
 
     /// <summary>Lê o que foi acrescentado desde a última chamada. Devolve os frametimes novos.</summary>
     public List<double> ReadNew()
     {
-        var fresh = new List<double>();
-        if (!File.Exists(_path)) return fresh;
+        var fresh = new Dictionary<string, List<double>>(StringComparer.OrdinalIgnoreCase);
+        if (!File.Exists(_path)) return new List<double>();
         using var stream = new FileStream(_path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
         if (stream.Length < _position) { _position = 0; _partial = ""; } // arquivo recriado
         stream.Seek(_position, SeekOrigin.Begin);
@@ -270,19 +279,32 @@ public sealed class FrameCsvTail
         {
             var line = raw.TrimEnd('\r');
             if (line.Length == 0) continue;
-            var cells = line.Split(',');
+            var cells = BiosAdvisor.Benchmark.FrametimeAnalyzer.SplitCsv(line);
             if (_frametimeColumn < 0)
             {
-                _frametimeColumn = Array.FindIndex(cells, c => c is "MsBetweenPresents" or "FrameTime");
-                _appColumn = Array.FindIndex(cells, c => c is "Application" or "ProcessName");
+                int Column(params string[] names) => Array.FindIndex(cells, c => names.Any(n => c.Equals(n, StringComparison.OrdinalIgnoreCase)));
+                _frametimeColumn = Column("MsBetweenPresents", "FrameTime");
+                _appColumn = Column("Application", "ProcessName");
+                _pidColumn = Column("ProcessID");
+                _swapColumn = Column("SwapChainAddress");
                 continue;
             }
             if (cells.Length <= _frametimeColumn) continue;
-            if (_process is not null && _appColumn >= 0 && cells.Length > _appColumn && !cells[_appColumn].Equals(_process, StringComparison.OrdinalIgnoreCase)) continue;
-            if (double.TryParse(cells[_frametimeColumn], NumberStyles.Float, CultureInfo.InvariantCulture, out var ms) && ms > 0 && !double.IsInfinity(ms)) fresh.Add(ms);
+            string Cell(int i) => i >= 0 && cells.Length > i ? cells[i] : "";
+            if (_process is not null && _appColumn >= 0 && !Cell(_appColumn).Equals(_process, StringComparison.OrdinalIgnoreCase)) continue;
+            if (!double.TryParse(cells[_frametimeColumn], NumberStyles.Float, CultureInfo.InvariantCulture, out var ms) || ms <= 0 || double.IsInfinity(ms) || double.IsNaN(ms)) continue;
+            var key = $"{Cell(_pidColumn)}|{Cell(_swapColumn)}";
+            if (!fresh.TryGetValue(key, out var list)) fresh[key] = list = new List<double>();
+            list.Add(ms);
         }
-        Frametimes.AddRange(fresh);
-        return fresh;
+        foreach (var (key, list) in fresh)
+        {
+            if (!_streams.TryGetValue(key, out var all)) _streams[key] = all = new List<double>();
+            all.AddRange(list);
+        }
+        // Os quadros novos do fluxo principal (o gráfico ao vivo não mistura janelas diferentes)
+        var main = _streams.OrderByDescending(s => s.Value.Count).FirstOrDefault().Key;
+        return main is not null && fresh.TryGetValue(main, out var mainFresh) ? mainFresh : new List<double>();
     }
 }
 

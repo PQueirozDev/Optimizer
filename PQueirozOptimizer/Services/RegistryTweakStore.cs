@@ -205,6 +205,22 @@ public sealed class RegistryTweakStore
         ProtectDirectory(directory);
     }
 
+    /// <summary>
+    /// Arquivo que o app pode executar elevado: não é link e o dono é Administradores ou SYSTEM. Arquivos plantados
+    /// por outra conta continuam com ela como dona mesmo depois de a pasta ser reprotegida, então são recusados.
+    /// </summary>
+    internal static bool IsTrustedFile(string path)
+    {
+        try
+        {
+            var info = new FileInfo(path);
+            if (!info.Exists || info.Attributes.HasFlag(FileAttributes.ReparsePoint)) return false;
+            var owner = info.GetAccessControl().GetOwner(typeof(SecurityIdentifier)) as SecurityIdentifier;
+            return owner is not null && (owner.IsWellKnown(WellKnownSidType.BuiltinAdministratorsSid) || owner.IsWellKnown(WellKnownSidType.LocalSystemSid));
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or InvalidOperationException) { return false; }
+    }
+
     /// <summary>Só administradores e o sistema alteram os backups; usuários comuns apenas leem.</summary>
     internal static void ProtectDirectory(string directory)
     {

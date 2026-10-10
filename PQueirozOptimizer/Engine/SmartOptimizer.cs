@@ -101,10 +101,15 @@ public static class SmartOptimizer
             .Where(g => g.Item2.Length > 0).ToList();
 
     /// <summary>Resultado conferido depois de aplicar: o estado lido de novo, não a saída do script.</summary>
-    public static List<(TweakDefinition Tweak, bool Verified, string Detail)> Verify(IEnumerable<string> selectedIds, TweakContext after) =>
+    /// <param name="cleanOperations">Operações que terminaram sem falhas. Ações pontuais não deixam estado para ler, então
+    /// só contam como executadas se a operação delas terminou limpa. Null = sem essa informação (tratadas como executadas).</param>
+    public static List<(TweakDefinition Tweak, bool Verified, string Detail)> Verify(IEnumerable<string> selectedIds, TweakContext after, IReadOnlySet<string>? cleanOperations = null) =>
         selectedIds.Select(id => TweakCatalog.Find(id)).OfType<TweakDefinition>().Select(t =>
         {
-            if (t.OneOff) return (t, true, "Ação pontual executada (não fica registrada como estado).");
+            if (t.OneOff)
+                return cleanOperations is null || cleanOperations.Contains(t.Operation)
+                    ? (t, true, "Ação pontual executada (não fica registrada como estado).")
+                    : (t, false, "A execução teve falhas; confira no registro se esta ação pontual foi concluída.");
             TweakReading r;
             try { r = t.Read(after); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException) { return (t, false, "Não foi possível ler o estado: " + ex.Message); }

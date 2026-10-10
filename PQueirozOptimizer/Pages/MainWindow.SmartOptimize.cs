@@ -353,7 +353,8 @@ public partial class MainWindow
         var after = MachineReader.Context(await LiveSystemState.LoadAsync(), reading.Machine, reading.Hardware);
         var ran = plan.Where(p => outcomes.Any(o => o.Operation == p.Operation && o.Outcome is nameof(LiveOutcome.Completed) or nameof(LiveOutcome.CompletedWithFailures)))
             .SelectMany(p => TweakCatalog.All.Where(t => t.Operation == p.Operation && p.Steps.Contains(t.Step)).Select(t => t.Id)).ToList();
-        var verification = SmartOptimizer.Verify(ran, after);
+        var clean = outcomes.Where(o => o.Outcome == nameof(LiveOutcome.Completed)).Select(o => o.Operation).ToHashSet();
+        var verification = SmartOptimizer.Verify(ran, after, clean);
         SmartHistory.Default.RecordRun(new SmartHistory.Run(DateTime.Now, analysis.Goal, selected.ToArray(),
             verification.Where(v => v.Verified).Select(v => v.Tweak.Id).ToArray(), verification.Where(v => !v.Verified).Select(v => v.Tweak.Id).ToArray()));
         _log.Write(verification.All(v => v.Verified) ? "SUCCESS" : "WARN", $"Smart Optimize: {verification.Count(v => v.Verified)} de {verification.Count} ajustes confirmados pelo Windows");

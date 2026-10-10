@@ -63,16 +63,25 @@ public sealed class BiosService
     {
         try
         {
+            if (!Directory.Exists(DataDirectory)) return LocalTool();
+            // A pasta pode ter sido criada antes por outra conta: reprotege e só aceita executáveis dos Administradores
+            EnsureDirectory();
             var saved = File.Exists(ToolPathFile) ? File.ReadAllText(ToolPathFile).Trim() : null;
             if (saved != null && File.Exists(saved))
             {
-                if (IsInside(saved, StagedDirectory)) return saved;
+                if (IsInside(saved, StagedDirectory)) return RegistryTweakStore.IsTrustedFile(saved) ? saved : null;
                 // Configurado por uma versão anterior (pasta do usuário): passa a usar a cópia protegida
                 SetToolPath(saved);
                 return File.ReadAllText(ToolPathFile).Trim();
             }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { }
+        return LocalTool();
+    }
+
+    /// <summary>SCEWIN na pasta de instalação do app (Program Files, só administradores escrevem).</summary>
+    private static string? LocalTool()
+    {
         var local = Path.Combine(AppContext.BaseDirectory, "SCEWIN", "SCEWIN_64.exe");
         return File.Exists(local) ? local : null;
     }
