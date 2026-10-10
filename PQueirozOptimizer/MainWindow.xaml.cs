@@ -246,7 +246,13 @@ public partial class MainWindow : Window
             await firstFrame.Task;
             await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
             StartupProfiler.Mark("usable");
-            if (StartupProfiler.Finish()) { Close(); return; }
+            if (StartupProfiler.Enabled)
+            {
+                await RunProfilePassAsync();
+                StartupProfiler.Finish();
+                Close();
+                return;
+            }
             // Tutorial e aviso de atualização só depois que a tela de abertura saiu (senão ficam atrás dela)
             await StartupSplash.Close();
             ShowInterruptedOperationNotice();
