@@ -20,7 +20,7 @@ public partial class App : Application
     private static Mutex? _instanceMutex;
 
     /// <summary>
-    /// Garante uma única janela do Optimizer. Se já houver uma aberta, ela vem para frente.
+    /// Garante uma única janela do Qrztweaks. Se já houver uma aberta, ela vem para frente.
     /// Quando a outra instância ainda está fechando (ex.: reinício após atualização), espera ela sair.
     /// </summary>
     private static bool AcquireSingleInstance()
@@ -35,7 +35,8 @@ public partial class App : Application
     private static bool BringExistingToFront()
     {
         using var current = System.Diagnostics.Process.GetCurrentProcess();
-        foreach (var other in System.Diagnostics.Process.GetProcessesByName(current.ProcessName))
+        foreach (var name in new[] { current.ProcessName, "Qrztweaks", "PQueirozOptimizer" }.Distinct(StringComparer.OrdinalIgnoreCase))
+        foreach (var other in System.Diagnostics.Process.GetProcessesByName(name))
         {
             using (other)
             {
@@ -231,8 +232,8 @@ public partial class App : Application
         Log.Write("WARN", "Licença recusada na verificação online: " + error);
         var busy = MainWindow is MainWindow { IsOperationRunning: true };
         MessageBox.Show(Services.Translator.Tr(error) + "\n\n" + Services.Translator.Tr(busy
-                ? "Termine a operação em andamento e feche o Optimizer: na próxima abertura, será preciso ativar uma nova chave."
-                : "O Optimizer será fechado. Ao abrir de novo, você poderá ativar uma nova chave."),
+                ? "Termine a operação em andamento e feche o Qrztweaks: na próxima abertura, será preciso ativar uma nova chave."
+                : "O Qrztweaks será fechado. Ao abrir de novo, você poderá ativar uma nova chave."),
             "Qrztweaks", MessageBoxButton.OK, MessageBoxImage.Warning);
         if (!busy) Shutdown();
     }

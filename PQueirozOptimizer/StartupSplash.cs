@@ -194,7 +194,7 @@ public static class StartupSplash
         try
         {
             var image = new BitmapImage();
-            image.BeginInit(); image.UriSource = new Uri("pack://application:,,,/PQueirozOptimizer;component/Assets/app.png"); image.CacheOption = BitmapCacheOption.OnLoad; image.DecodePixelWidth = 192; image.EndInit(); image.Freeze();
+            image.BeginInit(); image.UriSource = new Uri("pack://application:,,,/Qrztweaks;component/Assets/app.png"); image.CacheOption = BitmapCacheOption.OnLoad; image.DecodePixelWidth = 192; image.EndInit(); image.Freeze();
             logo.Child = new Image { Source = image, Width = 68, Height = 68 };
             RenderOptions.SetBitmapScalingMode(logo.Child, BitmapScalingMode.HighQuality);
         }

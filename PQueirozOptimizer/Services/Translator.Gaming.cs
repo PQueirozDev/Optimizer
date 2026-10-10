@@ -8,6 +8,9 @@ public static partial class Translator
     private static readonly Dictionary<string, string> GamingExact = new(StringComparer.Ordinal)
     {
         ["Restauração pendente"] = "Recovery pending",
+        ["Executável e identificação do aplicativo no Windows atualizados para Qrztweaks, mantendo licenças, backups e atalhos antigos compatíveis."] = "Executable and Windows app identity updated to Qrztweaks, preserving compatibility with licenses, backups and older shortcuts.",
+        ["Novo ícone violeta com a letra Q e detalhe de raio no app, no instalador e no site."] = "New violet Q icon with a lightning detail in the app, installer and website.",
+        ["Revisão dos avisos e textos que ainda usavam o nome antigo."] = "Updated messages and text that still used the old name.",
         ["Corrigida a validação dos planos de otimização em notebooks nos testes de publicação."] = "Fixed optimization plan validation on laptops in release tests.",
         ["Modo Jogo preserva os itens que não puderam ser restaurados e permite tentar novamente, sem informar sucesso indevido."] = "Game Mode keeps items that could not be restored and lets you retry without incorrectly reporting success.",
         ["Estado de recuperação salvo antes das alterações, com gravação atômica da sessão."] = "Recovery state is saved before changes, with atomic session writes.",

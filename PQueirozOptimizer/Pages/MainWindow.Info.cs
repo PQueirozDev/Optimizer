@@ -25,6 +25,12 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v1.10.4", "10/10/2026", new[]
+        {
+            "Executável e identificação do aplicativo no Windows atualizados para Qrztweaks, mantendo licenças, backups e atalhos antigos compatíveis.",
+            "Novo ícone violeta com a letra Q e detalhe de raio no app, no instalador e no site.",
+            "Revisão dos avisos e textos que ainda usavam o nome antigo.",
+        }),
         ("v1.10.3", "10/10/2026", new[]
         {
             "Modo Jogo preserva os itens que não puderam ser restaurados e permite tentar novamente, sem informar sucesso indevido.",
@@ -382,7 +388,7 @@ public partial class MainWindow
         var hero = new DockPanel();
         var logo = new Border { Width = 72, Height = 72, CornerRadius = new CornerRadius(20), VerticalAlignment = VerticalAlignment.Top };
         // O logo já tem o próprio bloco arredondado; o fundo de destaque só aparece se a imagem não carregar
-        try { logo.Child = new Image { Source = new BitmapImage(new Uri("pack://application:,,,/PQueirozOptimizer;component/Assets/app.png")), Width = 72, Height = 72 }; }
+        try { logo.Child = new Image { Source = new BitmapImage(new Uri("pack://application:,,,/Qrztweaks;component/Assets/app.png")), Width = 72, Height = 72 }; }
         catch (Exception ex) when (ex is System.IO.IOException or UriFormatException) { logo.SetResourceReference(Border.BackgroundProperty, "AccentGradientBrush"); logo.Child = GlyphIcon(Glyphs.Lightning, 30, "OnAccentBrush"); }
         DockPanel.SetDock(logo, Dock.Left); hero.Children.Add(logo);
         var heroText = new StackPanel { Margin = new Thickness(22, 0, 0, 0) };

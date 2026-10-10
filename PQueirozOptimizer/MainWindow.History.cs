@@ -145,7 +145,7 @@ public partial class MainWindow
         export.VerticalAlignment = VerticalAlignment.Top;
         export.Click += (_, _) =>
         {
-            var dialog = new Microsoft.Win32.SaveFileDialog { FileName = "optimizer-atividade.log", Filter = "Log (*.log)|*.log" };
+            var dialog = new Microsoft.Win32.SaveFileDialog { FileName = "qrztweaks-atividade.log", Filter = "Log (*.log)|*.log" };
             if (dialog.ShowDialog(this) == true)
             {
                 try { File.Copy(_log.Export(), dialog.FileName, true); OperationStatus.Text = "Atividade exportada."; }

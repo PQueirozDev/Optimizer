@@ -47,5 +47,5 @@ public static class ShortcutFile
     }
 
     /// <summary>Caminho do executável deste aplicativo, para os atalhos apontarem para ele.</summary>
-    public static string AppExecutable => Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "PQueirozOptimizer.exe");
+    public static string AppExecutable => Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "Qrztweaks.exe");
 }

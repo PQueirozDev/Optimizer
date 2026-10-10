@@ -2,7 +2,7 @@
         Title="Modo de energia" Width="440" SizeToContent="Height" WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
         Background="{DynamicResource BackgroundBrush}" Foreground="{DynamicResource TextBrush}" FontFamily="{StaticResource UiFont}"
         TextOptions.TextFormattingMode="Display" UseLayoutRounding="True"
-        Icon="pack://application:,,,/PQueirozOptimizer;component/Assets/app.ico">
+        Icon="pack://application:,,,/Qrztweaks;component/Assets/app.ico">
   <Grid>
     <Border Background="{DynamicResource GlowBrush}" IsHitTestVisible="False"/>
     <StackPanel Margin="26,22,26,18">

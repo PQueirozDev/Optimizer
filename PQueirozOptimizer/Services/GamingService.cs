@@ -85,7 +85,7 @@ public sealed class GamingService
     private static readonly HashSet<string> NeverClose = new(StringComparer.OrdinalIgnoreCase)
     {
         "explorer", "dwm", "csrss", "winlogon", "lsass", "svchost", "services", "System", "Idle", "steam", "steamwebhelper",
-        "EpicGamesLauncher", "Battle.net", "RiotClientServices", "Discord", "PQueirozOptimizer",
+        "EpicGamesLauncher", "Battle.net", "RiotClientServices", "Discord", "PQueirozOptimizer", "Qrztweaks",
     };
 
     public static readonly PausableService[] PausableServices =

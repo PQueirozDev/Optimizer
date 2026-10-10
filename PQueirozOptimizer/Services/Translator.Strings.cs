@@ -186,7 +186,7 @@ public static partial class Translator
 
         // ---------- BIOS, patch notes, sobre ----------
         ["Assistente seguro de BIOS"] = "Safe BIOS assistant", ["Reiniciar na BIOS/UEFI"] = "Restart into BIOS/UEFI",
-        ["O Optimizer não grava firmware. Aqui estão os ajustes que costumam trazer ganho real — faça-os manualmente, conferindo o manual da sua placa-mãe."] = "The Optimizer never writes firmware. These are the settings that usually bring real gains — change them manually, checking your motherboard manual.",
+        ["O Qrztweaks não grava firmware. Aqui estão os ajustes que costumam trazer ganho real — faça-os manualmente, conferindo o manual da sua placa-mãe."] = "Qrztweaks never writes firmware. These are the settings that usually bring real gains — change them manually, checking your motherboard manual.",
         ["XMP / EXPO"] = "XMP / EXPO", ["Faz a memória rodar na velocidade anunciada. Costuma dar o maior ganho em jogos."] = "Runs your memory at its rated speed. Usually the biggest gain in games.",
         ["Resizable BAR"] = "Resizable BAR", ["Permite à placa de vídeo acessar toda a VRAM de uma vez. Exige CSM desativado."] = "Lets the GPU access all VRAM at once. Requires CSM to be disabled.",
         ["Modo de energia"] = "Power mode", ["Mantenha C-States habilitados em notebooks; em desktops, o perfil padrão da placa já é bom."] = "Keep C-States enabled on laptops; on desktops the board's default profile is already good.",
@@ -288,10 +288,10 @@ public static partial class Translator
         ["Chave ativada. Sua licença foi atualizada."] = "Key activated. Your license has been updated.",
         ["A área de transferência está ocupada. Tente novamente."] = "The clipboard is busy. Try again.",
         ["Esta chave foi revogada. Fale com o suporte para mais informações."] = "This key has been revoked. Contact support for more information.",
-        ["A data e a hora do Windows estão atrasadas em relação ao último uso do Optimizer. Acerte o relógio para continuar."] = "Windows' date and time are earlier than the last time the Optimizer was used. Fix the clock to continue.",
+        ["A data e a hora do Windows estão atrasadas em relação ao último uso do Qrztweaks. Acerte o relógio para continuar."] = "Windows' date and time are earlier than the last time Qrztweaks was used. Fix the clock to continue.",
         ["Confira a data e a hora do Windows."] = "Check Windows' date and time.",
-        ["O Optimizer será fechado. Ao abrir de novo, você poderá ativar uma nova chave."] = "The Optimizer will close. When you open it again, you can activate a new key.",
-        ["Termine a operação em andamento e feche o Optimizer: na próxima abertura, será preciso ativar uma nova chave."] = "Finish the current operation and close the Optimizer: the next time it opens, a new key will be required.",
+        ["O Qrztweaks será fechado. Ao abrir de novo, você poderá ativar uma nova chave."] = "Qrztweaks will close. When you open it again, you can activate a new key.",
+        ["Termine a operação em andamento e feche o Qrztweaks: na próxima abertura, será preciso ativar uma nova chave."] = "Finish the current operation and close Qrztweaks: the next time it opens, a new key will be required.",
 
         // ---------- Configurações e perfis ----------
         ["Modos & Perfis de Visualização"] = "Modes & display profiles",

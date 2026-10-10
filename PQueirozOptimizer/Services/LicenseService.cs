@@ -187,7 +187,7 @@ public sealed class LicenseService
             var now = DateTime.UtcNow;
             if (payload.ExpiresAtUtc is { } expires)
             {
-                if (_clock.IsRolledBack(now)) { ClockRolledBack = true; error = "A data e a hora do Windows estão atrasadas em relação ao último uso do Optimizer. Acerte o relógio para continuar."; return false; }
+                if (_clock.IsRolledBack(now)) { ClockRolledBack = true; error = "A data e a hora do Windows estão atrasadas em relação ao último uso do Qrztweaks. Acerte o relógio para continuar."; return false; }
                 if (expires < _clock.EffectiveNowUtc(now)) { ExpiredLicense = info; error = "Esta chave de acesso expirou."; return false; }
             }
             _clock.Observe(now);

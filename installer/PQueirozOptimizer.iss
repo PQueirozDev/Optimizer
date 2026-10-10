@@ -1,11 +1,11 @@
-﻿#define MyAppName "Qrztweaks"
+#define MyAppName "Qrztweaks"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.10.1"
+  #define MyAppVersion "1.10.4"
 #endif
 #ifndef MyAppPublisher
   #define MyAppPublisher "Pedro Queiroz"
 #endif
-#define MyAppExeName "PQueirozOptimizer.exe"
+#define MyAppExeName "Qrztweaks.exe"
 #define MyAppId "{{B1F0EA9A-8C70-4F92-9B72-9A5D1C3F0F11}"
 #define PublishDir "..\artifacts\publish\win-x64"
 
@@ -82,6 +82,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
+; Alias de compatibilidade para atalhos de energia/limpeza criados por versões antigas.
+Source: "{#PublishDir}\Qrztweaks.exe"; DestDir: "{app}"; DestName: "PQueirozOptimizer.exe"; Flags: ignoreversion
 
 [InstallDelete]
 ; Atalhos com o nome antigo (antes da troca para Qrztweaks): a atualização recria com o nome novo

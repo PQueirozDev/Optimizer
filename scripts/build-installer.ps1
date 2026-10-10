@@ -71,7 +71,7 @@ dotnet publish $projectPath `
     /p:FileVersion=$Version.0 `
     /p:InformationalVersion=$Version
 
-$exePath = Join-Path $publishDir "PQueirozOptimizer.exe"
+$exePath = Join-Path $publishDir "Qrztweaks.exe"
 if (-not (Test-Path -LiteralPath $exePath)) {
     throw "Executavel publicado nao encontrado: $exePath"
 }

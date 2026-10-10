@@ -49,7 +49,7 @@ public sealed class PowerPlanService
 
     private static IReadOnlyList<PlanSetting> EmbeddedSettings()
     {
-        var resource = Application.GetResourceStream(new Uri("pack://application:,,,/PQueirozOptimizer;component/Assets/Qrz.powerplan.txt"))
+        var resource = Application.GetResourceStream(new Uri("pack://application:,,,/Qrztweaks;component/Assets/Qrz.powerplan.txt"))
             ?? throw new InvalidOperationException("Configurações do plano Qrz não encontradas.");
         using var reader = new StreamReader(resource.Stream, Encoding.UTF8);
         return LoadSettings(reader);

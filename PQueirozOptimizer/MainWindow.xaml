@@ -4,7 +4,7 @@
  Title="Qrztweaks" Width="1320" Height="860" MinWidth="760" MinHeight="520"
  WindowStyle="None" Background="{DynamicResource BackgroundBrush}" FontFamily="{StaticResource UiFont}"
  TextOptions.TextFormattingMode="Display" UseLayoutRounding="True"
- Icon="pack://application:,,,/PQueirozOptimizer;component/Assets/app.ico" Loaded="Window_Loaded" StateChanged="Window_StateChanged" PreviewKeyDown="Window_PreviewKeyDown">
+ Icon="pack://application:,,,/Qrztweaks;component/Assets/app.ico" Loaded="Window_Loaded" StateChanged="Window_StateChanged" PreviewKeyDown="Window_PreviewKeyDown">
  <WindowChrome.WindowChrome><WindowChrome CaptionHeight="48" ResizeBorderThickness="6" GlassFrameThickness="0" UseAeroCaptionButtons="False" CornerRadius="0"/></WindowChrome.WindowChrome>
  <Border x:Name="MainRootBorder" Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
   <Grid x:Name="RootGrid">
@@ -17,7 +17,7 @@
      <!-- Logo (faz parte da área de arrastar a janela) -->
      <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="20,18,16,14">
       <Border Width="36" Height="36">
-       <Image Source="pack://application:,,,/PQueirozOptimizer;component/Assets/app.png" Width="36" Height="36" RenderOptions.BitmapScalingMode="HighQuality"/>
+       <Image Source="pack://application:,,,/Qrztweaks;component/Assets/app.png" Width="36" Height="36" RenderOptions.BitmapScalingMode="HighQuality"/>
       </Border>
       <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
        <TextBlock Text="Qrztweaks" FontSize="14" FontWeight="Bold" FontFamily="{StaticResource DisplayFont}"/>

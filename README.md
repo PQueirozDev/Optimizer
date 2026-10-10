@@ -44,7 +44,7 @@ O instalador cria o atalho no Menu Iniciar e registra o desinstalador no Windows
 
 ## Ativação
 
-O Optimizer só abre depois de validar uma chave de acesso vinculada ao computador. Na primeira abertura, clique em **Copiar pedido** e envie a mensagem pelo [Discord](https://discord.gg/pHJ4Waxft). Ao copiar a chave recebida, ela é colada sozinha na janela de ativação, mesmo que venha dentro de uma mensagem ou quebrada em linhas.
+O Qrztweaks só abre depois de validar uma chave de acesso vinculada ao computador. Na primeira abertura, clique em **Copiar pedido** e envie a mensagem pelo [Discord](https://discord.gg/pHJ4Waxft). Ao copiar a chave recebida, ela é colada sozinha na janela de ativação, mesmo que venha dentro de uma mensagem ou quebrada em linhas.
 
 ## Executar em desenvolvimento
 
@@ -90,7 +90,7 @@ Depois execute:
 O executável publicado fica em:
 
 ```text
-artifacts\publish\win-x64\PQueirozOptimizer.exe
+artifacts\publish\win-x64\Qrztweaks.exe
 ```
 
 O instalador final fica em:
@@ -132,7 +132,7 @@ O comando imprime a chave a ser enviada ao cliente. `-Plan` é obrigatório (`Ba
 
 ## Estrutura
 
-O produto se chama **Qrztweaks** desde a v1.9.1 (antes, PQueiroz Optimizer). Os nomes internos `PQueirozOptimizer` continuam de propósito: o executável e a pasta do código, as pastas de dados em `%LocalAppData%` e `%ProgramData%`, o campo `Product` assinado nas chaves e o `AppId` do instalador. Trocar qualquer um deles invalida as licenças emitidas ou impede a atualização por cima das instalações existentes. A release também publica uma cópia do instalador com o nome antigo (`PQueirozOptimizer-Setup-vX.Y.Z.exe`) para o caminho reserva do atualizador das versões até a 1.9.0.
+O produto e o executável se chamam **Qrztweaks** (`Qrztweaks.exe`). Os namespaces e a pasta do código mantêm `PQueirozOptimizer`. As pastas de dados, o campo `Product` assinado nas licenças, o mutex, o identificador da barra de tarefas e o `AppId` do instalador também são preservados para manter a compatibilidade. O instalador mantém uma cópia do executável com o nome antigo para atalhos de energia e limpeza já existentes, e cria os atalhos principais apontando para `Qrztweaks.exe`. A release continua publicando `PQueirozOptimizer-Setup-vX.Y.Z.exe` para o atualizador das versões até a 1.9.0. Referências ao nome antigo nas notas históricas são intencionais.
 
 - `PQueirozOptimizer/`: código-fonte WPF.
 - `Otimizador_de_PC.ps1`: script PowerShell com as otimizações, executado pelo aplicativo.

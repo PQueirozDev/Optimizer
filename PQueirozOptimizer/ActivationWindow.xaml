@@ -7,7 +7,7 @@
     <StackPanel Margin="44,38,44,32">
       <StackPanel Orientation="Horizontal">
         <Border Width="44" Height="44">
-          <Image Source="pack://application:,,,/PQueirozOptimizer;component/Assets/app.png" Width="44" Height="44" RenderOptions.BitmapScalingMode="HighQuality"/>
+          <Image Source="pack://application:,,,/Qrztweaks;component/Assets/app.png" Width="44" Height="44" RenderOptions.BitmapScalingMode="HighQuality"/>
         </Border>
         <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
           <TextBlock Text="Qrztweaks" FontSize="14" FontWeight="Bold" FontFamily="{StaticResource DisplayFont}"/>
