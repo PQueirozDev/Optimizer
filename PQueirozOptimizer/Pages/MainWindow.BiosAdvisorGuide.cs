@@ -133,11 +133,11 @@ public partial class MainWindow
     private Border StepRow(string text, bool last)
     {
         var t = new TextBlock { Text = text, FontSize = 12.5, FontWeight = last ? FontWeights.Bold : FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap, Tag = last ? null : Translator.SystemDataTag };
-        t.SetResourceReference(TextBlock.ForegroundProperty, last ? "OnAccentBrush" : "TextBrush");
+        t.SetResourceReference(TextBlock.ForegroundProperty, last ? "OnPrimaryBrush" : "TextBrush");
         var b = new Border { Child = t, Padding = new Thickness(12, 7, 12, 7), CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(1), HorizontalAlignment = HorizontalAlignment.Left };
-        if (last) b.SetResourceReference(Border.BackgroundProperty, "AccentBrush");
+        if (last) b.SetResourceReference(Border.BackgroundProperty, "PrimaryFillBrush");
         else b.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
-        b.SetResourceReference(Border.BorderBrushProperty, last ? "AccentBrush" : "BorderSubtleBrush");
+        b.SetResourceReference(Border.BorderBrushProperty, last ? "PrimaryFillBrush" : "BorderSubtleBrush");
         return b;
     }
 

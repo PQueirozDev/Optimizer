@@ -13,9 +13,10 @@ public partial class MainWindow
     // Os mesmos títulos do menu lateral, para a tela de bloqueio
     private static readonly Dictionary<string, string> PageTitles = new()
     {
-        ["optimization"] = "Otimizações", ["startup"] = "Inicialização", ["fixes"] = "Correções", ["tools"] = "Ferramentas",
-        ["services"] = "Serviços", ["apps"] = "Apps", ["drivers"] = "Drivers", ["network"] = "Rede", ["resources"] = "Recursos",
-        ["diagnostics"] = "Central de diagnóstico", ["smart"] = "Smart Optimize", ["perflab"] = "Performance Lab", ["profiles"] = "Perfis", ["gaming"] = "Modo Jogo", ["customize"] = "Personalizar Windows", ["bios"] = "BIOS / UEFI", ["biosadvisor"] = "BIOS Advisor",
+        ["optimization"] = "Otimizações", ["startup"] = "Inicialização", ["fixes"] = "Correções", ["tools"] = "Utilitários",
+        ["services"] = "Serviços", ["apps"] = "Aplicativos", ["drivers"] = "Drivers", ["network"] = "Rede", ["resources"] = "Recursos",
+        ["diagnostics"] = "Central de diagnóstico", ["smart"] = "Otimização inteligente", ["perflab"] = "Laboratório de desempenho", ["profiles"] = "Perfis", ["gaming"] = "Modo Jogo", ["customize"] = "Personalizar Windows", ["bios"] = "Editor de BIOS", ["biosadvisor"] = "Assistente de BIOS",
+        ["dashboard"] = "Início", ["mypc"] = "Meu PC", ["history"] = "Histórico", ["restore"] = "Pontos de restauração", ["settings"] = "Configurações", ["patchnotes"] = "Novidades", ["about"] = "Sobre",
     };
 
     private static bool PageAllowed(string page) => PlanAccess.Allows(CurrentLicense, page);
@@ -54,7 +55,7 @@ public partial class MainWindow
     // Operações em lote bloqueadas mostram o próprio nome, não o da página equivalente
     private static readonly Dictionary<string, string> OperationTitles = new()
     {
-        ["debloat"] = "Debloat e privacidade", ["gamer"] = "Versão Avançada (jogos)", ["gamerservicos"] = "Avançada sem parar serviços", ["inteligente"] = "Otimização inteligente",
+        ["debloat"] = "Remoção de aplicativos e privacidade", ["gamer"] = "Versão Avançada (jogos)", ["gamerservicos"] = "Avançada sem parar serviços", ["inteligente"] = "Otimização inteligente",
     };
 
     private void ShowLockedPage(string page, string? pageTitle = null)

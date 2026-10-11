@@ -6,7 +6,7 @@ using PQueirozOptimizer.Services;
 
 namespace PQueirozOptimizer;
 
-/// <summary>Configurações → Aparência: tema, intensidade do roxo, densidade, tamanho dos cards e animações.</summary>
+/// <summary>Configurações → Aparência: tema, cores, intensidade, densidade, tamanho dos cards e animações.</summary>
 public partial class MainWindow
 {
     private Border AppearanceSection()
@@ -30,7 +30,7 @@ public partial class MainWindow
 
         panel.Children.Add(SettingRow("Cor principal", "Botões, seleção da barra lateral e gráficos.",
             ColorPicker(current.AccentColor, AccentChoices, hex => Update(s => s.AccentColor = hex))));
-        panel.Children.Add(SettingRow("Cor secundária", "Cor do anel de saúde e dos indicadores.",
+        panel.Children.Add(SettingRow("Cor secundária", "Medidores circulares, anel de saúde e indicadores.",
             ColorPicker(current.SecondaryColor, SecondaryChoices, hex => Update(s => s.SecondaryColor = hex))));
         panel.Children.Add(SettingRow("Intensidade da cor", "Suave deixa as cores mais discretas; Vibrante, mais vivas.",
             Segmented(new[] { "Suave", "Padrão", "Vibrante" }, (int)current.Accent, i => Update(s => s.Accent = (AccentIntensity)i))));
@@ -51,14 +51,14 @@ public partial class MainWindow
         panel.Children.Add(SettingRow("Barra lateral compacta", "Mostra só os ícones; o nome de cada página aparece ao passar o mouse. Também alterna com Ctrl+B.",
             Switch(current.CompactSidebar, on => Update(s => s.CompactSidebar = on))));
 
-        var dashTitle = Label("Command Center", 13.5); dashTitle.FontWeight = FontWeights.SemiBold; dashTitle.Margin = new Thickness(0, 8, 0, 2);
+        var dashTitle = Label("Tela inicial", 13.5); dashTitle.FontWeight = FontWeights.SemiBold; dashTitle.Margin = new Thickness(0, 8, 0, 2);
         panel.Children.Add(dashTitle);
-        panel.Children.Add(Label("Escolha o que aparece na página inicial.", 12, true));
-        panel.Children.Add(SettingRow("Status e alertas", "Otimizações ativas, última análise, último teste e alertas.", Switch(current.DashboardStatus, on => Update(s => s.DashboardStatus = on))));
-        panel.Children.Add(SettingRow("Ações rápidas", "Smart Optimize, Modo Jogo, Performance Lab, Restaurar e Diagnóstico.", Switch(current.DashboardQuickActions, on => Update(s => s.DashboardQuickActions = on))));
-        panel.Children.Add(SettingRow("Monitor em tempo real", "Gráficos de CPU, GPU, memória e rede.", Switch(current.DashboardLive, on => Update(s => s.DashboardLive = on))));
-        panel.Children.Add(SettingRow("Cards de hardware", "Processador, memória, disco, placa de vídeo e temperaturas.", Switch(current.DashboardHardware, on => Update(s => s.DashboardHardware = on))));
-        panel.Children.Add(SettingRow("Atividade recente", "Leitura rápida e as últimas operações.", Switch(current.DashboardActivity, on => Update(s => s.DashboardActivity = on))));
+        panel.Children.Add(Label("Escolha o que aparece no Início.", 12, true));
+        panel.Children.Add(SettingRow("Alertas e recomendações", "Recomendações da última análise e alertas do sistema.", Switch(current.DashboardStatus, on => Update(s => s.DashboardStatus = on))));
+        panel.Children.Add(SettingRow("Acesso rápido", "Analisador de desempenho, Otimização inteligente, Central de saúde e Central de jogos.", Switch(current.DashboardQuickActions, on => Update(s => s.DashboardQuickActions = on))));
+        panel.Children.Add(SettingRow("Gráficos ao vivo", "Atividade de CPU, placa de vídeo, memória e rede nos cards, atualizada a cada segundo.", Switch(current.DashboardLive, on => Update(s => s.DashboardLive = on))));
+        panel.Children.Add(SettingRow("Cards de hardware", "Processador, memória, placa de vídeo, armazenamento e rede.", Switch(current.DashboardHardware, on => Update(s => s.DashboardHardware = on))));
+        panel.Children.Add(SettingRow("Atividade e configurações rápidas", "Últimas operações, seus jogos e os atalhos de configuração.", Switch(current.DashboardActivity, on => Update(s => s.DashboardActivity = on))));
 
         var translucent = new CheckBox { IsChecked = current.Translucent && ThemeService.TranslucencySupported, Content = "", IsEnabled = ThemeService.TranslucencySupported };
         translucent.SetResourceReference(StyleProperty, "SwitchCheckBox");
@@ -98,7 +98,7 @@ public partial class MainWindow
         var restore = IconButton(Glyphs.Undo, "Restaurar padrão");
         restore.HorizontalAlignment = HorizontalAlignment.Left;
         restore.IsEnabled = !IsDefaultAppearance(current);
-        restore.Click += (_, _) => { SaveAppearance(AppearanceService.Defaults()); ShowToast("Aparência", "Padrão restaurado: tema Escuro, cores originais, densidade Padrão, cards Médios e animações ligadas.", "Success"); };
+        restore.Click += (_, _) => { SaveAppearance(AppearanceService.Defaults()); ShowToast("Aparência", "Padrão restaurado: tema Azul meia-noite, cores originais, densidade Padrão, cards Médios e animações ligadas.", "Success"); };
         panel.Children.Add(restore);
 
         var card = Surface(panel);
@@ -140,19 +140,19 @@ public partial class MainWindow
     /// <summary>Ordem e nomes dos temas na galeria.</summary>
     internal static readonly (ThemeMode Mode, string Name)[] Themes =
     {
-        (ThemeMode.Dark, "Escuro"), (ThemeMode.Oled, "OLED"), (ThemeMode.Light, "Claro"), (ThemeMode.Graphite, "Grafite"),
-        (ThemeMode.Ocean, "Oceano"), (ThemeMode.Forest, "Floresta"), (ThemeMode.Plum, "Ameixa"), (ThemeMode.Midnight, "Meia-noite"), (ThemeMode.Sand, "Areia"), (ThemeMode.Auto, "Automático"),
+        (ThemeMode.Dark, "Azul meia-noite"), (ThemeMode.Oled, "OLED"), (ThemeMode.Light, "Claro"), (ThemeMode.Graphite, "Grafite"),
+        (ThemeMode.Ocean, "Oceano"), (ThemeMode.Forest, "Floresta"), (ThemeMode.Plum, "Ameixa"), (ThemeMode.Midnight, "Roxo meia-noite"), (ThemeMode.Sand, "Areia"), (ThemeMode.Auto, "Automático"),
     };
 
     // A primeira de cada lista (null) é a cor original do app
     private static readonly (string? Hex, string Name, string Preview)[] AccentChoices =
     {
-        (null, "Roxo (padrão)", "#8B5CF6"), ("#3B82F6", "Azul", "#3B82F6"), ("#06B6D4", "Ciano", "#06B6D4"), ("#10B981", "Verde", "#10B981"),
+        (null, "Azul (padrão)", "#3B82F6"), ("#8B5CF6", "Roxo", "#8B5CF6"), ("#06B6D4", "Ciano", "#06B6D4"), ("#10B981", "Verde", "#10B981"),
         ("#F97316", "Laranja", "#F97316"), ("#EC4899", "Rosa", "#EC4899"), ("#EF4444", "Vermelho", "#EF4444"), ("#EAB308", "Dourado", "#EAB308"),
     };
     private static readonly (string? Hex, string Name, string Preview)[] SecondaryChoices =
     {
-        (null, "Ciano (padrão)", "#22D3EE"), ("#60A5FA", "Azul", "#60A5FA"), ("#A78BFA", "Lilás", "#A78BFA"), ("#34D399", "Verde", "#34D399"),
+        (null, "Azul-céu (padrão)", "#5CC8FF"), ("#60A5FA", "Azul", "#60A5FA"), ("#A78BFA", "Lilás", "#A78BFA"), ("#34D399", "Verde", "#34D399"),
         ("#F472B6", "Rosa", "#F472B6"), ("#FB923C", "Laranja", "#FB923C"), ("#FACC15", "Amarelo", "#FACC15"),
     };
 
@@ -160,7 +160,7 @@ public partial class MainWindow
     private FrameworkElement ThemeGallery(ThemeMode selected, Action<ThemeMode> onSelect)
     {
         var grid = Responsive(new System.Windows.Controls.Primitives.UniformGrid { Margin = new Thickness(0, 0, -10, AppearanceService.Space(16)) }, 132, 9);
-        var accent = (Color)(Application.Current.Resources["AccentColor"] ?? Color.FromRgb(0x8B, 0x5C, 0xF6));
+        var accent = (Color)(Application.Current.Resources["AccentColor"] ?? Color.FromRgb(0x3B, 0x82, 0xF6));
         foreach (var (mode, name) in Themes)
         {
             var isSelected = mode == selected;

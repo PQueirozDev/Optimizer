@@ -54,7 +54,8 @@ public partial class MainWindow : Window
         Closed += (_, _) => _log.EntryAdded -= onEntry;
         if (_configService.LastLoadError is { } loadError) _log.Write("WARN", loadError);
         if (_configService.LastSaveError is { } saveError) _log.Write("WARN", "Preferências não foram salvas: " + saveError);
-        VersionLabel.Text = "Versão " + AppVersion;
+        VersionLabel.Text = "v" + AppVersion;
+        VersionLabel.ToolTip = "Versão " + AppVersion;
         Closing += (_, e) =>
         {
             if (!_operationRunning && PendingSystemMutations > 0)
@@ -98,12 +99,24 @@ public partial class MainWindow : Window
     {
         var license = (Application.Current as App)?.ActiveLicense;
         NavIsos.Visibility = IsAdminLicense ? Visibility.Visible : Visibility.Collapsed;
-        LicenseLabel.Text = license is null ? (PlanAccess.DemoMode ? "Modo demonstração" : "Sem licença ativa") : $"{(license.IsAdmin ? "Admin" : license.PlanName)} · {license.Licensee}";
-        LicenseLabel.ToolTip = license?.ExpiresAtUtc is { } expires ? $"Válida até {expires.ToLocalTime():dd/MM/yyyy}" : "Licença sem data de expiração";
+        // Cartão da licença no rodapé da barra lateral: iniciais, titular e plano
+        LicenseLabel.Text = license is null ? (PlanAccess.DemoMode ? "Modo demonstração" : "Sem licença ativa") : license.Licensee;
+        LicenseLabel.Tag = license is null ? null : Translator.SystemDataTag;
+        LicensePlanText.Text = license is null ? (PlanAccess.DemoMode ? "DEMO" : "") : (license.IsAdmin ? "ADMIN" : Translator.Tr(license.PlanName).ToUpperInvariant());
+        LicensePlanBadge.Visibility = string.IsNullOrEmpty(LicensePlanText.Text) ? Visibility.Collapsed : Visibility.Visible;
+        LicenseAvatarText.Text = Initials(license?.Licensee);
+        LicenseCard.ToolTip = license?.ExpiresAtUtc is { } expires ? $"Válida até {expires.ToLocalTime():dd/MM/yyyy}" : license is null ? null : "Licença sem data de expiração";
         UpdateNavLocks();
         InitSidebar();
         if (Engine.ProfileStore.Default.WatchGames) StartGameWatcher();
         Closed += (_, _) => StopGameWatcher();
+    }
+
+    /// <summary>Iniciais do titular para o avatar (duas letras; "Q" sem licença).</summary>
+    private static string Initials(string? name)
+    {
+        var parts = (name ?? "").Split(new[] { ' ', '.', '_', '-' }, StringSplitOptions.RemoveEmptyEntries).Where(p => char.IsLetterOrDigit(p[0])).ToArray();
+        return parts.Length switch { 0 => "Q", 1 => parts[0][..Math.Min(2, parts[0].Length)].ToUpperInvariant(), _ => $"{char.ToUpperInvariant(parts[0][0])}{char.ToUpperInvariant(parts[^1][0])}" };
     }
 
     #region Window & Language Controls
@@ -285,14 +298,24 @@ public partial class MainWindow : Window
         }
         if (page == "admin")
         {
-            // A ativação abre uma janela; a seleção da navegação continua na página atual
-            UpdateActiveNavButton(_currentPage);
-            ActivateAdminLicense();
+            // Licença: com chave ativa abre a seção Minha licença; sem chave (demonstração), a janela de ativação
+            if (CurrentLicense is null) { UpdateActiveNavButton(_currentPage); ActivateAdminLicense(); return; }
+            NavigateTo("settings");
+            UpdateActiveNavButton("admin");
+            ScrollToSection("license");
+            return;
+        }
+        if (page == "updates")
+        {
+            NavigateTo("settings");
+            UpdateActiveNavButton("updates");
+            ScrollToSection("updates");
             return;
         }
         if (AdvisorLayer.Visibility == Visibility.Visible) CloseAdvisorGuide();
         _currentPage = page;
         UpdateActiveNavButton(page);
+        RevealNavItem(page);
         UpdatePageHeader(page);
         ContentScroll.ScrollToTop();
         RenderPage(page);
@@ -309,6 +332,7 @@ public partial class MainWindow : Window
         switch (page)
         {
             case "dashboard": _ = ShowDashboardAsync(); break;
+            case "mypc": ShowMyPc(); break;
             case "optimization": ShowOptimization(); break;
             case "smart": ShowSmartOptimize(); break;
             case "perflab": ShowPerformanceLab(); break;
@@ -336,17 +360,66 @@ public partial class MainWindow : Window
 
     private void UpdateActiveNavButton(string page)
     {
-        var buttons = new[] { NavDashboard, NavPerfLab, NavSmart, NavProfiles, NavOpt, NavStartup, NavDrivers, NavIsos, NavTools, NavCustomize, NavGaming, NavNetwork, NavRestore, NavResources, NavFixes, NavDiagnostics, NavServices, NavApps, NavSettings, NavAbout, NavHistory, NavPatchNotes, NavBios, NavBiosAdvisor, NavAdmin };
-        foreach (var b in buttons) b.IsChecked = b.Tag?.ToString() == page;
+        foreach (var b in NavItems()) b.IsChecked = b.Tag?.ToString() == page;
     }
 
+    /// <summary>Rola até uma seção marcada com Tag "section:nome" (Configurações: licença, atualizações) e a destaca.</summary>
+    private void ScrollToSection(string name)
+    {
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
+        {
+            if (FindTagged(ContentHost, "section:" + name) is not FrameworkElement target) return;
+            target.BringIntoView(new Rect(0, -12, target.ActualWidth, Math.Min(target.ActualHeight + 24, ContentScroll.ViewportHeight)));
+            if (target is Border border && AppearanceService.AnimationsEnabled)
+            {
+                // A borda fica no azul de destaque por um instante, para mostrar onde a página chegou
+                var original = border.BorderBrush;
+                border.SetResourceReference(Border.BorderBrushProperty, "AccentBrush");
+                var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(900) };
+                timer.Tick += (_, _) => { timer.Stop(); border.BorderBrush = original; };
+                timer.Start();
+            }
+        });
+    }
+
+    private static DependencyObject? FindTagged(DependencyObject node, string tag)
+    {
+        if (node is FrameworkElement { Tag: string t } && t == tag) return node;
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++)
+            if (FindTagged(VisualTreeHelper.GetChild(node, i), tag) is { } found) return found;
+        return null;
+    }
+
+    private void SidebarSettings_Click(object sender, RoutedEventArgs e) => NavigateTo("settings");
+
+    private void OptimizeButton_Click(object sender, RoutedEventArgs e) => NavigateTo("smart");
+
     #region Theming
-    /// <summary>Botão do topo: passa para o próximo tema da galeria de Configurações → Aparência.</summary>
+    /// <summary>Botão de tema do rodapé da barra lateral: menu com os temas da galeria (o atual marcado).</summary>
     private void ThemeButton_Click(object sender, RoutedEventArgs e)
     {
-        var next = AppearanceService.Current.Clone();
-        next.Theme = NextTheme(next.Theme).Mode;
-        SaveAppearance(next);
+        var menu = new ContextMenu { PlacementTarget = ThemeButton, Placement = PlacementMode.Top, VerticalOffset = -6 };
+        menu.Items.Add(new MenuItem { Header = Translator.Tr("Tema"), IsEnabled = false, FontWeight = FontWeights.SemiBold });
+        foreach (var (mode, name) in Themes)
+        {
+            var item = new MenuItem { Header = Translator.Tr(name), IsCheckable = true, IsChecked = AppearanceService.Current.Theme == mode };
+            var (bg, surface, _) = ThemeService.Swatch(mode == Models.ThemeMode.Auto ? Models.ThemeMode.Light : mode);
+            item.Icon = new Border { Width = 14, Height = 14, CornerRadius = new CornerRadius(4), BorderThickness = new Thickness(1), Background = new SolidColorBrush(bg), BorderBrush = new SolidColorBrush(surface) };
+            var chosen = mode;
+            item.Click += (_, _) =>
+            {
+                if (AppearanceService.Current.Theme == chosen) return;
+                var next = AppearanceService.Current.Clone();
+                next.Theme = chosen;
+                SaveAppearance(next);
+            };
+            menu.Items.Add(item);
+        }
+        menu.Items.Add(new Separator { Style = (Style)FindResource("MenuSeparator") });
+        var all = new MenuItem { Header = Translator.Tr("Mais opções de aparência") };
+        all.Click += (_, _) => NavigateTo("settings");
+        menu.Items.Add(all);
+        menu.IsOpen = true;
     }
 
     private static (Models.ThemeMode Mode, string Name) NextTheme(Models.ThemeMode mode)
@@ -386,7 +459,7 @@ public partial class MainWindow : Window
     {
         var mode = AppearanceService.Current.Theme;
         ThemeButton.Content = GlyphIcon(mode switch { Models.ThemeMode.Light or Models.ThemeMode.Sand => Glyphs.Sun, Models.ThemeMode.Auto => Glyphs.Refresh, _ => Glyphs.Moon }, 13);
-        ThemeButton.ToolTip = $"Tema: {Themes.First(t => t.Mode == mode).Name} (clique para {NextTheme(mode).Name})";
+        ThemeButton.ToolTip = string.Format(Translator.Tr("Tema: {0}"), Translator.Tr(Themes.First(t => t.Mode == mode).Name));
     }
 
     /// <summary>

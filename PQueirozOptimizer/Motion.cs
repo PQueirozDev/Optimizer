@@ -104,19 +104,19 @@ public static class Motion
         if (animate && Math.Abs(move.X - target) > 0.5)
         {
             // Desliza com um leve quique no fim e "estica" no meio do caminho
-            To(move, TranslateTransform.XProperty, target, 300, true, new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.35 });
-            var stretch = new DoubleAnimationUsingKeyFrames { Duration = TimeSpan.FromMilliseconds(300) };
-            stretch.KeyFrames.Add(new EasingDoubleKeyFrame(1.3, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(110)), EaseOut));
-            stretch.KeyFrames.Add(new EasingDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(300)), EaseOut));
+            To(move, TranslateTransform.XProperty, target, 200, true, new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.25 });
+            var stretch = new DoubleAnimationUsingKeyFrames { Duration = TimeSpan.FromMilliseconds(200) };
+            stretch.KeyFrames.Add(new EasingDoubleKeyFrame(1.22, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(80)), EaseOut));
+            stretch.KeyFrames.Add(new EasingDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(200)), EaseOut));
             scale.BeginAnimation(ScaleTransform.ScaleXProperty, stretch);
             // Ao ligar: um anel da cor principal se expande e some em volta da trilha
             if (on && Part<UIElement>(toggle, "pulse") is { } pulse)
             {
                 if (pulse.RenderTransform is not ScaleTransform grow) pulse.RenderTransform = grow = new ScaleTransform(1, 1);
-                var expand = new DoubleAnimation(1, 1.55, TimeSpan.FromMilliseconds(520)) { EasingFunction = EaseOut };
+                var expand = new DoubleAnimation(1, 1.4, TimeSpan.FromMilliseconds(360)) { EasingFunction = EaseOut };
                 grow.BeginAnimation(ScaleTransform.ScaleXProperty, expand);
-                grow.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(1, 1.9, TimeSpan.FromMilliseconds(520)) { EasingFunction = EaseOut });
-                pulse.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0.55, 0, TimeSpan.FromMilliseconds(520)) { EasingFunction = EaseOut });
+                grow.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(1, 1.7, TimeSpan.FromMilliseconds(360)) { EasingFunction = EaseOut });
+                pulse.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0.4, 0, TimeSpan.FromMilliseconds(360)) { EasingFunction = EaseOut });
             }
         }
         else
@@ -124,14 +124,14 @@ public static class Motion
             To(move, TranslateTransform.XProperty, target, 0, false);
             scale.BeginAnimation(ScaleTransform.ScaleXProperty, null); scale.ScaleX = 1;
         }
-        To(trackOn, UIElement.OpacityProperty, on ? 1 : 0, 220, animate);
+        To(trackOn, UIElement.OpacityProperty, on ? 1 : 0, 180, animate);
     }
 
     private static void PressKnob(ToggleButton toggle, bool pressed)
     {
         if (!toggle.IsEnabled || Part<FrameworkElement>(toggle, "knob") is not { } knob) return;
         var (_, scale) = KnobTransforms(knob);
-        To(scale, ScaleTransform.ScaleYProperty, pressed ? 0.82 : 1, pressed ? 90 : 220, Animate(toggle),
+        To(scale, ScaleTransform.ScaleYProperty, pressed ? 0.85 : 1, pressed ? 80 : 180, Animate(toggle),
             pressed ? null : new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.5 });
     }
 
@@ -151,8 +151,8 @@ public static class Motion
         if (check.StrokeDashArray is not { Count: 2 }) check.StrokeDashArray = new DoubleCollection { length, length };
         if (animate && on)
         {
-            check.BeginAnimation(Shape.StrokeDashOffsetProperty, new DoubleAnimation(length, 0, TimeSpan.FromMilliseconds(280)) { EasingFunction = EaseOut });
-            var bounce = new DoubleAnimation(0.6, 1, TimeSpan.FromMilliseconds(320)) { EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.6 } };
+            check.BeginAnimation(Shape.StrokeDashOffsetProperty, new DoubleAnimation(length, 0, TimeSpan.FromMilliseconds(200)) { EasingFunction = EaseOut });
+            var bounce = new DoubleAnimation(0.7, 1, TimeSpan.FromMilliseconds(220)) { EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.45 } };
             pop.BeginAnimation(ScaleTransform.ScaleXProperty, bounce); pop.BeginAnimation(ScaleTransform.ScaleYProperty, bounce);
         }
         else
@@ -170,7 +170,7 @@ public static class Motion
     {
         if (Part<UIElement>(button, "hover") is not { } hover) return;
         var level = !button.IsEnabled ? 0 : pressed ? 0.14 : button.IsMouseOver ? 0.07 : 0;
-        To(hover, UIElement.OpacityProperty, level, button.IsMouseOver ? 120 : 220, Animate(button));
+        To(hover, UIElement.OpacityProperty, level, button.IsMouseOver ? 120 : 180, Animate(button));
     }
 
     private static void Press(ButtonBase button, bool pressed)
@@ -184,9 +184,9 @@ public static class Motion
             root.RenderTransform = scale;
         }
         // Afunda rápido ao pressionar e volta com um pequeno "salto"
-        var ease = pressed ? null : new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.6 };
-        To(scale, ScaleTransform.ScaleXProperty, pressed ? 0.96 : 1, pressed ? 80 : 260, Animate(button), ease);
-        To(scale, ScaleTransform.ScaleYProperty, pressed ? 0.96 : 1, pressed ? 80 : 260, Animate(button), ease);
+        var ease = pressed ? null : new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.4 };
+        To(scale, ScaleTransform.ScaleXProperty, pressed ? 0.97 : 1, pressed ? 80 : 180, Animate(button), ease);
+        To(scale, ScaleTransform.ScaleYProperty, pressed ? 0.97 : 1, pressed ? 80 : 180, Animate(button), ease);
         Hover(button, pressed);
     }
 }

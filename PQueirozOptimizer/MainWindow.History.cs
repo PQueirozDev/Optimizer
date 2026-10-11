@@ -83,7 +83,7 @@ public partial class MainWindow
 
     private void ShowHistory()
     {
-        PageTitle.Text = "Atividade e reversão";
+        PageTitle.Text = "Histórico";
         PageBadge.Visibility = Visibility.Collapsed;
         var root = new StackPanel();
         var backupPanel = new StackPanel();

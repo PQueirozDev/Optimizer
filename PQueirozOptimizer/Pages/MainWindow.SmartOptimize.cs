@@ -49,7 +49,7 @@ public partial class MainWindow
 
     private void ShowSmartOptimize()
     {
-        PageTitle.Text = "Smart Optimize";
+        PageTitle.Text = "Otimização inteligente";
         PageBadge.Visibility = Visibility.Collapsed;
         var root = new StackPanel();
 

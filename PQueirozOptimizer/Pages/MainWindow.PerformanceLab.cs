@@ -41,7 +41,7 @@ public partial class MainWindow
 
     private void ShowPerformanceLab()
     {
-        PageTitle.Text = "Performance Lab";
+        PageTitle.Text = "Laboratório de desempenho";
         PageBadge.Visibility = _capture is null ? Visibility.Collapsed : Visibility.Visible;
         PageBadgeText.Text = "gravando";
         var root = new StackPanel();

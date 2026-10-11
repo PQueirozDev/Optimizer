@@ -89,7 +89,10 @@ public static class PlanAccess
     public static bool DemoMode { get; set; }
     public static readonly IReadOnlySet<string> DemoPages = new HashSet<string>(StringComparer.Ordinal) { "smart", "diagnostics", "perflab" };
 
-    public static bool Allows(LicenseInfo? license, string page) => license is null ? DemoMode && DemoPages.Contains(page) : license.Tier >= Required(page);
+    /// <summary>Páginas só de leitura que a demonstração também abre (Início, Meu PC, Configurações, Novidades e Sobre).</summary>
+    public static readonly IReadOnlySet<string> DemoOpenPages = new HashSet<string>(StringComparer.Ordinal) { "dashboard", "mypc", "settings", "patchnotes", "about" };
+
+    public static bool Allows(LicenseInfo? license, string page) => license is null ? DemoMode && (DemoPages.Contains(page) || DemoOpenPages.Contains(page)) : license.Tier >= Required(page);
 }
 
 public sealed record LicenseInfo(string Licensee, DateTime? ExpiresAtUtc, string MachineId, string Role, string? Plan = null)

@@ -298,7 +298,7 @@ public partial class MainWindow
 
     private void ShowPatchNotes()
     {
-        PageTitle.Text = "Patch notes"; PageBadge.Visibility = Visibility.Visible; PageBadgeText.Text = "Versão atual " + AppVersion;
+        PageTitle.Text = "Novidades"; PageBadge.Visibility = Visibility.Visible; PageBadgeText.Text = "Versão atual " + AppVersion;
         var root = new StackPanel { MaxWidth = 900, HorizontalAlignment = HorizontalAlignment.Left };
         for (var i = 0; i < PatchNotes.Length; i++)
         {
@@ -330,7 +330,7 @@ public partial class MainWindow
 
     private void ShowBios()
     {
-        PageTitle.Text = "BIOS / UEFI"; PageBadge.Visibility = Visibility.Collapsed;
+        PageTitle.Text = "Editor de BIOS"; PageBadge.Visibility = Visibility.Collapsed;
         var root = new StackPanel();
 
         var hero = new DockPanel();

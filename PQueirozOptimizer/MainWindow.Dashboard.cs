@@ -48,7 +48,7 @@ public partial class MainWindow
 
     private async Task RenderDashboardAsync()
     {
-        PageTitle.Text = "Command Center";
+        PageTitle.Text = "Início";
         PageBadge.Visibility = Visibility.Collapsed;
         var root = new StackPanel();
         ContentHost.Children.Clear(); ContentHost.Children.Add(root);

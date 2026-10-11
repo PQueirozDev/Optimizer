@@ -1,25 +1,50 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media.Animation;
 using PQueirozOptimizer.Services;
 
 namespace PQueirozOptimizer;
 
 /// <summary>
-/// Barra lateral compactável: só ícones (72 px) com o nome nas dicas, por preferência, Ctrl+B ou automaticamente
-/// em janelas estreitas. A navegação por teclado (Tab e setas) funciona nos dois modos.
+/// Barra lateral: categorias recolhíveis (PRINCIPAL, OTIMIZAÇÃO, DESEMPENHO, FERRAMENTAS, SISTEMA) e modo compacto
+/// só com ícones (72 px) com o nome nas dicas, por preferência, Ctrl+B ou automaticamente em janelas estreitas.
+/// A navegação por teclado (Tab e setas) funciona nos dois modos. A barra superior também se adapta à largura.
 /// </summary>
 public partial class MainWindow
 {
+    private const double SidebarWidth = 236, SidebarCompactWidth = 72;
     private bool _sidebarCompactApplied;
     private bool? _sidebarForcedByWidth;
 
     private bool SidebarShouldBeCompact => AppearanceService.Current.CompactSidebar || (_sidebarForcedByWidth ?? false);
 
+    /// <summary>Todos os itens de navegação, em ordem (dentro das categorias).</summary>
+    private IEnumerable<RadioButton> NavItems()
+    {
+        foreach (var child in NavStack.Children)
+        {
+            if (child is RadioButton direct) yield return direct;
+            if (child is Panel group) foreach (var nav in group.Children.OfType<RadioButton>()) yield return nav;
+        }
+    }
+
+    private IEnumerable<(ToggleButton Header, Panel Group)> NavCategories()
+    {
+        ToggleButton? header = null;
+        foreach (var child in NavStack.Children)
+        {
+            if (child is ToggleButton toggle) header = toggle;
+            else if (child is Panel group && header != null) { yield return (header, group); header = null; }
+        }
+    }
+
     private void InitSidebar()
     {
         SizeChanged += (_, e) =>
         {
+            ApplyTopBarMode(e.NewSize.Width);
             // Abaixo de 1000 px a barra completa toma espaço demais do conteúdo
             var narrow = e.NewSize.Width < 1000;
             if (_sidebarForcedByWidth == narrow) return;
@@ -34,27 +59,92 @@ public partial class MainWindow
             SaveAppearance(next);
             e.Handled = true;
         };
+        // Categorias recolhidas na última vez
+        var collapsed = AppearanceService.Current.CollapsedNavGroups ?? new List<string>();
+        foreach (var (header, group) in NavCategories())
+        {
+            var isCollapsed = collapsed.Contains(header.Tag as string ?? "");
+            header.IsChecked = !isCollapsed;
+            group.Visibility = isCollapsed ? Visibility.Collapsed : Visibility.Visible;
+        }
         ApplySidebarMode();
+        ApplyTopBarMode(ActualWidth > 0 ? ActualWidth : Width);
+    }
+
+    private void NavCategory_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ToggleButton header) return;
+        var group = NavCategories().FirstOrDefault(c => c.Header == header).Group;
+        if (group is null) return;
+        var expanded = header.IsChecked == true;
+        group.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
+        if (expanded && AppearanceService.AnimationsEnabled)
+        {
+            // Os itens aparecem descendo um pouco (160 ms); recolher é imediato
+            var slide = new System.Windows.Media.TranslateTransform(0, -6);
+            group.RenderTransform = slide;
+            group.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(160)));
+            slide.BeginAnimation(System.Windows.Media.TranslateTransform.YProperty, new DoubleAnimation(-6, 0, TimeSpan.FromMilliseconds(160)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+        }
+        var next = AppearanceService.Current.Clone();
+        var collapsed = NavCategories().Where(c => c.Header.IsChecked != true).Select(c => c.Header.Tag as string ?? "").ToList();
+        next.CollapsedNavGroups = collapsed.Count == 0 ? null : collapsed;
+        // Só guarda a preferência: não precisa redesenhar a página por isso
+        AppearanceService.SetQuietly(next);
+        try { _configService.SaveAppearance(next); }
+        catch (System.IO.IOException ex) { _log.Write("WARN", "Preferências não foram salvas: " + (ex.InnerException?.Message ?? ex.Message)); }
+    }
+
+    /// <summary>Ao abrir uma página por busca ou atalho, a categoria dela abre se estiver recolhida.</summary>
+    private void RevealNavItem(string page)
+    {
+        foreach (var (header, group) in NavCategories())
+        {
+            if (!group.Children.OfType<RadioButton>().Any(n => n.Tag as string == page) || header.IsChecked == true) continue;
+            header.IsChecked = true;
+            group.Visibility = Visibility.Visible;
+        }
     }
 
     private void ApplySidebarMode()
     {
         var compact = SidebarShouldBeCompact;
-        if (compact == _sidebarCompactApplied && RootGrid.ColumnDefinitions[0].Width.Value is 72 or 248) { RefreshNavTooltips(compact); return; }
+        if (compact == _sidebarCompactApplied && RootGrid.ColumnDefinitions[0].Width.Value is SidebarCompactWidth or SidebarWidth) { RefreshNavTooltips(compact); return; }
         _sidebarCompactApplied = compact;
-        RootGrid.ColumnDefinitions[0].Width = new GridLength(compact ? 72 : 248);
+        RootGrid.ColumnDefinitions[0].Width = new GridLength(compact ? SidebarCompactWidth : SidebarWidth);
         SidebarLogoText.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
-        SidebarLogo.Margin = compact ? new Thickness(18, 18, 0, 14) : new Thickness(20, 18, 16, 14);
+        SidebarLogo.Margin = compact ? new Thickness(20, 16, 0, 10) : new Thickness(20, 16, 14, 10);
         HudPanel.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+        // Rodapé compacto: só o avatar da licença (o resto vai para a dica)
+        LicenseInfoText.Visibility = ThemeButton.Visibility = SidebarSettingsButton.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+        LicenseCard.Padding = compact ? new Thickness(7) : new Thickness(10, 9, 10, 9);
+        LicenseCard.ToolTip = compact ? LicenseLabel.Text + (string.IsNullOrEmpty(LicensePlanText.Text) ? "" : " · " + LicensePlanText.Text) : null;
         SidebarScroll.Padding = compact ? new Thickness(8, 0, 8, 0) : new Thickness(12, 0, 12, 0);
-        foreach (var child in NavStack.Children)
+        foreach (var (header, group) in NavCategories())
         {
-            if (child is TextBlock header) header.Visibility = compact ? Visibility.Collapsed : Visibility.Visible; // títulos das seções
-            if (child is not RadioButton nav) continue;
+            // No modo compacto não há nomes de categoria: todos os ícones ficam visíveis, separados por um respiro
+            header.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+            group.Visibility = compact || header.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+            group.Margin = compact ? new Thickness(0, 8, 0, 0) : new Thickness(0);
+        }
+        foreach (var nav in NavItems())
+        {
             nav.HorizontalContentAlignment = compact ? HorizontalAlignment.Center : HorizontalAlignment.Stretch;
             foreach (var text in NavTexts(nav)) text.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
         }
         RefreshNavTooltips(compact);
+    }
+
+    /// <summary>Barra superior em janelas estreitas: some primeiro o estado, depois o texto de Configurações e a busca encolhe.</summary>
+    private void ApplyTopBarMode(double windowWidth)
+    {
+        if (windowWidth <= 0 || double.IsNaN(windowWidth)) return;
+        TitleOptChipHost.Visibility = windowWidth < 1280 ? Visibility.Collapsed : Visibility.Visible;
+        TitleAdminChipHost.Visibility = windowWidth < 1120 ? Visibility.Collapsed : Visibility.Visible;
+        TopSettingsText.Visibility = windowWidth < 960 ? Visibility.Collapsed : Visibility.Visible;
+        if (TopSettingsButton.Content is StackPanel { Children: [_, TextBlock gear] }) gear.Margin = new Thickness(windowWidth < 960 ? 0 : 9, 0, 0, 0);
+        TopSettingsButton.Padding = new Thickness(windowWidth < 960 ? 10 : 13, 0, windowWidth < 960 ? 10 : 13, 0);
+        SearchHost.Width = windowWidth < 900 ? 170 : 250;
     }
 
     /// <summary>Textos e selos do item (tudo menos o ícone).</summary>
@@ -71,12 +161,12 @@ public partial class MainWindow
     /// <summary>No modo compacto o nome vai na dica (e para leitores de tela em qualquer modo).</summary>
     private void RefreshNavTooltips(bool compact)
     {
-        foreach (var nav in NavStack.Children.OfType<RadioButton>())
+        foreach (var nav in NavItems())
         {
             var name = Translator.Tr(NavName(nav));
             System.Windows.Automation.AutomationProperties.SetName(nav, name);
             var page = nav.Tag?.ToString() ?? "";
-            var locked = PlanAccess.Required(page) > (CurrentLicense?.Tier ?? PlanTier.Base) && page is not ("dashboard" or "history" or "restore" or "settings" or "about" or "patchnotes" or "admin" or "isos");
+            var locked = PlanAccess.Required(page) > (CurrentLicense?.Tier ?? PlanTier.Base) && page is not ("dashboard" or "mypc" or "history" or "restore" or "settings" or "about" or "patchnotes" or "admin" or "updates" or "isos");
             if (locked) continue; // a dica de plano bloqueado continua (UpdateNavLocks)
             nav.ToolTip = compact ? name : null;
         }

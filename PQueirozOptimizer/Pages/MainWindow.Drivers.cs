@@ -14,7 +14,7 @@ public partial class MainWindow
 
     private void ShowDrivers()
     {
-        PageTitle.Text = "Drivers & Utilitários";
+        PageTitle.Text = "Drivers e utilitários";
         PageBadge.Visibility = Visibility.Collapsed;
         // A recomendação depende da placa de vídeo; sem leitura recente, lê em segundo plano e redesenha
         if (_snapshot is null) _ = RefreshDriversWhenSnapshotReadyAsync();

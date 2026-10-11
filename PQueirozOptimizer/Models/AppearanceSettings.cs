@@ -18,9 +18,9 @@ public sealed class AppearanceSettings
     [JsonPropertyName("animations")] public bool Animations { get; set; } = true;
     /// <summary>Fundo translúcido (Acrylic do Windows 11) atrás da janela.</summary>
     [JsonPropertyName("translucent")] public bool Translucent { get; set; }
-    /// <summary>Cor principal (#RRGGBB); vazio = roxo padrão do app.</summary>
+    /// <summary>Cor principal (#RRGGBB); vazio = azul padrão do app.</summary>
     [JsonPropertyName("accentColor")] public string? AccentColor { get; set; }
-    /// <summary>Cor secundária, usada nos gradientes e indicadores (#RRGGBB); vazio = ciano padrão.</summary>
+    /// <summary>Cor secundária, usada nos medidores e indicadores (#RRGGBB); vazio = azul-céu padrão.</summary>
     [JsonPropertyName("secondaryColor")] public string? SecondaryColor { get; set; }
     /// <summary>Desliga as animações quando "Mostrar animações no Windows" estiver desligado (redução de movimento).</summary>
     [JsonPropertyName("followSystemMotion")] public bool FollowSystemMotion { get; set; }
@@ -32,6 +32,13 @@ public sealed class AppearanceSettings
     [JsonPropertyName("dashLive")] public bool DashboardLive { get; set; } = true;
     [JsonPropertyName("dashHardware")] public bool DashboardHardware { get; set; } = true;
     [JsonPropertyName("dashActivity")] public bool DashboardActivity { get; set; } = true;
+    /// <summary>Categorias recolhidas na barra lateral (main, optimize, performance, tools, system); null = todas abertas.</summary>
+    [JsonPropertyName("navCollapsed")] public List<string>? CollapsedNavGroups { get; set; }
 
-    public AppearanceSettings Clone() => (AppearanceSettings)MemberwiseClone();
+    public AppearanceSettings Clone()
+    {
+        var copy = (AppearanceSettings)MemberwiseClone();
+        copy.CollapsedNavGroups = CollapsedNavGroups?.ToList();
+        return copy;
+    }
 }

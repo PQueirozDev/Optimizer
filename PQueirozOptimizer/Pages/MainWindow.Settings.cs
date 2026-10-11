@@ -361,9 +361,9 @@ public partial class MainWindow
         stack.Children.Add(new DockPanel { Children = { check, status } });
         DockPanel.SetDock(check, Dock.Left);
 
-        var section = new Border { CornerRadius = new CornerRadius(12), Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 24), BorderThickness = new Thickness(1), Child = stack };
-        section.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
-        section.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
+        var section = Surface(stack);
+        section.Margin = new Thickness(0, 0, 0, 24);
+        section.Tag = "section:updates";
         return section;
     }
 
@@ -446,6 +446,7 @@ public partial class MainWindow
         var card = Surface(stack);
         card.Margin = new Thickness(0, 0, 0, 24);
         card.SetResourceReference(Border.BorderBrushProperty, tone + "SoftBrush");
+        card.Tag = "section:license";
         return card;
     }
     #endregion

@@ -18,7 +18,7 @@ public partial class MainWindow
     // ================= Apps =================
     private void ShowApps()
     {
-        PageTitle.Text = "Apps";
+        PageTitle.Text = "Aplicativos";
         PageBadge.Visibility = Visibility.Collapsed;
         var root = new StackPanel();
         root.Children.Add(Tabs(new[] { (Glyphs.Lightning, "Otimizar apps"), (Glyphs.Delete, "Desinstalar") }, _appsTab, tab => { _appsTab = tab; ShowApps(); AnimatePageIn(); }));

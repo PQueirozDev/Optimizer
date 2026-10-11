@@ -7,7 +7,7 @@ using PQueirozOptimizer.Services;
 
 namespace PQueirozOptimizer;
 
-/// <summary>Códigos dos ícones da fonte Segoe Fluent Icons / Segoe MDL2 Assets.</summary>
+/// <summary>Códigos dos ícones da fonte Segoe Fluent Icons / Segoe MDL2 Assets (uma família só, sem emojis).</summary>
 public static class Glyphs
 {
     public static readonly string Home = G(0xE80F);
@@ -43,6 +43,9 @@ public static class Glyphs
     public static readonly string Maximize = G(0xE922);
     public static readonly string Restore = G(0xE923);
     public static readonly string ChevronRight = G(0xE76C);
+    public static readonly string ChevronDown = G(0xE70D);
+    public static readonly string ChevronUp = G(0xE70E);
+    public static readonly string ArrowUp = G(0xE74A);
     public static readonly string Power = G(0xE7E8);
     public static readonly string Cancel = G(0xE711);
     public static readonly string Battery = G(0xE83F);
@@ -55,6 +58,8 @@ public static class Glyphs
     public static readonly string Person = G(0xE77B);
     public static readonly string Globe = G(0xE774);
     public static readonly string Network = G(0xE968);
+    public static readonly string Wifi = G(0xE701);
+    public static readonly string Ethernet = G(0xE839);
     public static readonly string Play = G(0xE768);
     public static readonly string Pause = G(0xE769);
     public static readonly string Stop = G(0xE71A);
@@ -78,6 +83,19 @@ public static class Glyphs
     public static readonly string Upload = G(0xE898);
     public static readonly string Filter = G(0xE71C);
     public static readonly string Pin = G(0xE718);
+    public static readonly string Bell = G(0xEA8F);
+    public static readonly string Thermometer = G(0xE9CA);
+    public static readonly string Heart = G(0xEB51);
+    public static readonly string HeartPulse = G(0xE95E);
+    public static readonly string Devices = G(0xE772);
+    public static readonly string MyPc = G(0xE977);
+    public static readonly string Flask = G(0xF196);
+    public static readonly string AreaChart = G(0xE9D2);
+    public static readonly string Sliders = G(0xE9E9);
+    public static readonly string Palette = G(0xE790);
+    public static readonly string CloudDownload = G(0xEBD3);
+    public static readonly string Bug = G(0xEBE8);
+    public static readonly string Fire = G(0xECAD);
 
     private static string G(int code) => char.ConvertFromUtf32(code);
 }
@@ -126,11 +144,16 @@ public partial class MainWindow
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException) { _log.Write("WARN", "Não foi possível abrir a pasta: " + ex.Message); }
     }
 
+    // ===================================================================================================
+    // Design system: estas funções são a API visual das páginas. Elas leem os tokens do ThemeService, então
+    // mudar o visual aqui muda todas as telas de uma vez, sem cada página decidir cor, raio ou espaço.
+    // ===================================================================================================
+
     /// <summary>
-    /// Escala única de tipografia (11 · 12.5 · 14 · 18 · 24): qualquer tamanho pedido cai no degrau mais
-    /// próximo, para as páginas não misturarem uma dúzia de tamanhos quase iguais.
+    /// Escala única de tipografia (11 · 12 · 13 · 14 · 16 · 18 · 22 · 28): qualquer tamanho pedido cai no degrau
+    /// mais próximo, para as páginas não misturarem uma dúzia de tamanhos quase iguais.
     /// </summary>
-    private static double TypeScale(double size) => size switch { <= 11.5 => 11, <= 13 => 12.5, <= 16 => 14, <= 20 => 18, _ => 24 };
+    private static double TypeScale(double size) => size switch { <= 11.5 => 11, <= 12.5 => 12, <= 13 => 13, <= 15 => 14, <= 17 => 16, <= 20 => 18, <= 25 => 22, _ => 28 };
 
     private TextBlock Label(string text, double size = 13, bool muted = false)
     {
@@ -149,73 +172,141 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// Quadrado neutro com borda fina; só o ícone leva a cor do tom (roxo, ou a cor de um alerta),
-    /// sem o fundo colorido que deixava cada página com um arco-íris de quadradinhos.
+    /// Quadrado neutro com borda fina e o ícone na cor do tom (azul de destaque, ou a cor de um alerta),
+    /// sem fundo colorido: as páginas não viram um arco-íris de quadradinhos.
     /// </summary>
     private static Border IconChip(string glyph, string tone = "Accent", double size = 40)
     {
-        var chip = new Border { Width = size, Height = size, CornerRadius = new CornerRadius(size * 0.26), BorderThickness = new Thickness(1), Child = GlyphIcon(glyph, size * 0.42, tone + "Brush") };
+        var chip = new Border { Width = size, Height = size, CornerRadius = new CornerRadius(size * 0.28), BorderThickness = new Thickness(1), Child = GlyphIcon(glyph, size * 0.42, tone + "Brush") };
         chip.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
-        chip.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
+        chip.SetResourceReference(Border.BorderBrushProperty, "BorderSubtleBrush");
         return chip;
     }
 
-    /// <summary>
-    /// Quadrado neutro com borda fina e ícone vetorial na cor do texto; os cartões principais
-    /// recebem o ícone no roxo de destaque.
-    /// </summary>
+    /// <summary>Quadrado neutro com ícone vetorial na cor do texto; os cartões principais recebem o ícone no azul.</summary>
     private static Border OutlineChip(VectorIcon icon, double size = 42, bool primary = false)
     {
-        var chip = new Border { Width = size, Height = size, CornerRadius = new CornerRadius(size * 0.26), BorderThickness = new Thickness(1), Child = OptimizationIcons.Render(icon, size * 0.52, primary ? "AccentBrush" : "TextBrush") };
+        var chip = new Border { Width = size, Height = size, CornerRadius = new CornerRadius(size * 0.28), BorderThickness = new Thickness(1), Child = OptimizationIcons.Render(icon, size * 0.52, primary ? "AccentBrush" : "TextBrush") };
         chip.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
-        chip.SetResourceReference(Border.BorderBrushProperty, primary ? "AccentSoftBrush" : "BorderBrush");
+        chip.SetResourceReference(Border.BorderBrushProperty, primary ? "SecondaryBorderBrush" : "BorderSubtleBrush");
         return chip;
     }
 
+    /// <summary>Selo (QrzBadge): texto curto no tom pedido sobre o mesmo tom translúcido.</summary>
     private static Border Pill(string text, string tone = "Accent")
     {
         var label = new TextBlock { Text = text, FontSize = 11, FontWeight = FontWeights.SemiBold };
-        label.SetResourceReference(TextBlock.ForegroundProperty, tone + "Brush");
-        var pill = new Border { CornerRadius = new CornerRadius(9), Padding = new Thickness(9, 3, 9, 3), Child = label, VerticalAlignment = VerticalAlignment.Center, BorderThickness = new Thickness(1) };
+        label.SetResourceReference(TextBlock.ForegroundProperty, tone == "Accent" ? "AccentTextBrush" : tone + "Brush");
+        var pill = new Border { CornerRadius = new CornerRadius(8), Padding = new Thickness(8, 3, 8, 3), Child = label, VerticalAlignment = VerticalAlignment.Center, BorderThickness = new Thickness(1) };
         pill.SetResourceReference(Border.BackgroundProperty, tone + "SoftBrush");
         pill.SetResourceReference(Border.BorderBrushProperty, tone + "SoftBrush");
         return pill;
     }
 
-
+    /// <summary>Card (QrzCard): superfície com leve gradiente, borda fina e cantos de 16 px; sem sombra.</summary>
     private Border Surface(UIElement content)
     {
-        // Painel plano: borda fina e sem sombra; o cartão não reage ao mouse porque não é clicável
-        var border = new Border { Child = content, Padding = AppearanceService.CardPadding, CornerRadius = new CornerRadius(14), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, AppearanceService.Space(16)) };
+        var border = new Border { Child = content, Padding = AppearanceService.CardPadding, CornerRadius = new CornerRadius(16), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, AppearanceService.Space(16)) };
         border.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
         border.SetResourceReference(Border.BorderBrushProperty, "CardBorderBrush");
         return border;
     }
 
+    /// <summary>Caixa interna mais escura dentro de um card (gráficos "ao vivo", listas, valores agrupados).</summary>
+    private static Border Inset(UIElement content, double padding = 12)
+    {
+        var box = new Border { Child = content, Padding = new Thickness(padding), CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1) };
+        box.SetResourceReference(Border.BackgroundProperty, "CardInsetBrush");
+        box.SetResourceReference(Border.BorderBrushProperty, "BorderSubtleBrush");
+        return box;
+    }
+
     private void Primary(Button button)
     {
         button.SetResourceReference(StyleProperty, "PrimaryButton");
-        button.SetResourceReference(Button.BackgroundProperty, "AccentBrush");
-        button.BorderBrush = Brushes.Transparent;
-        button.SetResourceReference(Button.ForegroundProperty, "OnAccentBrush");
+        button.ClearValue(Button.BackgroundProperty);
+        button.ClearValue(Button.BorderBrushProperty);
+        button.ClearValue(Button.ForegroundProperty);
     }
 
-    /// <summary>Botão com ícone à esquerda do texto.</summary>
+    /// <summary>Botão com ícone à esquerda do texto (QrzButton). Principal = claro; neutro = ícone azul.</summary>
     private static Button IconButton(string glyph, string text, bool primary = false)
     {
         var content = new StackPanel { Orientation = Orientation.Horizontal };
-        var icon = GlyphIcon(glyph, 13, primary ? "OnAccentBrush" : "AccentBrush");
+        var icon = GlyphIcon(glyph, 13, primary ? "OnPrimaryBrush" : "AccentBrush");
         icon.Margin = new Thickness(0, 0, 8, 0);
         content.Children.Add(icon);
         content.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center, Foreground = null });
         // Centralizado: em linhas com texto de várias linhas o botão não estica na altura
         var button = new Button { Content = content, VerticalAlignment = VerticalAlignment.Center };
         ((TextBlock)content.Children[1]).SetBinding(TextBlock.ForegroundProperty, new System.Windows.Data.Binding(nameof(Button.Foreground)) { Source = button });
-        if (primary)
-        {
-            button.SetResourceReference(StyleProperty, "PrimaryButton");
-        }
+        if (primary) button.SetResourceReference(StyleProperty, "PrimaryButton");
         return button;
+    }
+
+    /// <summary>Botão secundário (azul translúcido) com ícone, como o "Run Full Optimization" da referência.</summary>
+    private static Button SecondaryButton(string glyph, string text)
+    {
+        var button = IconButton(glyph, text);
+        button.SetResourceReference(StyleProperty, "SecondaryButton");
+        if (button.Content is StackPanel { Children: [TextBlock icon, ..] }) icon.SetResourceReference(TextBlock.ForegroundProperty, "OnSecondaryBrush");
+        return button;
+    }
+
+    /// <summary>Botão compacto "Texto ›" dos cards de acesso rápido.</summary>
+    private static Button ChevronButton(string text, bool primary = false)
+    {
+        var content = new StackPanel { Orientation = Orientation.Horizontal };
+        var label = new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center };
+        content.Children.Add(label);
+        var arrow = GlyphIcon(Glyphs.ChevronRight, 9, primary ? "OnPrimaryBrush" : "TextBrush");
+        arrow.Margin = new Thickness(10, 1, 0, 0);
+        content.Children.Add(arrow);
+        var button = new Button { Content = content, Padding = new Thickness(16, 8, 14, 8), Margin = new Thickness(0), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center };
+        label.SetBinding(TextBlock.ForegroundProperty, new System.Windows.Data.Binding(nameof(Button.Foreground)) { Source = button });
+        if (primary) button.SetResourceReference(StyleProperty, "PrimaryButton");
+        else button.SetResourceReference(Button.BackgroundProperty, "CardElevatedBrush");
+        return button;
+    }
+
+    /// <summary>Bolinha de estado (verde/amarelo/vermelho/cinza). O estado sempre vem acompanhado de texto.</summary>
+    private static Ellipse StatusDot(string tone, double size = 8)
+    {
+        var dot = new Ellipse { Width = size, Height = size, VerticalAlignment = VerticalAlignment.Center };
+        dot.SetResourceReference(Shape.FillProperty, tone + "Brush");
+        return dot;
+    }
+
+    /// <summary>Linha de detalhe da referência: ícone e rótulo discretos à esquerda, valor à direita.</summary>
+    private static DockPanel DetailRow(string glyph, string label, string value, string valueBrush = "TextBrush", bool systemValue = true)
+    {
+        var row = new DockPanel { Margin = new Thickness(0, 0, 0, 9) };
+        var v = new TextBlock { Text = value, FontSize = 12.5, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 220, ToolTip = value };
+        if (systemValue) v.Tag = Translator.SystemDataTag;
+        v.SetResourceReference(TextBlock.ForegroundProperty, valueBrush);
+        DockPanel.SetDock(v, Dock.Right); row.Children.Add(v);
+        var icon = GlyphIcon(glyph, 12, "MutedBrush"); icon.Margin = new Thickness(0, 0, 9, 0); icon.Width = 14;
+        row.Children.Add(icon);
+        var l = new TextBlock { Text = label, FontSize = 12.5, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
+        l.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+        row.Children.Add(l);
+        return row;
+    }
+
+    /// <summary>Estado vazio (QrzEmptyState): ícone, título, explicação e uma ação opcional.</summary>
+    private Border EmptyState(string glyph, string title, string text, Button? action = null)
+    {
+        var stack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, MaxWidth = 460, Margin = new Thickness(0, 12, 0, 12) };
+        var chip = IconChip(glyph, "Accent", 46); chip.Margin = new Thickness(0, 0, 0, 14); chip.HorizontalAlignment = HorizontalAlignment.Center;
+        stack.Children.Add(chip);
+        var t = new TextBlock { Text = title, FontSize = 16, FontWeight = FontWeights.SemiBold, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap };
+        t.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+        stack.Children.Add(t);
+        var d = new TextBlock { Text = text, FontSize = 12.5, Margin = new Thickness(0, 6, 0, 0), TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap };
+        d.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+        stack.Children.Add(d);
+        if (action != null) { action.Margin = new Thickness(0, 16, 0, 0); action.HorizontalAlignment = HorizontalAlignment.Center; stack.Children.Add(action); }
+        return Surface(stack);
     }
 
     /// <summary>Cartão de estatística: ícone, rótulo discreto e valor em destaque.</summary>
@@ -240,7 +331,7 @@ public partial class MainWindow
         Grid.SetColumn(text, 1);
         grid.Children.Add(text);
 
-        var card = new Border { Padding = new Thickness(AppearanceService.Space(15) * scale), CornerRadius = new CornerRadius(14), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 14, AppearanceService.Space(14)), Child = grid };
+        var card = new Border { Padding = new Thickness(AppearanceService.Space(16) * scale), CornerRadius = new CornerRadius(14), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 14, AppearanceService.Space(14)), Child = grid };
         card.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
         card.SetResourceReference(Border.BorderBrushProperty, "CardBorderBrush");
         return card;
@@ -251,11 +342,12 @@ public partial class MainWindow
     {
         value = Math.Clamp(value, 0, 100);
         var grid = new Grid { Width = size, Height = size };
-        var track = new Ellipse { StrokeThickness = 10 };
+        var thickness = Math.Max(6, size * 0.07);
+        var track = new Ellipse { StrokeThickness = thickness };
         track.SetResourceReference(Shape.StrokeProperty, "BorderBrush");
         grid.Children.Add(track);
 
-        var radius = (size - 10) / 2;
+        var radius = (size - thickness) / 2;
         var angle = value / 100 * 359.99;
         var center = new Point(size / 2, size / 2);
         Point At(double degrees)
@@ -265,13 +357,13 @@ public partial class MainWindow
         }
         var figure = new PathFigure { StartPoint = At(0), IsClosed = false };
         figure.Segments.Add(new ArcSegment(At(angle), new Size(radius, radius), 0, angle > 180, SweepDirection.Clockwise, true));
-        var arc = new Path { Data = new PathGeometry(new[] { figure }), StrokeThickness = 10, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round };
+        var arc = new Path { Data = new PathGeometry(new[] { figure }), StrokeThickness = thickness, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round };
         arc.SetResourceReference(Shape.StrokeProperty, "AccentGradientBrush");
         // O arco "se desenha" ao aparecer: o traço tracejado começa escondido e é revelado
         var dash = radius * angle * Math.PI / 180 / arc.StrokeThickness + 1;
         arc.StrokeDashArray = new DoubleCollection { dash, dash };
         if (Application.Current?.MainWindow is { IsVisible: true } && AppearanceService.AnimationsEnabled)
-            arc.BeginAnimation(Shape.StrokeDashOffsetProperty, new System.Windows.Media.Animation.DoubleAnimation(dash, 0, TimeSpan.FromMilliseconds(1100))
+            arc.BeginAnimation(Shape.StrokeDashOffsetProperty, new System.Windows.Media.Animation.DoubleAnimation(dash, 0, TimeSpan.FromMilliseconds(700))
         { EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut } });
         grid.Children.Add(arc);
 
@@ -280,21 +372,22 @@ public partial class MainWindow
         number.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
         var small = new TextBlock { Text = caption, FontSize = 11, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Center };
         small.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
-        labels.Children.Add(number); labels.Children.Add(small);
+        labels.Children.Add(number); if (!string.IsNullOrEmpty(caption)) labels.Children.Add(small);
         grid.Children.Add(labels);
         return grid;
     }
 
-    /// <summary>Cabeçalho de seção com ícone e subtítulo opcional.</summary>
+    /// <summary>Cabeçalho de seção (QrzSectionHeader): título e subtítulo opcional.</summary>
     private StackPanel SectionHeader(string title, string? subtitle = null)
     {
-        var panel = new StackPanel { Margin = new Thickness(0, 8, 0, 12) };
-        var t = new TextBlock { Text = title, FontSize = 18, FontWeight = FontWeights.SemiBold };
+        var panel = new StackPanel { Margin = new Thickness(0, 4, 0, 14) };
+        var t = new TextBlock { Text = title, FontSize = 18, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
+        t.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
         t.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
         panel.Children.Add(t);
         if (!string.IsNullOrWhiteSpace(subtitle))
         {
-            var s = new TextBlock { Text = subtitle, FontSize = 12.5, Margin = new Thickness(0, 3, 0, 0), TextWrapping = TextWrapping.Wrap };
+            var s = new TextBlock { Text = subtitle, FontSize = 12.5, Margin = new Thickness(0, 4, 0, 0), TextWrapping = TextWrapping.Wrap };
             s.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
             panel.Children.Add(s);
         }

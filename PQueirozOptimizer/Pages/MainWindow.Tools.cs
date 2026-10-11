@@ -16,7 +16,7 @@ public partial class MainWindow
     #region Tools Page (Including "Barra de tarefas all black")
     private void ShowTools()
     {
-        PageTitle.Text = "Ferramentas";
+        PageTitle.Text = "Utilitários";
         PageBadge.Visibility = Visibility.Collapsed;
         var root = new StackPanel();
         var featured = Responsive(new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, -14, 0) }, 360, 2);

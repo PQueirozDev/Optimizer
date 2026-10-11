@@ -22,7 +22,7 @@ public partial class MainWindow
 
     private void ShowBiosAdvisor()
     {
-        PageTitle.Text = "BIOS Advisor"; PageBadge.Visibility = Visibility.Collapsed;
+        PageTitle.Text = "Assistente de BIOS"; PageBadge.Visibility = Visibility.Collapsed;
         var root = new StackPanel();
         ContentHost.Children.Clear(); ContentHost.Children.Add(root);
         root.Children.Add(AdvisorHero());

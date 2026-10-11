@@ -449,6 +449,7 @@ internal static class Program
             if (args.Contains("--tour")) return Media.Tour(root);
             if (args.Contains("--switches")) return Switches();
             if (args.Contains("--videoshots")) return Media.VideoShots(root);
+            if (args.Contains("--ui")) return UiShots.Run(root, args);
             RecoveryTests.Run();
             SafetyTests.Run(Path.Combine(root, "safety"));
             V2Tests.Run(Path.Combine(root, "v2"));

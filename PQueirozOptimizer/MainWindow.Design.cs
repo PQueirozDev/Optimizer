@@ -15,48 +15,51 @@ namespace PQueirozOptimizer;
 public partial class MainWindow
 {
     // ================= Cabeçalho de cada página =================
+    // Linha discreta acima do título = categoria da barra lateral (no Início, o nome do computador)
     private static readonly Dictionary<string, (string Eyebrow, string Glyph, string Subtitle)> PageHeaders = new()
     {
-        ["dashboard"] = ("MONITORAR", Glyphs.Home, "Saúde, desempenho e atividade do seu PC em tempo real."),
-        ["perflab"] = ("MONITORAR", Glyphs.Speed, "FPS, frametime e sensores reais, histórico e comparação antes/depois."),
-        ["profiles"] = ("JOGOS E REDE", Glyphs.Person, "Perfis por jogo ou uso, com ativação automática do Modo Jogo."),
-        ["smart"] = ("OTIMIZAÇÕES", Glyphs.Lightning, "Análise do PC e ajustes recomendados pelo objetivo, com risco e reversão."),
-        ["restore"] = ("MANUTENÇÃO", Glyphs.Restore2, "Crie e restaure pontos de restauração para proteger o sistema."),
-        ["resources"] = ("MANUTENÇÃO", Glyphs.Library, "Automação, atalhos, downloads e testes para preparar qualquer PC."),
-        ["fixes"] = ("MANUTENÇÃO", Glyphs.Repair, "Correções rápidas para problemas comuns do Windows."),
-        ["services"] = ("OTIMIZAÇÕES", Glyphs.Services, "Desligue serviços e tarefas em segundo plano para liberar o sistema."),
-        ["apps"] = ("OTIMIZAÇÕES", Glyphs.Apps, "Ajuste Discord, navegadores e outros apps e remova o que não usa."),
-        ["optimization"] = ("OTIMIZAÇÕES", Glyphs.Lightning, "Ajustes revisados item por item, com backup e reversão."),
-        ["startup"] = ("OTIMIZAÇÕES", Glyphs.Power, "Programas, tarefas e serviços que iniciam com o Windows."),
-        ["drivers"] = ("OTIMIZAÇÕES", Glyphs.Monitor, "Drivers oficiais, instalação limpa com DDU e utilitários."),
-        ["isos"] = ("OTIMIZAÇÕES", Glyphs.Disc, "Imagens personalizadas do Windows."),
-        ["tools"] = ("OTIMIZAÇÕES", Glyphs.Repair, "Atalhos e utilitários do dia a dia."),
-        ["customize"] = ("OTIMIZAÇÕES", Glyphs.Personalize, "Barra de tarefas, Explorador, área de trabalho e outras preferências do Windows."),
-        ["history"] = ("OTIMIZAÇÕES", Glyphs.History, "Tudo o que foi feito e como desfazer."),
-        ["diagnostics"] = ("MANUTENÇÃO", Glyphs.Diagnostic, "Uma leitura guiada dos principais componentes do Windows."),
-        ["gaming"] = ("JOGOS E REDE", Glyphs.Game, "Sessão de jogo, perfis, NVIDIA, configurações dos jogos e Defender."),
-        ["network"] = ("JOGOS E REDE", Glyphs.Network, "Velocidade, DNS, latência e reparos de conexão."),
-        ["settings"] = ("SISTEMA", Glyphs.Settings, "Perfis, tema, idioma, licença e atualizações."),
-        ["bios"] = ("SISTEMA", Glyphs.Chip, "Editor de BIOS pelo SCEWIN e ajustes recomendados."),
-        ["biosadvisor"] = ("SISTEMA", Glyphs.Diagnostic, "Análise do hardware e recomendações de BIOS, sem alterar nada automaticamente."),
-        ["patchnotes"] = ("SISTEMA", Glyphs.Document, "Novidades de cada versão."),
-        ["about"] = ("SISTEMA", Glyphs.Info, "Sobre o Qrztweaks."),
+        ["dashboard"] = ("Principal", Glyphs.Home, "Visão geral do desempenho e da saúde do seu computador."),
+        ["mypc"] = ("Principal", Glyphs.MyPc, "Hardware, sistema e estado do seu computador, lidos agora."),
+        ["perflab"] = ("Desempenho", Glyphs.Flask, "FPS, tempo de quadro e sensores reais, com histórico e comparação antes e depois."),
+        ["profiles"] = ("Desempenho", Glyphs.Person, "Perfis por jogo ou uso, com ativação automática do Modo Jogo."),
+        ["smart"] = ("Otimização", Glyphs.Lightning, "Análise do PC e ajustes recomendados pelo objetivo, com risco e reversão."),
+        ["restore"] = ("Ferramentas", Glyphs.Restore2, "Crie e restaure pontos de restauração para proteger o sistema."),
+        ["resources"] = ("Ferramentas", Glyphs.Library, "Automação, atalhos, downloads e testes para preparar qualquer PC."),
+        ["fixes"] = ("Ferramentas", Glyphs.Repair, "Correções rápidas para problemas comuns do Windows."),
+        ["services"] = ("Otimização", Glyphs.Services, "Desligue serviços e tarefas em segundo plano para liberar o sistema."),
+        ["apps"] = ("Otimização", Glyphs.Apps, "Ajuste Discord, navegadores e outros aplicativos e remova o que não usa."),
+        ["optimization"] = ("Otimização", Glyphs.Sliders, "Ajustes revisados item por item, com backup e reversão."),
+        ["startup"] = ("Otimização", Glyphs.Power, "Programas, tarefas e serviços que iniciam com o Windows."),
+        ["drivers"] = ("Otimização", Glyphs.Devices, "Drivers oficiais, instalação limpa com DDU e utilitários."),
+        ["isos"] = ("Otimização", Glyphs.Disc, "Imagens personalizadas do Windows."),
+        ["tools"] = ("Ferramentas", Glyphs.Settings, "Atalhos e utilitários do dia a dia."),
+        ["customize"] = ("Otimização", Glyphs.Personalize, "Barra de tarefas, Explorador, área de trabalho e outras preferências do Windows."),
+        ["history"] = ("Ferramentas", Glyphs.History, "Tudo o que foi feito e como desfazer."),
+        ["diagnostics"] = ("Ferramentas", Glyphs.Diagnostic, "Uma leitura guiada dos principais componentes do Windows."),
+        ["gaming"] = ("Desempenho", Glyphs.Game, "Sessão de jogo, perfis, NVIDIA, configurações dos jogos e Defender."),
+        ["network"] = ("Desempenho", Glyphs.Network, "Velocidade, DNS, latência e reparos de conexão."),
+        ["settings"] = ("Sistema", Glyphs.Settings, "Aparência, licença, idioma, tutoriais e atualizações."),
+        ["bios"] = ("Ferramentas", Glyphs.Chip, "Editor de BIOS pelo SCEWIN e ajustes recomendados."),
+        ["biosadvisor"] = ("Ferramentas", Glyphs.Diagnostic, "Análise do hardware e recomendações de BIOS, sem alterar nada automaticamente."),
+        ["patchnotes"] = ("Sistema", Glyphs.Document, "Novidades de cada versão."),
+        ["about"] = ("Sistema", Glyphs.Info, "Sobre o Qrztweaks."),
     };
 
     private void UpdatePageHeader(string page)
     {
+        PageActions.Children.Clear();
         if (!PageHeaders.TryGetValue(page, out var header)) return;
         PageEyebrow.Text = header.Eyebrow;
-        PageIcon.Text = header.Glyph;
         PageSubtitle.Text = header.Subtitle;
-        // O ícone "pulsa" ao trocar de página
-        if (!AppearanceService.AnimationsEnabled) { PageIconChip.RenderTransform = null; return; }
-        var scale = new ScaleTransform(0.85, 0.85);
-        PageIconChip.RenderTransformOrigin = new Point(0.5, 0.5);
-        PageIconChip.RenderTransform = scale;
-        var pop = new DoubleAnimation(0.85, 1, TimeSpan.FromMilliseconds(320)) { EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.4 } };
-        scale.BeginAnimation(ScaleTransform.ScaleXProperty, pop);
-        scale.BeginAnimation(ScaleTransform.ScaleYProperty, pop);
+        // Título e subtítulo entram com um leve deslize (160 ms); sem animação, trocam direto
+        if (!AppearanceService.AnimationsEnabled || !IsLoaded) return;
+        foreach (var part in new FrameworkElement[] { PageEyebrow, PageTitle, PageSubtitle })
+        {
+            var slide = new TranslateTransform(0, 4);
+            part.RenderTransform = slide;
+            part.BeginAnimation(OpacityProperty, new DoubleAnimation(0.35, 1, TimeSpan.FromMilliseconds(160)));
+            slide.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(4, 0, TimeSpan.FromMilliseconds(160)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+        }
     }
 
     // ================= Notificações =================
@@ -112,10 +115,10 @@ public partial class MainWindow
         {
             var index = i;
             var content = new StackPanel { Orientation = Orientation.Horizontal };
-            var icon = GlyphIcon(tabs[i].Glyph, 13, i == selected ? "OnAccentBrush" : "MutedBrush"); icon.Margin = new Thickness(0, 0, 8, 0);
+            var icon = GlyphIcon(tabs[i].Glyph, 13, i == selected ? "OnPrimaryBrush" : "MutedBrush"); icon.Margin = new Thickness(0, 0, 8, 0);
             content.Children.Add(icon);
             var label = new TextBlock { Text = tabs[i].Title, FontSize = 12.5, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
-            label.SetResourceReference(TextBlock.ForegroundProperty, i == selected ? "OnAccentBrush" : "MutedBrush");
+            label.SetResourceReference(TextBlock.ForegroundProperty, i == selected ? "OnPrimaryBrush" : "MutedBrush");
             content.Children.Add(label);
             var button = new Button { Content = content, Padding = new Thickness(16, 8, 16, 8), Margin = new Thickness(0, 0, 4, 0), BorderThickness = new Thickness(0) };
             if (i == selected) button.SetResourceReference(StyleProperty, "PrimaryButton");
@@ -137,25 +140,26 @@ public partial class MainWindow
 
     private List<PaletteEntry> PaletteEntries() => _palette ??= new List<PaletteEntry>
     {
-        new("Command Center", "Monitorar", Glyphs.Home, "dashboard inicio painel saude monitor visao geral", () => NavigateTo("dashboard")),
-        new("Performance Lab", "Monitorar", Glyphs.Speed, "fps frametime benchmark presentmon teste comparar 1% low", () => NavigateTo("perflab")),
-        new("Perfis", "Jogos e rede", Glyphs.Person, "perfil valorant cs2 fortnite streaming importar exportar automatico", () => NavigateTo("profiles")),
-        new("Smart Optimize", "Otimizações", Glyphs.Lightning, "inteligente recomendacoes objetivo analise perfil gaming notebook programacao", () => NavigateTo("smart")),
-        new("Optimization Lab", "Monitorar", Glyphs.Diagnostic, "experimento medir ajuste antes depois", () => { _perfTab = "lab"; NavigateTo("perflab"); }),
-        new("Modo compacto", "Monitorar", Glyphs.Pin, "hud segundo monitor janela pequena compacto", OpenCompactMonitor),
-        new("Otimizações", "Otimizações", Glyphs.Lightning, "ajustes perfil", () => NavigateTo("optimization")),
-        new("Versão Padrão", "Otimizações", Glyphs.Speed, "otimizar padrao basico", () => _ = PrepareOperationAsync("padrao")),
-        new("Versão Avançada (jogos)", "Otimizações", Glyphs.Game, "gamer latencia fps avancada", () => _ = PrepareOperationAsync("gamer")),
-        new("Debloat e privacidade", "Otimizações", Glyphs.Shield, "remover apps telemetria privacidade bloat", () => _ = PrepareOperationAsync("debloat")),
-        new("Limpeza rápida", "Otimizações", Glyphs.Broom, "limpar temporarios cache lixo", () => _ = PrepareOperationAsync("quickclean")),
-        new("Diagnóstico do PC", "Otimizações", Glyphs.Diagnostic, "analisar analise saude dpc temperatura", () => _ = PrepareOperationAsync("analisar")),
-        new("Inicialização", "Otimizações", Glyphs.Power, "startup autoruns programas servicos tarefas", () => NavigateTo("startup")),
-        new("Drivers", "Otimizações", Glyphs.Monitor, "driver nvidia amd intel chipset", () => NavigateTo("drivers")),
+        new("Início", "Principal", Glyphs.Home, "dashboard inicio home painel saude monitor visao geral command center", () => NavigateTo("dashboard")),
+        new("Meu PC", "Principal", Glyphs.MyPc, "hardware processador placa de video memoria armazenamento placa mae bios sistema especificacoes", () => NavigateTo("mypc")),
+        new("Laboratório de desempenho", "Desempenho", Glyphs.Flask, "fps frametime tempo de quadro benchmark presentmon teste comparar 1% low performance lab", () => NavigateTo("perflab")),
+        new("Perfis", "Desempenho", Glyphs.Person, "perfil valorant cs2 fortnite streaming importar exportar automatico", () => NavigateTo("profiles")),
+        new("Otimização inteligente", "Otimização", Glyphs.Lightning, "inteligente smart optimize recomendacoes objetivo analise perfil gaming notebook programacao", () => NavigateTo("smart")),
+        new("Laboratório de otimização", "Desempenho", Glyphs.Diagnostic, "experimento medir ajuste antes depois optimization lab", () => { _perfTab = "lab"; NavigateTo("perflab"); }),
+        new("Modo compacto", "Desempenho", Glyphs.Pin, "hud segundo monitor janela pequena compacto", OpenCompactMonitor),
+        new("Otimizações", "Otimização", Glyphs.Sliders, "ajustes perfil", () => NavigateTo("optimization")),
+        new("Versão Padrão", "Otimização", Glyphs.Speed, "otimizar padrao basico", () => _ = PrepareOperationAsync("padrao")),
+        new("Versão Avançada (jogos)", "Otimização", Glyphs.Game, "gamer latencia fps avancada", () => _ = PrepareOperationAsync("gamer")),
+        new("Remoção de aplicativos e privacidade", "Otimização", Glyphs.Shield, "debloat remover apps aplicativos telemetria privacidade bloat", () => _ = PrepareOperationAsync("debloat")),
+        new("Limpeza rápida", "Otimização", Glyphs.Broom, "limpar temporarios cache lixo", () => _ = PrepareOperationAsync("quickclean")),
+        new("Diagnóstico do PC", "Ferramentas", Glyphs.Diagnostic, "analisar analise saude dpc temperatura", () => _ = PrepareOperationAsync("analisar")),
+        new("Inicialização", "Otimização", Glyphs.Power, "startup autoruns programas servicos tarefas", () => NavigateTo("startup")),
+        new("Drivers", "Otimização", Glyphs.Devices, "driver nvidia amd intel chipset", () => NavigateTo("drivers")),
         new("Instalação limpa de driver (DDU)", "Drivers", Glyphs.Refresh, "ddu display driver uninstaller limpa reinstalar", () => NavigateTo("drivers")),
-        new("Ferramentas", "Otimizações", Glyphs.Repair, "utilitarios atalhos all black barra", () => NavigateTo("tools")),
-        new("Personalizar Windows", "Otimizações", Glyphs.Personalize, "barra de tarefas esquerda relogio segundos extensoes ocultos menu contexto classico num lock area de trabalho icones mouse aceleracao teclas aderencia finalizar tarefa", () => NavigateTo("customize")),
-        new("Atividade e reversão", "Otimizações", Glyphs.History, "historico reverter desfazer backup log", () => NavigateTo("history")),
-        new("Modo Jogo", "Jogos e Rede", Glyphs.Game, "sessao game mode fechar programas pausar servicos ascension", () => OpenGamingTab(0)),
+        new("Utilitários", "Ferramentas", Glyphs.Settings, "ferramentas utilitarios atalhos all black barra", () => NavigateTo("tools")),
+        new("Personalizar Windows", "Otimização", Glyphs.Personalize, "barra de tarefas esquerda relogio segundos extensoes ocultos menu contexto classico num lock area de trabalho icones mouse aceleracao teclas aderencia finalizar tarefa", () => NavigateTo("customize")),
+        new("Histórico", "Ferramentas", Glyphs.History, "historico atividade reverter desfazer backup log", () => NavigateTo("history")),
+        new("Modo Jogo", "Desempenho", Glyphs.Game, "sessao game mode fechar programas pausar servicos ascension", () => OpenGamingTab(0)),
         new("Plano de energia Qrz", "Jogos e Rede", Glyphs.Battery, "energia power plan qrz latencia", () => OpenGamingTab(3)),
         new("Perfis de jogos", "Jogos e Rede", Glyphs.Game, "perfil exe gpu prioridade tela cheia", () => OpenGamingTab(1)),
         new("Configurações dos jogos", "Jogos e Rede", Glyphs.Settings, "fortnite apex cs2 rocket league preset competitivo ini", () => OpenGamingTab(1)),
@@ -163,13 +167,15 @@ public partial class MainWindow
         new("Windows Defender", "Jogos e Rede", Glyphs.Shield, "antivirus defender exclusao protecao tempo real", () => OpenGamingTab(3)),
         new("Runtimes para jogos", "Jogos e Rede", Glyphs.Package, "visual c++ directx net xna redistribuivel dll", () => OpenGamingTab(1)),
         new("Memória em espera", "Jogos e Rede", Glyphs.Memory, "ram standby islc liberar memoria", () => OpenGamingTab(3)),
-        new("Rede", "Jogos e Rede", Glyphs.Network, "internet conexao", () => NavigateTo("network")),
+        new("Rede", "Desempenho", Glyphs.Network, "internet conexao", () => NavigateTo("network")),
         new("Teste de velocidade", "Rede", Glyphs.Speed, "speedtest ping jitter download upload", () => NavigateTo("network")),
         new("Servidor DNS", "Rede", Glyphs.Globe, "dns cloudflare google quad9", () => NavigateTo("network")),
-        new("Configurações", "Sistema", Glyphs.Settings, "tema idioma licenca atualizacao perfil", () => NavigateTo("settings")),
-        new("Editor de BIOS", "Sistema", Glyphs.Chip, "bios uefi scewin amisce rebar 4g xmp", () => NavigateTo("bios")),
-        new("BIOS Advisor", "Sistema", Glyphs.Diagnostic, "bios advisor assistente recomendacoes xmp turbo speed shift pl1 pl2 pbo resizable bar score benchmark fps", () => NavigateTo("biosadvisor")),
-        new("Patch notes", "Sistema", Glyphs.Document, "novidades versao changelog", () => NavigateTo("patchnotes")),
+        new("Configurações", "Sistema", Glyphs.Settings, "tema idioma licenca atualizacao perfil aparencia", () => NavigateTo("settings")),
+        new("Licença", "Sistema", Glyphs.Key, "licenca chave plano ativar renovar upgrade", () => NavigateTo("admin")),
+        new("Atualizações", "Sistema", Glyphs.CloudDownload, "atualizacao atualizar versao nova update", () => NavigateTo("updates")),
+        new("Editor de BIOS", "Ferramentas", Glyphs.Chip, "bios uefi scewin amisce rebar 4g xmp", () => NavigateTo("bios")),
+        new("Assistente de BIOS", "Ferramentas", Glyphs.Diagnostic, "bios advisor assistente recomendacoes xmp turbo speed shift pl1 pl2 pbo resizable bar pontuacao benchmark fps", () => NavigateTo("biosadvisor")),
+        new("Novidades", "Sistema", Glyphs.Document, "novidades versao changelog patch notes", () => NavigateTo("patchnotes")),
         new("Sobre", "Sistema", Glyphs.Info, "autor contato discord", () => NavigateTo("about")),
     };
 

@@ -22,15 +22,17 @@ public static class ThemeService
     private sealed record Palette(string Background, string Sidebar, string Panel, string PanelHover, string Card, string Border, string BorderSubtle,
         string Text, string TextSecondary, string Muted, string Success, string Warning, string Danger, string Shadow);
 
-    private static readonly Palette Dark = new("#07080C", "#F20A0B11", "#10121A", "#181B25", "#F20E1017", "#262B3A", "#181C27",
-        "#F2F4FA", "#BFC5D4", "#8A91A6", "#34D399", "#FBBF24", "#F87171", "#000000");
+    // Azul meia-noite (padrão): preto quase neutro, texto branco e o azul como destaque
+    private static readonly Palette Dark = new("#07080B", "#F20A0B0F", "#111318", "#181B22", "#F20F1116", "#23262E", "#1A1C22",
+        "#F4F6FA", "#C1C7D2", "#8A92A1", "#34D399", "#FBBF24", "#F87171", "#000000");
 
     // OLED: preto puro no fundo; superfícies quase pretas para continuar havendo separação entre os blocos
     private static readonly Palette Oled = new("#000000", "#FF000000", "#0A0A0E", "#14141B", "#FF050507", "#22222C", "#131319",
         "#F2F4FA", "#BFC5D4", "#8A91A6", "#34D399", "#FBBF24", "#F87171", "#000000");
 
-    private static readonly Palette Light = new("#F3F4F9", "#F7FFFFFF", "#F6F6FB", "#ECEDF5", "#FFFFFFFF", "#D8DBE8", "#E7E9F2",
-        "#0D1120", "#3B4258", "#5D6580", "#059669", "#C26A05", "#DC2626", "#5B6488");
+    // Claro: branco, texto quase preto e o mesmo azul
+    private static readonly Palette Light = new("#F3F5F9", "#F7FFFFFF", "#F4F6FA", "#EAEDF3", "#FFFFFFFF", "#D9DEE7", "#E6E9F0",
+        "#0A0D14", "#353C4A", "#5C6576", "#059669", "#C26A05", "#DC2626", "#5B6488");
 
     // Grafite: cinza neutro, sem o tom azulado do Escuro
     private static readonly Palette Graphite = new("#0E0F11", "#F2131417", "#17181B", "#202226", "#F2151619", "#2C2E33", "#1F2125",
@@ -52,7 +54,7 @@ public static class ThemeService
     private static readonly Palette Plum = new("#140A16", "#F21A0E1D", "#22132A", "#2D1A36", "#F21D1023", "#45294F", "#301C38",
         "#F7F1F8", "#D2C3D6", "#9C8BA3", "#34D399", "#FBBF24", "#FB7185", "#000000");
 
-    // Meia-noite: a paleta do Qrztweaks 2.0 (fundo #101016, cards #1C1A25, texto #F5F3FF, verde #22C55E, amarelo #F59E0B)
+    // Roxo meia-noite: a paleta roxa do Qrztweaks 2.0 (fundo #101016, cards #1C1A25, texto #F5F3FF, verde #22C55E, amarelo #F59E0B)
     private static readonly Palette Midnight = new("#101016", "#F213121A", "#17151F", "#211E2C", "#F21C1A25", "#2E2A3B", "#24212F",
         "#F5F3FF", "#CFC8E6", "#9A92B5", "#22C55E", "#F59E0B", "#F87171", "#000000");
 
@@ -91,11 +93,11 @@ public static class ThemeService
     /// <summary>
     /// Cor principal e secundária escolhidas pelo usuário, ajustadas à intensidade e ao tema: Suave tira
     /// saturação, Vibrante deixa mais viva; no tema claro a cor escurece para manter o contraste.
-    /// Sem escolha, usa as cores originais do app (o roxo e o ciano calibrados à mão abaixo).
+    /// Sem escolha, usa as cores originais do app (o azul e o azul-céu calibrados à mão abaixo).
     /// </summary>
     private static (Color Accent, Color AccentHover, Color Info, byte SoftAlpha, double Glow) AccentFor(AppearanceSettings settings, bool light)
     {
-        // Meia-noite usa o roxo #7C3AED e o lilás #A78BFA do Qrztweaks 2.0 quando o usuário não escolheu outra cor
+        // Roxo meia-noite usa o roxo #7C3AED e o lilás #A78BFA do Qrztweaks 2.0 quando o usuário não escolheu outra cor
         (Color Accent, Color AccentHover, Color Info, byte SoftAlpha, double Glow) standard = settings.Theme == ThemeMode.Midnight && !light && settings.Accent == AccentIntensity.Default
             ? (C("#7C3AED"), C("#A78BFA"), C("#A78BFA"), (byte)0x2B, 0.35)
             : AccentFor(settings.Accent, light);
@@ -122,15 +124,15 @@ public static class ThemeService
         return (accent, hover, info, standard.SoftAlpha, standard.Glow);
     }
 
-    /// <summary>Cor de destaque (roxo) e secundária (ciano) para cada intensidade.</summary>
+    /// <summary>Cor de destaque (azul) e secundária (azul-céu) para cada intensidade.</summary>
     private static (Color Accent, Color AccentHover, Color Info, byte SoftAlpha, double Glow) AccentFor(AccentIntensity intensity, bool light) => (intensity, light) switch
     {
-        (AccentIntensity.Soft, false) => (C("#8C82D2"), C("#A39AE0"), C("#5FB8CC"), 0x20, 0.15),
-        (AccentIntensity.Vibrant, false) => (C("#9B5CFF"), C("#B488FF"), C("#22E1FF"), 0x38, 0.55),
-        (AccentIntensity.Soft, true) => (C("#6E62B8"), C("#5D52A3"), C("#2A8597"), 0x18, 0.1),
-        (AccentIntensity.Vibrant, true) => (C("#7A22F0"), C("#6514D6"), C("#0596B8"), 0x24, 0.35),
-        (_, true) => (C("#7C3AED"), C("#6D28D9"), C("#0891B2"), 0x1C, 0.25),
-        _ => (C("#8B5CF6"), C("#A78BFA"), C("#22D3EE"), 0x2B, 0.35),
+        (AccentIntensity.Soft, false) => (C("#6F93D3"), C("#8EABE2"), C("#7DB9D1"), 0x20, 0.15),
+        (AccentIntensity.Vibrant, false) => (C("#2F80FF"), C("#62A2FF"), C("#22D3EE"), 0x38, 0.55),
+        (AccentIntensity.Soft, true) => (C("#4A6CB0"), C("#3E5D9C"), C("#2A8597"), 0x18, 0.1),
+        (AccentIntensity.Vibrant, true) => (C("#1D5BFF"), C("#1449E0"), C("#0596B8"), 0x24, 0.35),
+        (_, true) => (C("#2563EB"), C("#1D4ED8"), C("#0891B2"), 0x1C, 0.25),
+        _ => (C("#3B82F6"), C("#60A5FA"), C("#5CC8FF"), 0x2B, 0.35),
     };
 
     public static bool IsDark { get; private set; } = true;
@@ -221,8 +223,11 @@ public static class ThemeService
         }
         // Borda ao passar o mouse: destaque discreto, sem gradiente chamativo
         Brush("BorderHoverBrush", WithAlpha(accent, (byte)(dark ? 0x80 : 0x70)));
+        // Borda neutra mais forte (hover de botões e cards sem destaque)
+        Brush("BorderStrongBrush", Blend(C(palette.Border), dark ? Colors.White : Colors.Black, dark ? 0.12 : 0.14));
         resources["ShadowColor"] = C(palette.Shadow);
         resources["AccentColor"] = accent;
+        resources["InfoColor"] = info;
         resources["GlowOpacity"] = glow;
 
         // Cor sólida: o nome "Gradient" ficou pelos estilos que já usam a chave (o splash lê as duas paradas)
@@ -230,21 +235,53 @@ public static class ThemeService
 
         resources["CardBorderBrush"] = resources["BorderSubtleBrush"];
         resources["CardHoverBorderBrush"] = resources["BorderBrush"];
-        Brush("NavSelectedBrush", WithAlpha(accent, softAlpha));
 
-        // Destaque de cartões principais: só um leve tom do roxo sobre o fundo do cartão, sem gradiente
+        // Navegação: seleção neutra (um degrau mais claro) com a barrinha azul, como na referência
+        Brush("NavSelectedBrush", dark ? WithAlpha(Colors.White, 0x0E) : WithAlpha(accent, 0x14));
+        Brush("NavSelectedBorderBrush", dark ? WithAlpha(Colors.White, 0x10) : WithAlpha(accent, 0x22));
+        Brush("NavHoverBrush", dark ? WithAlpha(Colors.White, 0x08) : WithAlpha(Colors.Black, 0x06));
+
+        // Botões: principal claro (branco azulado) no escuro e azul sólido no claro; secundário azul translúcido
+        Brush("PrimaryFillBrush", dark ? Blend(Colors.White, accent, 0.09) : accent);
+        Brush("OnPrimaryBrush", dark ? C("#0A0F1C") : BestAccentText(accent));
+        Brush("SecondaryFillBrush", WithAlpha(accent, (byte)(dark ? 0x24 : 0x16)));
+        Brush("SecondaryBorderBrush", WithAlpha(accent, (byte)(dark ? 0x4D : 0x3A)));
+        Brush("OnSecondaryBrush", dark ? Blend(accent, Colors.White, 0.55) : Blend(accent, Colors.Black, 0.18));
+        // Azul para números e textos de destaque (mais claro no escuro, mais fechado no claro)
+        Brush("AccentTextBrush", dark ? Blend(accent, Colors.White, 0.2) : Blend(accent, Colors.Black, 0.1));
+
+        // Superfícies dos cards: leve gradiente (mais claro no alto), caixa interna mais escura e card elevado
         var baseColor = C(palette.Card) with { A = 255 };
-        Brush("HeroBrush", translucent ? WithAlpha(Blend(baseColor, accent, dark ? 0.08 : 0.04), 0xB8) : Blend(baseColor, accent, dark ? 0.08 : 0.04));
-        Brush("GlowBrush", Colors.Transparent);
+        Color Surf(Color c) => translucent ? WithAlpha(c, 0xA8) : c;
+        resources["CardBgBrush"] = Frozen(new LinearGradientBrush(Surf(dark ? Blend(baseColor, Colors.White, 0.028) : baseColor), Surf(baseColor), new Point(0, 0), new Point(0.4, 1)));
+        Brush("CardInsetBrush", Surf(dark ? Blend(baseColor, Colors.Black, 0.32) : Blend(baseColor, C("#EEF1F6"), 0.7)));
+        Brush("CardElevatedBrush", Surf(dark ? Blend(baseColor, Colors.White, 0.045) : Colors.White));
+
+        // Gráficos: linha azul, área em gradiente que some embaixo e grade quase invisível
+        Brush("ChartLineBrush", accent);
+        Brush("ChartSecondaryBrush", info);
+        Brush("ChartGridBrush", WithAlpha(C(palette.Text), (byte)(dark ? 0x0C : 0x12)));
+        resources["ChartFillBrush"] = Frozen(new LinearGradientBrush(WithAlpha(accent, (byte)(dark ? 0x55 : 0x40)), WithAlpha(accent, 0), new Point(0, 0), new Point(0, 1)));
+
+        // Destaque de cartões principais: um toque de azul no canto, sem gradiente chamativo
+        var hero = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
+        hero.GradientStops.Add(new GradientStop(Surf(Blend(baseColor, accent, dark ? 0.11 : 0.05)), 0));
+        hero.GradientStops.Add(new GradientStop(Surf(baseColor), 0.65));
+        resources["HeroBrush"] = Frozen(hero);
+        // Brilho azul bem discreto no alto da área de conteúdo (pincel estático: não custa nada parado)
+        var glowBrush = new RadialGradientBrush { Center = new Point(0.78, 0), GradientOrigin = new Point(0.78, 0), RadiusX = 0.7, RadiusY = 0.85 };
+        glowBrush.GradientStops.Add(new GradientStop(WithAlpha(accent, (byte)(dark ? 0x16 : 0x0A)), 0));
+        glowBrush.GradientStops.Add(new GradientStop(WithAlpha(accent, 0), 1));
+        resources["GlowBrush"] = Frozen(glowBrush);
 
         // Forma e espaço
         var density = settings.Density switch { Density.Compact => 0.78, Density.Comfortable => 1.22, _ => 1.0 };
-        resources["CardRadius"] = new CornerRadius(14);
+        resources["CardRadius"] = new CornerRadius(16);
         resources["ControlRadius"] = new CornerRadius(10);
-        resources["CardPadding"] = new Thickness(Math.Round(22 * density));
+        resources["CardPadding"] = new Thickness(Math.Round(20 * density));
         resources["ContentGap"] = Math.Round(16 * density);
         resources["FastDuration"] = new Duration(TimeSpan.FromMilliseconds(settings.Animations ? 140 : 0));
-        resources["NormalDuration"] = new Duration(TimeSpan.FromMilliseconds(settings.Animations ? 240 : 0));
+        resources["NormalDuration"] = new Duration(TimeSpan.FromMilliseconds(settings.Animations ? 200 : 0));
     }
 
     private static Color C(string hex) => (Color)ColorConverter.ConvertFromString(hex);
@@ -260,7 +297,8 @@ public static class ThemeService
         var luminance = 0.2126 * Channel(accent.R) + 0.7152 * Channel(accent.G) + 0.0722 * Channel(accent.B);
         var whiteContrast = 1.05 / (luminance + 0.05);
         var blackContrast = (luminance + 0.05) / 0.05;
-        return blackContrast >= whiteContrast ? Colors.Black : Colors.White;
+        // Ícones e textos curtos sobre o destaque: branco sempre que tiver contraste de elemento gráfico (3:1)
+        return whiteContrast >= 3 || whiteContrast >= blackContrast ? Colors.White : Colors.Black;
     }
     private static Color EnsureAccentContrast(Color color)
     {

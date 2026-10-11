@@ -21,7 +21,7 @@ public partial class MainWindow
 
     private void ShowOptimization()
     {
-        PageTitle.Text = "Otimização";
+        PageTitle.Text = "Otimizações";
         var activeProfile = _configService.GetActiveProfile();
         var allowedIds = new HashSet<string>(activeProfile.EnabledOptimizations, StringComparer.OrdinalIgnoreCase);
         // Perfis salvos antes da otimização sem parar serviços: ela aparece junto com a Versão Avançada

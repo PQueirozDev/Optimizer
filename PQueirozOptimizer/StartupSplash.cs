@@ -48,9 +48,9 @@ public static class StartupSplash
     {
         var resources = Application.Current.Resources;
         Color C(string key, Color fallback) => resources[key] is SolidColorBrush b ? b.Color with { A = 255 } : fallback;
-        return new Palette(C("BackgroundBrush", Color.FromRgb(0x0B, 0x0B, 0x14)), C("CardBgBrush", Color.FromRgb(0x13, 0x13, 0x1F)),
-            C("BorderBrush", Color.FromRgb(0x2A, 0x2A, 0x3A)), C("TextBrush", Colors.White), C("MutedBrush", Color.FromRgb(0x9C, 0xA3, 0xAF)),
-            C("AccentBrush", Color.FromRgb(0x8B, 0x5C, 0xF6)), Services.AppearanceService.AnimationsEnabled);
+        return new Palette(C("BackgroundBrush", Color.FromRgb(0x07, 0x08, 0x0B)), C("SurfaceBrush", Color.FromRgb(0x0F, 0x11, 0x16)),
+            C("BorderBrush", Color.FromRgb(0x23, 0x26, 0x2E)), C("TextBrush", Colors.White), C("MutedBrush", Color.FromRgb(0x8A, 0x92, 0xA1)),
+            C("AccentBrush", Color.FromRgb(0x3B, 0x82, 0xF6)), Services.AppearanceService.AnimationsEnabled);
     }
 
     /// <summary>Abre a tela de abertura sem bloquear: ela é montada na própria thread, em paralelo à inicialização.</summary>

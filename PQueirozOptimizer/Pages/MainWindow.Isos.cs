@@ -15,7 +15,7 @@ public partial class MainWindow
 
     private void ShowIsos()
     {
-        PageTitle.Text = "ISOs do Windows";
+        PageTitle.Text = "Imagens do Windows";
         PageBadge.Visibility = Visibility.Visible;
         PageBadgeText.Text = "Download & Gerenciamento";
         var root = new StackPanel();

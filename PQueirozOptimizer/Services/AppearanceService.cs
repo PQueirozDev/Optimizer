@@ -38,6 +38,9 @@ public static class AppearanceService
         Changed?.Invoke();
     }
 
-    /// <summary>Valores de fábrica: Escuro, roxo Padrão, densidade Padrão, cards Médios, animações ligadas.</summary>
+    /// <summary>Guarda uma preferência que não muda o visual (ex.: categorias recolhidas), sem redesenhar a janela.</summary>
+    public static void SetQuietly(AppearanceSettings settings) => Current = settings.Clone();
+
+    /// <summary>Valores de fábrica: Azul meia-noite, azul Padrão, densidade Padrão, cards Médios, animações ligadas.</summary>
     public static AppearanceSettings Defaults() => new();
 }
