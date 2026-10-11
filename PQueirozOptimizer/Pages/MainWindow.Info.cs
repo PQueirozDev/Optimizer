@@ -26,6 +26,16 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v2.1.0", "11/10/2026", new[]
+        {
+            "Novo visual: tema Azul meia-noite (preto, branco e azul) como padrão, ícone azul e barra lateral em categorias recolhíveis, com o monitor ao vivo e a licença no rodapé.",
+            "Início mais limpo: estado do PC com nota de saúde e indicadores reais (temperaturas, saúde, estabilidade e drivers), números ao vivo de processador, memória, placa de vídeo e rede e atalhos.",
+            "Nova página Meu PC: especificações lidas na hora (processador, placa de vídeo e driver, memória, placa-mãe e BIOS, sistema, rede e armazenamento) e Copiar resumo para o suporte.",
+            "Gráficos com curva suave e valor ao passar o mouse, histórico em linha do tempo, abas segmentadas e animações mais curtas.",
+            "Com o app em português, páginas e recursos têm nomes em português: Otimização inteligente, Laboratório de desempenho, Assistente de BIOS e Novidades.",
+            "Seu tema atual continua valendo; o Início oferece uma vez o novo tema Azul meia-noite.",
+            "Correções: o modo demonstração abre o Início, o Meu PC e as Configurações, e o texto dos botões fica legível nos temas claros.",
+        }),
         ("v2.0.0", "10/10/2026", new[]
         {
             "Otimização inteligente: analisa o PC, lê o estado de cada ajuste e recomenda pelo objetivo (jogos competitivos, notebook, programação, uso diário ou personalizado), com risco, reversão e evidência de cada item.",

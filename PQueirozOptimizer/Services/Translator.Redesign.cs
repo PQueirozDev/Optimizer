@@ -166,6 +166,22 @@ public static partial class Translator
         ["Remove arquivos ou aplicativos: não é desfeito pela reversão."] = "Removes files or apps: not undone by rollback.",
         ["Modos e perfis de visualização"] = "Modes and display profiles",
 
+        // ---------- Novidades da 2.1.0 ----------
+        ["Novo visual: tema Azul meia-noite (preto, branco e azul) como padrão, ícone azul e barra lateral em categorias recolhíveis, com o monitor ao vivo e a licença no rodapé."] =
+            "New look: Midnight Blue theme (black, white and blue) by default, a blue icon and a sidebar with collapsible categories, with the live monitor and the license at the bottom.",
+        ["Início mais limpo: estado do PC com nota de saúde e indicadores reais (temperaturas, saúde, estabilidade e drivers), números ao vivo de processador, memória, placa de vídeo e rede e atalhos."] =
+            "Cleaner Home: PC state with a health score and real indicators (temperatures, health, stability and drivers), live CPU, memory, graphics card and network numbers, and shortcuts.",
+        ["Nova página Meu PC: especificações lidas na hora (processador, placa de vídeo e driver, memória, placa-mãe e BIOS, sistema, rede e armazenamento) e Copiar resumo para o suporte."] =
+            "New My PC page: specs read on the spot (processor, graphics card and driver, memory, motherboard and BIOS, system, network and storage) and Copy summary for support.",
+        ["Gráficos com curva suave e valor ao passar o mouse, histórico em linha do tempo, abas segmentadas e animações mais curtas."] =
+            "Charts with smooth curves and values on hover, history as a timeline, segmented tabs and shorter animations.",
+        ["Com o app em português, páginas e recursos têm nomes em português: Otimização inteligente, Laboratório de desempenho, Assistente de BIOS e Novidades."] =
+            "With the app in Portuguese, pages and features have Portuguese names; English mode keeps Smart Optimize, Performance Lab, BIOS Advisor and What's new.",
+        ["Seu tema atual continua valendo; o Início oferece uma vez o novo tema Azul meia-noite."] =
+            "Your current theme stays; Home offers the new Midnight Blue theme once.",
+        ["Correções: o modo demonstração abre o Início, o Meu PC e as Configurações, e o texto dos botões fica legível nos temas claros."] =
+            "Fixes: demo mode opens Home, My PC and Settings, and button text stays readable in light themes.",
+
         // ---------- Início limpo ----------
         ["Bom dia"] = "Good morning", ["Boa tarde"] = "Good afternoon", ["Boa noite"] = "Good evening",
         ["Analisar meu PC"] = "Analyze my PC", ["Revisar {0} ajustes"] = "Review {0} tweaks", ["Analise o PC"] = "Analyze the PC",

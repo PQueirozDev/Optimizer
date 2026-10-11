@@ -2,7 +2,7 @@
 
 As notas completas de cada versão aparecem no app (Novidades) e nas releases do GitHub.
 
-## Redesign visual (em desenvolvimento, branch `dev/redesign-ui`)
+## 2.1.0 (11/10/2026): redesign visual
 
 ### Novo visual
 - Tema padrão **Azul meia-noite**: fundo preto, texto branco e azul como destaque; botões principais claros.
