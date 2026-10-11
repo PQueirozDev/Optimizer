@@ -10,7 +10,7 @@ namespace PQueirozOptimizer;
 /// <summary>Otimização completa: o passo a passo da Visão geral.</summary>
 public partial class MainWindow
 {
-    // ================= Otimização completa (Visão geral) =================
+    // ================= Otimização completa (página Otimizações) =================
     /// <summary>Passo a passo das otimizações recomendadas, na ordem certa (como o "Fix All" do Paragon).</summary>
     private Border FixAllCard()
     {

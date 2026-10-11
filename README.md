@@ -6,18 +6,18 @@ Aplicativo desktop para Windows, feito em C# + WPF (.NET 8), para otimização, 
 
 ## Novidades da 2.0
 
-- **Smart Optimize**: lê o hardware e o estado real de cada ajuste, recomenda pelo objetivo (gaming competitivo,
+- **Otimização inteligente**: lê o hardware e o estado real de cada ajuste, recomenda pelo objetivo (jogos competitivos,
   notebook, programação, uso diário ou personalizado), mostra risco, reversão e evidência, bloqueia conflitos e
   confere no Windows o que foi aplicado.
-- **Performance Lab**: FPS médio, mínimo, 1% low, 0,1% low e frametime P95/P99 pelo PresentMon, sensores por segundo,
+- **Laboratório de desempenho**: FPS médio, mínimo, 1% low, 0,1% low e frametime P95/P99 pelo PresentMon, sensores por segundo,
   histórico, comparação antes/depois e exportação CSV/JSON/PDF. Nada é estimado.
-- **Optimization Lab**: mede um ajuste por vez com várias gravações e teste estatístico.
-- **Diagnóstico inteligente**, **Command Center**, **modo compacto** para segundo monitor e **perfis** por jogo.
+- **Laboratório de otimização**: mede um ajuste por vez com várias gravações e teste estatístico.
+- **Diagnóstico inteligente**, **Início**, **modo compacto** para segundo monitor e **perfis** por jogo.
 - **Segurança**: atualizações com hash assinado, operações elevadas endurecidas, aviso de operação interrompida e
   modo demonstração sem licença (só leitura).
 
-Documentação: [manual](docs/MANUAL.md) · [Smart Optimize](docs/guias/SMART-OPTIMIZE.md) ·
-[Performance Lab](docs/guias/PERFORMANCE-LAB.md) · [segurança](docs/guias/SEGURANCA.md) ·
+Documentação: [manual](docs/MANUAL.md) · [Otimização inteligente](docs/guias/SMART-OPTIMIZE.md) ·
+[Laboratório de desempenho](docs/guias/PERFORMANCE-LAB.md) · [segurança](docs/guias/SEGURANCA.md) ·
 [licenças](docs/guias/LICENCAS.md) · [arquitetura](docs/ARQUITETURA.md) · [desenvolvimento](docs/DESENVOLVIMENTO.md) ·
 [changelog](CHANGELOG.md).
 
@@ -39,7 +39,7 @@ Documentação: [manual](docs/MANUAL.md) · [Smart Optimize](docs/guias/SMART-OP
 - Busca rápida (Ctrl+K) e notificações ao concluir cada ação.
 - Drivers, utilitários do Windows, assistente de BIOS/UEFI e catálogo de ISOs.
 - Recursos (verificação de corrupção, runtimes, reinstalação limpa do driver, atalhos, downloads e benchmarks), Correções rápidas do Windows, Pontos de restauração, grupos de Serviços e otimizador/desinstalador de Apps.
-- BIOS Advisor: analisa o hardware e mostra o que conferir ou mudar na BIOS (caminho, risco, como desfazer), com nota baseada em evidência, verificação da versão da BIOS no site oficial, analisador de memória, monitor de sensores e benchmark antes/depois. Nunca altera a BIOS sozinho.
+- Assistente de BIOS: analisa o hardware e mostra o que conferir ou mudar na BIOS (caminho, risco, como desfazer), com nota baseada em evidência, verificação da versão da BIOS no site oficial, analisador de memória, monitor de sensores e benchmark antes/depois. Nunca altera a BIOS sozinho.
 - BIOS por grupos (XMP/EXPO, Resizable BAR, Spread Spectrum, PBO, C-States, virtualização), com instruções para ASUS e ASRock, e Win32 Priority no Modo Jogo.
 - Tutorial guiado na primeira abertura e tutoriais curtos por página, que podem ser revistos em Configurações.
 - Aparência personalizável: 9 temas (Escuro, OLED, Claro, Grafite, Oceano, Floresta, Ameixa, Areia e Automático, que segue o Windows), intensidade do roxo, densidade, tamanho dos cards, animações e janela translúcida (Windows 11), salvos em `%LocalAppData%\PQueirozOptimizer\config.json`.
@@ -79,9 +79,9 @@ dotnet run --project .\PQueirozOptimizer\PQueirozOptimizer.csproj
 dotnet run --project .\tests\Optimizer.Verification
 ```
 
-O projeto de verificação também aceita `--render`, que gera imagens das telas, `--i18n`, que confere se a interface em inglês está toda traduzida, `--safety` (segurança e reversão) e `--v2` (Smart Optimize, Performance Lab, diagnóstico, perfis, atualizações assinadas e modo demonstração). Detalhes em [docs/DESENVOLVIMENTO.md](docs/DESENVOLVIMENTO.md). O teste que ativa e desativa serviços só roda com o terminal aberto como administrador; no GitHub Actions ele sempre roda.
+O projeto de verificação também aceita `--render`, que gera imagens das telas, `--i18n`, que confere se a interface em inglês está toda traduzida, `--safety` (segurança e reversão) e `--v2` (Otimização inteligente, Laboratório de desempenho, diagnóstico, perfis, atualizações assinadas e modo demonstração). Detalhes em [docs/DESENVOLVIMENTO.md](docs/DESENVOLVIMENTO.md). O teste que ativa e desativa serviços só roda com o terminal aberto como administrador; no GitHub Actions ele sempre roda.
 
-## Banco do BIOS Advisor
+## Banco do Assistente de BIOS
 
 O Advisor pode ler os valores atuais pelo SCEWIN escolhido pelo usuário. Essa leitura apenas exporta as configurações; não grava ajustes na BIOS. Os valores ficam salvos com a identificação da placa e versão da BIOS e deixam de valer quando essa identificação muda.
 

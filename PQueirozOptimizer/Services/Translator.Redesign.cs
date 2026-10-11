@@ -165,6 +165,16 @@ public static partial class Translator
             "App version synced with the installer and the update engine so the new build is recognized correctly.",
         ["Remove arquivos ou aplicativos: não é desfeito pela reversão."] = "Removes files or apps: not undone by rollback.",
         ["Modos e perfis de visualização"] = "Modes and display profiles",
+
+        // ---------- Início limpo ----------
+        ["Bom dia"] = "Good morning", ["Boa tarde"] = "Good afternoon", ["Boa noite"] = "Good evening",
+        ["Analisar meu PC"] = "Analyze my PC", ["Revisar {0} ajustes"] = "Review {0} tweaks", ["Analise o PC"] = "Analyze the PC",
+        ["{0} ajustes recomendados"] = "{0} recommended tweaks", ["Meça FPS e tempo de quadro"] = "Measure FPS and frame time",
+        ["Desligado"] = "Off", ["Ativo"] = "On", ["Ver histórico"] = "See history", ["de"] = "of",
+        ["Ler o sistema e os indicadores de novo"] = "Read the system and indicators again", ["Modo compacto (segundo monitor)"] = "Compact mode (second monitor)",
+        ["Sem administrador"] = "No admin rights",
+        ["O Qrztweaks está sem permissão de administrador: o Windows pode bloquear ajustes, serviços e atualizações."] =
+            "Qrztweaks has no administrator permission: Windows may block tweaks, services and updates.",
     };
 
     private static readonly (Regex Regex, Func<Match, string> Build)[] RedesignPatterns =
@@ -186,6 +196,8 @@ public static partial class Translator
         P(@"^Pouco espaço em (.+)$", m => $"Low space on {m.Groups[1].Value}"),
         P(@"^Espaço ficando curto em (.+)$", m => $"Space running low on {m.Groups[1].Value}"),
         P(@"^(\d+) ajustes aplicados$", m => $"{m.Groups[1].Value} tweaks applied"),
+        P(@"^Revisar (\d+) ajustes$", m => $"Review {m.Groups[1].Value} tweaks"),
+        P(@"^(\d+) ajustes recomendados$", m => $"{m.Groups[1].Value} recommended tweaks"),
         P(@"^(\d+) ajustes$", m => $"{m.Groups[1].Value} tweaks"),
         P(@"^Análise de (\d\d/\d\d \d\d:\d\d) para o objetivo (.+)\.$", m => $"Analysis from {m.Groups[1].Value} for the {T(m, 2)} goal."),
         P(@"^há (\d+) min$", m => $"{m.Groups[1].Value} min ago"),
@@ -231,6 +243,8 @@ public static partial class Translator
     /// <summary>Mensagem do registro de atividade para exibir: traduzida no inglês; em português, as linhas antigas em inglês viram português.</summary>
     public static string LogText(string message)
     {
+        // Linhas antigas em português que citavam "Atividade e reversão" (hoje Histórico)
+        message = message.Replace("Consulte a atividade e a reversão", "Consulte o Histórico").Replace("Atividade e reversão", "Histórico");
         if (Active) return Tr(message);
         foreach (var (regex, build) in LegacyLog)
         {

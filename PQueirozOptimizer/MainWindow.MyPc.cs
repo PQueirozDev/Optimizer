@@ -30,6 +30,7 @@ public partial class MainWindow
         ContentHost.Children.Clear(); ContentHost.Children.Add(root);
         _homeLive.Clear();
         _homeRoot = root;
+        PageActions.Children.Clear();
         AddPageAction(Glyphs.Copy, "Copiar resumo", () => { if (_myPcData is { } d) CopyText(MyPcSummary(d), Tr("Resumo do PC copiado. Cole no ticket de suporte ou onde precisar.")); })
             .ToolTip = Tr("Copia processador, placa de vídeo, memória, placa-mãe, sistema e armazenamento em texto");
         AddPageAction(Glyphs.Refresh, "Atualizar", () => { HomeData.Invalidate(); _snapshotReadAt = default; _myPcData = null; ShowMyPc(); });
@@ -86,7 +87,6 @@ public partial class MainWindow
     private Border MyPcOverview(MyPcData data, int score, string headline)
     {
         var grid = new Grid();
-        grid.Children.Add(new QrzArt { Kind = ArtKind.Squares, Anchor = 1, Margin = new Thickness(-20) });
         var dock = new DockPanel();
         var ring = ScoreRing(score, Tr("SAÚDE"), 104 * AppearanceService.CardScale);
         ring.VerticalAlignment = VerticalAlignment.Top; ring.Margin = new Thickness(16, 0, 0, 0);
@@ -182,7 +182,7 @@ public partial class MainWindow
 
     private Border GpuSpecs(MyPcData d)
     {
-        var main = d.Gpus.FirstOrDefault();
+        var main = d.Gpus.OrderByDescending(g => GpuRank(g.Name)).FirstOrDefault();
         var (_, vram) = LiveRow(Glyphs.Memory, Tr("Memória de vídeo"), "--");
         var (_, temp) = LiveRow(Glyphs.Thermometer, Tr("Temperatura"), "--");
         var (_, use) = LiveRow(Glyphs.AreaChart, Tr("Uso agora"), "--");
@@ -198,7 +198,7 @@ public partial class MainWindow
             DetailRow(Glyphs.Clock, Tr("Data do driver"), main?.DriverDate is { } date ? date.ToString("dd/MM/yyyy", CultureInfo.CurrentCulture) : Tr("Indisponível")),
             (UIElement)vram.Parent, (UIElement)temp.Parent, (UIElement)use.Parent,
         };
-        foreach (var other in d.Gpus.Skip(1)) rows.Add(DetailRow(Glyphs.Monitor, Tr("Outra placa"), other.Name));
+        foreach (var other in d.Gpus.Where(g => g != main)) rows.Add(DetailRow(Glyphs.Monitor, Tr("Outra placa"), other.Name));
         return SpecCard(Glyphs.Monitor, Tr("Placa de vídeo"), main is { } m ? FirstGpu(m.Name) : FirstGpu(d.Snapshot.Graphics), rows);
     }
 

@@ -25,26 +25,27 @@
 
      <!-- Rodapé: monitor ao vivo (CPU, GPU, RAM e ping), licença, configurações e tema -->
      <StackPanel x:Name="SidebarFooter" DockPanel.Dock="Bottom" Margin="12,6,12,14">
-      <Border x:Name="HudPanel" Margin="0,0,0,8" Padding="12,10" CornerRadius="12" Background="{DynamicResource CardInsetBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1">
+      <Border x:Name="HudPanel" Margin="0,0,0,8" Padding="12,10,12,11" CornerRadius="12" Background="{DynamicResource CardInsetBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1">
        <StackPanel>
-        <DockPanel Margin="0,0,0,8">
+        <DockPanel Margin="0,0,0,9">
          <TextBlock x:Name="HudPing" DockPanel.Dock="Right" Text="-- ms" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Tag="dado-do-sistema" ToolTip="Latência até 1.1.1.1"/>
          <Ellipse x:Name="HudLiveDot" Width="6" Height="6" Fill="{DynamicResource SuccessBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-         <TextBlock x:Name="NavFooterStatus" Text="Monitor ao vivo" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+         <TextBlock x:Name="NavFooterStatus" Text="Monitor ao vivo" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
         </DockPanel>
-        <Grid>
-         <Grid.ColumnDefinitions><ColumnDefinition Width="34"/><ColumnDefinition Width="*"/><ColumnDefinition Width="38"/></Grid.ColumnDefinitions>
-         <Grid.RowDefinitions><RowDefinition Height="17"/><RowDefinition Height="17"/><RowDefinition Height="17"/></Grid.RowDefinitions>
-         <TextBlock Text="CPU" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Tag="dado-do-sistema"/>
-         <ProgressBar x:Name="HudCpuBar" Grid.Column="1" Height="4" Maximum="100" VerticalAlignment="Center"/>
-         <TextBlock x:Name="HudCpuText" Grid.Column="2" Text="--" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Tag="dado-do-sistema"/>
-         <TextBlock Grid.Row="1" Text="GPU" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Tag="dado-do-sistema"/>
-         <ProgressBar x:Name="HudGpuBar" Grid.Row="1" Grid.Column="1" Height="4" Maximum="100" VerticalAlignment="Center"/>
-         <TextBlock x:Name="HudGpuText" Grid.Row="1" Grid.Column="2" Text="--" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Tag="dado-do-sistema"/>
-         <TextBlock Grid.Row="2" Text="RAM" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Tag="dado-do-sistema"/>
-         <ProgressBar x:Name="HudRamBar" Grid.Row="2" Grid.Column="1" Height="4" Maximum="100" VerticalAlignment="Center"/>
-         <TextBlock x:Name="HudRamText" Grid.Row="2" Grid.Column="2" Text="--" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Tag="dado-do-sistema"/>
-        </Grid>
+        <UniformGrid Columns="3">
+         <StackPanel Margin="0,0,8,0">
+          <DockPanel><TextBlock x:Name="HudCpuText" DockPanel.Dock="Right" Text="--" FontSize="11" FontWeight="SemiBold" Tag="dado-do-sistema"/><TextBlock Text="CPU" FontSize="10.5" Foreground="{DynamicResource MutedBrush}" Tag="dado-do-sistema"/></DockPanel>
+          <ProgressBar x:Name="HudCpuBar" Height="3" Maximum="100" Margin="0,5,0,0"/>
+         </StackPanel>
+         <StackPanel Margin="4,0,4,0">
+          <DockPanel><TextBlock x:Name="HudGpuText" DockPanel.Dock="Right" Text="--" FontSize="11" FontWeight="SemiBold" Tag="dado-do-sistema"/><TextBlock Text="GPU" FontSize="10.5" Foreground="{DynamicResource MutedBrush}" Tag="dado-do-sistema"/></DockPanel>
+          <ProgressBar x:Name="HudGpuBar" Height="3" Maximum="100" Margin="0,5,0,0"/>
+         </StackPanel>
+         <StackPanel Margin="8,0,0,0">
+          <DockPanel><TextBlock x:Name="HudRamText" DockPanel.Dock="Right" Text="--" FontSize="11" FontWeight="SemiBold" Tag="dado-do-sistema"/><TextBlock Text="RAM" FontSize="10.5" Foreground="{DynamicResource MutedBrush}" Tag="dado-do-sistema"/></DockPanel>
+          <ProgressBar x:Name="HudRamBar" Height="3" Maximum="100" Margin="0,5,0,0"/>
+         </StackPanel>
+        </UniformGrid>
        </StackPanel>
       </Border>
       <Border x:Name="LicenseCard" Padding="10,9" CornerRadius="12" Background="{DynamicResource CardBgBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1">
@@ -197,13 +198,14 @@
     <!-- Barra superior: Otimizar, estado, alertas, busca (Ctrl+K), idioma, configurações e controles da janela -->
     <DockPanel Grid.Row="0" LastChildFill="False">
      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
-      <Border x:Name="TitleOptChipHost" CornerRadius="15" Padding="11,0" Height="30" Margin="0,15,8,0" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1">
+      <Border x:Name="TitleOptChipHost" CornerRadius="15" Padding="11,0" Height="30" Margin="0,15,8,0" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1" Visibility="Collapsed">
        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
         <TextBlock Text="&#xE9D9;" Style="{StaticResource IconText}" FontSize="12" Foreground="{DynamicResource AccentBrush}" Margin="0,0,7,0"/>
         <TextBlock x:Name="TitleOptChip" Text="Pronto" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
        </StackPanel>
       </Border>
-      <Border x:Name="TitleAdminChipHost" CornerRadius="15" Padding="11,0" Height="30" Margin="0,15,8,0" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1">
+      <Border x:Name="TitleAdminChipHost" CornerRadius="15" Padding="11,0" Height="30" Margin="0,15,8,0" Background="{DynamicResource WarningSoftBrush}" Visibility="Collapsed"
+              ToolTip="O Qrztweaks está sem permissão de administrador: o Windows pode bloquear ajustes, serviços e atualizações.">
        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
         <Ellipse x:Name="TitleAdminDot" Width="7" Height="7" Fill="{DynamicResource MutedBrush}" Margin="0,0,7,0"/>
         <TextBlock x:Name="TitleAdminChip" Text="Verificando" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
@@ -238,13 +240,8 @@
         </Border>
        </Popup>
       </Grid>
-      <Button x:Name="LangButton" Content="PT" Style="{StaticResource ChipButton}" Margin="0,13,8,0" Click="LangButton_Click" WindowChrome.IsHitTestVisibleInChrome="True"/>
-      <Button x:Name="TopSettingsButton" Margin="0,13,14,0" Padding="13,0" Height="34" Click="SidebarSettings_Click" WindowChrome.IsHitTestVisibleInChrome="True" local:QrzUi.CornerRadius="17">
-       <StackPanel Orientation="Horizontal">
-        <TextBlock x:Name="TopSettingsText" Text="Configurações" VerticalAlignment="Center" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
-        <TextBlock Text="&#xE713;" Style="{StaticResource IconText}" FontSize="12.5" Margin="9,0,0,0" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
-       </StackPanel>
-      </Button>
+      <Button x:Name="LangButton" Content="PT" Style="{StaticResource GhostButton}" Padding="10,0" Height="34" Margin="0,13,10,0" FontSize="11.5" Click="LangButton_Click" WindowChrome.IsHitTestVisibleInChrome="True"/>
+
       <Button Style="{StaticResource TitleBarBtnStyle}" Content="&#xE921;" ToolTip="Minimizar" Click="BtnMinimize_Click" WindowChrome.IsHitTestVisibleInChrome="True"/>
       <Button x:Name="BtnMaximize" Style="{StaticResource TitleBarBtnStyle}" Content="&#xE922;" Click="BtnMaximize_Click" WindowChrome.IsHitTestVisibleInChrome="True"/>
       <Button Style="{StaticResource TitleBarCloseBtnStyle}" Content="&#xE8BB;" ToolTip="Fechar" Click="BtnClose_Click" WindowChrome.IsHitTestVisibleInChrome="True"/>

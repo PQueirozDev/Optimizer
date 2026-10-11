@@ -8,14 +8,14 @@ O Qrztweaks roda como administrador. Este guia resume o que o protege e o que o 
    própria, com a lista exata.
 2. **Backup antes de mudar.** O valor original de cada registro, serviço, tarefa e plano de energia é gravado antes
    da mudança, numa pasta só de administradores. O ponto de restauração do Windows é complemento, não garantia.
-3. **Verificar depois.** O Smart Optimize e a tela ao vivo leem o estado de novo e só marcam como concluído o que o
+3. **Verificar depois.** A Otimização inteligente e a tela ao vivo leem o estado de novo e só marcam como concluído o que o
    Windows confirma.
 4. **Recuperação.** Se o app fechar no meio de uma otimização, a próxima abertura avisa e leva à reversão. O mesmo
    vale para o Modo Jogo e para uma atualização que não terminou.
 
 ## O que o app nunca faz sozinho
 
-- Gravar na BIOS. O BIOS Advisor só recomenda; o editor grava apenas o que você escolher, com cópia original
+- Gravar na BIOS. O Assistente de BIOS só recomenda; o editor grava apenas o que você escolher, com cópia original
   validada, valores conferidos pelo tamanho do campo e bloqueio se a versão da BIOS mudou (HIICrc32).
 - Desligar o Windows Defender. Exclusões amplas (unidade inteira, pasta do Windows, Downloads, Temp, pastas de rede,
   Program Files ou o perfil inteiro) são recusadas, e a tela deixa claro que a exclusão vale até ser removida.

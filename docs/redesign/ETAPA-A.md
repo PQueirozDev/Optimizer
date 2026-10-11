@@ -46,8 +46,9 @@ estilos em `App.xaml` (botões, navegação, interruptor, caixa de seleção, ba
    a barra de status em card ocupa mais ~70 px no rodapé.
 4. **Gráficos:** linhas retas, sem valor ao passar o mouse, grade visível.
 5. **Barra lateral:** seções fixas (não recolhem), nomes longos, "Chave de administrador" como item de menu.
-6. **Desempenho:** a interface desenha ~54 quadros/s parada (medido), porque a barra de progresso
-   indeterminada da barra de status anima mesmo escondida.
+6. **Desempenho:** a barra de progresso indeterminada da barra de status anima mesmo escondida (corrigido).
+   A contagem de ~54 quadros/s registrada aqui veio de um medidor que forçava a renderização; ver
+   [DESEMPENHO.md](DESEMPENHO.md) para a medição corrigida.
 7. **Idioma:** 50 textos com termos em inglês no modo português (auditoria `--ui --pt-audit`), incluindo
    nomes de páginas e mensagens do registro gravadas em inglês pelo BIOS Advisor.
 
@@ -56,14 +57,15 @@ estilos em `App.xaml` (botões, navegação, interruptor, caixa de seleção, ba
 Método: `tools/Measure-UiPerformance.ps1` (modo de medição do próprio app, Release, sem administrador,
 preferências salvas deste PC: tema Oceano, Vibrante, translúcido, densidade Confortável, cards Grandes).
 
-| Medida | Antes |
+| Medida | Antes (primeira rodada, medidor com distorção) |
 |---|---|
 | Abertura (1ª execução / mediana das seguintes) | 2.629 ms / 1.471 ms |
-| CPU parado na Visão geral (monitor ao vivo) | 0,61 % |
-| Quadros/s parado na Visão geral / em Configurações | 53,7 / 55,2 |
+| CPU parado na Visão geral (monitor ao vivo) | 0,61 % (inflado pelo medidor) |
 | Memória (working set / privada / heap gerenciado) | 229 / 179 / 14 MB |
 | Troca de página (mediana / pior) | 67 / 133 ms |
 | Working set depois de abrir todas as páginas | 280 MB |
+
+A comparação válida (medidor corrigido, mesma máquina) está em [DESEMPENHO.md](DESEMPENHO.md).
 
 ## 5. Arquitetura do design system
 
@@ -79,7 +81,7 @@ preferências salvas deste PC: tema Oceano, Vibrante, translúcido, densidade Co
   os valores iniciais.
 - **Componentes** (`Controls/`, prefixo `Qrz`): `QrzGrid` (grade responsiva com colunas por largura e itens que
   ocupam várias colunas), `QrzGauge` (medidor circular), `LineChart` (curva suave, preenchimento em gradiente,
-  ponto final e valor ao passar o mouse), `QrzArt` (grafismos abstratos estáticos dos cards). As funções de
+  ponto final e valor ao passar o mouse). Os grafismos abstratos (`QrzArt`) foram testados e retirados na versão limpa, a pedido. As funções de
   `MainWindow.Ui.cs` (`Surface`, `Pill`, `IconChip`, `IconButton`, `SectionHeader`, `Label`...) viram a API do
   design system e passam a desenhar o visual novo em todas as páginas de uma vez; as páginas que montavam
   cards à mão passam a usar essas funções.

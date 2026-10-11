@@ -56,7 +56,7 @@ Saída: `artifacts\installer\Qrztweaks-Setup-v2.0.0.exe`.
 | Chave | Para quê | Onde fica a privada | Ferramenta |
 |---|---|---|---|
 | Licenças | Assinar chaves `PQO1-` e a lista de revogação | License Manager (fora do repositório) | License Manager |
-| Banco do BIOS Advisor | `bios-db/bios-db.json.sig` | `private/bios-db-rsa-private.blob` | `tools/Sign-BiosDatabase.ps1` |
+| Banco do Assistente de BIOS | `bios-db/bios-db.json.sig` | `private/bios-db-rsa-private.blob` | `tools/Sign-BiosDatabase.ps1` |
 | Releases | `SHA256SUMS.txt.sig` | `private/update-rsa-private.blob` + secret `UPDATE_SIGNING_KEY` | `tools/Sign-ReleaseChecksums.ps1` |
 
 `private/` está no `.gitignore`. Guarde cópias seguras das chaves privadas: perder a de releases obriga a publicar

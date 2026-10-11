@@ -1,6 +1,6 @@
 # Mede o desempenho da interface do Qrztweaks sem interacao (modo de medicao do proprio app):
 #  - abertura: do inicio do processo ate a Visao geral utilizavel (varias execucoes, mediana);
-#  - app parado na Visao geral: CPU media, quadros por segundo, memoria;
+#  - app parado na Visao geral: CPU media, uso do motor 3D da GPU pelo app, memoria;
 #  - troca de paginas: tempo de cada uma, mediana e maximo;
 #  - app parado em Configuracoes (sem o painel ao vivo).
 # O app abre sem pedir administrador (RunAsInvoker) e fecha sozinho ao terminar.
@@ -62,14 +62,14 @@ $lines = @(
     ('| Abertura (1a execucao) | {0:N0} ms |' -f $startups[0]),
     ('| Abertura (mediana das seguintes) | {0:N0} ms |' -f (Median $warm)),
     ('| CPU parado na Visao geral (monitor ao vivo) | {0:N2} % |' -f $full['idle-dashboard-cpu-percent']),
-    ('| Quadros/s parado na Visao geral | {0:N1} |' -f $full['idle-dashboard-frames-per-second']),
+    ('| GPU (motor 3D) do app parado na Visao geral | {0:N2} % |' -f $full['idle-dashboard-gpu-3d-percent']),
     ('| Memoria (working set) na Visao geral | {0:N0} MB |' -f $full['idle-dashboard-working-set-mb']),
     ('| Memoria privada na Visao geral | {0:N0} MB |' -f $full['idle-dashboard-private-mb']),
     ('| Heap gerenciado na Visao geral | {0:N0} MB |' -f $full['idle-dashboard-managed-mb']),
     ('| Troca de pagina (mediana) | {0:N0} ms |' -f $full['nav-median-ms']),
     ('| Troca de pagina (pior) | {0:N0} ms |' -f $full['nav-max-ms']),
     ('| CPU parado em Configuracoes | {0:N2} % |' -f $full['idle-settings-cpu-percent']),
-    ('| Quadros/s parado em Configuracoes | {0:N1} |' -f $full['idle-settings-frames-per-second']),
+    ('| GPU (motor 3D) do app parado em Configuracoes | {0:N2} % |' -f $full['idle-settings-gpu-3d-percent']),
     ('| Memoria (working set) depois de abrir todas as paginas | {0:N0} MB |' -f $full['idle-settings-working-set-mb']),
     '',
     'Troca de cada pagina (ms): ' + (($navPages | ForEach-Object { '{0} {1:N0}' -f ($_ -replace '^nav-|-ms$', ''), $full[$_] }) -join ', ')

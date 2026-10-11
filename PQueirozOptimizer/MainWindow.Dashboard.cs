@@ -72,12 +72,13 @@ public partial class MainWindow
         _homeLive.Clear();
         _homeRoot = root;
         PageActions.Children.Clear();
-        AddLiveBadge();
-        AddPageAction(Glyphs.Refresh, "Atualizar", RefreshHome).ToolTip = Tr("Ler o sistema, as unidades e os indicadores de novo");
+        PageActions.Children.Add(RoundIcon(Glyphs.Pin, "Modo compacto (segundo monitor)", OpenCompactMonitor));
+        PageActions.Children.Add(RoundIcon(Glyphs.Refresh, "Ler o sistema e os indicadores de novo", RefreshHome));
         try
         {
             // As leituras mais pesadas (WMI) rodam em paralelo com a leitura do sistema, fora da tela
-            var extras = Task.Run(() => (Cpu: HomeData.Cpu(), Memory: HomeData.Memory(), Drives: HomeData.Drives(), Network: HomeData.Network()));
+            // O Início só precisa da frequência base da CPU; discos, memória e rede detalhados ficam para o Meu PC
+            var extras = Task.Run(HomeData.Cpu);
             var snapshot = FreshSnapshot;
             if (snapshot is null || !extras.IsCompleted)
             {
@@ -88,15 +89,11 @@ public partial class MainWindow
                 snapshot = await read;
                 StartupProfiler.Mark("snapshot-read");
             }
-            var data = await extras;
+            var cpuInfo = await extras;
             // O usuário pode ter trocado de página (ou reaberto o Início) durante a leitura
             if (_currentPage != "dashboard" || !ContentHost.Children.Contains(root)) return;
             root.Children.Clear();
-            TitleAdminChip.Text = snapshot.IsAdministrator ? "Administrador" : "Usuário";
-            TitleAdminDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, snapshot.IsAdministrator ? "SuccessBrush" : "WarningBrush");
-            // No Início, a linha acima do título é o nome do computador (como "PC Name" da referência)
-            PageEyebrow.Text = Environment.MachineName;
-            PageEyebrow.Tag = Translator.SystemDataTag;
+            SetAdminState(snapshot.IsAdministrator);
             RefreshAlertsDot();
 
             _updateSlot = new StackPanel();
@@ -107,76 +104,53 @@ public partial class MainWindow
             if (NewLookBanner() is { } offer) root.Children.Add(offer);
 
             var prefs = AppearanceService.Current;
-            var (score, _, tone) = HealthScore(snapshot);
-            if (prefs.DashboardStatus) root.Children.Add(RecommendationLine(snapshot));
+            var (score, headline, tone) = HealthScore(snapshot);
 
-            // 1. Hardware ao vivo + Meu PC
-            var top = HomeGrid();
+            // 1. Destaque: estado do PC, ação principal, nota de saúde e indicadores
+            var hero = HomeHero(snapshot, score, headline, tone, prefs.DashboardStatus);
+            hero.Margin = new Thickness(0, 0, 0, AppearanceService.Space(16));
+            root.Children.Add(hero);
+
+            // 2. Números ao vivo (o detalhe de cada um fica no Meu PC)
             if (prefs.DashboardHardware)
             {
-                top.Children.Add(CpuCard(snapshot, data.Cpu, prefs.DashboardLive));
-                top.Children.Add(MemoryCard(snapshot, data.Memory, prefs.DashboardLive));
-                top.Children.Add(GpuCard(snapshot, prefs.DashboardLive));
-            }
-            top.Children.Add(MyPcCard(snapshot, score, tone));
-            root.Children.Add(top);
-
-            // 2. Armazenamento, rede e atividade
-            if (prefs.DashboardHardware || prefs.DashboardActivity)
-            {
-                var middle = HomeGrid();
-                if (prefs.DashboardHardware)
-                {
-                    middle.Children.Add(StorageCard(data.Drives));
-                    middle.Children.Add(Span(NetworkCard(data.Network, prefs.DashboardLive), 2));
-                }
-                if (prefs.DashboardActivity) middle.Children.Add(ActivityCard());
-                root.Children.Add(middle);
+                var metrics = HomeGrid(200);
+                var cpu = cpuInfo;
+                metrics.Children.Add(MetricTile("Processador",
+                    s => ($"{s.Cpu:0}%", s.CpuMhz is { } mhz ? (mhz / 1000).ToString("0.00", System.Globalization.CultureInfo.CurrentCulture) + " GHz" : cpu.BaseMhz is { } b ? (b / 1000).ToString("0.00", System.Globalization.CultureInfo.CurrentCulture) + " GHz" : ShortCpuName(snapshot.Processor)),
+                    s => s.Cpu, 100, prefs.DashboardLive));
+                metrics.Children.Add(MetricTile("Memória",
+                    s => ($"{s.Ram:0}%", $"{Gb(s.RamUsedGb)} {Tr("de")} {Gb(s.RamTotalGb)}"),
+                    s => s.Ram, 100, prefs.DashboardLive));
+                metrics.Children.Add(MetricTile("Placa de vídeo",
+                    s => (s.Gpu is { } g ? $"{g:0}%" : "--", s.GpuTempC is { } t ? $"{t:0} °C" : FirstGpu(snapshot.Graphics)),
+                    s => s.Gpu, 100, prefs.DashboardLive));
+                metrics.Children.Add(MetricTile("Rede",
+                    s => (s.PingMs is { } p ? $"{p:0} ms" : "--", $"↓ {FormatRate(s.DownBytesPerSec)}  ↑ {FormatRate(s.UpBytesPerSec)}"),
+                    s => s.DownBytesPerSec * 8 / 1_000_000, null, prefs.DashboardLive));
+                root.Children.Add(metrics);
             }
 
-            // 3. Acesso rápido
+            // 3. Atalhos
             if (prefs.DashboardQuickActions)
             {
-                root.Children.Add(HomeSectionTitle("Acesso rápido", "Os recursos mais usados, com o estado de cada um."));
-                var quick = HomeGrid(240);
-                var lastTest = PerfLabStore.Default.List().FirstOrDefault();
-                quick.Children.Add(QuickCard(Tr("Analisador de desempenho"), Tr("Ferramenta de análise de FPS"),
-                    lastTest is null ? "Muted" : "Success", lastTest is null ? Tr("Nenhum teste ainda") : $"{Tr("Último teste")}: {lastTest.StartedAt:dd/MM HH:mm}",
-                    Tr("Analisar"), ArtKind.DotWave, () => NavigateTo("perflab")));
+                var shortcuts = HomeGrid(200);
                 var analysis = SmartHistory.Default.LastAnalysis;
-                quick.Children.Add(QuickCard(Tr("Otimização inteligente"), Tr("Ajustes recomendados em um clique"),
-                    analysis is null ? "Muted" : "Success", analysis is null ? Tr("Ainda não analisado") : string.Format(Tr("{0} ajustes aplicados"), analysis.Applied),
-                    Tr("Otimizar"), ArtKind.Waves, () => NavigateTo("smart")));
-                quick.Children.Add(QuickCard(Tr("Central de saúde"), Tr("Diagnóstico com evidências"),
-                    tone, string.Format(Tr("Saúde {0} de 100"), score), Tr("Diagnosticar"), ArtKind.Rings, () => NavigateTo("diagnostics")));
+                var lastTest = PerfLabStore.Default.List().FirstOrDefault();
                 var session = GamingService.ActiveSession();
-                quick.Children.Add(QuickCard(Tr("Central de jogos"), Tr("Modo Jogo, perfis e presets"),
-                    session is null ? "Muted" : session.RecoveryPending ? "Warning" : "Success",
-                    session is null ? Tr("Modo Jogo desligado") : session.RecoveryPending ? Tr("Restauração pendente") : Tr("Modo Jogo ativo"),
-                    Tr("Configurar"), ArtKind.Bars, () => NavigateTo("gaming")));
-                root.Children.Add(quick);
+                shortcuts.Children.Add(ShortcutTile(Glyphs.Lightning, "Otimização inteligente",
+                    analysis is null ? Tr("Analise o PC") : string.Format(Tr("{0} ajustes recomendados"), analysis.Recommended), () => NavigateTo("smart")));
+                shortcuts.Children.Add(ShortcutTile(Glyphs.Flask, "Laboratório de desempenho",
+                    lastTest is null ? Tr("Meça FPS e tempo de quadro") : $"{Tr("Último teste")}: {lastTest.StartedAt:dd/MM}", () => NavigateTo("perflab")));
+                shortcuts.Children.Add(ShortcutTile(Glyphs.Diagnostic, "Diagnóstico",
+                    string.Format(Tr("Saúde {0} de 100"), score), () => NavigateTo("diagnostics")));
+                shortcuts.Children.Add(ShortcutTile(Glyphs.Game, "Modo Jogo",
+                    session is null ? Tr("Desligado") : session.RecoveryPending ? Tr("Restauração pendente") : Tr("Ativo"), () => NavigateTo("gaming")));
+                root.Children.Add(shortcuts);
             }
 
-            // 4. Configurações rápidas e jogos
-            if (prefs.DashboardActivity)
-            {
-                var bottom = HomeGrid();
-                bottom.Children.Add(Span(QuickSettingsCard(), 2));
-                bottom.Children.Add(Span(GamesCard(), 2));
-                root.Children.Add(bottom);
-            }
-
-            // 5. O passo a passo completo continua disponível
-            root.Children.Add(FixAllCard());
-            var profile = _configService.GetActiveProfile();
-            var profileLine = new Grid { Margin = new Thickness(4, 0, 0, 8) };
-            profileLine.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            profileLine.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            profileLine.Children.Add(GlyphIcon(Glyphs.Settings, 12, "MutedBrush"));
-            var pl = Label($"Perfil selecionado: {ProfileDisplayName(profile.Name)}. Você sempre revisa os ajustes antes de aplicar.", 12, true); pl.Margin = new Thickness(8, 0, 0, 0);
-            Grid.SetColumn(pl, 1);
-            profileLine.Children.Add(pl);
-            root.Children.Add(profileLine);
+            // 4. Atividade recente (só as últimas três linhas)
+            if (prefs.DashboardActivity) root.Children.Add(RecentActivity());
 
             // Primeira leitura já desenhada (o monitor atualiza a cada segundo depois)
             if (HardwareMonitorService.Shared.Latest is { } latest) foreach (var update in _homeLive) update(latest);
@@ -200,65 +174,27 @@ public partial class MainWindow
     /// <summary>Esqueleto estático enquanto o sistema é lido (sem brilho animado: nada fica redesenhando).</summary>
     private UIElement HomeSkeleton()
     {
-        var grid = HomeGrid();
+        var root = new StackPanel();
+        Border Bar(double width, double height, double top)
+        {
+            var bar = new Border { Width = width, Height = height, CornerRadius = new CornerRadius(Math.Min(6, height / 2)), Margin = new Thickness(0, top, 0, 0), HorizontalAlignment = HorizontalAlignment.Left };
+            bar.SetResourceReference(Border.BackgroundProperty, "PanelHoverBrush");
+            return bar;
+        }
+        var hero = new StackPanel();
+        hero.Children.Add(Bar(90, 12, 0)); hero.Children.Add(Bar(360, 26, 12)); hero.Children.Add(Bar(260, 12, 12)); hero.Children.Add(Bar(220, 38, 26));
+        var heroCard = HomeCard(hero, "HeroBrush");
+        heroCard.Margin = new Thickness(0, 0, 0, AppearanceService.Space(16));
+        root.Children.Add(heroCard);
+        var grid = HomeGrid(200);
         for (var i = 0; i < 4; i++)
         {
-            var stack = new StackPanel();
-            foreach (var (width, height, top) in new[] { (0.45, 12.0, 0.0), (0.7, 14.0, 8.0), (0.35, 30.0, 26.0), (1.0, 8.0, 22.0), (0.9, 8.0, 12.0), (0.8, 8.0, 12.0), (1.0, 64.0, 22.0) })
-            {
-                var bar = new Border { Height = height, CornerRadius = new CornerRadius(Math.Min(6, height / 2)), Margin = new Thickness(0, top, 0, 0), HorizontalAlignment = HorizontalAlignment.Left };
-                bar.SetResourceReference(Border.BackgroundProperty, "PanelHoverBrush");
-                stack.Children.Add(bar);
-                var fraction = width;
-                stack.SizeChanged += (_, e) => bar.Width = Math.Max(0, e.NewSize.Width * fraction);
-            }
-            grid.Children.Add(HomeCard(stack));
+            var card = new StackPanel();
+            card.Children.Add(Bar(70, 10, 0)); card.Children.Add(Bar(80, 26, 12)); card.Children.Add(Bar(110, 10, 10)); card.Children.Add(Bar(160, 34, 18));
+            grid.Children.Add(HomeCard(card));
         }
-        return grid;
-    }
-
-    /// <summary>
-    /// Linha de recomendações acima dos cards (como "Recommended tweaks" da referência): quantos ajustes a última
-    /// análise recomendou e os alertas atuais, cada um levando à página certa.
-    /// </summary>
-    private UIElement RecommendationLine(SystemSnapshot snapshot)
-    {
-        var line = new DockPanel { Margin = new Thickness(0, 0, 0, AppearanceService.Space(16)) };
-        var alerts = CommandAlerts(snapshot);
-        var right = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        foreach (var (text, alertTone, page) in alerts.Take(2))
-        {
-            var pill = Pill("● " + Tr(text), alertTone);
-            ((TextBlock)pill.Child).Tag = Translator.SystemDataTag;
-            pill.Margin = new Thickness(8, 0, 0, 0);
-            if (page is { } target && target != "dashboard") { pill.Cursor = Cursors.Hand; pill.MouseLeftButtonUp += (_, _) => NavigateTo(target); }
-            right.Children.Add(pill);
-        }
-        if (alerts.Count > 2)
-        {
-            var more = Pill($"+{alerts.Count - 2}", "Info"); more.Margin = new Thickness(8, 0, 0, 0); more.Cursor = Cursors.Hand;
-            more.MouseLeftButtonUp += (_, _) => AlertsButton_Click(AlertsButton, new RoutedEventArgs());
-            right.Children.Add(more);
-        }
-        DockPanel.SetDock(right, Dock.Right); line.Children.Add(right);
-
-        var left = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        var analysis = SmartHistory.Default.LastAnalysis;
-        var text1 = new TextBlock { Text = analysis is null ? Tr("Analise o PC para receber recomendações") : Tr("Recomendações da última análise"), FontSize = 12.5, VerticalAlignment = VerticalAlignment.Center };
-        text1.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
-        left.Children.Add(text1);
-        var info = GlyphIcon(Glyphs.Info, 12, "MutedBrush"); info.Margin = new Thickness(7, 1, 9, 0);
-        info.ToolTip = analysis is null ? Tr("A Otimização inteligente lê o hardware e o estado de cada ajuste e recomenda só o que se aplica.")
-            : string.Format(Tr("Análise de {0:dd/MM HH:mm} para o objetivo {1}."), analysis.At, Tr(GoalTitle(analysis.Goal)));
-        left.Children.Add(info);
-        var count = Pill(analysis is null ? Tr("Analisar") : string.Format(Tr("{0} ajustes"), analysis.Recommended), "Accent");
-        ((TextBlock)count.Child).Tag = Translator.SystemDataTag;
-        count.Cursor = Cursors.Hand;
-        count.ToolTip = Tr("Abrir a Otimização inteligente");
-        count.MouseLeftButtonUp += (_, _) => NavigateTo("smart");
-        left.Children.Add(count);
-        line.Children.Add(left);
-        return line;
+        root.Children.Add(grid);
+        return root;
     }
 
     /// <summary>

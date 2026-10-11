@@ -1,6 +1,35 @@
 # Changelog
 
-As notas completas de cada versão aparecem no app (Patch notes) e nas releases do GitHub.
+As notas completas de cada versão aparecem no app (Novidades) e nas releases do GitHub.
+
+## Redesign visual (em desenvolvimento, branch `dev/redesign-ui`)
+
+### Novo visual
+- Tema padrão **Azul meia-noite**: fundo preto, texto branco e azul como destaque; botões principais claros.
+  Claro, Grafite, Roxo meia-noite (a paleta roxa da 2.0) e os outros temas continuam; quem escolheu outro tema
+  mantém a escolha e vê uma vez o convite para o tema novo.
+- **Barra lateral** em categorias recolhíveis (Principal, Otimização, Desempenho, Ferramentas, Sistema), cartão da
+  licença com menu de temas, monitor ao vivo compacto e modo só com ícones.
+- **Barra superior** com Otimizar, alertas (sino), busca Ctrl+K e idioma; o estado da operação e o aviso de
+  administrador só aparecem quando informam algo.
+- **Início** limpo: estado do PC com nota de saúde e indicadores reais (temperatura da GPU pelo driver NVIDIA,
+  estabilidade pelo registro de eventos, dispositivos com erro), quatro números ao vivo com curva do último
+  minuto, atalhos e atividade recente.
+- Nova página **Meu PC**: especificações lidas na hora (processador, placa de vídeo e driver, memória, placa-mãe e
+  BIOS, sistema, rede, armazenamento), indicadores explicados e **Copiar resumo** para o suporte.
+- Gráficos com curva suave, área em gradiente e valor ao passar o mouse; medidor circular; grade responsiva
+  (4, 2 ou 1 coluna); histórico em linha do tempo; abas segmentadas; animações de 120 a 220 ms.
+- Ícone do app, favicon e arte do instalador em azul.
+
+### Idioma
+- Com o app em português não aparecem mais nomes em inglês: Otimização inteligente, Laboratório de desempenho,
+  Laboratório de otimização, Assistente de BIOS, Novidades, Histórico, Aplicativos, Jogos competitivos.
+  O modo inglês continua com Smart Optimize, Performance Lab etc.
+
+### Correções
+- Modo demonstração: Início, Meu PC, Configurações, Novidades e Sobre abrem (antes mostravam "recurso bloqueado").
+- Botões principais com texto definido por string ficavam com o texto na cor errada em temas claros.
+- A barra de progresso indeterminada escondida não anima mais.
 
 ## 2.0.0 (em desenvolvimento, branch `dev/qrztweaks-2.0`)
 

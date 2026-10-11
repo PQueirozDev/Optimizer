@@ -142,6 +142,11 @@ public partial class MainWindow
             root.Children.Add(grid);
         }
 
+        // O passo a passo completo (antes no Início) fica junto das otimizações
+        var fixAll = FixAllCard();
+        fixAll.Margin = new Thickness(0, 6, 0, 16);
+        root.Children.Add(fixAll);
+
         ContentHost.Children.Clear();
         ContentHost.Children.Add(root);
     }

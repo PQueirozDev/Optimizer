@@ -21,7 +21,7 @@ App.xaml.cs ── licença (LicenseService) ── ActivationWindow / modo demo
   exato ou padrão (`Translator.*.cs`). As telas da 2.0 ficam em `Translator.V2.cs`. Textos marcados com
   `Translator.SystemDataTag` (nomes de hardware, processos) não são traduzidos. `--i18n` confere tudo.
 - **Planos**: `PlanAccess` diz o nível exigido por página e por operação do script. Toda operação passa por ele,
-  inclusive no Smart Optimize e no modo demonstração (licença nula = nada liberado além das páginas de leitura).
+  inclusive na Otimização inteligente e no modo demonstração (licença nula = nada liberado além das páginas de leitura).
 
 ## Motor de otimização (`Engine/`)
 
@@ -38,11 +38,11 @@ App.xaml.cs ── licença (LicenseService) ── ActivationWindow / modo demo
 ### Por que o catálogo não aplica nada sozinho
 
 O script já resolve backup item a item, ponto de restauração, quarentena de arquivos adulterados, listas permitidas
-na reversão e a tela ao vivo. O catálogo só **descreve e verifica**: o Smart Optimize agrupa a seleção por operação
+na reversão e a tela ao vivo. O catálogo só **descreve e verifica**: a Otimização inteligente agrupa a seleção por operação
 (`padrao`, `debloat`, `gamer`) e chama a mesma execução da tela de revisão. Um teste (`V2Tests`) falha se o catálogo
 e o script saírem de sincronia (etapa nova sem item, item sem etapa ou risco diferente do marcador).
 
-### Fluxo do Smart Optimize
+### Fluxo da Otimização inteligente
 
 1. `HardwareDetector` (WMI) + `SystemInfoService` → `MachineSummary`.
 2. `LiveSystemState.LoadAsync` lê apps da Loja e tarefas numa única chamada ao PowerShell.
@@ -68,7 +68,7 @@ Detalhes em [guias/SEGURANCA.md](guias/SEGURANCA.md).
 |---|---|
 | `%ProgramData%\OtimizadorPC\` | Backups do script, registro, serviços, BIOS e drivers (pasta só de administradores). |
 | `%ProgramData%\PQueirozOptimizer\` | Atualizações baixadas, registro de operação interrompida, PresentMon. |
-| `%LocalAppData%\PQueirozOptimizer\` | Licença, configurações, histórico do Smart Optimize, testes do Performance Lab, perfis, modo compacto. |
+| `%LocalAppData%\PQueirozOptimizer\` | Licença, configurações, histórico da Otimização inteligente, testes do Laboratório de desempenho, perfis, modo compacto. |
 
 ## Testes
 

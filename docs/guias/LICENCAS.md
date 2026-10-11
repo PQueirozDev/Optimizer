@@ -15,17 +15,17 @@
 
 | Plano | Preço | Libera |
 |---|---|---|
-| Base | R$ 15/mês | Otimizações, Smart Optimize (itens do Base), Inicialização, Correções, Ferramentas, Limpeza |
-| Intermediário | R$ 25/mês | + Serviços, Apps, Drivers, Rede, Recursos, Diagnóstico, Performance Lab |
+| Base | R$ 15/mês | Otimizações, Otimização inteligente (itens do Base), Inicialização, Correções, Ferramentas, Limpeza |
+| Intermediário | R$ 25/mês | + Serviços, Apps, Drivers, Rede, Recursos, Diagnóstico, Laboratório de desempenho |
 | Avançado | R$ 29,99/mês | O app completo: + Modo Jogo, Perfis, Personalizar Windows, BIOS |
 | Vitalício | R$ 59,99 único | O app completo, sem vencimento, com reemissão ao formatar |
 
-Atividade e reversão, pontos de restauração e configurações ficam em todos os planos: ninguém fica sem desfazer.
+Histórico, pontos de restauração e configurações ficam em todos os planos: ninguém fica sem desfazer.
 
 ## Modo demonstração
 
-Na tela de ativação, **Explorar sem licença** abre o app em modo só leitura: Command Center, Smart Optimize
-(análise), Diagnóstico e Performance Lab. Toda operação continua passando por `PlanAccess` com licença nula, que
+Na tela de ativação, **Explorar sem licença** abre o app em modo só leitura: Início, Otimização inteligente
+(análise), Diagnóstico e Laboratório de desempenho. Toda operação continua passando por `PlanAccess` com licença nula, que
 nega: a demonstração não aplica nada e não é um caminho para contornar a ativação.
 
 ## Troca de hardware ou Windows reinstalado
@@ -36,7 +36,7 @@ Nenhuma validação é afrouxada.
 
 ## Avisos
 
-- 7 dias antes do vencimento: aviso no Command Center com renovação pelo Discord.
+- 7 dias antes do vencimento: aviso no Início com renovação pelo Discord.
 - Licença vencida, revogada, de outro PC ou com relógio atrasado: a tela de ativação explica o motivo.
 
 ## Fluxo atual de venda

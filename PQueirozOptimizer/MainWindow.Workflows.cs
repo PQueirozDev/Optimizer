@@ -112,13 +112,13 @@ public partial class MainWindow
         _operationCts = cts;
         OperationProgress.Visibility = Visibility.Visible;
         OperationStatus.Text = title;
-        TitleOptChip.Text = "Em execução";
+        ShowOperationChip("Em execução");
         try
         {
             await action(cts.Token);
             _snapshot = null;
             OperationStatus.Text = title + " — concluído. Confira os resultados na atividade.";
-            TitleOptChip.Text = "Concluído";
+            ShowOperationChip("Concluído");
             ShowToast(title, "Concluído", "Success");
             return true;
         }
@@ -126,14 +126,14 @@ public partial class MainWindow
         {
             _snapshot = null;
             OperationStatus.Text = title + " — cancelado. O que já foi aplicado aparece no Histórico.";
-            TitleOptChip.Text = "Cancelado";
+            ShowOperationChip("Cancelado");
             ShowToast(title, "Cancelado", "Warning");
         }
         catch (Exception ex)
         {
             _log.Write("ERROR", ex.Message);
             OperationStatus.Text = ex.Message;
-            TitleOptChip.Text = "Verificar resultado";
+            ShowOperationChip("Verificar resultado");
             ShowToast(title, ex.Message, "Danger");
         }
         finally

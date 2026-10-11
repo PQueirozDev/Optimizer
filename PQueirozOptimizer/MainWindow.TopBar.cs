@@ -76,19 +76,4 @@ public partial class MainWindow
         PageActions.Children.Add(button);
         return button;
     }
-
-    /// <summary>Selo "● Ao vivo" do cabeçalho: indica que os números da página são atualizados a cada segundo.</summary>
-    private void AddLiveBadge()
-    {
-        var content = new StackPanel { Orientation = Orientation.Horizontal };
-        content.Children.Add(StatusDot("Success", 7));
-        var t = new TextBlock { Text = Translator.Tr("Ao vivo"), FontSize = 12, FontWeight = FontWeights.SemiBold, Margin = new Thickness(7, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-        t.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
-        content.Children.Add(t);
-        var badge = new Border { Child = content, Padding = new Thickness(12, 7, 13, 7), CornerRadius = new CornerRadius(17), BorderThickness = new Thickness(1), VerticalAlignment = VerticalAlignment.Center,
-            ToolTip = Translator.Tr("CPU, placa de vídeo, memória e rede lidas a cada segundo") };
-        badge.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
-        badge.SetResourceReference(Border.BorderBrushProperty, "BorderSubtleBrush");
-        PageActions.Children.Add(badge);
-    }
 }

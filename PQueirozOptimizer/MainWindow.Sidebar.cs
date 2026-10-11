@@ -135,16 +135,35 @@ public partial class MainWindow
         RefreshNavTooltips(compact);
     }
 
-    /// <summary>Barra superior em janelas estreitas: some primeiro o estado, depois o texto de Configurações e a busca encolhe.</summary>
+    private bool _showOperationChip, _showAdminWarning;
+    private double _topBarWidth;
+
+    /// <summary>
+    /// Barra superior limpa: o estado da operação e o aviso de administrador só aparecem quando informam algo
+    /// (e somem em janelas estreitas); a busca encolhe abaixo de 900 px.
+    /// </summary>
     private void ApplyTopBarMode(double windowWidth)
     {
-        if (windowWidth <= 0 || double.IsNaN(windowWidth)) return;
-        TitleOptChipHost.Visibility = windowWidth < 1280 ? Visibility.Collapsed : Visibility.Visible;
-        TitleAdminChipHost.Visibility = windowWidth < 1120 ? Visibility.Collapsed : Visibility.Visible;
-        TopSettingsText.Visibility = windowWidth < 960 ? Visibility.Collapsed : Visibility.Visible;
-        if (TopSettingsButton.Content is StackPanel { Children: [_, TextBlock gear] }) gear.Margin = new Thickness(windowWidth < 960 ? 0 : 9, 0, 0, 0);
-        TopSettingsButton.Padding = new Thickness(windowWidth < 960 ? 10 : 13, 0, windowWidth < 960 ? 10 : 13, 0);
-        SearchHost.Width = windowWidth < 900 ? 170 : 250;
+        if (windowWidth > 0 && !double.IsNaN(windowWidth)) _topBarWidth = windowWidth;
+        var width = _topBarWidth;
+        TitleOptChipHost.Visibility = _showOperationChip && width >= 1120 ? Visibility.Visible : Visibility.Collapsed;
+        TitleAdminChipHost.Visibility = _showAdminWarning && width >= 1000 ? Visibility.Visible : Visibility.Collapsed;
+        SearchHost.Width = width is > 0 and < 900 ? 170 : 250;
+    }
+
+    private void ShowOperationChip(string text)
+    {
+        TitleOptChip.Text = text;
+        _showOperationChip = true;
+        ApplyTopBarMode(0);
+    }
+
+    private void SetAdminState(bool isAdministrator)
+    {
+        TitleAdminChip.Text = isAdministrator ? "Administrador" : "Sem administrador";
+        TitleAdminDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, isAdministrator ? "SuccessBrush" : "WarningBrush");
+        _showAdminWarning = !isAdministrator;
+        ApplyTopBarMode(0);
     }
 
     /// <summary>Textos e selos do item (tudo menos o ícone).</summary>

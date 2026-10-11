@@ -1,4 +1,4 @@
-# Guia do Performance Lab
+# Guia do Laboratório de desempenho
 
 Mede FPS, frametime e sensores enquanto você joga, guarda o histórico e compara testes.
 
@@ -35,9 +35,9 @@ Também dá para **importar** logs do PresentMon ou do CapFrameX.
 
 Na aba **Comparar**, escolha o teste de antes e o de depois. A tabela mostra a diferença absoluta e percentual,
 indica melhor/pior em texto e avisa quando hardware, driver, Windows, resolução, taxa de atualização ou plano de
-energia mudaram. Uma gravação de cada lado não prova ganho: use o Optimization Lab.
+energia mudaram. Uma gravação de cada lado não prova ganho: use o Laboratório de otimização.
 
-## Optimization Lab
+## Laboratório de otimização
 
 Mede o efeito de **um** ajuste reversível:
 

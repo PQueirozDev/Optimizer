@@ -172,23 +172,21 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// Quadrado neutro com borda fina e o ícone na cor do tom (azul de destaque, ou a cor de um alerta),
-    /// sem fundo colorido: as páginas não viram um arco-íris de quadradinhos.
+    /// Ícone na cor do tom (azul de destaque, ou a cor de um alerta) sobre um fundo quase invisível, sem borda:
+    /// ancora o ícone sem virar uma caixinha em cada card.
     /// </summary>
     private static Border IconChip(string glyph, string tone = "Accent", double size = 40)
     {
-        var chip = new Border { Width = size, Height = size, CornerRadius = new CornerRadius(size * 0.28), BorderThickness = new Thickness(1), Child = GlyphIcon(glyph, size * 0.42, tone + "Brush") };
-        chip.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
-        chip.SetResourceReference(Border.BorderBrushProperty, "BorderSubtleBrush");
+        var chip = new Border { Width = size, Height = size, CornerRadius = new CornerRadius(size * 0.3), Child = GlyphIcon(glyph, size * 0.42, tone + "Brush") };
+        chip.SetResourceReference(Border.BackgroundProperty, "NavHoverBrush");
         return chip;
     }
 
     /// <summary>Quadrado neutro com ícone vetorial na cor do texto; os cartões principais recebem o ícone no azul.</summary>
     private static Border OutlineChip(VectorIcon icon, double size = 42, bool primary = false)
     {
-        var chip = new Border { Width = size, Height = size, CornerRadius = new CornerRadius(size * 0.28), BorderThickness = new Thickness(1), Child = OptimizationIcons.Render(icon, size * 0.52, primary ? "AccentBrush" : "TextBrush") };
-        chip.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
-        chip.SetResourceReference(Border.BorderBrushProperty, primary ? "SecondaryBorderBrush" : "BorderSubtleBrush");
+        var chip = new Border { Width = size, Height = size, CornerRadius = new CornerRadius(size * 0.3), Child = OptimizationIcons.Render(icon, size * 0.52, primary ? "AccentBrush" : "TextBrush") };
+        chip.SetResourceReference(Border.BackgroundProperty, "NavHoverBrush");
         return chip;
     }
 
@@ -197,9 +195,8 @@ public partial class MainWindow
     {
         var label = new TextBlock { Text = text, FontSize = 11, FontWeight = FontWeights.SemiBold };
         label.SetResourceReference(TextBlock.ForegroundProperty, tone == "Accent" ? "AccentTextBrush" : tone + "Brush");
-        var pill = new Border { CornerRadius = new CornerRadius(8), Padding = new Thickness(8, 3, 8, 3), Child = label, VerticalAlignment = VerticalAlignment.Center, BorderThickness = new Thickness(1) };
+        var pill = new Border { CornerRadius = new CornerRadius(8), Padding = new Thickness(8, 3, 8, 3), Child = label, VerticalAlignment = VerticalAlignment.Center };
         pill.SetResourceReference(Border.BackgroundProperty, tone + "SoftBrush");
-        pill.SetResourceReference(Border.BorderBrushProperty, tone + "SoftBrush");
         return pill;
     }
 
@@ -277,17 +274,15 @@ public partial class MainWindow
         return dot;
     }
 
-    /// <summary>Linha de detalhe da referência: ícone e rótulo discretos à esquerda, valor à direita.</summary>
+    /// <summary>Linha de detalhe: rótulo discreto à esquerda, valor à direita (sem ícone por linha, para não poluir).</summary>
     private static DockPanel DetailRow(string glyph, string label, string value, string valueBrush = "TextBrush", bool systemValue = true)
     {
-        var row = new DockPanel { Margin = new Thickness(0, 0, 0, 9) };
-        var v = new TextBlock { Text = value, FontSize = 12.5, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 220, ToolTip = value };
+        var row = new DockPanel { Margin = new Thickness(0, 0, 0, 10) };
+        var v = new TextBlock { Text = value, FontSize = 12.5, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 240, ToolTip = value };
         if (systemValue) v.Tag = Translator.SystemDataTag;
         v.SetResourceReference(TextBlock.ForegroundProperty, valueBrush);
         DockPanel.SetDock(v, Dock.Right); row.Children.Add(v);
-        var icon = GlyphIcon(glyph, 12, "MutedBrush"); icon.Margin = new Thickness(0, 0, 9, 0); icon.Width = 14;
-        row.Children.Add(icon);
-        var l = new TextBlock { Text = label, FontSize = 12.5, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
+        var l = new TextBlock { Text = label, FontSize = 12.5, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0) };
         l.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         row.Children.Add(l);
         return row;
