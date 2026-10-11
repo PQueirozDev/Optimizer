@@ -3,8 +3,12 @@ using System.Runtime.InteropServices;
 
 namespace PQueirozOptimizer.Services;
 
-/// <summary>Uma leitura do monitor. Gpu e PingMs ficam nulos quando o Windows não os informa.</summary>
-public sealed record HardwareSample(double Cpu, double Ram, double RamUsedGb, double RamTotalGb, double? Gpu, double DownBytesPerSec, double UpBytesPerSec, double? PingMs);
+/// <summary>
+/// Uma leitura do monitor. Os campos opcionais ficam nulos quando o Windows (ou o driver) não os informa:
+/// frequência real da CPU, número de processos, temperatura e memória da placa de vídeo.
+/// </summary>
+public sealed record HardwareSample(double Cpu, double Ram, double RamUsedGb, double RamTotalGb, double? Gpu, double DownBytesPerSec, double UpBytesPerSec, double? PingMs,
+    double? CpuMhz = null, int? Processes = null, double? GpuTempC = null, double? VramUsedGb = null, double? VramTotalGb = null);
 
 /// <summary>
 /// Monitor de hardware em tempo real (uso de CPU, GPU, memória, rede e latência), lido direto das
@@ -44,9 +48,15 @@ public sealed class HardwareMonitorService : IDisposable
     private async Task RunAsync(CancellationToken token)
     {
         using var gpu = GpuUsageCounter.TryCreate();
+        using var vram = GpuUsageCounter.TryCreate(@"\GPU Adapter Memory(*)\Dedicated Usage", max: true);
+        // Frequência real como no Gerenciador de Tarefas: frequência nominal × % de desempenho (passa de 100% no turbo)
+        using var frequency = BiosAdvisor.Detector.PdhCounter.TryCreate(@"\Processor Information(_Total)\Processor Frequency");
+        using var performance = BiosAdvisor.Detector.PdhCounter.TryCreate(BiosAdvisor.Detector.PdhCounter.ProcessorPerformance);
+        using var processes = BiosAdvisor.Detector.PdhCounter.TryCreate(@"\System\Processes");
+        var vramTotal = NvmlReader.MemoryGb()?.TotalGb ?? DedicatedVideoMemoryGb();
         var cpu = new CpuUsage();
         var net = new NetworkThroughput();
-        double? ping = null;
+        double? ping = null, gpuTemp = null, vramUsed = null;
         var tick = 0;
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
         try
@@ -57,7 +67,16 @@ public sealed class HardwareMonitorService : IDisposable
                 if (tick++ % 5 == 0) _ = Task.Run(async () => ping = await PingAsync("1.1.1.1"), token);
                 var (ramPercent, used, total) = ReadMemory();
                 var (down, up) = net.Read();
-                var sample = new HardwareSample(cpu.Read(), ramPercent, used, total, gpu?.Read(), down, up, ping);
+                var nominal = frequency?.Read(); var percent = performance?.Read();
+                double? mhz = nominal is > 0 && percent is > 0 ? nominal * percent / 100 : null;
+                var processCount = processes?.Read() is { } p ? (int?)Math.Round(p) : null;
+                // Temperatura e memória da placa a cada 2 s (NVML; a memória cai para os contadores do Windows nas outras placas)
+                if (tick % 2 == 1)
+                {
+                    gpuTemp = NvmlReader.TemperatureC();
+                    vramUsed = NvmlReader.MemoryGb()?.UsedGb ?? (vram?.Read() is { } bytes ? bytes / (1024d * 1024 * 1024) : null);
+                }
+                var sample = new HardwareSample(cpu.Read(), ramPercent, used, total, gpu?.Read(), down, up, ping, mhz, processCount, gpuTemp, vramUsed, vramTotal);
                 Action<HardwareSample>? handlers;
                 lock (_gate)
                 {
@@ -84,6 +103,29 @@ public sealed class HardwareMonitorService : IDisposable
     }
 
     public void Dispose() => Stop();
+
+    /// <summary>
+    /// Memória dedicada da placa de vídeo principal (a maior entre os adaptadores), informada pelo driver no registro.
+    /// Vale para qualquer fabricante; null quando o driver não informa.
+    /// </summary>
+    public static double? DedicatedVideoMemoryGb()
+    {
+        try
+        {
+            using var classKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}");
+            if (classKey is null) return null;
+            double best = 0;
+            foreach (var name in classKey.GetSubKeyNames().Where(n => n.Length == 4 && n.All(char.IsDigit)))
+            {
+                using var adapter = classKey.OpenSubKey(name);
+                var value = adapter?.GetValue("HardwareInformation.qwMemorySize") ?? adapter?.GetValue("HardwareInformation.MemorySize");
+                var bytes = value switch { long l => l, int i => (uint)i, byte[] b when b.Length >= 8 => BitConverter.ToInt64(b, 0), byte[] b when b.Length >= 4 => BitConverter.ToUInt32(b, 0), _ => 0L };
+                best = Math.Max(best, bytes / (1024d * 1024 * 1024));
+            }
+            return best >= 0.25 ? best : null;
+        }
+        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or System.IO.IOException) { return null; }
+    }
 
     // ---------- Memória ----------
     [StructLayout(LayoutKind.Sequential)]
@@ -151,9 +193,10 @@ public sealed class HardwareMonitorService : IDisposable
         }
     }
 
-    // ---------- GPU (contadores "GPU Engine" do Windows 10 1709+, os mesmos do Gerenciador de Tarefas) ----------
+    // ---------- GPU (contadores "GPU Engine" e "GPU Adapter Memory" do Windows 10 1709+, os mesmos do Gerenciador de Tarefas) ----------
     private sealed class GpuUsageCounter : IDisposable
     {
+        private bool _max;
         private const uint PdhFmtDouble = 0x00000200, PdhFmtNoCap100 = 0x00008000;
         private const int PdhMoreData = unchecked((int)0x800007D2);
         private IntPtr _query, _counter;
@@ -167,11 +210,12 @@ public sealed class HardwareMonitorService : IDisposable
         [StructLayout(LayoutKind.Sequential)]
         private struct CounterValueItem { public IntPtr Name; public uint Status; public double Value; }
 
-        public static GpuUsageCounter? TryCreate()
+        /// <summary>Contador de várias instâncias: soma (uso do motor 3D por processo) ou maior valor (memória por adaptador).</summary>
+        public static GpuUsageCounter? TryCreate(string path = @"\GPU Engine(*engtype_3D)\Utilization Percentage", bool max = false)
         {
-            var c = new GpuUsageCounter();
+            var c = new GpuUsageCounter { _max = max };
             if (PdhOpenQuery(null, IntPtr.Zero, out c._query) != 0) return null;
-            if (PdhAddEnglishCounter(c._query, @"\GPU Engine(*engtype_3D)\Utilization Percentage", IntPtr.Zero, out c._counter) != 0) { c.Dispose(); return null; }
+            if (PdhAddEnglishCounter(c._query, path, IntPtr.Zero, out c._counter) != 0) { c.Dispose(); return null; }
             PdhCollectQueryData(c._query);
             return c;
         }
@@ -187,14 +231,15 @@ public sealed class HardwareMonitorService : IDisposable
             {
                 if (PdhGetFormattedCounterArray(_counter, PdhFmtDouble | PdhFmtNoCap100, ref size, out var count, buffer) != 0) return null;
                 // Cada processo tem sua instância do motor 3D; o uso da placa é a soma (como no Gerenciador de Tarefas)
-                double sum = 0;
+                double sum = 0, best = 0;
                 var itemSize = Marshal.SizeOf<CounterValueItem>();
                 for (var i = 0; i < count; i++)
                 {
                     var item = Marshal.PtrToStructure<CounterValueItem>(buffer + i * itemSize);
-                    if (item.Status == 0) sum += item.Value;
+                    if (item.Status != 0) continue;
+                    sum += item.Value; best = Math.Max(best, item.Value);
                 }
-                return Math.Clamp(sum, 0, 100);
+                return _max ? best : Math.Clamp(sum, 0, 100);
             }
             finally { Marshal.FreeHGlobal(buffer); }
         }

@@ -90,7 +90,7 @@ public partial class MainWindow
         _advisorDatabaseChecked = true;
         bool updated;
         try { updated = await Advisor.RefreshDatabaseAsync(); }
-        catch (Exception ex) { _log.Write("WARN", "BIOS Advisor: " + ex.GetBaseException().Message); return; }
+        catch (Exception ex) { _log.Write("WARN", "Assistente de BIOS: " + ex.GetBaseException().Message); return; }
         if (updated && !_advisorClosed && _currentPage == "biosadvisor" && IsLoaded && AdvisorLayer.Visibility != Visibility.Visible)
         {
             ShowToast("BIOS Advisor", T($"Banco de perfis atualizado para a versão {BiosDatabase.Current.Version}.", $"Profile database updated to version {BiosDatabase.Current.Version}."), "Info");

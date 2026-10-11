@@ -77,7 +77,7 @@ public partial class MainWindow
     private async Task RedrawWhenDetectedAsync(Task<HardwareProfile> detection)
     {
         try { await detection; }
-        catch (Exception ex) { _log.Write("ERROR", "BIOS Advisor: falha na detecção: " + ex.GetBaseException().Message); }
+        catch (Exception ex) { _log.Write("ERROR", "Assistente de BIOS: falha na detecção: " + ex.GetBaseException().Message); }
         if (_currentPage == "biosadvisor" && IsLoaded) KeepScroll(ShowBiosAdvisor);
     }
 

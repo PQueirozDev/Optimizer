@@ -1,18 +1,18 @@
-﻿using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.IO;
-using System.Reflection;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Media;
-using PQueirozOptimizer.Services;
+using System.Windows.Input;
+using PQueirozOptimizer.Controls;
+using PQueirozOptimizer.Engine;
 using PQueirozOptimizer.Models;
+using PQueirozOptimizer.Services;
 
 namespace PQueirozOptimizer;
 
-/// <summary>Visão geral: pontuação de saúde, leitura do sistema, painel e avisos de licença.</summary>
+/// <summary>
+/// Início: visão geral do desempenho e da saúde do PC, no layout da referência — cards de processador, memória
+/// e placa de vídeo com número grande e atividade ao vivo, o card Meu PC com os indicadores, armazenamento,
+/// rede, atividade, acesso rápido, configurações rápidas e os jogos. Avisos de licença e atualização no topo.
+/// </summary>
 public partial class MainWindow
 {
     /// <summary>Pontuação simples de 0 a 100 a partir do espaço livre e do tempo ligado.</summary>
@@ -46,163 +46,128 @@ public partial class MainWindow
         finally { _snapshotRead = null; }
     }
 
+    /// <summary>Botão Atualizar do Início: lê tudo de novo (sistema, unidades, indicadores).</summary>
+    private void RefreshHome()
+    {
+        HomeData.Invalidate();
+        _snapshotReadAt = default;
+        _ = RenderDashboardAsync();
+    }
+
+    /// <summary>Grade responsiva do Início: 4 colunas em telas largas, 2 em médias, 1 em estreitas.</summary>
+    private static QrzGrid HomeGrid(double minColumn = 290) => new()
+    {
+        MinColumnWidth = minColumn * AppearanceService.CardScale, MaxColumns = 4, AllowedColumns = new[] { 1, 2, 4 },
+        ColumnGap = AppearanceService.Space(16), RowGap = AppearanceService.Space(16), Margin = new Thickness(0, 0, 0, AppearanceService.Space(16)),
+    };
+
+    private static T Span<T>(T element, int span) where T : UIElement { QrzGrid.SetSpan(element, span); return element; }
+
     private async Task RenderDashboardAsync()
     {
         PageTitle.Text = "Início";
         PageBadge.Visibility = Visibility.Collapsed;
         var root = new StackPanel();
         ContentHost.Children.Clear(); ContentHost.Children.Add(root);
+        _homeLive.Clear();
+        _homeRoot = root;
+        PageActions.Children.Clear();
+        AddLiveBadge();
+        AddPageAction(Glyphs.Refresh, "Atualizar", RefreshHome).ToolTip = Tr("Ler o sistema, as unidades e os indicadores de novo");
         try
         {
-            // Voltar ao painel reaproveita a última leitura
+            // As leituras mais pesadas (WMI) rodam em paralelo com a leitura do sistema, fora da tela
+            var extras = Task.Run(() => (Cpu: HomeData.Cpu(), Memory: HomeData.Memory(), Drives: HomeData.Drives(), Network: HomeData.Network()));
             var snapshot = FreshSnapshot;
-            if (snapshot is null)
+            if (snapshot is null || !extras.IsCompleted)
             {
-                // A leitura costuma levar milissegundos: o aviso de carregamento só aparece se ela demorar
-                var read = ReadSnapshotAsync();
-                if (await Task.WhenAny(read, Task.Delay(150)) != read)
-                {
-                    var loading = new StackPanel();
-                    loading.Children.Add(SectionHeader("Consultando seu computador...", "Lendo processador, memória, armazenamento e sistema."));
-                    loading.Children.Add(new ProgressBar { IsIndeterminate = true, Height = 5 });
-                    root.Children.Add(Surface(loading));
-                }
+                var read = snapshot is null ? ReadSnapshotAsync() : Task.FromResult(snapshot);
+                // A leitura costuma ser rápida: o esqueleto só aparece se ela demorar
+                var both = Task.WhenAll(read, extras);
+                if (await Task.WhenAny(both, Task.Delay(150)) != both) root.Children.Add(HomeSkeleton());
                 snapshot = await read;
                 StartupProfiler.Mark("snapshot-read");
-                // O usuário pode ter trocado de página (ou reaberto o painel) durante a leitura
-                if (_currentPage != "dashboard" || !ContentHost.Children.Contains(root)) return;
             }
+            var data = await extras;
+            // O usuário pode ter trocado de página (ou reaberto o Início) durante a leitura
+            if (_currentPage != "dashboard" || !ContentHost.Children.Contains(root)) return;
             root.Children.Clear();
             TitleAdminChip.Text = snapshot.IsAdministrator ? "Administrador" : "Usuário";
             TitleAdminDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, snapshot.IsAdministrator ? "SuccessBrush" : "WarningBrush");
+            // No Início, a linha acima do título é o nome do computador (como "PC Name" da referência)
+            PageEyebrow.Text = Environment.MachineName;
+            PageEyebrow.Tag = Translator.SystemDataTag;
+            RefreshAlertsDot();
 
             _updateSlot = new StackPanel();
             root.Children.Add(_updateSlot);
             ShowUpdateBanner();
             if ((Application.Current as App)?.ActiveLicense is { IsExpiringSoon: true } expiring) root.Children.Add(LicenseRenewalBanner(expiring));
             if (PlanAccess.DemoMode && CurrentLicense is null) root.Children.Add(DemoBanner());
+            if (NewLookBanner() is { } offer) root.Children.Add(offer);
 
-            // Destaque: pontuação de saúde + ações principais
-            var (score, headline, tone) = HealthScore(snapshot);
-            var hero = new Grid();
-            hero.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            hero.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var heroText = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            // 1. Estado geral: o status não depende só da cor (texto + ícone)
-            var statusText = tone == "Success" ? "Saudável" : tone == "Warning" ? "Atenção" : "Crítico";
-            var status = Pill((tone == "Success" ? "● " : "▲ ") + statusText, tone);
-            status.HorizontalAlignment = HorizontalAlignment.Left; status.Margin = new Thickness(0, 0, 0, 10);
-            heroText.Children.Add(status);
-            var headlineText = new TextBlock { Text = headline, FontSize = 24, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
-            headlineText.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
-            heroText.Children.Add(headlineText);
-            var facts = new WrapPanel { Margin = new Thickness(0, 10, 0, AppearanceService.Space(18)) };
-            var lastGoal = Engine.SmartHistory.Default.LastAnalysis?.Goal;
-            foreach (var (glyph, label, value) in new[]
-            {
-                (Glyphs.Monitor, "Computador", Environment.MachineName), (Glyphs.Monitor, "Sistema", $"{snapshot.OperatingSystem} · Build {snapshot.Build}"),
-                (Glyphs.Clock, "Tempo ligado", snapshot.UptimeText), (Glyphs.Lightning, "Perfil ativo", lastGoal is { } g ? Translator.Tr(GoalTitle(g)) : Translator.Tr("Nenhum objetivo analisado")),
-            })
-            {
-                var fact = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 22, 4) };
-                var icon = GlyphIcon(glyph, 12, "MutedBrush"); icon.Margin = new Thickness(0, 0, 7, 0);
-                fact.Children.Add(icon);
-                var l = new TextBlock { Text = label + ":", FontSize = 12.5, Margin = new Thickness(0, 0, 5, 0) }; l.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
-                var v = new TextBlock { Text = value, FontSize = 12.5, FontWeight = FontWeights.SemiBold, Tag = Translator.SystemDataTag }; v.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondaryBrush");
-                fact.Children.Add(l); fact.Children.Add(v);
-                facts.Children.Add(fact);
-            }
-            heroText.Children.Add(facts);
-            // 2. Ação principal em destaque; as outras ficam como secundárias
-            var actions = new WrapPanel();
-            var clean = IconButton(Glyphs.Broom, "Analisar limpeza", primary: true); clean.Tag = "quickclean"; clean.Click += RunOperation_Click;
-            clean.ToolTip = "Mostra quanto espaço dá para liberar antes de apagar qualquer coisa";
-            var tune = IconButton(Glyphs.Lightning, "Revisar ajustes"); tune.Tag = "padrao"; tune.Click += RunOperation_Click;
-            var settings = IconButton(Glyphs.Settings, "Configurações"); settings.Click += (_, _) => NavigateTo("settings");
-            foreach (var b in new[] { clean, tune, settings }) { b.IsEnabled = !_operationRunning; b.Margin = new Thickness(0, 0, 8, 0); actions.Children.Add(b); }
-            heroText.Children.Add(actions);
-            hero.Children.Add(heroText);
-            var ring = ScoreRing(score, "SAÚDE", 112 * AppearanceService.CardScale); ring.Margin = new Thickness(24, 0, 4, 0);
-            ring.ToolTip = $"Pontuação de saúde: {score:0} de 100";
-            Grid.SetColumn(ring, 1); hero.Children.Add(ring);
-            var heroCard = Surface(hero);
-            heroCard.Padding = new Thickness(AppearanceService.Space(26), AppearanceService.Space(22), AppearanceService.Space(26), AppearanceService.Space(22));
-            heroCard.SetResourceReference(Border.BackgroundProperty, "HeroBrush");
-            root.Children.Add(heroCard);
             var prefs = AppearanceService.Current;
-            // Status (otimizações ativas, última análise, último teste, alertas) e ações rápidas
-            if (prefs.DashboardStatus) root.Children.Add(CommandStatusRow(snapshot));
-            if (prefs.DashboardQuickActions) root.Children.Add(QuickActionsPanel());
-            // 3. Monitor em tempo real
-            if (prefs.DashboardLive) root.Children.Add(BuildLivePanel());
+            var (score, _, tone) = HealthScore(snapshot);
+            if (prefs.DashboardStatus) root.Children.Add(RecommendationLine(snapshot));
 
-            // 4. Hardware
-            var stats = Responsive(new UniformGrid { Columns = 5, Margin = new Thickness(0, 0, -14, 2) }, 200, 5);
-            stats.Children.Add(Card("PROCESSADOR", snapshot.Processor, Glyphs.Chip, "MutedBrush"));
-            stats.Children.Add(Card("MEMÓRIA", snapshot.Memory, Glyphs.Memory, "MutedBrush"));
-            stats.Children.Add(Card("ESPAÇO LIVRE", $"{snapshot.FreeSpace} de {snapshot.Storage}", Glyphs.Drive, "MutedBrush"));
-            stats.Children.Add(Card("PLACA DE VÍDEO", snapshot.Graphics, Glyphs.Monitor, "MutedBrush"));
-            stats.Children.Add(TemperatureCard());
-            if (prefs.DashboardHardware) root.Children.Add(stats);
-
-            var columns = new Grid();
-            columns.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            columns.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.1, GridUnitType.Star) });
-            columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(16) });
-            columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            var health = BuildHealthPanel(snapshot);
-            columns.Children.Add(health);
-
-            var activityPanel = new StackPanel();
-            var activityHead = new DockPanel();
-            var seeAll = new Button { Content = "Ver tudo", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(0), VerticalAlignment = VerticalAlignment.Top };
-            seeAll.SetResourceReference(StyleProperty, "GhostButton");
-            seeAll.Click += History_Click;
-            DockPanel.SetDock(seeAll, Dock.Right); activityHead.Children.Add(seeAll);
-            activityHead.Children.Add(SectionHeader("Atividade recente"));
-            activityPanel.Children.Add(activityHead);
-            foreach (var line in _activity.TakeLast(5).Reverse())
+            // 1. Hardware ao vivo + Meu PC
+            var top = HomeGrid();
+            if (prefs.DashboardHardware)
             {
-                var isError = line.Contains("[ERROR]"); var isSuccess = line.Contains("[SUCCESS]");
-                var row = new DockPanel { Margin = new Thickness(0, 0, 0, 10) };
-                var dot = new System.Windows.Shapes.Ellipse { Width = 7, Height = 7, Margin = new Thickness(0, 5, 10, 0), VerticalAlignment = VerticalAlignment.Top };
-                dot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, isError ? "DangerBrush" : isSuccess ? "SuccessBrush" : "AccentBrush");
-                row.Children.Add(dot);
-                var text = Label(line, 11.5, true); text.Margin = new Thickness(0); text.TextTrimming = TextTrimming.CharacterEllipsis; text.TextWrapping = TextWrapping.NoWrap;
-                text.ToolTip = line;
-                row.Children.Add(text);
-                activityPanel.Children.Add(row);
+                top.Children.Add(CpuCard(snapshot, data.Cpu, prefs.DashboardLive));
+                top.Children.Add(MemoryCard(snapshot, data.Memory, prefs.DashboardLive));
+                top.Children.Add(GpuCard(snapshot, prefs.DashboardLive));
             }
-            if (_activity.Count == 0) activityPanel.Children.Add(Label("Suas próximas execuções aparecerão aqui.", 13, true));
-            var activityCard = Surface(activityPanel);
-            Grid.SetColumn(activityCard, 2);
-            columns.Children.Add(activityCard);
-            // Empilha os cartões em telas estreitas. A decisão usa a área visível (não a largura da própria grade,
-            // que muda ao reorganizar e entrava em ciclo) e só reorganiza quando o modo muda de fato.
-            bool? stackedNow = null;
-            void Arrange()
+            top.Children.Add(MyPcCard(snapshot, score, tone));
+            root.Children.Add(top);
+
+            // 2. Armazenamento, rede e atividade
+            if (prefs.DashboardHardware || prefs.DashboardActivity)
             {
-                var stacked = ContentScroll.ViewportWidth is > 0 and < 940;
-                if (stackedNow == stacked) return;
-                stackedNow = stacked;
-                columns.RowDefinitions[1].Height = stacked ? GridLength.Auto : new GridLength(0);
-                columns.ColumnDefinitions[0].Width = stacked ? new GridLength(1, GridUnitType.Star) : new GridLength(1.1, GridUnitType.Star);
-                columns.ColumnDefinitions[1].Width = new GridLength(stacked ? 0 : 16);
-                columns.ColumnDefinitions[2].Width = stacked ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
-                Grid.SetRow(activityCard, stacked ? 1 : 0);
-                Grid.SetColumn(activityCard, stacked ? 0 : 2);
+                var middle = HomeGrid();
+                if (prefs.DashboardHardware)
+                {
+                    middle.Children.Add(StorageCard(data.Drives));
+                    middle.Children.Add(Span(NetworkCard(data.Network, prefs.DashboardLive), 2));
+                }
+                if (prefs.DashboardActivity) middle.Children.Add(ActivityCard());
+                root.Children.Add(middle);
             }
-            Arrange();
-            // ScrollChanged também pega a barra de rolagem aparecendo ou sumindo (muda a largura visível)
-            ScrollChangedEventHandler onResize = (_, e) => { if (e.ViewportWidthChange != 0) Arrange(); };
-            ContentScroll.ScrollChanged += onResize;
-            columns.Loaded += (_, _) => Arrange();
-            columns.Unloaded += (_, _) => ContentScroll.ScrollChanged -= onResize;
-            if (prefs.DashboardActivity) root.Children.Add(columns);
-            // 6. Recursos secundários: o passo a passo completo
+
+            // 3. Acesso rápido
+            if (prefs.DashboardQuickActions)
+            {
+                root.Children.Add(HomeSectionTitle("Acesso rápido", "Os recursos mais usados, com o estado de cada um."));
+                var quick = HomeGrid(240);
+                var lastTest = PerfLabStore.Default.List().FirstOrDefault();
+                quick.Children.Add(QuickCard(Tr("Analisador de desempenho"), Tr("Ferramenta de análise de FPS"),
+                    lastTest is null ? "Muted" : "Success", lastTest is null ? Tr("Nenhum teste ainda") : $"{Tr("Último teste")}: {lastTest.StartedAt:dd/MM HH:mm}",
+                    Tr("Analisar"), ArtKind.DotWave, () => NavigateTo("perflab")));
+                var analysis = SmartHistory.Default.LastAnalysis;
+                quick.Children.Add(QuickCard(Tr("Otimização inteligente"), Tr("Ajustes recomendados em um clique"),
+                    analysis is null ? "Muted" : "Success", analysis is null ? Tr("Ainda não analisado") : string.Format(Tr("{0} ajustes aplicados"), analysis.Applied),
+                    Tr("Otimizar"), ArtKind.Waves, () => NavigateTo("smart")));
+                quick.Children.Add(QuickCard(Tr("Central de saúde"), Tr("Diagnóstico com evidências"),
+                    tone, string.Format(Tr("Saúde {0} de 100"), score), Tr("Diagnosticar"), ArtKind.Rings, () => NavigateTo("diagnostics")));
+                var session = GamingService.ActiveSession();
+                quick.Children.Add(QuickCard(Tr("Central de jogos"), Tr("Modo Jogo, perfis e presets"),
+                    session is null ? "Muted" : session.RecoveryPending ? "Warning" : "Success",
+                    session is null ? Tr("Modo Jogo desligado") : session.RecoveryPending ? Tr("Restauração pendente") : Tr("Modo Jogo ativo"),
+                    Tr("Configurar"), ArtKind.Bars, () => NavigateTo("gaming")));
+                root.Children.Add(quick);
+            }
+
+            // 4. Configurações rápidas e jogos
+            if (prefs.DashboardActivity)
+            {
+                var bottom = HomeGrid();
+                bottom.Children.Add(Span(QuickSettingsCard(), 2));
+                bottom.Children.Add(Span(GamesCard(), 2));
+                root.Children.Add(bottom);
+            }
+
+            // 5. O passo a passo completo continua disponível
             root.Children.Add(FixAllCard());
-
             var profile = _configService.GetActiveProfile();
             var profileLine = new Grid { Margin = new Thickness(4, 0, 0, 8) };
             profileLine.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -212,6 +177,9 @@ public partial class MainWindow
             Grid.SetColumn(pl, 1);
             profileLine.Children.Add(pl);
             root.Children.Add(profileLine);
+
+            // Primeira leitura já desenhada (o monitor atualiza a cada segundo depois)
+            if (HardwareMonitorService.Shared.Latest is { } latest) foreach (var update in _homeLive) update(latest);
             AnimatePageIn();
         }
         catch (Exception ex)
@@ -222,55 +190,127 @@ public partial class MainWindow
         }
     }
 
-    private Border BuildHealthPanel(SystemSnapshot snapshot)
+    private StackPanel HomeSectionTitle(string title, string subtitle)
     {
-        var panel = new StackPanel();
-        panel.Children.Add(SectionHeader("Leitura rápida", "Indicadores que mais influenciam o desempenho do dia a dia."));
-        var free = snapshot.FreePercent;
-        AddMeter(panel, Glyphs.Drive, "Espaço livre no disco", free, $"{free:N0}% livre", free >= 20 ? "Success" : free >= 10 ? "Warning" : "Danger");
-        var hours = snapshot.Uptime.TotalHours;
-        AddMeter(panel, Glyphs.Clock, "Tempo desde o último reinício", Math.Min(100, hours / 168d * 100), hours < 72 ? "Recente" : "Reinicie em breve", hours < 72 ? "Success" : "Warning");
-        var memory = snapshot.MemoryGb;
-        AddMeter(panel, Glyphs.Memory, "Memória instalada", Math.Min(100, memory / 32d * 100), memory >= 16 ? "Ideal para jogos" : memory >= 8 ? "Suficiente" : "Limitada", memory >= 16 ? "Success" : memory >= 8 ? "Warning" : "Danger");
-        panel.Children.Add(Label("Acesso rápido", 12, true));
-        AddHealthLink(panel, "Drivers", Glyphs.Monitor, "drivers", "Verificar dispositivos e drivers");
-        AddHealthLink(panel, "Serviços", Glyphs.Services, "services", "Abrir grupos de serviços");
-        AddHealthLink(panel, "Windows Update", Glyphs.Refresh, "fixes", "Reparar o Windows Update", "windows-update");
-        AddHealthLink(panel, "Bluetooth", Glyphs.Bluetooth, "fixes", "Reparar o Bluetooth", "bluetooth");
-        return Surface(panel);
+        var header = SectionHeader(title, subtitle);
+        header.Margin = new Thickness(0, AppearanceService.Space(8), 0, AppearanceService.Space(14));
+        return header;
     }
 
+    /// <summary>Esqueleto estático enquanto o sistema é lido (sem brilho animado: nada fica redesenhando).</summary>
+    private UIElement HomeSkeleton()
+    {
+        var grid = HomeGrid();
+        for (var i = 0; i < 4; i++)
+        {
+            var stack = new StackPanel();
+            foreach (var (width, height, top) in new[] { (0.45, 12.0, 0.0), (0.7, 14.0, 8.0), (0.35, 30.0, 26.0), (1.0, 8.0, 22.0), (0.9, 8.0, 12.0), (0.8, 8.0, 12.0), (1.0, 64.0, 22.0) })
+            {
+                var bar = new Border { Height = height, CornerRadius = new CornerRadius(Math.Min(6, height / 2)), Margin = new Thickness(0, top, 0, 0), HorizontalAlignment = HorizontalAlignment.Left };
+                bar.SetResourceReference(Border.BackgroundProperty, "PanelHoverBrush");
+                stack.Children.Add(bar);
+                var fraction = width;
+                stack.SizeChanged += (_, e) => bar.Width = Math.Max(0, e.NewSize.Width * fraction);
+            }
+            grid.Children.Add(HomeCard(stack));
+        }
+        return grid;
+    }
+
+    /// <summary>
+    /// Linha de recomendações acima dos cards (como "Recommended tweaks" da referência): quantos ajustes a última
+    /// análise recomendou e os alertas atuais, cada um levando à página certa.
+    /// </summary>
+    private UIElement RecommendationLine(SystemSnapshot snapshot)
+    {
+        var line = new DockPanel { Margin = new Thickness(0, 0, 0, AppearanceService.Space(16)) };
+        var alerts = CommandAlerts(snapshot);
+        var right = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        foreach (var (text, alertTone, page) in alerts.Take(2))
+        {
+            var pill = Pill("● " + Tr(text), alertTone);
+            ((TextBlock)pill.Child).Tag = Translator.SystemDataTag;
+            pill.Margin = new Thickness(8, 0, 0, 0);
+            if (page is { } target && target != "dashboard") { pill.Cursor = Cursors.Hand; pill.MouseLeftButtonUp += (_, _) => NavigateTo(target); }
+            right.Children.Add(pill);
+        }
+        if (alerts.Count > 2)
+        {
+            var more = Pill($"+{alerts.Count - 2}", "Info"); more.Margin = new Thickness(8, 0, 0, 0); more.Cursor = Cursors.Hand;
+            more.MouseLeftButtonUp += (_, _) => AlertsButton_Click(AlertsButton, new RoutedEventArgs());
+            right.Children.Add(more);
+        }
+        DockPanel.SetDock(right, Dock.Right); line.Children.Add(right);
+
+        var left = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        var analysis = SmartHistory.Default.LastAnalysis;
+        var text1 = new TextBlock { Text = analysis is null ? Tr("Analise o PC para receber recomendações") : Tr("Recomendações da última análise"), FontSize = 12.5, VerticalAlignment = VerticalAlignment.Center };
+        text1.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+        left.Children.Add(text1);
+        var info = GlyphIcon(Glyphs.Info, 12, "MutedBrush"); info.Margin = new Thickness(7, 1, 9, 0);
+        info.ToolTip = analysis is null ? Tr("A Otimização inteligente lê o hardware e o estado de cada ajuste e recomenda só o que se aplica.")
+            : string.Format(Tr("Análise de {0:dd/MM HH:mm} para o objetivo {1}."), analysis.At, Tr(GoalTitle(analysis.Goal)));
+        left.Children.Add(info);
+        var count = Pill(analysis is null ? Tr("Analisar") : string.Format(Tr("{0} ajustes"), analysis.Recommended), "Accent");
+        ((TextBlock)count.Child).Tag = Translator.SystemDataTag;
+        count.Cursor = Cursors.Hand;
+        count.ToolTip = Tr("Abrir a Otimização inteligente");
+        count.MouseLeftButtonUp += (_, _) => NavigateTo("smart");
+        left.Children.Add(count);
+        line.Children.Add(left);
+        return line;
+    }
+
+    /// <summary>
+    /// Convite único para o tema novo: quem tinha escolhido outro tema continua com ele até aceitar.
+    /// A escolha fica guardada (não aparece de novo depois de aplicar ou dispensar).
+    /// </summary>
+    private Border? NewLookBanner()
+    {
+        const string offerId = "redesign-tema-azul";
+        if (AppearanceService.Current.Theme == ThemeMode.Dark || _configService.IsTutorialCompleted(offerId)) return null;
+        var dock = new DockPanel();
+        Border? card = null;
+        void Done()
+        {
+            try { _configService.SetTutorialCompleted(offerId, true); }
+            catch (System.IO.IOException ex) { _log.Write("WARN", "Preferências não foram salvas: " + ex.Message); }
+        }
+        var apply = IconButton(Glyphs.Check, "Aplicar o tema", primary: true);
+        apply.Margin = new Thickness(12, 0, 0, 0);
+        apply.Click += (_, _) => { Done(); var next = AppearanceService.Current.Clone(); next.Theme = ThemeMode.Dark; SaveAppearance(next); };
+        var later = new Button { Content = "Agora não", Margin = new Thickness(8, 0, 0, 0) };
+        later.SetResourceReference(StyleProperty, "GhostButton");
+        later.Click += (_, _) => { Done(); if (card?.Parent is Panel parent) parent.Children.Remove(card); };
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Children = { later, apply } };
+        DockPanel.SetDock(buttons, Dock.Right); dock.Children.Add(buttons);
+        var chip = IconChip(Glyphs.Palette, "Accent", 40); DockPanel.SetDock(chip, Dock.Left); dock.Children.Add(chip);
+        var text = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        var title = Label("Novo visual do Qrztweaks", 14); title.FontWeight = FontWeights.SemiBold; title.Margin = new Thickness(0);
+        text.Children.Add(title);
+        var sub = Label("O tema Azul meia-noite (preto, branco e azul) foi feito para o novo design. Seu tema atual continua disponível em Configurações → Aparência.", 12, true);
+        sub.Margin = new Thickness(0, 2, 0, 0);
+        text.Children.Add(sub);
+        dock.Children.Add(text);
+        card = Surface(dock);
+        card.SetResourceReference(Border.BackgroundProperty, "HeroBrush");
+        return card;
+    }
+
+    /// <summary>Atalho de reparo (usado no Meu PC): ícone, nome e seta, levando à página ou correção.</summary>
     private void AddHealthLink(Panel panel, string title, string glyph, string page, string hint, string? fixId = null)
     {
-        var button = new Button { HorizontalContentAlignment = HorizontalAlignment.Stretch, Padding = new Thickness(7), Margin = new Thickness(0, 3, 0, 0), ToolTip = hint };
+        var button = new Button { HorizontalContentAlignment = HorizontalAlignment.Stretch, Padding = new Thickness(8), Margin = new Thickness(0, 3, 0, 0), ToolTip = hint };
         button.SetResourceReference(StyleProperty, "GhostButton");
         var row = new DockPanel();
-        row.Children.Add(IconChip(glyph, "Info", 26));
-        var text = Label(title, 11.5); text.Margin = new Thickness(8, 0, 0, 0); row.Children.Add(text);
-        var arrow = Label("›", 18, true); DockPanel.SetDock(arrow, Dock.Right); row.Children.Add(arrow);
+        row.Children.Add(IconChip(glyph, "Accent", 28));
+        var text = Label(title, 12.5); text.Margin = new Thickness(10, 0, 0, 0); text.VerticalAlignment = VerticalAlignment.Center;
+        text.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+        var arrow = GlyphIcon(Glyphs.ChevronRight, 10, "MutedBrush"); DockPanel.SetDock(arrow, Dock.Right);
+        row.Children.Add(arrow); row.Children.Add(text);
         button.Content = row;
         button.Click += (_, _) => { if (fixId != null) OpenFixById(fixId); else NavigateTo(page); };
         panel.Children.Add(button);
-    }
-
-    private void AddMeter(Panel panel, string glyph, string title, double value, string status, string tone)
-    {
-        var row = new Grid { Margin = new Thickness(0, 6, 0, 10) };
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        row.Children.Add(IconChip(glyph, tone, 34));
-        var body = new StackPanel { Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-        var head = new DockPanel();
-        var s = new TextBlock { Text = status, FontSize = 11, FontWeight = FontWeights.SemiBold };
-        s.SetResourceReference(TextBlock.ForegroundProperty, tone + "Brush");
-        DockPanel.SetDock(s, Dock.Right); head.Children.Add(s);
-        var t = new TextBlock { Text = title, FontSize = 12.5, FontWeight = FontWeights.Medium };
-        head.Children.Add(t);
-        body.Children.Add(head);
-        var bar = new ProgressBar { Minimum = 0, Maximum = 100, Value = Math.Clamp(value, 0, 100), Height = 6, Margin = new Thickness(0, 7, 0, 0), IsIndeterminate = false };
-        body.Children.Add(bar);
-        Grid.SetColumn(body, 1); row.Children.Add(body);
-        panel.Children.Add(row);
     }
 
     /// <summary>

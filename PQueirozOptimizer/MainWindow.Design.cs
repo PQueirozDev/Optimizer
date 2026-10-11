@@ -49,6 +49,7 @@ public partial class MainWindow
     {
         PageActions.Children.Clear();
         if (!PageHeaders.TryGetValue(page, out var header)) return;
+        PageEyebrow.Tag = null;
         PageEyebrow.Text = header.Eyebrow;
         PageSubtitle.Text = header.Subtitle;
         // Título e subtítulo entram com um leve deslize (160 ms); sem animação, trocam direto

@@ -79,7 +79,8 @@ internal static class UiShots
                 typeof(MainWindow).GetMethod("NavigateTo", Flags)!.Invoke(window, new object[] { page });
                 Wait(page == "dashboard" ? 2500 : page == "startup" ? 6000 : 900);
                 if (window.FindName("TutorialLayer") is UIElement layer) layer.Visibility = Visibility.Collapsed;
-                Save(window, Path.Combine(outDir, $"{page}-{w}x{h}.png"), w, tall ? 2600 : h, tall);
+                Save(window, Path.Combine(outDir, $"{page}-{w}x{h}.png"));
+                if (tall) SavePage(window, Path.Combine(outDir, $"{page}-{w}-pagina.png"));
                 if (audit) Collect(window, page);
                 Console.WriteLine($"UI {page} {w}x{h}");
             }
@@ -93,22 +94,43 @@ internal static class UiShots
         return 0;
     }
 
-    /// <summary>Captura a janela; com <paramref name="tall"/>, a página inteira (sem a rolagem) numa imagem alta.</summary>
-    static void Save(MainWindow window, string path, int width, int height, bool tall)
+    /// <summary>Captura a janela como ela está na tela.</summary>
+    static void Save(MainWindow window, string path)
     {
+        window.UpdateLayout();
         var visual = (FrameworkElement)window.Content;
-        if (tall)
-        {
-            visual.Measure(new Size(width, height)); visual.Arrange(new Rect(0, 0, width, height)); visual.UpdateLayout();
-        }
-        else window.UpdateLayout();
-        var w = (int)Math.Round(tall ? width : visual.ActualWidth); var h = (int)Math.Round(tall ? height : visual.ActualHeight);
-        var bitmap = new RenderTargetBitmap(w, h, 96, 96, PixelFormats.Pbgra32);
+        var bitmap = new RenderTargetBitmap((int)Math.Round(visual.ActualWidth), (int)Math.Round(visual.ActualHeight), 96, 96, PixelFormats.Pbgra32);
         bitmap.Render(visual);
+        Write(bitmap, path);
+    }
+
+    /// <summary>A página inteira (o conteúdo rolável sem cortar), sobre o fundo do tema, para conferir tudo de uma vez.</summary>
+    static void SavePage(MainWindow window, string path)
+    {
+        var host = (FrameworkElement)window.FindName("ContentHost");
+        var width = host.ActualWidth;
+        host.Measure(new Size(width, double.PositiveInfinity));
+        var height = Math.Max(1, host.DesiredSize.Height);
+        host.Arrange(new Rect(0, 0, width, height));
+        host.UpdateLayout();
+        var visual = new DrawingVisual();
+        using (var dc = visual.RenderOpen())
+        {
+            dc.DrawRectangle(window.TryFindResource("BackgroundBrush") as Brush ?? Brushes.Black, null, new Rect(0, 0, width + 32, height + 32));
+            dc.DrawRectangle(new VisualBrush(host) { Stretch = Stretch.None, AlignmentX = AlignmentX.Left, AlignmentY = AlignmentY.Top }, null, new Rect(16, 16, width, height));
+        }
+        var bitmap = new RenderTargetBitmap((int)Math.Round(width + 32), (int)Math.Round(height + 32), 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(visual);
+        Write(bitmap, path);
+        // Devolve o conteúdo ao tamanho da janela
+        window.InvalidateMeasure(); host.InvalidateMeasure(); window.UpdateLayout();
+    }
+
+    static void Write(BitmapSource bitmap, string path)
+    {
         var png = new PngBitmapEncoder();
         png.Frames.Add(BitmapFrame.Create(bitmap));
         using var stream = File.Create(path);
         png.Save(stream);
-        if (tall) { window.InvalidateMeasure(); window.UpdateLayout(); }
     }
 }

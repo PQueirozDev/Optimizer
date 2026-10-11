@@ -18,6 +18,8 @@ public sealed class QrzGrid : Panel
 
     public double MinColumnWidth { get; set; } = 300;
     public int MaxColumns { get; set; } = 4;
+    /// <summary>Quantidades de colunas permitidas (ex.: 1, 2 e 4, para quatro cards nunca virarem 3 + 1). Null = qualquer uma.</summary>
+    public int[]? AllowedColumns { get; set; }
     public double ColumnGap { get; set; } = 16;
     public double RowGap { get; set; } = 16;
 
@@ -28,8 +30,11 @@ public sealed class QrzGrid : Panel
     private readonly List<double> _rowHeights = new();
     private double _columnWidth;
 
-    private int ColumnsFor(double width) =>
-        double.IsInfinity(width) || width <= 0 ? MaxColumns : Math.Clamp((int)((width + ColumnGap) / (MinColumnWidth + ColumnGap)), 1, Math.Max(1, MaxColumns));
+    private int ColumnsFor(double width)
+    {
+        var columns = double.IsInfinity(width) || width <= 0 ? MaxColumns : Math.Clamp((int)((width + ColumnGap) / (MinColumnWidth + ColumnGap)), 1, Math.Max(1, MaxColumns));
+        return AllowedColumns is { Length: > 0 } allowed ? allowed.Where(c => c <= columns).DefaultIfEmpty(1).Max() : columns;
+    }
 
     protected override Size MeasureOverride(Size available)
     {

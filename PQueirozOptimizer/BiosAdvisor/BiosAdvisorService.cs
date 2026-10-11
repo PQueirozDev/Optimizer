@@ -23,7 +23,7 @@ public sealed class BiosAdvisorService
         _detector = detector ?? new HardwareDetector();
         Store = store ?? new BiosAdvisorStore();
         State = Store.Load();
-        _log.Write("INFO", "BIOS Advisor initialized");
+        _log.Write("INFO", "Assistente de BIOS iniciado");
     }
 
     public HardwareProfile? Profile => _detection is { IsCompletedSuccessfully: true } t ? t.Result : null;
@@ -44,20 +44,20 @@ public sealed class BiosAdvisorService
 
     private HardwareProfile LogDetected(HardwareProfile p)
     {
-        _log.Write("INFO", "Hardware detected");
-        _log.Write("INFO", $"Motherboard detected: {p.Motherboard.Manufacturer} {p.Motherboard.Product} · BIOS {p.Bios.Version}");
-        _log.Write("INFO", $"CPU detected: {p.Cpu.Name} ({p.Cpu.Cores}C/{p.Cpu.Threads}T)");
-        _log.Write("INFO", $"Memory detected: {p.Memory.Modules.Count} module(s), {p.Memory.TotalBytes / 1024 / 1024 / 1024} GB, {p.Memory.ConfiguredMhz} MHz");
-        foreach (var g in p.Gpus) _log.Write("INFO", $"GPU detected: {g.Name} (driver {g.DriverVersion})");
+        _log.Write("INFO", "Hardware detectado");
+        _log.Write("INFO", $"Placa-mãe detectada: {p.Motherboard.Manufacturer} {p.Motherboard.Product} · BIOS {p.Bios.Version}");
+        _log.Write("INFO", $"Processador detectado: {p.Cpu.Name} ({p.Cpu.Cores} núcleos/{p.Cpu.Threads} threads)");
+        _log.Write("INFO", $"Memória detectada: {p.Memory.Modules.Count} módulo(s), {p.Memory.TotalBytes / 1024 / 1024 / 1024} GB, {p.Memory.ConfiguredMhz} MHz");
+        foreach (var g in p.Gpus) _log.Write("INFO", $"Placa de vídeo detectada: {g.Name} (driver {g.DriverVersion})");
         return p;
     }
 
     public AdvisorReport Analyze(HardwareProfile profile)
     {
-        _log.Write("INFO", $"Rules loaded: {BiosAdvisorEngine.Rules.Count}");
+        _log.Write("INFO", $"Regras carregadas: {BiosAdvisorEngine.Rules.Count}");
         var db = BiosDatabase.Current;
         var report = BiosAdvisorEngine.Analyze(profile, State.Preset, BiosAdvisorStore.ValidConfirmations(State, profile), State.Readings, db);
-        _log.Write("INFO", $"Recommendations generated: {report.Recommendations.Count} ({report.Preset}, score {report.Score.Overall?.ToString() ?? "n/a"}, database v{db.Version})");
+        _log.Write("INFO", $"Recomendações geradas: {report.Recommendations.Count} ({report.Preset}, pontuação {report.Score.Overall?.ToString() ?? "sem dados"}, banco v{db.Version})");
         return report;
     }
 
@@ -74,7 +74,7 @@ public sealed class BiosAdvisorService
         var readings = BiosSettingMapper.Map(settings, BiosDatabase.Current, profile.Fingerprint, DateTime.Now);
         State.Readings = readings;
         Store.Save(State);
-        _log.Write("INFO", $"BIOS Advisor: BIOS read via SCEWIN ({readings.Values.Count} of {readings.TotalQuestions} settings recognized)");
+        _log.Write("INFO", $"Assistente de BIOS: BIOS lida pelo SCEWIN ({readings.Values.Count} de {readings.TotalQuestions} configurações reconhecidas)");
         return readings;
     }
 
@@ -82,7 +82,7 @@ public sealed class BiosAdvisorService
     public async Task<bool> RefreshDatabaseAsync()
     {
         var updated = await BiosDatabase.RefreshAsync();
-        if (updated) _log.Write("INFO", $"BIOS Advisor: database updated to v{BiosDatabase.Current.Version}");
+        if (updated) _log.Write("INFO", $"Assistente de BIOS: banco atualizado para a v{BiosDatabase.Current.Version}");
         return updated;
     }
 
@@ -100,7 +100,7 @@ public sealed class BiosAdvisorService
     {
         if (run.Slot == Benchmark.BenchmarkSlot.Baseline) State.Baseline = run; else State.After = run;
         Store.Save(State);
-        _log.Write("INFO", $"BIOS Advisor: benchmark {(run.Slot == Benchmark.BenchmarkSlot.Baseline ? "baseline" : "after")} saved");
+        _log.Write("INFO", $"Assistente de BIOS: teste de desempenho {(run.Slot == Benchmark.BenchmarkSlot.Baseline ? "de referência" : "depois dos ajustes")} salvo");
     }
 
     public void ClearBenchmarks() { State.Baseline = null; State.After = null; Store.Save(State); }

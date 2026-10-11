@@ -21,7 +21,12 @@ public sealed class QrzArt : FrameworkElement
     {
         IsHitTestVisible = false;
         SnapsToDevicePixels = false;
+        // Recorte com os cantos do card: o desenho nunca passa da borda arredondada
+        SizeChanged += (_, e) => Clip = new RectangleGeometry(new Rect(e.NewSize), CornerRadius, CornerRadius);
     }
+
+    /// <summary>Raio dos cantos do recorte (o mesmo do card onde o desenho fica).</summary>
+    public double CornerRadius { get; set; } = 15;
 
     protected override void OnRender(DrawingContext dc)
     {

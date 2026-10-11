@@ -60,7 +60,7 @@ public partial class MainWindow
 
     private async Task RedrawWhenAsync(Task task)
     {
-        try { await task; } catch (Exception ex) { _log.Write("WARN", "BIOS Advisor: " + ex.GetBaseException().Message); }
+        try { await task; } catch (Exception ex) { _log.Write("WARN", "Assistente de BIOS: " + ex.GetBaseException().Message); }
         if (_currentPage == "biosadvisor" && IsLoaded && AdvisorLayer.Visibility != Visibility.Visible) KeepScroll(ShowBiosAdvisor);
     }
 
