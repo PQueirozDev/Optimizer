@@ -10,7 +10,7 @@ using PQueirozOptimizer.Services;
 
 namespace PQueirozOptimizer;
 
-/// <summary>BIOS Advisor: versão da BIOS, analisador de memória, monitor de sensores e teste antes/depois.</summary>
+/// <summary>Assistente de BIOS: versão da BIOS, analisador de memória, monitor de sensores e teste antes/depois.</summary>
 public partial class MainWindow
 {
     private Task<BiosUpdateResult>? _biosUpdateCheck;
@@ -346,12 +346,12 @@ public partial class MainWindow
             var current = (slot == BenchmarkSlot.Baseline ? Advisor.State.Baseline : Advisor.State.After) ?? existing;
             var run = (current ?? new BenchmarkRun { Slot = slot, BiosVersion = report.Profile.Bios.Version }).WithFrames(metrics, Path.GetFileName(file));
             Advisor.SaveBenchmark(run);
-            ShowToast("BIOS Advisor", T($"{metrics.Frames} quadros importados.", $"{metrics.Frames} frames imported."), "Success");
+            ShowToast("Assistente de BIOS", T($"{metrics.Frames} quadros importados.", $"{metrics.Frames} frames imported."), "Success");
             if (_currentPage == "biosadvisor") KeepScroll(ShowBiosAdvisor);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FormatException or OutOfMemoryException)
         {
-            if (!_advisorClosed) ShowToast("BIOS Advisor", ex.Message, "Danger");
+            if (!_advisorClosed) ShowToast("Assistente de BIOS", ex.Message, "Danger");
         }
     }
 
@@ -371,7 +371,7 @@ public partial class MainWindow
         {
             if (!_advisorClosed && ReferenceEquals(_advisorRecording, cts)) StopSensorRecording(report);
         }));
-        ShowToast("BIOS Advisor", T("Gravando sensores. Jogue o trecho de teste e depois clique em Parar (máximo 10 minutos).", "Recording sensors. Play the test section, then click Stop (10 minutes max)."), "Info");
+        ShowToast("Assistente de BIOS", T("Gravando sensores. Jogue o trecho de teste e depois clique em Parar (máximo 10 minutos).", "Recording sensors. Play the test section, then click Stop (10 minutes max)."), "Info");
         KeepScroll(ShowBiosAdvisor);
     }
 
@@ -384,12 +384,12 @@ public partial class MainWindow
         _advisorRecordingRegistration.Dispose();
         cts?.Dispose();
         if (_advisorMonitorTimer != null) _advisorMonitorTimer.Interval = TimeSpan.FromSeconds(3);
-        if (samples.Count < 5) { ShowToast("BIOS Advisor", T("Gravação curta demais: nada foi salvo.", "Recording too short: nothing was saved."), "Warning"); }
+        if (samples.Count < 5) { ShowToast("Assistente de BIOS", T("Gravação curta demais: nada foi salvo.", "Recording too short: nothing was saved."), "Warning"); }
         else
         {
             var existing = slot == BenchmarkSlot.Baseline ? Advisor.State.Baseline : Advisor.State.After;
             Advisor.SaveBenchmark((existing ?? new BenchmarkRun { Slot = slot, BiosVersion = report.Profile.Bios.Version }).WithSensors(samples));
-            ShowToast("BIOS Advisor", T($"{samples.Count} leituras de sensores salvas.", $"{samples.Count} sensor readings saved."), "Success");
+            ShowToast("Assistente de BIOS", T($"{samples.Count} leituras de sensores salvas.", $"{samples.Count} sensor readings saved."), "Success");
         }
         if (_currentPage == "biosadvisor") KeepScroll(ShowBiosAdvisor);
     }

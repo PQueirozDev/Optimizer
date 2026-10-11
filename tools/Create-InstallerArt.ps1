@@ -1,5 +1,5 @@
 # Gera as imagens do assistente de instalacao (Inno Setup) com a identidade visual do app:
-# fundo escuro com brilho violeta/ciano, logo em quadrado com gradiente e o nome do produto.
+# fundo preto com brilho azul e azul-ceu, logo do app e o nome do produto.
 # Saida: installer\art\wizard-large*.bmp (painel lateral) e wizard-small*.bmp (canto superior).
 param([string]$OutputDirectory = (Join-Path $PSScriptRoot "..\installer\art"))
 
@@ -10,10 +10,10 @@ $logoPath = Join-Path $PSScriptRoot "..\PQueirozOptimizer\Assets\app.png"
 New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
 $logo = [System.Drawing.Image]::FromFile((Resolve-Path $logoPath))
 
-$violet = [System.Drawing.Color]::FromArgb(139, 92, 246)
-$cyan = [System.Drawing.Color]::FromArgb(34, 211, 238)
+$accent = [System.Drawing.Color]::FromArgb(59, 130, 246)
+$cyan = [System.Drawing.Color]::FromArgb(92, 200, 255)
 $blue = [System.Drawing.Color]::FromArgb(47, 123, 255)
-$background = [System.Drawing.Color]::FromArgb(10, 11, 18)
+$background = [System.Drawing.Color]::FromArgb(7, 8, 11)
 
 function New-RoundedPath([float]$x, [float]$y, [float]$w, [float]$h, [float]$r) {
     $path = New-Object System.Drawing.Drawing2D.GraphicsPath
@@ -58,9 +58,9 @@ function New-LargeImage([int]$scale) {
     $g = [System.Drawing.Graphics]::FromImage($bitmap)
     $g.SmoothingMode = "AntiAlias"; $g.InterpolationMode = "HighQualityBicubic"; $g.TextRenderingHint = "AntiAliasGridFit"
     $g.Clear($background)
-    Add-Glow $g ($w * 0.85) ($h * 0.05) ($w * 0.95) $violet 150
+    Add-Glow $g ($w * 0.85) ($h * 0.05) ($w * 0.95) $accent 150
     Add-Glow $g ($w * 0.05) ($h * 0.95) ($w * 0.9) $cyan 95
-    Add-Glow $g ($w * 0.9) ($h * 0.75) ($w * 0.5) ([System.Drawing.Color]::FromArgb(236, 72, 153)) 60
+    Add-Glow $g ($w * 0.9) ($h * 0.75) ($w * 0.5) ([System.Drawing.Color]::FromArgb(29, 78, 216)) 70
 
     $tile = 64 * $scale
     Draw-LogoTile $g (($w - $tile) / 2) (92 * $scale) $tile
@@ -75,7 +75,7 @@ function New-LargeImage([int]$scale) {
 
     # Linha de destaque em gradiente embaixo do nome
     $lineY = 222 * $scale
-    $line = New-Object System.Drawing.Drawing2D.LinearGradientBrush((New-Object System.Drawing.PointF(($w * 0.3), 0)), (New-Object System.Drawing.PointF(($w * 0.7), 0)), $violet, $cyan)
+    $line = New-Object System.Drawing.Drawing2D.LinearGradientBrush((New-Object System.Drawing.PointF(($w * 0.3), 0)), (New-Object System.Drawing.PointF(($w * 0.7), 0)), $accent, $cyan)
     $g.FillRectangle($line, $w * 0.3, $lineY, $w * 0.4, 2 * $scale)
 
     $title.Dispose(); $sub.Dispose(); $muted.Dispose(); $line.Dispose(); $g.Dispose()

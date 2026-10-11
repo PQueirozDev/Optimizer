@@ -5,10 +5,10 @@ using PQueirozOptimizer.BiosAdvisor.Detector;
 using PQueirozOptimizer.BiosAdvisor.Monitoring;
 using PQueirozOptimizer.BiosAdvisor.Updates;
 
-/// <summary>Testes do BIOS Advisor: motor de regras, análise de memória, detecção (com WMI simulado), benchmark e atualização.</summary>
+/// <summary>Testes do Assistente de BIOS: motor de regras, análise de memória, detecção (com WMI simulado), benchmark e atualização.</summary>
 internal static class BiosAdvisorTests
 {
-    static void Assert(bool condition, string name) { if (!condition) throw new Exception(name); Console.WriteLine("PASS BIOS Advisor: " + name); }
+    static void Assert(bool condition, string name) { if (!condition) throw new Exception(name); Console.WriteLine("PASS Assistente de BIOS: " + name); }
 
     // ---------- Perfis de teste ----------
     internal static HardwareProfile TufB460(string partNumber = "DDR4 3000", int configured = 2933, string locatorA = "ChannelA-DIMM2", string locatorB = "ChannelB-DIMM2", long? bar1 = 256, string gpu = "NVIDIA GeForce RTX 2060", int enabledCores = 8, int threads = 16)

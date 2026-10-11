@@ -73,7 +73,7 @@ public partial class MainWindow
                 if (Msg("A verificação completa pode levar 30 minutos ou mais. Você pode continuar usando o PC, mas evite jogos pesados enquanto ela roda. Iniciar?", "Verificação de corrupção", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                     _ = RunLiveAsync("corrupcao");
             }));
-        grid.Children.Add(Automation("resources.runtimes", Glyphs.Package, "Accent", "Passo 2", "Runtimes e DirectX", "Tudo o que jogos e apps precisam",
+        grid.Children.Add(Automation("resources.runtimes", Glyphs.Package, "Accent", "Passo 2", "Runtimes e DirectX", "Tudo o que jogos e aplicativos precisam",
             "Baixa e instala o Visual C++, o DirectX e o .NET Desktop Runtime pelo winget. Corrige erros de DLL faltando.",
             new[] { "Visual C++ 2010–2022", "DirectX (runtime)", ".NET Desktop Runtime" }, "Instalar runtimes", async () =>
             {
@@ -202,7 +202,7 @@ public partial class MainWindow
         var run = IconButton(Glyphs.Play, "Rodar benchmark", primary: true);
         run.Click += (_, _) => _ = PrepareOperationAsync("benchmark");
         DockPanel.SetDock(run, Dock.Right); builtIn.Children.Add(run);
-        builtIn.Children.Add(FeatureHeader(Glyphs.Speed, "Accent", "Benchmark do Qrztweaks", "Mede CPU, disco e tempo de inicialização para comparar antes e depois das otimizações. Os resultados ficam em Atividade e reversão.", "Integrado", "Success"));
+        builtIn.Children.Add(FeatureHeader(Glyphs.Speed, "Accent", "Benchmark do Qrztweaks", "Mede CPU, disco e tempo de inicialização para comparar antes e depois das otimizações. Os resultados ficam no Histórico.", "Integrado", "Success"));
         var hero = Surface(builtIn); hero.SetResourceReference(Border.BackgroundProperty, "HeroBrush");
         panel.Children.Add(hero);
         panel.Children.Add(LinksCard("Ferramentas de estresse e benchmark", "Use para testar estabilidade depois de overclock ou para comparar com outros PCs.", Benchmarks));

@@ -7,7 +7,7 @@ using PQueirozOptimizer.Services;
 namespace PQueirozOptimizer;
 
 /// <summary>
-/// BIOS Advisor: detecta o hardware, analisa com o motor de regras e mostra o que conferir/alterar na BIOS.
+/// Assistente de BIOS: detecta o hardware, analisa com o motor de regras e mostra o que conferir/alterar na BIOS.
 /// Só leitura: nada aqui grava na BIOS, faz flash ou muda tensões. A lógica fica em BiosAdvisor/; esta página só desenha.
 /// </summary>
 public partial class MainWindow
@@ -66,7 +66,7 @@ public partial class MainWindow
         root.Children.Add(AdvisorMonitorCard(report));
         root.Children.Add(AdvisorRecommendations(report));
         root.Children.Add(AdvisorBenchmarkCard(report));
-        var disclaimer = Label(T("O BIOS Advisor fornece recomendações baseadas no hardware detectado. Configurações disponíveis podem variar conforme versão da BIOS. Nada é alterado automaticamente: o app não grava na BIOS, não faz atualização (flash) e não muda tensões.",
+        var disclaimer = Label(T("O Assistente de BIOS fornece recomendações baseadas no hardware detectado. Configurações disponíveis podem variar conforme versão da BIOS. Nada é alterado automaticamente: o app não grava na BIOS, não faz atualização (flash) e não muda tensões.",
             "BIOS Advisor gives recommendations based on the detected hardware. Available settings may vary with the BIOS version. Nothing is changed automatically: the app never writes to the BIOS, never flashes it and never changes voltages."), 12, true);
         disclaimer.Margin = new Thickness(4, 4, 0, 8);
         root.Children.Add(disclaimer);
@@ -95,7 +95,7 @@ public partial class MainWindow
         DockPanel.SetDock(actions, Dock.Right); hero.Children.Add(actions);
         var chip = IconChip(Glyphs.Chip, "Accent", 52); DockPanel.SetDock(chip, Dock.Left); hero.Children.Add(chip);
         var text = new StackPanel { Margin = new Thickness(18, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-        var eyebrow = new TextBlock { Text = "BIOS ADVISOR", FontSize = 11, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 2) };
+        var eyebrow = new TextBlock { Text = "ASSISTENTE DE BIOS", FontSize = 11, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 2) };
         eyebrow.SetResourceReference(TextBlock.ForegroundProperty, "AccentBrush");
         text.Children.Add(eyebrow);
         var title = Label(T("Onde ainda existe margem de desempenho na sua BIOS", "Where your BIOS still has performance headroom"), 20); title.Margin = new Thickness(0, 0, 0, 4);

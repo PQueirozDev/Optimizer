@@ -421,7 +421,7 @@ internal static class Program
         return process.ExitCode;
     }
 
-    /// <summary>BIOS Advisor nas telas de teste: perfil fixo (TUF B460M-PLUS) e verificação de BIOS simulada, sem WMI nem internet.</summary>
+    /// <summary>Assistente de BIOS nas telas de teste: perfil fixo (TUF B460M-PLUS) e verificação de BIOS simulada, sem WMI nem internet.</summary>
     static void PrepareBiosAdvisor(MainWindow window)
     {
         var flags = BindingFlags.NonPublic | BindingFlags.Instance;
@@ -544,7 +544,7 @@ internal static class Program
             Assert(Translator.Tr("Cortana removida: acesso negado").StartsWith("Cortana removed: "), "Rótulo antes de dois-pontos traduzido");
             Assert(Translator.Tr("  ● Disponível para download oficial") == "  ● Available for official download", "Símbolo e espaços preservados");
             Assert(Translator.Tr("Tarefa \\Microsoft\\Windows\\Autochk\\Proxy nao existe neste Windows; nada a fazer.").StartsWith("Task \\Microsoft"), "Tarefa ausente traduzida");
-            Assert(Translator.Tr("Otimização — cancelado. O que já foi aplicado aparece em Atividade e reversão.") == "Optimization — cancelled. What was already applied shows up in Activity & restore.", "Cancelamento traduzido");
+            Assert(Translator.Tr("Otimização — cancelado. O que já foi aplicado aparece no Histórico.") == "Optimization — cancelled. What was already applied shows up in History.", "Cancelamento traduzido");
             Assert(Translator.Tr("CPU em uso agora: 12%") == "CPU in use now: 12%", "Uso de CPU do benchmark traduzido");
             Assert(MainWindow.ClassifyLine("[AVISO] Pouco espaco livre em disco") is { Tone: "Warning" } && MainWindow.ClassifyLine("[OK] TRIM: Ativo") is { Tone: "Success" }, "Linhas do diagnóstico coloridas pela marcação");
             Assert(MainWindow.ParseLiveMarker("[PLANO] {\"Etapas\":[\"A\",\"B\"],\"Atividade\":\"Otimizacao Padrao\"}") is { Kind: "plan", Activity: "Otimizacao Padrao", Steps: ["A", "B"] }, "Plano de etapas lido");
@@ -698,13 +698,13 @@ internal static class Program
                 foreach (var page in new[] { "resources", "gaming", "network", "services", "bios" })
                     if (typeof(MainWindow).GetMethod("PageTutorial", flags)!.Invoke(window, new object[] { page }) is System.Collections.IList pageSteps) WalkTutorial("pagina-" + page, page, pageSteps);
                 PrepareBiosAdvisor(window);
-                foreach (var page in new[] { "dashboard", "optimization", "startup", "drivers", "tools", "gaming", "network", "restore", "resources", "fixes", "services", "apps", "history", "settings", "about", "patchnotes", "bios", "biosadvisor", "smart", "perflab", "profiles", "diagnostics" })
+                foreach (var page in new[] { "dashboard", "mypc", "optimization", "startup", "drivers", "tools", "gaming", "network", "restore", "resources", "fixes", "services", "apps", "history", "settings", "about", "patchnotes", "bios", "biosadvisor", "smart", "perflab", "profiles", "diagnostics" })
                 {
                     typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { page });
-                    Wait(page == "dashboard" ? 4000 : page == "startup" ? 8000 : 600);
+                    Wait(page is "dashboard" or "mypc" ? 4000 : page == "startup" ? 8000 : 600);
                     Collect(window); Snap("en-" + page);
                 }
-                // 2.0: análise real do Smart Optimize (lê o PC, não aplica nada) e as abas do Performance Lab
+                // 2.0: análise real da Otimização inteligente (lê o PC, não aplica nada) e as abas do Laboratório de desempenho
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "smart" });
                 typeof(MainWindow).GetMethod("RunSmartAnalysisAsync", flags)!.Invoke(window, new object[] { true });
                 Wait(25000);
@@ -851,7 +851,7 @@ internal static class Program
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "gaming" });
                 Render("gaming-games-tall", 1320, 2000);
                 typeof(MainWindow).GetField("_gamingTab", flags)!.SetValue(window, 0);
-                // BIOS Advisor inteiro e o guia "Ver como configurar" (perfil fixo de teste)
+                // Assistente de BIOS inteiro e o guia "Ver como configurar" (perfil fixo de teste)
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "biosadvisor" });
                 Render("biosadvisor-tall", 1320, 4600);
                 var advisorReport = typeof(MainWindow).GetField("_advisorReport", flags)!.GetValue(window)!;

@@ -22,24 +22,18 @@ public partial class MainWindow
         if ((Application.Current as App)?.ActiveLicense is { } license) root.Children.Add(LicenseSection(license));
 
         // 1. Profile Manager Header
-        var profileSection = new Border
-        {
-            CornerRadius = new CornerRadius(12),
-            Padding = new Thickness(22),
-            Margin = new Thickness(0, 0, 0, 24),
-            BorderThickness = new Thickness(1)
-        };
-        profileSection.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
-        profileSection.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
+        var profileSection = Surface(new StackPanel());
+        profileSection.Margin = new Thickness(0, 0, 0, 24);
 
         var profileStack = new StackPanel();
 
         var secTitle = new TextBlock
         {
-            Text = "Modos & Perfis de Visualização",
+            Text = "Modos e perfis de visualização",
             FontSize = 18,
-            FontWeight = FontWeights.Bold
+            FontWeight = FontWeights.SemiBold
         };
+        secTitle.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
         secTitle.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
 
         var secDesc = new TextBlock
@@ -76,7 +70,7 @@ public partial class MainWindow
         var allProfiles = _configService.Config.Profiles;
         foreach (var p in allProfiles)
         {
-            profileCombo.Items.Add(p.Name + (p.Name == _configService.Config.ActiveProfile ? " (Ativo)" : ""));
+            profileCombo.Items.Add(ProfileDisplayName(p.Name) + (p.Name == _configService.Config.ActiveProfile ? " (Ativo)" : ""));
         }
 
         var activeIndex = allProfiles.FindIndex(p => p.Name.Equals(_configService.Config.ActiveProfile, StringComparison.OrdinalIgnoreCase));
@@ -144,12 +138,15 @@ public partial class MainWindow
             };
 
             var cbContent = new StackPanel();
-            var cbTitle = new TextBlock { Text = $"{opt.Icon} {opt.Name}", FontSize = 12.5, FontWeight = FontWeights.Medium };
+            var cbTitle = new TextBlock { Text = opt.Name, FontSize = 12.5, FontWeight = FontWeights.Medium, VerticalAlignment = VerticalAlignment.Center };
             cbTitle.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
             var cbDesc = new TextBlock { Text = opt.Description, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) };
             cbDesc.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
 
-            cbContent.Children.Add(cbTitle);
+            var cbHead = new StackPanel { Orientation = Orientation.Horizontal };
+            var cbIcon = GlyphIcon(OptimizationGlyph(opt.Id), 12, "AccentBrush"); cbIcon.Margin = new Thickness(0, 0, 8, 0);
+            cbHead.Children.Add(cbIcon); cbHead.Children.Add(cbTitle);
+            cbContent.Children.Add(cbHead);
             cbContent.Children.Add(cbDesc);
             cb.Content = cbContent;
 
@@ -244,13 +241,13 @@ public partial class MainWindow
         applyBtn.Click += (_, _) =>
         {
             if (SelectedProfile() is not { } prof) return;
-            SaveAndConfirm(() => _configService.SetActiveProfile(prof.Name), $"Perfil '{prof.Name}' ativado com sucesso!", "Perfil Ativado");
+            SaveAndConfirm(() => _configService.SetActiveProfile(prof.Name), $"Perfil '{ProfileDisplayName(prof.Name)}' ativado com sucesso!", "Perfil Ativado");
         };
 
         saveCurrentBtn.Click += (_, _) =>
         {
             if (SelectedProfile() is not { } prof) return;
-            SaveAndConfirm(() => _configService.SaveProfile(prof.Name, prof.Description, CheckedIds()), $"Perfil '{prof.Name}' atualizado com sucesso!", "Salvo");
+            SaveAndConfirm(() => _configService.SaveProfile(prof.Name, prof.Description, CheckedIds()), $"Perfil '{ProfileDisplayName(prof.Name)}' atualizado com sucesso!", "Salvo");
         };
 
         saveAsNewBtn.Click += (_, _) =>
@@ -277,8 +274,8 @@ public partial class MainWindow
                 Msg("Perfis padrão do sistema não podem ser excluídos.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-            if (Msg($"Deseja realmente excluir o perfil '{prof.Name}'?", "Confirmar Exclusão", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
-                SaveAndConfirm(() => _configService.DeleteProfile(prof.Name), $"Perfil '{prof.Name}' excluído.", "Excluído");
+            if (Msg($"Deseja realmente excluir o perfil '{ProfileDisplayName(prof.Name)}'?", "Confirmar Exclusão", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                SaveAndConfirm(() => _configService.DeleteProfile(prof.Name), $"Perfil '{ProfileDisplayName(prof.Name)}' excluído.", "Excluído");
         };
 
         profileSection.Child = profileStack;
@@ -289,23 +286,18 @@ public partial class MainWindow
         root.Children.Add(TutorialsSection());
 
         // 3. Language Section (App-wide language switch)
-        var langSection = new Border
-        {
-            CornerRadius = new CornerRadius(12),
-            Padding = new Thickness(22),
-            Margin = new Thickness(0, 0, 0, 24),
-            BorderThickness = new Thickness(1)
-        };
-        langSection.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
-        langSection.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
+        var langSection = Surface(new StackPanel());
+        langSection.Margin = new Thickness(0, 0, 0, 24);
 
         var langStack = new StackPanel();
         var langTitle = new TextBlock
         {
             Text = "Language / Idioma",
             FontSize = 18,
-            FontWeight = FontWeights.Bold
+            FontWeight = FontWeights.SemiBold,
+            Tag = Translator.SystemDataTag
         };
+        langTitle.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
         langTitle.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
 
         var langDesc = new TextBlock
@@ -346,7 +338,7 @@ public partial class MainWindow
     {
         var stack = new StackPanel();
         var title = Label(_loc.T("Atualizações", "Updates"), 17.5);
-        title.FontWeight = FontWeights.Bold; title.Margin = new Thickness(0);
+        title.Margin = new Thickness(0);
         stack.Children.Add(title);
         var desc = Label(_loc.T(
             $"Versão instalada: {AppVersion}. O aplicativo procura novas versões ao abrir; use o botão para verificar agora.",

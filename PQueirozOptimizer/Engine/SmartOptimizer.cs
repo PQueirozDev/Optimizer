@@ -27,7 +27,7 @@ public sealed record SmartAnalysis(MachineSummary Machine, OptimizationGoal Goal
 }
 
 /// <summary>
-/// Smart Optimize: lê o estado de cada ajuste do catálogo, aplica as regras do objetivo e as condições do PC e
+/// Otimização inteligente: lê o estado de cada ajuste do catálogo, aplica as regras do objetivo e as condições do PC e
 /// detecta conflitos. Não altera nada: a aplicação é feita pelo script (com backup e ponto de restauração).
 /// </summary>
 public static class SmartOptimizer
@@ -71,10 +71,10 @@ public static class SmartOptimizer
         {
             var found = new[] { m.WslInstalled ? "WSL" : null, m.DockerInstalled ? "Docker" : null, m.HyperVInstalled ? "Hyper-V" : null }.OfType<string>().ToList();
             list.Add(new("Virtualização em uso" + (found.Count > 0 ? $" ({string.Join(", ", found)})" : ""),
-                "O Smart Optimize não mexe em Hyper-V, WSL, Docker nem nos recursos de virtualização. Para desligá-los, use Serviços, de forma consciente.", Array.Empty<string>(), false));
+                "A Otimização inteligente não mexe em Hyper-V, WSL, Docker nem nos recursos de virtualização. Para desligá-los, use Serviços, de forma consciente.", Array.Empty<string>(), false));
         }
         if (goal == OptimizationGoal.Laptop && !m.IsLaptop)
-            list.Add(new("Objetivo Notebook em um desktop", "Este PC não tem bateria. O perfil Notebook prioriza consumo e temperatura; para jogos, escolha Gaming competitivo.", Array.Empty<string>(), false));
+            list.Add(new("Objetivo Notebook em um desktop", "Este PC não tem bateria. O perfil Notebook prioriza consumo e temperatura; para jogos, escolha Jogos competitivos.", Array.Empty<string>(), false));
         return list;
     }
 
@@ -177,7 +177,7 @@ public sealed class LiveSystemState : ISystemState
     }
 }
 
-/// <summary>Leitura do hardware para a análise (WMI pelo detector do BIOS Advisor) e dos ambientes de desenvolvimento.</summary>
+/// <summary>Leitura do hardware para a análise (WMI pelo detector do Assistente de BIOS) e dos ambientes de desenvolvimento.</summary>
 public static class MachineReader
 {
     public static MachineSummary Read(HardwareProfile hw, Models.SystemSnapshot snapshot)
@@ -225,7 +225,7 @@ public static class MachineReader
     };
 }
 
-/// <summary>Histórico das execuções do Smart Optimize (para o painel e para a reversão consciente).</summary>
+/// <summary>Histórico das execuções da Otimização inteligente (para o painel e para a reversão consciente).</summary>
 public sealed class SmartHistory
 {
     public sealed record Run(DateTime At, OptimizationGoal Goal, string[] Selected, string[] Verified, string[] NotVerified);

@@ -102,7 +102,7 @@ public sealed class CompactMonitorWindow : Window
         _gpuBar.Value = s.Gpu ?? 0; _gpu.Text = s.Gpu is { } g ? $"{g:0}%" : "--";
         _ramBar.Value = s.Ram; _ram.Text = $"{s.Ram:0}%";
         _fps.Text = _liveFps() is { } f ? $"{f:0}" : "--";
-        _fps.ToolTip = Translator.Tr("FPS só aparece durante uma captura do Performance Lab com o PresentMon.");
+        _fps.ToolTip = Translator.Tr("FPS só aparece durante uma captura do Laboratório de desempenho com o PresentMon.");
         _profile.Text = Translator.Tr("Perfil: ") + _profileName();
         var session = GamingService.ActiveSession();
         _game.Text = Translator.Tr(session is null ? "Modo Jogo desligado" : session.RecoveryPending ? "Modo Jogo: restauração pendente" : "Modo Jogo ativo");

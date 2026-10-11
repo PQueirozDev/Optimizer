@@ -23,7 +23,7 @@ public sealed record BiosPathSet(string Id, string Vendor, string Source, string
 }
 
 /// <summary>
-/// Banco de dados do BIOS Advisor: caminhos por família de BIOS, nomes de opções por fabricante, perfis de placas e
+/// Banco de dados do Assistente de BIOS: caminhos por família de BIOS, nomes de opções por fabricante, perfis de placas e
 /// os nomes das perguntas do SCEWIN para cada configuração. Só dados — nunca código. Vem embutido no app e pode ser
 /// atualizado pela internet (bios-db/bios-db.json no GitHub do projeto), desde que a assinatura RSA confira e a versão seja maior.
 /// </summary>
@@ -73,7 +73,7 @@ public sealed class BiosDatabase
     public static BiosDatabase LoadEmbedded()
     {
         using var stream = typeof(BiosDatabase).Assembly.GetManifestResourceStream("PQueirozOptimizer.BiosAdvisor.bios-db.json")
-            ?? throw new InvalidOperationException("Banco do BIOS Advisor não embutido no app.");
+            ?? throw new InvalidOperationException("Banco do Assistente de BIOS não embutido no app.");
         using var reader = new StreamReader(stream, Encoding.UTF8);
         return Parse(reader.ReadToEnd(), "embutido");
     }
@@ -170,7 +170,7 @@ public sealed class BiosDatabase
     {
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
-        if (Int(root, "format") != SupportedFormat) throw new FormatException("Formato do banco do BIOS Advisor não suportado.");
+        if (Int(root, "format") != SupportedFormat) throw new FormatException("Formato do banco do Assistente de BIOS não suportado.");
         var version = Int(root, "version") ?? throw new FormatException("Banco sem versão.");
         if (version < 1) throw new FormatException("Versão do banco deve ser positiva.");
 

@@ -3,7 +3,7 @@
   Desenha o ícone do Qrztweaks em vetor e gera todos os arquivos derivados.
 
 .DESCRIPTION
-  O ícone é um "Q" geométrico cuja perna é um raio, violeta sobre um bloco grafite. Cada tamanho é desenhado
+  O ícone é um "Q" geométrico cuja perna é um raio, azul sobre um bloco quase preto. Cada tamanho é desenhado
   direto na resolução final (sem reduzir uma imagem grande), e os tamanhos pequenos (até 32 px) usam traço mais
   grosso e nenhum detalhe fino, para continuar nítidos na barra de tarefas. O brilho fica sempre dentro do bloco:
   fora dele o fundo é transparente de verdade.
@@ -26,9 +26,9 @@ $root = Split-Path $PSScriptRoot -Parent
 
 # ---------- Arte (grade de 512) ----------
 $palette = @{
-    TileTop = '#262036'; TileBottom = '#101016'; Border = '#7C3AED'
-    RingLight = '#C4B5FD'; RingMid = '#8B5CF6'; RingDark = '#6D28D9'
-    BoltLight = '#FFFFFF'; BoltDark = '#DDD6FE'; Glow = '#7C3AED'
+    TileTop = '#16213A'; TileBottom = '#090C14'; Border = '#2563EB'
+    RingLight = '#93C5FD'; RingMid = '#3B82F6'; RingDark = '#1D4ED8'
+    BoltLight = '#FFFFFF'; BoltDark = '#DBEAFE'; Glow = '#3B82F6'
 }
 $ringCenter = 240; $ringRadius = 124
 # Raio na vertical, centrado na origem; depois é girado e levado para a perna do Q
@@ -67,10 +67,10 @@ function Render-Icon([int]$size, [switch]$Small, [switch]$FullBleed) {
 
     $dc.PushClip($tile)
     if (-not $Small) {
-        # Brilho violeta atrás do Q e luz no alto do bloco, sempre recortados pelo bloco
+        # Brilho azul atrás do Q e luz no alto do bloco, sempre recortados pelo bloco
         $glow = [Windows.Media.RadialGradientBrush]::new()
-        $glow.GradientStops.Add([Windows.Media.GradientStop]::new([Windows.Media.Color]::FromArgb(110, 124, 58, 237), 0))
-        $glow.GradientStops.Add([Windows.Media.GradientStop]::new([Windows.Media.Color]::FromArgb(0, 124, 58, 237), 1))
+        $glow.GradientStops.Add([Windows.Media.GradientStop]::new([Windows.Media.Color]::FromArgb(110, 59, 130, 246), 0))
+        $glow.GradientStops.Add([Windows.Media.GradientStop]::new([Windows.Media.Color]::FromArgb(0, 59, 130, 246), 1))
         $glow.Center = [Windows.Point]::new(0.47, 0.47); $glow.GradientOrigin = $glow.Center; $glow.RadiusX = 0.5; $glow.RadiusY = 0.5
         $dc.DrawEllipse($glow, $null, [Windows.Point]::new($ringCenter, $ringCenter), 230, 230)
         $shine = [Windows.Media.LinearGradientBrush]::new([Windows.Media.Color]::FromArgb(22, 255, 255, 255), [Windows.Media.Color]::FromArgb(0, 255, 255, 255), 90)
@@ -93,7 +93,7 @@ function Render-Icon([int]$size, [switch]$Small, [switch]$FullBleed) {
     $dc.Pop()
 
     if (-not $Small -and -not $FullBleed) {
-        # Fio de borda violeta, por dentro do bloco
+        # Fio de borda azul, por dentro do bloco
         $inner = [Windows.Rect]::new($tileRect.X + 2, $tileRect.Y + 2, $tileRect.Width - 4, $tileRect.Height - 4)
         $dc.DrawRoundedRectangle($null, [Windows.Media.Pen]::new((Brush $palette.Border 0.55), 4), $inner, $corner - 2, $corner - 2)
     }

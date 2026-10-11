@@ -7,7 +7,7 @@ using PQueirozOptimizer.Services;
 namespace PQueirozOptimizer;
 
 /// <summary>
-/// BIOS Advisor: leitura dos valores reais da BIOS pelo SCEWIN (export, só leitura) e o banco de perfis atualizável.
+/// Assistente de BIOS: leitura dos valores reais da BIOS pelo SCEWIN (export, só leitura) e o banco de perfis atualizável.
 /// </summary>
 public partial class MainWindow
 {
@@ -61,7 +61,7 @@ public partial class MainWindow
                 BiosReadings? result = null;
                 var ok = await ExecuteTrackedAsync(T("Lendo a BIOS pelo SCEWIN (só leitura)", "Reading the BIOS via SCEWIN (read-only)"), async _ => result = await Advisor.ReadBiosAsync(Bios, profile));
                 if (ok && result != null)
-                    ShowToast("BIOS Advisor", T($"{result.Values.Count} configurações reconhecidas na BIOS.", $"{result.Values.Count} settings recognized in the BIOS."), result.Values.Count > 0 ? "Success" : "Warning");
+                    ShowToast("Assistente de BIOS", T($"{result.Values.Count} configurações reconhecidas na BIOS.", $"{result.Values.Count} settings recognized in the BIOS."), result.Values.Count > 0 ? "Success" : "Warning");
                 if (_currentPage == "biosadvisor") KeepScroll(ShowBiosAdvisor);
             };
             actions.Children.Add(read);
@@ -93,7 +93,7 @@ public partial class MainWindow
         catch (Exception ex) { _log.Write("WARN", "Assistente de BIOS: " + ex.GetBaseException().Message); return; }
         if (updated && !_advisorClosed && _currentPage == "biosadvisor" && IsLoaded && AdvisorLayer.Visibility != Visibility.Visible)
         {
-            ShowToast("BIOS Advisor", T($"Banco de perfis atualizado para a versão {BiosDatabase.Current.Version}.", $"Profile database updated to version {BiosDatabase.Current.Version}."), "Info");
+            ShowToast("Assistente de BIOS", T($"Banco de perfis atualizado para a versão {BiosDatabase.Current.Version}.", $"Profile database updated to version {BiosDatabase.Current.Version}."), "Info");
             KeepScroll(ShowBiosAdvisor);
         }
     }

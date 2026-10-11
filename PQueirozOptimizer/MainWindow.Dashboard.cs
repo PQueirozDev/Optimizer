@@ -173,7 +173,7 @@ public partial class MainWindow
             profileLine.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             profileLine.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             profileLine.Children.Add(GlyphIcon(Glyphs.Settings, 12, "MutedBrush"));
-            var pl = Label($"Perfil selecionado: {profile.Name}. Você sempre revisa os ajustes antes de aplicar.", 12, true); pl.Margin = new Thickness(8, 0, 0, 0);
+            var pl = Label($"Perfil selecionado: {ProfileDisplayName(profile.Name)}. Você sempre revisa os ajustes antes de aplicar.", 12, true); pl.Margin = new Thickness(8, 0, 0, 0);
             Grid.SetColumn(pl, 1);
             profileLine.Children.Add(pl);
             root.Children.Add(profileLine);

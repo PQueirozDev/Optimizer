@@ -13,7 +13,7 @@ public sealed record ActivityEntry(string Raw, string Time, string Level, string
         var match = Regex.Match(line, @"^\[(?<time>[^\]]+)\]\s*\[(?<level>[^\]]+)\]\s*(?<message>.*)$");
         return new(line, match.Success ? match.Groups["time"].Value : "—",
             match.Success ? match.Groups["level"].Value : "INFO",
-            Translator.Tr(match.Success ? match.Groups["message"].Value : line));
+            Translator.LogText(match.Success ? match.Groups["message"].Value : line));
     }
 
     public bool Matches(string query, string category) =>

@@ -21,7 +21,7 @@ public sealed record LiveMarker(string Kind, string Activity, IReadOnlyList<stri
 public partial class MainWindow
 {
     private enum LiveStepState { Pending, Running, Done, Failed, NotRun }
-    /// <summary>Como uma execução terminou (o Smart Optimize para a sequência se o usuário cancelar).</summary>
+    /// <summary>Como uma execução terminou (a Otimização inteligente para a sequência se o usuário cancelar).</summary>
     private enum LiveOutcome { NotStarted, Completed, CompletedWithFailures, Cancelled }
 
     private sealed class LiveStep

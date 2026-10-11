@@ -505,7 +505,7 @@ public partial class MainWindow
             dot.Margin = new Thickness(0, 5, 10, 0); dot.VerticalAlignment = VerticalAlignment.Top;
             row.Children.Add(dot);
             var texts = new StackPanel();
-            var message = new TextBlock { Text = m.Success ? Tr(m.Groups[3].Value.Trim()) : line, FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = line, Tag = Translator.SystemDataTag };
+            var message = new TextBlock { Text = m.Success ? Translator.LogText(m.Groups[3].Value.Trim()) : line, FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = line, Tag = Translator.SystemDataTag };
             message.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
             texts.Children.Add(message);
             if (m.Success)

@@ -74,8 +74,8 @@ public partial class MainWindow
             root.Children.Add(Surface(panel));
         }
         var restore = new StackPanel();
-        restore.Children.Add(SectionHeader("Restaurar", "Os ajustes de um perfil são aplicados pelo Smart Optimize, com backup de cada item. Para desfazer, use Atividade e reversão."));
-        var go = IconButton(Glyphs.Undo, "Abrir Atividade e reversão"); go.HorizontalAlignment = HorizontalAlignment.Left; go.Click += History_Click;
+        restore.Children.Add(SectionHeader("Restaurar", "Os ajustes de um perfil são aplicados pela Otimização inteligente, com backup de cada item. Para desfazer, use o Histórico."));
+        var go = IconButton(Glyphs.Undo, "Abrir o Histórico"); go.HorizontalAlignment = HorizontalAlignment.Left; go.Click += History_Click;
         restore.Children.Add(go);
         root.Children.Add(Surface(restore));
         ContentHost.Children.Clear(); ContentHost.Children.Add(root);
@@ -94,7 +94,7 @@ public partial class MainWindow
         var goal = new ComboBox { Width = 220 };
         foreach (var g in Goals) goal.Items.Add(new ComboBoxItem { Content = g.Title, Tag = g.Goal });
         goal.SelectedIndex = Array.FindIndex(Goals, g => g.Goal == profile.Goal);
-        panel.Children.Add(SettingRow("Objetivo", "Usado nas recomendações do Smart Optimize.", goal));
+        panel.Children.Add(SettingRow("Objetivo", "Usado nas recomendações da Otimização inteligente.", goal));
         var processes = new TextBox { Text = string.Join(", ", profile.Processes), Width = 420, HorizontalAlignment = HorizontalAlignment.Left, ToolTip = "Ex.: cs2.exe, VALORANT-Win64-Shipping.exe" };
         System.Windows.Automation.AutomationProperties.SetName(processes, "Processos dos jogos");
         panel.Children.Add(SettingRow("Processos dos jogos", "Nomes dos executáveis, separados por vírgula.", processes));
@@ -166,7 +166,7 @@ public partial class MainWindow
         catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException) { ShowToast("Importação", ex.Message, "Danger"); }
     }
 
-    /// <summary>Aplica pelo Smart Optimize: a análise lê o estado e só os ajustes do perfil que fazem sentido ficam marcados.</summary>
+    /// <summary>Aplica pela Otimização inteligente: a análise lê o estado e só os ajustes do perfil que fazem sentido ficam marcados.</summary>
     private void ApplyProfile(UserProfile profile)
     {
         _smartGoal = profile.Goal == OptimizationGoal.Custom ? OptimizationGoal.Custom : profile.Goal;

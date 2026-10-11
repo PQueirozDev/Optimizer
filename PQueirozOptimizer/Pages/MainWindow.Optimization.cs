@@ -32,7 +32,7 @@ public partial class MainWindow
             .ToList();
 
         PageBadge.Visibility = Visibility.Visible;
-        PageBadgeText.Text = $"{activeProfile.Name} · {visibleOptimizations.Count} ativas";
+        PageBadgeText.Text = $"{ProfileDisplayName(activeProfile.Name)} · {visibleOptimizations.Count} ativas";
 
         var root = new StackPanel();
 
@@ -44,7 +44,7 @@ public partial class MainWindow
         DockPanel.SetDock(customizeBtn, Dock.Right); profileGrid.Children.Add(customizeBtn);
         var profileChip = OutlineChip(OptimizationIcons.For("padrao"), 44, primary: true); DockPanel.SetDock(profileChip, Dock.Left); profileGrid.Children.Add(profileChip);
         var profileText = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-        var profileTitle = Label("Perfil ativo: " + activeProfile.Name, 15); profileTitle.FontWeight = FontWeights.SemiBold; profileTitle.Margin = new Thickness(0);
+        var profileTitle = Label("Perfil ativo: " + ProfileDisplayName(activeProfile.Name), 15); profileTitle.FontWeight = FontWeights.SemiBold; profileTitle.Margin = new Thickness(0);
         profileText.Children.Add(profileTitle);
         var profileDesc = Label(string.IsNullOrWhiteSpace(activeProfile.Description)
             ? $"Exibindo {visibleOptimizations.Count} de {ConfigService.AllOptimizations.Count} otimizações configuradas."

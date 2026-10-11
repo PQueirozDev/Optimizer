@@ -6,7 +6,7 @@ using Microsoft.Win32;
 using PQueirozOptimizer.Engine;
 using PQueirozOptimizer.Services;
 
-/// <summary>Qrztweaks 2.0: catálogo, Smart Optimize, Performance Lab, Optimization Lab, diagnóstico, perfis, atualizações e demonstração.</summary>
+/// <summary>Qrztweaks 2.0: catálogo, Otimização inteligente, Laboratório de desempenho, Laboratório de otimização, diagnóstico, perfis, atualizações e demonstração.</summary>
 internal static class V2Tests
 {
     static void Check(bool value, string message)
@@ -51,7 +51,7 @@ internal static class V2Tests
         Check(all.Select(t => t.Id).Distinct().Count() == all.Count, "Catálogo: identificadores únicos");
         Check(all.All(t => t.Name.Length > 0 && t.Description.Length > 0 && t.SideEffects.Length > 0 && t.Verification.Length > 0 && t.Revert.Length > 0 && t.Evidence.Length > 0 && t.Category.Length > 0),
             "Catálogo: todo ajuste tem descrição, efeitos colaterais, verificação, reversão e evidência");
-        Check(all.All(t => t.Risk != StepRisk.High), "Catálogo: nenhum ajuste Avançado (alto risco) entra no Smart Optimize");
+        Check(all.All(t => t.Risk != StepRisk.High), "Catálogo: nenhum ajuste Avançado (alto risco) entra na Otimização inteligente");
 
         // Sincronia com o script: cada etapa do catálogo existe e cada etapa do script está no catálogo ou na lista de exclusões
         var script = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Otimizador_de_PC.ps1"));
@@ -234,7 +234,7 @@ internal static class V2Tests
         var capped = gpuBound with { GpuAvg = 60, AverageFps = 60 };
         Check(!DiagnosticsEngine.Run(new DiagnosticInputs { LastCapture = capped }).Findings.Any(f => f.Id == "bottleneck.cpu"), "Diagnóstico: FPS travado em 60 não é tratado como gargalo de CPU");
         var empty = DiagnosticsEngine.Run(new DiagnosticInputs());
-        Check(!empty.Findings.Any(f => f.Id.StartsWith("bottleneck", StringComparison.Ordinal)) && empty.MissingData.Any(m => m.Contains("Performance Lab")), "Diagnóstico: sem teste, nenhum gargalo é afirmado e a falta de dados é informada");
+        Check(!empty.Findings.Any(f => f.Id.StartsWith("bottleneck", StringComparison.Ordinal)) && empty.MissingData.Any(m => m.Contains("Laboratório de desempenho")), "Diagnóstico: sem teste, nenhum gargalo é afirmado e a falta de dados é informada");
         var disk = DiagnosticsEngine.Run(new DiagnosticInputs { SystemDriveFreeGb = 8, SystemDriveTotalGb = 500, Disks = new[] { new DiskReading("SSD", "SSD", "Warning", true) } });
         Check(disk.Findings.Any(f => f.Id == "disk.space") && disk.Findings.Any(f => f.Id == "disk.health" && f.Severity == DiagnosisSeverity.Critical), "Diagnóstico: pouco espaço e disco com alerta de saúde");
         Check(DiagnosticsEngine.Run(new DiagnosticInputs { PowerPlan = "Economia de energia", IsLaptop = false }).Findings.Any(f => f.Id == "power.saver"), "Diagnóstico: economia de energia num desktop");
@@ -322,7 +322,7 @@ internal static class V2Tests
                 "Demonstração: otimizações, Modo Jogo e serviços continuam bloqueados (nada é aplicado)");
             var s = new FakeState();
             var analysis = SmartOptimizer.Analyze(Machine(), Context(s), OptimizationGoal.CompetitiveGaming, null, _ => TweakCatalog.All.Select(t => t.Step).ToHashSet());
-            Check(analysis.Items.All(i => i.Locked && !i.Selectable), "Demonstração: o Smart Optimize mostra as recomendações, mas nenhum ajuste pode ser selecionado");
+            Check(analysis.Items.All(i => i.Locked && !i.Selectable), "Demonstração: a Otimização inteligente mostra as recomendações, mas nenhum ajuste pode ser selecionado");
         }
         finally { PlanAccess.DemoMode = false; }
     }

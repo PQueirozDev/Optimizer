@@ -9,7 +9,7 @@ using PQueirozOptimizer.Services;
 namespace PQueirozOptimizer;
 
 /// <summary>
-/// QRZ Smart Optimize: analisa o PC, lê o estado de cada ajuste, recomenda conforme o objetivo, deixa o usuário
+/// QRZ Otimização inteligente: analisa o PC, lê o estado de cada ajuste, recomenda conforme o objetivo, deixa o usuário
 /// revisar item a item e aplica pelo mesmo caminho das otimizações (backup, ponto de restauração, tela ao vivo).
 /// Depois de aplicar, lê o estado de novo para confirmar o que mudou de verdade.
 /// </summary>
@@ -23,7 +23,7 @@ public partial class MainWindow
 
     internal static readonly (OptimizationGoal Goal, string Glyph, string Title, string Detail)[] Goals =
     {
-        (OptimizationGoal.CompetitiveGaming, Glyphs.Game, "Gaming competitivo", "Frametime estável, responsividade e menos processos em segundo plano."),
+        (OptimizationGoal.CompetitiveGaming, Glyphs.Game, "Jogos competitivos", "Frametime estável, responsividade e menos processos em segundo plano."),
         (OptimizationGoal.Laptop, Glyphs.Laptop, "Notebook", "Temperatura, autonomia, consumo e ruído."),
         (OptimizationGoal.Development, Glyphs.Code, "Programação", "Preserva Docker, WSL, Hyper-V e ferramentas de desenvolvimento."),
         (OptimizationGoal.DailyUse, Glyphs.Home, "Uso diário", "Inicialização, limpeza segura, privacidade e estabilidade."),
@@ -59,7 +59,7 @@ public partial class MainWindow
         analyze.Click += async (_, _) => await RunSmartAnalysisAsync(rereadSystem: true);
         DockPanel.SetDock(analyze, Dock.Right); head.Children.Add(analyze);
         head.Children.Add(SectionHeader("Escolha o objetivo deste PC",
-            "O Smart Optimize lê o hardware e o estado de cada ajuste, recomenda só o que se aplica e mostra o risco, a reversão e a evidência de cada um. Nada é aplicado sem a sua revisão."));
+            "A Otimização inteligente lê o hardware e o estado de cada ajuste, recomenda só o que se aplica e mostra o risco, a reversão e a evidência de cada um. Nada é aplicado sem a sua revisão."));
         intro.Children.Add(head);
         var goals = new UniformGrid { Columns = 5, Margin = new Thickness(0, 4, 0, 0) };
         foreach (var g in Goals) goals.Children.Add(GoalCard(g.Goal, g.Glyph, g.Title, g.Detail));
@@ -143,13 +143,13 @@ public partial class MainWindow
             _smartProfileSelection = null;
             foreach (var item in analysis.Items.Where(i => chosen is null ? i.Preselected : chosen.Contains(i.Tweak.Id) && i.Selectable)) _smartSelection.Add(item.Tweak.Id);
             SmartHistory.Default.RecordAnalysis(analysis);
-            _log.Write("INFO", $"Smart Optimize: análise concluída ({analysis.Count(TweakState.Recommended)} recomendados, {analysis.Count(TweakState.Applied)} já aplicados)");
+            _log.Write("INFO", $"Otimização inteligente: análise concluída ({analysis.Count(TweakState.Recommended)} recomendados, {analysis.Count(TweakState.Applied)} já aplicados)");
             if (_currentPage != "smart") return;
             ShowSmartOptimize();
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
-            _log.Write("ERROR", "Smart Optimize: " + ex.Message);
+            _log.Write("ERROR", "Otimização inteligente: " + ex.Message);
             results.Children.Clear();
             results.Children.Add(Card("Não foi possível concluir a análise", ex.Message, Glyphs.Warning, "WarningBrush"));
         }
@@ -235,7 +235,7 @@ public partial class MainWindow
             results.Children.Add(Surface(panel));
         }
         apply.Click += async (_, _) => await ApplySmartAsync(analysis);
-        var lab = IconButton(Glyphs.Speed, "Optimization Lab");
+        var lab = IconButton(Glyphs.Speed, "Laboratório de otimização");
         lab.ToolTip = "Medir o efeito de um ajuste por vez, com gravações antes e depois.";
         lab.Click += (_, _) => NavigateTo("perflab");
         results.Children.Add(ActionBar(selectedLabel, lab, apply));
@@ -339,7 +339,7 @@ public partial class MainWindow
         if (reboot.Count > 0) message += "\n\nPrecisam reiniciar para valer:\n• " + string.Join("\n• ", reboot);
         if (ConfirmationSummary(scriptSteps) is { } extra) message += "\n\n" + extra;
         else message += "\n\nContinuar?";
-        if (Msg(message, "Smart Optimize", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+        if (Msg(message, "Otimização inteligente", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes) return;
 
         var outcomes = new List<(string Operation, string Outcome)>();
         foreach (var (operation, steps) in plan)
@@ -357,7 +357,7 @@ public partial class MainWindow
         var verification = SmartOptimizer.Verify(ran, after, clean);
         SmartHistory.Default.RecordRun(new SmartHistory.Run(DateTime.Now, analysis.Goal, selected.ToArray(),
             verification.Where(v => v.Verified).Select(v => v.Tweak.Id).ToArray(), verification.Where(v => !v.Verified).Select(v => v.Tweak.Id).ToArray()));
-        _log.Write(verification.All(v => v.Verified) ? "SUCCESS" : "WARN", $"Smart Optimize: {verification.Count(v => v.Verified)} de {verification.Count} ajustes confirmados pelo Windows");
+        _log.Write(verification.All(v => v.Verified) ? "SUCCESS" : "WARN", $"Otimização inteligente: {verification.Count(v => v.Verified)} de {verification.Count} ajustes confirmados pelo Windows");
         _smartAnalysis = null;
         ShowSmartVerification(verification, selected.Count - ran.Count);
     }
@@ -387,7 +387,7 @@ public partial class MainWindow
         if (results.Count > 0) root.Children.Add(Surface(list));
         var history = IconButton(Glyphs.History, "Ver backup e reversão"); history.Click += History_Click;
         var again = IconButton(Glyphs.Refresh, "Analisar de novo", primary: true); again.Click += async (_, _) => { NavigateTo("smart"); await RunSmartAnalysisAsync(rereadSystem: true); };
-        root.Children.Add(ActionBar(Label("O backup de cada item está em Atividade e reversão.", 12.5, true), history, again));
+        root.Children.Add(ActionBar(Label("O backup de cada item está no Histórico.", 12.5, true), history, again));
         ContentHost.Children.Clear(); ContentHost.Children.Add(root);
     }
 }

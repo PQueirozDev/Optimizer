@@ -6,7 +6,7 @@ using PQueirozOptimizer.BiosAdvisor.Benchmark;
 namespace PQueirozOptimizer.BiosAdvisor;
 
 /// <summary>
-/// O que o BIOS Advisor guarda entre aberturas: preset escolhido, itens que o usuário conferiu na BIOS
+/// O que o Assistente de BIOS guarda entre aberturas: preset escolhido, itens que o usuário conferiu na BIOS
 /// (atrelados à placa + versão da BIOS) e os testes antes/depois. Fica em %LocalAppData%\PQueirozOptimizer\bios-advisor.
 /// </summary>
 public sealed class BiosAdvisorState

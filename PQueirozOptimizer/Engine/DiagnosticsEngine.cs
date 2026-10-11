@@ -53,9 +53,9 @@ public static class DiagnosticsEngine
         var missing = new List<string>();
         var cap = i.LastCapture;
 
-        // ---------- Gargalos (só com um teste do Performance Lab) ----------
+        // ---------- Gargalos (só com um teste do Laboratório de desempenho) ----------
         if (cap is null || cap.DurationSeconds < 20 || cap.CpuAvg is null)
-            missing.Add("Sem um teste do Performance Lab de pelo menos 20 segundos: limitações de CPU e GPU não podem ser avaliadas.");
+            missing.Add("Sem um teste do Laboratório de desempenho de pelo menos 20 segundos: limitações de CPU e GPU não podem ser avaliadas.");
         else if (cap.GpuAvg is null)
             missing.Add("O Windows não informou o uso da GPU no último teste: gargalo de GPU não avaliado.");
         else
@@ -72,7 +72,7 @@ public static class DiagnosticsEngine
                 findings.Add(new("bottleneck.cpu", "Possível limitação de CPU no último teste", DiagnosisSeverity.Warning, cap.DurationSeconds >= 60 ? DiagnosisConfidence.Medium : DiagnosisConfidence.Low,
                     new[] { $"GPU em só {cap.GpuAvg:0}% com {fps:0} FPS, abaixo dos {c.RefreshHz} Hz do monitor.", $"CPU total em {cap.CpuAvg:0}% (um único núcleo saturado não aparece no total)." },
                     new[] { "Jogo limitado por um núcleo da CPU.", "Limite de FPS no jogo ou no driver.", "Memória lenta (XMP/EXPO desligado) ou processos em segundo plano." },
-                    new[] { "Confira se não há limite de FPS ou V-Sync ligado.", "Feche programas em segundo plano (Modo Jogo).", "Confira no BIOS Advisor se o perfil XMP/EXPO está ativo." },
+                    new[] { "Confira se não há limite de FPS ou V-Sync ligado.", "Feche programas em segundo plano (Modo Jogo).", "Confira no Assistente de BIOS se o perfil XMP/EXPO está ativo." },
                     "Baixe a resolução: se o FPS não mudar, a CPU (ou um limite) é o gargalo.", "Nenhum: é uma leitura.", "biosadvisor"));
             if (cap.LimitedSeconds is > 0 && cap.DurationSeconds > 0)
             {
@@ -81,7 +81,7 @@ public static class DiagnosticsEngine
                     findings.Add(new("throttle.cpu", "A CPU foi limitada durante o teste", share >= 40 ? DiagnosisSeverity.Warning : DiagnosisSeverity.Info, DiagnosisConfidence.Medium,
                         new[] { $"O contador \"% Performance Limit\" do Windows ficou acima de zero em {cap.LimitedSeconds} de {cap.DurationSeconds:0} s ({share:0}%)." },
                         new[] { "Temperatura alta (cooler, pasta térmica, poeira).", "Limite de energia da placa-mãe ou do plano de energia." },
-                        new[] { "Limpe o cooler e confira a pasta térmica.", "Confira o plano de energia e, no BIOS Advisor, os limites de energia." },
+                        new[] { "Limpe o cooler e confira a pasta térmica.", "Confira o plano de energia e, no Assistente de BIOS, os limites de energia." },
                         "Repita o teste com o gabinete aberto ou ventoinhas no máximo: se o limite sumir, é térmico.", "Limpeza interna exige cuidado com eletricidade estática.", "biosadvisor"));
             }
             if (cap.ThrottleReasons.Any(r => r.Contains("Temperatura", StringComparison.OrdinalIgnoreCase) || r.Contains("energia", StringComparison.OrdinalIgnoreCase)))
@@ -89,7 +89,7 @@ public static class DiagnosticsEngine
                     new[] { "O driver NVIDIA informou: " + string.Join(", ", cap.ThrottleReasons) + (cap.GpuTempMax is { } t ? $". Temperatura máxima {t:0} °C." : ".") },
                     new[] { "Temperatura ou limite de energia da placa." },
                     new[] { "Melhore o fluxo de ar do gabinete e limpe a placa.", "Confira se os cabos de energia da GPU estão bem conectados." },
-                    "Acompanhe temperatura e clock no Performance Lab durante uma partida longa.", "Undervolt e mudanças de curva de ventoinha ficam por sua conta: o app não altera a GPU."));
+                    "Acompanhe temperatura e clock no Laboratório de desempenho durante uma partida longa.", "Undervolt e mudanças de curva de ventoinha ficam por sua conta: o app não altera a GPU."));
         }
 
         // ---------- Memória ----------
@@ -168,7 +168,7 @@ public static class DiagnosticsEngine
         if (i.CpuPerformanceLimitNow is > 5)
             findings.Add(new("throttle.now", "A CPU está limitada agora", DiagnosisSeverity.Info, DiagnosisConfidence.Low,
                 new[] { $"\"% Performance Limit\" em {i.CpuPerformanceLimitNow:0}% no momento da análise." }, new[] { "Temperatura, limite de energia ou plano de economia." },
-                new[] { "Grave um teste no Performance Lab durante uma carga real para confirmar." }, "Teste longo no Performance Lab.", "Nenhum."));
+                new[] { "Grave um teste no Laboratório de desempenho durante uma carga real para confirmar." }, "Teste longo no Laboratório de desempenho.", "Nenhum."));
         if (i.Uptime is { TotalDays: > 14 } up)
             findings.Add(new("uptime", "Windows sem reiniciar há muito tempo", DiagnosisSeverity.Info, DiagnosisConfidence.High,
                 new[] { $"Ligado há {up.TotalDays:0} dias (a inicialização rápida mantém o kernel entre desligamentos)." }, new[] { "Atualizações e vazamentos de memória se acumulam." },

@@ -50,8 +50,8 @@ public static class LicensePlans
 }
 
 /// <summary>
-/// O que cada nível libera, por página. Páginas fora da lista (Visão geral, Atividade e reversão, Pontos de restauração,
-/// Configurações, Patch notes, Sobre) ficam em todos os planos: ninguém pode ficar sem desfazer o que já aplicou.
+/// O que cada nível libera, por página. Páginas fora da lista (Visão geral, Histórico, Pontos de restauração,
+/// Configurações, Novidades, Sobre) ficam em todos os planos: ninguém pode ficar sem desfazer o que já aplicou.
 /// </summary>
 public static class PlanAccess
 {
@@ -60,7 +60,7 @@ public static class PlanAccess
         ["optimization"] = PlanTier.Base, ["startup"] = PlanTier.Base, ["fixes"] = PlanTier.Base, ["tools"] = PlanTier.Base,
         ["services"] = PlanTier.Intermediate, ["apps"] = PlanTier.Intermediate, ["drivers"] = PlanTier.Intermediate,
         ["network"] = PlanTier.Intermediate, ["resources"] = PlanTier.Intermediate, ["diagnostics"] = PlanTier.Intermediate,
-        // Smart Optimize abre no Base; cada ajuste confere o nível da operação que o aplica (Debloat e Avançada)
+        // Otimização inteligente abre no Base; cada ajuste confere o nível da operação que o aplica (Debloat e Avançada)
         ["smart"] = PlanTier.Base, ["perflab"] = PlanTier.Intermediate, ["profiles"] = PlanTier.Full,
         ["gaming"] = PlanTier.Full, ["customize"] = PlanTier.Full, ["bios"] = PlanTier.Full, ["biosadvisor"] = PlanTier.Full,
     };

@@ -33,7 +33,7 @@ public sealed class WindowsCustomizeService
     private static IEnumerable<WindowsSetting> AllSettings()
     {
         // Barra de tarefas
-        yield return new("Barra de tarefas", "Ícones alinhados à esquerda", "Iniciar e os apps ficam no canto esquerdo, como no Windows 10.",
+        yield return new("Barra de tarefas", "Ícones alinhados à esquerda", "Iniciar e os aplicativos ficam no canto esquerdo, como no Windows 10.",
             () => Dword(Registry.CurrentUser, Advanced, "TaskbarAl", 1) == 0, on => SetDword(Registry.CurrentUser, Advanced, "TaskbarAl", on ? 0 : 1), Requires: "win11");
         yield return new("Barra de tarefas", "Botão \"Finalizar tarefa\"", "Clique direito num app da barra para fechá-lo na hora, sem abrir o Gerenciador de Tarefas.",
             () => Dword(Registry.CurrentUser, Advanced + @"\TaskbarDeveloperSettings", "TaskbarEndTask", 0) == 1,
@@ -91,7 +91,7 @@ public sealed class WindowsCustomizeService
         yield return new("Sistema", "Agitar a janela minimiza as outras", "Segurar a barra de título e sacudir minimiza todas as outras janelas.",
             () => Dword(Registry.CurrentUser, Advanced, "DisallowShaking", SystemConditions.WindowsBuild >= 22631 ? 1 : 0) == 0,
             on => SetDword(Registry.CurrentUser, Advanced, "DisallowShaking", on ? 0 : 1), Recommended: false);
-        yield return new("Sistema", "Modo escuro do Windows", "Barra de tarefas, Iniciar, Configurações e apps compatíveis ficam escuros.",
+        yield return new("Sistema", "Modo escuro do Windows", "Barra de tarefas, Iniciar, Configurações e aplicativos compatíveis ficam escuros.",
             () => Dword(Registry.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize", "AppsUseLightTheme", 1) == 0,
             on =>
             {
@@ -152,7 +152,7 @@ public sealed class WindowsCustomizeService
         yield return Effect("Animar janelas ao minimizar e maximizar", "A janela \"voa\" até a barra de tarefas em vez de sumir na hora.",
             () => { var info = new AnimationInfo { Size = 8 }; return SystemParametersInfo(0x0048, 8, ref info, 0) && info.MinAnimate != 0; },
             on => { var info = new AnimationInfo { Size = 8, MinAnimate = on ? 1 : 0 }; Check(SystemParametersInfo(0x0049, 8, ref info, SpifSave)); });
-        yield return Effect("Animações na barra de tarefas", "Ícones da barra deslizam e piscam ao abrir e fechar apps.",
+        yield return Effect("Animações na barra de tarefas", "Ícones da barra deslizam e piscam ao abrir e fechar aplicativos.",
             () => Dword(Registry.CurrentUser, Advanced, "TaskbarAnimations", 1) == 1, on => SetDword(Registry.CurrentUser, Advanced, "TaskbarAnimations", on ? 1 : 0), restart: true);
         yield return Effect("Ativar Espiar", "Passar o mouse no canto da barra deixa as janelas transparentes para ver a área de trabalho.",
             () => Dword(Registry.CurrentUser, Dwm, "EnableAeroPeek", 1) == 1, on => SetDword(Registry.CurrentUser, Dwm, "EnableAeroPeek", on ? 1 : 0), restart: true);

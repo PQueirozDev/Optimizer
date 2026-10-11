@@ -28,11 +28,11 @@ public partial class MainWindow
     {
         ("v2.0.0", "10/10/2026", new[]
         {
-            "Smart Optimize: analisa o PC, lê o estado de cada ajuste e recomenda pelo objetivo (gaming competitivo, notebook, programação, uso diário ou personalizado), com risco, reversão e evidência de cada item.",
+            "Otimização inteligente: analisa o PC, lê o estado de cada ajuste e recomenda pelo objetivo (jogos competitivos, notebook, programação, uso diário ou personalizado), com risco, reversão e evidência de cada item.",
             "Depois de aplicar, o estado é lido de novo no Windows: um ajuste só aparece como concluído quando a mudança é confirmada.",
-            "Performance Lab: FPS médio, mínimo, 1% low, 0,1% low e frametime P95/P99 pelo PresentMon, sensores a cada segundo, histórico, comparação antes/depois e exportação em CSV, JSON e PDF.",
-            "Optimization Lab: testa um ajuste por vez com várias gravações; diferenças pequenas aparecem como sem diferença comprovada.",
-            "Diagnóstico inteligente com evidências e grau de confiança, Command Center com alertas e ações rápidas, modo compacto para segundo monitor e perfis por jogo.",
+            "Laboratório de desempenho: FPS médio, mínimo, 1% low, 0,1% low e frametime P95/P99 pelo PresentMon, sensores a cada segundo, histórico, comparação antes/depois e exportação em CSV, JSON e PDF.",
+            "Laboratório de otimização: testa um ajuste por vez com várias gravações; diferenças pequenas aparecem como sem diferença comprovada.",
+            "Diagnóstico inteligente com evidências e grau de confiança, tela inicial com alertas e ações rápidas, modo compacto para segundo monitor e perfis por jogo.",
             "Segurança: atualizações com hash assinado, exclusões amplas do Defender recusadas, BIOS validada antes de gravar e aviso de operação interrompida.",
             "Modo demonstração sem licença (só leitura) e pedido de transferência para quem trocou de PC ou reinstalou o Windows.",
         }),
@@ -59,14 +59,14 @@ public partial class MainWindow
         }),
         ("v1.10.1", "05/10/2026", new[]
         {
-            "BIOS Advisor agora lê os valores atuais pelo SCEWIN escolhido pelo usuário, sem gravar alterações na BIOS, e mostra o nome exato da opção, o valor e as opções disponíveis.",
+            "Assistente de BIOS agora lê os valores atuais pelo SCEWIN escolhido pelo usuário, sem gravar alterações na BIOS, e mostra o nome exato da opção, o valor e as opções disponíveis.",
             "Banco de perfis e caminhos da BIOS com atualizações assinadas, sem precisar atualizar o aplicativo para receber novos perfis.",
             "Leituras da BIOS salvas entre aberturas e invalidadas quando a placa ou a versão da BIOS muda; a nota de otimização passa a considerar os valores lidos.",
             "Corrigida a verificação de assinaturas do Windows quando o aplicativo é iniciado pelo PowerShell 7.",
         }),
         ("v1.10.0", "05/10/2026", new[]
         {
-            "Novo BIOS Advisor (Sistema): detecta placa-mãe, BIOS, processador, memória e placa de vídeo e mostra o que conferir ou mudar na BIOS, com caminho, risco, impacto térmico e como desfazer. Nada é alterado automaticamente.",
+            "Novo Assistente de BIOS (Sistema): detecta placa-mãe, BIOS, processador, memória e placa de vídeo e mostra o que conferir ou mudar na BIOS, com caminho, risco, impacto térmico e como desfazer. Nada é alterado automaticamente.",
             "Presets Seguro, Desempenho e Competitivo e uma nota de otimização que só conta o que tem evidência: detectado, inferido ou conferido por você na BIOS.",
             "Verificação da versão da BIOS pelo site oficial da fabricante (ASUS), analisador de memória (canais, XMP, slots), monitor de sensores e comparação antes/depois com CSV do PresentMon ou CapFrameX.",
             "Primeiro perfil completo: ASUS TUF GAMING B460M-PLUS com Intel Core i7-10700F, com os caminhos do manual oficial da ASUS.",
@@ -83,7 +83,7 @@ public partial class MainWindow
         ("v1.9.0", "05/10/2026", new[]
         {
             "Novos planos: Base (R$ 15/mês), Intermediário (R$ 25/mês), Avançado (R$ 29,99/mês, app completo) e Vitalício (R$ 59,99, para sempre). Chaves Mensal já emitidas continuam com o app completo.",
-            "Páginas fora do plano mostram o que falta e um botão de upgrade; Atividade e reversão e Pontos de restauração ficam liberados em todos os planos.",
+            "Páginas fora do plano mostram o que falta e um botão de upgrade; Histórico e Pontos de restauração ficam liberados em todos os planos.",
             "Configurações → Minha licença mostra o que o plano libera e um botão de upgrade para cada plano acima do seu.",
             "Personalizar Windows → Efeitos visuais: as Opções de desempenho do Windows dentro do app, com \"Melhor desempenho\", \"Melhor aparência\" e um interruptor por efeito.",
             "A abertura agora aparece sozinha: a janela principal só surge quando a animação termina.",
@@ -100,15 +100,15 @@ public partial class MainWindow
             "Otimizações reformuladas: novos ajustes (gravação de jogos em segundo plano, Modo de Jogo, transparência, experiências personalizadas), valores de latência corrigidos e remoção de ações que mais atrapalhavam do que ajudavam.",
             "As otimizações agora aplicam o plano de energia Qrz no lugar do Desempenho Máximo; reverter volta ao plano anterior.",
             "Tela cheia corrigida: a janela maximizada respeita a barra de tarefas, sem bordas cortadas, e o conteúdo fica centralizado em telas largas.",
-            "Corrigido o erro ao ligar/desligar grupos em Serviços e interruptores de Apps e Personalizar Windows que podiam fechar o app.",
+            "Corrigido o erro ao ligar/desligar grupos em Serviços e interruptores de Aplicativos e Personalizar Windows que podiam fechar o app.",
             "Proteção contra Adulteração detectada: o interruptor do Defender explica o motivo e abre a Segurança do Windows.",
             "Inicialização: apps da Microsoft Store aparecem e podem ser desligados; o botão de abrir as configurações do Windows voltou a funcionar.",
             "Correções de permissão na pasta de atualizações, na limpeza de cache de shaders e na restauração de serviços.",
         }),
         ("v1.8.16", "04/10/2026", new[]
         {
-            "Interruptores: a animação aparece sempre, e a página não trava nem volta ao topo ao ligar/desligar em Aparência, Personalizar Windows, Serviços, Apps e Inicialização.",
-            "Personalizar Windows e Apps aplicam as mudanças em segundo plano, sem congelar a tela.",
+            "Interruptores: a animação aparece sempre, e a página não trava nem volta ao topo ao ligar/desligar em Aparência, Personalizar Windows, Serviços, Aplicativos e Inicialização.",
+            "Personalizar Windows e Aplicativos aplicam as mudanças em segundo plano, sem congelar a tela.",
             "Nova tela de execução das otimizações: porcentagem real, etapa atual e quantas faltam.",
             "Nova aba \"Etapas\" mostra o que já foi feito, o que está em andamento e o que falta; o registro detalhado fica em outra aba, sem visual de terminal.",
         }),
@@ -120,7 +120,7 @@ public partial class MainWindow
         {
             "Nova página Personalizar Windows: 24 preferências com liga/desliga aplicadas na hora, como barra de tarefas à esquerda, botão Finalizar tarefa, extensões de arquivo, menu de contexto clássico, Num Lock e aceleração do mouse.",
             "Cada ajuste da revisão mostra o risco (Seguro, Moderado ou Arriscado), e os que não se aplicam a este PC (placa de vídeo, Windows 11, desktop) ficam ocultos.",
-            "Atividade e reversão: agora dá para desfazer um ajuste de cada vez, sem reverter os outros.",
+            "Histórico: agora dá para desfazer um ajuste de cada vez, sem reverter os outros.",
             "Novos ajustes: desligar o Recall e o Click To Do, a hibernação, a inicialização rápida, os apps da Store em segundo plano e o ULPS de placas AMD.",
             "Limpeza ampliada: sobras do Windows Update, cache de entrega, relatórios de erro, despejos de travamento e lixeira, com o tamanho de cada um antes de limpar.",
             "Tarefas agendadas: executar, parar e excluir (só as de programas) direto na página Inicialização.",
@@ -248,7 +248,7 @@ public partial class MainWindow
             "Atalho de modo de energia na Área de Trabalho (Ferramentas): troca entre eficiência, equilibrado e desempenho sem pedir administrador — ideal para notebooks.",
             "Operações longas podem ser canceladas, e erros inesperados não fecham mais o aplicativo.",
             "Painel: discos grandes não aparecem mais com 0% livre, e a memória mostra o valor instalado (16 GB, não 15,9 GB).",
-            "Debloat: tarefas de telemetria ausentes no Windows 11 não interrompem mais a etapa, e o OneDrive é removido de verdade no Windows 11.",
+            "Remoção de aplicativos: tarefas de telemetria ausentes no Windows 11 não interrompem mais a etapa, e o OneDrive é removido de verdade no Windows 11.",
             "Versão Padrão: mantém um plano de energia de desempenho já ativo, recria o Alto Desempenho quando apagado e a limpeza de disco agora limpa de fato.",
             "A revisão de ajustes mostra o que tem backup, o que não é reversível e o que é ação pontual; a análise ficou colorida e mais precisa.",
             "Ativação mais fácil: \"Copiar pedido\" gera a mensagem com o ID do computador, e a chave copiada é colada sozinha.",
@@ -268,7 +268,7 @@ public partial class MainWindow
             "Saída completa das operações ao vivo, com cores, contadores e botão para copiar o resultado.",
             "Nova página Inicialização do Windows para ativar e desativar programas que abrem com o PC.",
             "Corrige a Versão Avançada, que apagava configurações do agendador multimídia; nova ferramenta Reparar Configurações do Windows.",
-            "Novos ajustes reversíveis: anúncios e apps automáticos, Delivery Optimization, jogos em janela, Power Throttling, ID de publicidade, Bing, histórico de atividades e Copilot.",
+            "Novos ajustes reversíveis: anúncios e aplicativos automáticos, Delivery Optimization, jogos em janela, Power Throttling, ID de publicidade, Bing, histórico de atividades e Copilot.",
             "SFC, DISM e CHKDSK exibem a saída corretamente; benchmark de disco usa o winsat (sem cache).",
         }),
         ("v1.2.0", "23/09/2026", new[]

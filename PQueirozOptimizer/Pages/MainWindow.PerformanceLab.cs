@@ -15,7 +15,7 @@ namespace PQueirozOptimizer;
 
 /// <summary>
 /// QRZTWEAKS PERFORMANCE LAB: captura de FPS e frametime com dados reais de apresentação (PresentMon), sensores
-/// por segundo, histórico, comparação antes/depois, exportação e o Optimization Lab.
+/// por segundo, histórico, comparação antes/depois, exportação e o Laboratório de otimização.
 /// </summary>
 public partial class MainWindow
 {
@@ -26,7 +26,7 @@ public partial class MainWindow
     private PerfResult? _lastPerfResult;
     private string? _compareA, _compareB;
 
-    /// <summary>Experimento do Optimization Lab em andamento (um ajuste por vez).</summary>
+    /// <summary>Experimento do Laboratório de otimização em andamento (um ajuste por vez).</summary>
     private sealed class LabExperiment
     {
         public string Id { get; } = Guid.NewGuid().ToString("N")[..8];
@@ -45,16 +45,10 @@ public partial class MainWindow
         PageBadge.Visibility = _capture is null ? Visibility.Collapsed : Visibility.Visible;
         PageBadgeText.Text = "gravando";
         var root = new StackPanel();
-        var tabs = new WrapPanel { Margin = new Thickness(0, 0, 0, AppearanceService.Space(14)) };
-        foreach (var (id, glyph, text) in new[] { ("capture", Glyphs.Play, "Captura"), ("history", Glyphs.History, "Histórico"), ("compare", Glyphs.Speed, "Comparar"), ("lab", Glyphs.Diagnostic, "Optimization Lab") })
-        {
-            var b = IconButton(glyph, text, primary: _perfTab == id);
-            b.Margin = new Thickness(0, 0, 8, 8);
-            System.Windows.Automation.AutomationProperties.SetName(b, text + (_perfTab == id ? " (aba atual)" : ""));
-            b.Click += (_, _) => { _perfTab = id; ShowPerformanceLab(); };
-            tabs.Children.Add(b);
-        }
-        root.Children.Add(tabs);
+        // Abas no controle segmentado do design system (a aba atual em destaque claro)
+        var tabIds = new[] { "capture", "history", "compare", "lab" };
+        root.Children.Add(Tabs(new[] { (Glyphs.Play, "Captura"), (Glyphs.History, "Histórico"), (Glyphs.Speed, "Comparar"), (Glyphs.Flask, "Laboratório de otimização") },
+            Math.Max(0, Array.IndexOf(tabIds, _perfTab)), i => { _perfTab = tabIds[i]; ShowPerformanceLab(); AnimatePageIn(); }));
         var body = new StackPanel();
         root.Children.Add(body);
         ContentHost.Children.Clear(); ContentHost.Children.Add(root);
@@ -134,7 +128,7 @@ public partial class MainWindow
         System.Windows.Automation.AutomationProperties.SetName(duration, "Duração");
         foreach (var s in new[] { 30, 60, 120, 300 }) duration.Items.Add(new ComboBoxItem { Content = s >= 60 ? $"{s / 60} min" : $"{s} s", Tag = s });
         duration.SelectedIndex = 1;
-        var label = new TextBox { Width = 220, Margin = new Thickness(0, 0, 10, 10), Text = "", ToolTip = "Nome do teste (ex.: Antes do Smart Optimize)" };
+        var label = new TextBox { Width = 220, Margin = new Thickness(0, 0, 10, 10), Text = "", ToolTip = "Nome do teste (ex.: Antes da Otimização inteligente)" };
         System.Windows.Automation.AutomationProperties.SetName(label, "Nome do teste");
         // Cada campo com o rótulo em cima: sem isso as caixas vazias não diziam o que preencher
         StackPanel Field(string caption, FrameworkElement input)
@@ -195,7 +189,7 @@ public partial class MainWindow
             if (_capture is not null) { await StopCaptureAsync(_captureLabel); start.IsEnabled = true; ShowPerformanceLab(); return; }
             var name = (process.Text ?? "").Trim();
             if (name.Length > 0 && !name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) name += ".exe";
-            if (name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0) { ShowToast("Performance Lab", "Nome de processo inválido.", "Warning"); return; }
+            if (name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0) { ShowToast("Laboratório de desempenho", "Nome de processo inválido.", "Warning"); return; }
             var seconds = (int)((ComboBoxItem)duration.SelectedItem).Tag;
             start.IsEnabled = false;
             await StartCaptureAsync(name.Length == 0 ? null : name, seconds, label.Text);
@@ -216,7 +210,7 @@ public partial class MainWindow
             var hw = await PerfHardwareAsync();
             _capture = PerfCaptureSession.Start(hw, process, seconds);
             HardwareMonitorService.Shared.Sampled += KeepMonitorAlive;
-            _log.Write("INFO", $"Performance Lab: captura iniciada ({process ?? "só sensores"}, {seconds} s)");
+            _log.Write("INFO", $"Laboratório de desempenho: captura iniciada ({process ?? "só sensores"}, {seconds} s)");
             var started = DateTime.Now;
             _captureLabel = label;
             _captureTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
@@ -238,7 +232,7 @@ public partial class MainWindow
         catch (Exception ex) when (ex is InvalidOperationException or IOException or System.ComponentModel.Win32Exception)
         {
             _capture?.Dispose(); _capture = null;
-            ShowToast("Performance Lab", ex.Message, "Danger");
+            ShowToast("Laboratório de desempenho", ex.Message, "Danger");
         }
     }
 
@@ -260,15 +254,15 @@ public partial class MainWindow
             if (_lab is { } lab && session.Process == lab.Process) result = result with { LabExperiment = lab.Id, LabPhase = lab.Applied ? "after" : "before" };
             PerfLabStore.Default.Save(result);
             _lastPerfResult = result;
-            _log.Write("SUCCESS", $"Performance Lab: captura salva ({result.Source}" + (result.AverageFps is { } f ? $", {f:0} FPS médio" : "") + ")");
+            _log.Write("SUCCESS", $"Laboratório de desempenho: captura salva ({result.Source}" + (result.AverageFps is { } f ? $", {f:0} FPS médio" : "") + ")");
             if (status != null) status.Text = "Captura concluída e salva no histórico.";
             if (resultHost != null) { resultHost.Children.Clear(); resultHost.Children.Add(PerfResultCard(result)); }
-            ShowToast("Performance Lab", result.HasFrames ? $"FPS médio {result.AverageFps:0} · 1% low {result.Low1Fps:0}" : "Captura salva (sem FPS: só sensores).", "Success");
+            ShowToast("Laboratório de desempenho", result.HasFrames ? $"FPS médio {result.AverageFps:0} · 1% low {result.Low1Fps:0}" : "Captura salva (sem FPS: só sensores).", "Success");
             return result;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FormatException)
         {
-            ShowToast("Performance Lab", "A captura não pôde ser salva: " + ex.Message, "Danger");
+            ShowToast("Laboratório de desempenho", "A captura não pôde ser salva: " + ex.Message, "Danger");
             return null;
         }
         finally { session.Dispose(); }
@@ -319,7 +313,7 @@ public partial class MainWindow
     private void PrintPerfReport(PerfResult r, PerfResult? before)
     {
         var doc = new FlowDocument { FontFamily = new System.Windows.Media.FontFamily("Segoe UI"), FontSize = 12, PagePadding = new Thickness(48), ColumnWidth = 9999 };
-        doc.Blocks.Add(new Paragraph(new Run(Translator.Tr("Qrztweaks · Relatório do Performance Lab"))) { FontSize = 20, FontWeight = FontWeights.Bold });
+        doc.Blocks.Add(new Paragraph(new Run(Translator.Tr("Qrztweaks · Relatório do Laboratório de desempenho"))) { FontSize = 20, FontWeight = FontWeights.Bold });
         doc.Blocks.Add(new Paragraph(new Run($"{r.Label} · {r.StartedAt:dd/MM/yyyy HH:mm} · {r.DurationSeconds:0} s · {r.Process ?? "-"} · {Translator.Tr(r.Source)}")));
         var table = new Table { CellSpacing = 0 };
         table.Columns.Add(new TableColumn { Width = new GridLength(220) }); table.Columns.Add(new TableColumn()); if (before != null) { table.Columns.Add(new TableColumn()); table.Columns.Add(new TableColumn()); }
@@ -342,7 +336,7 @@ public partial class MainWindow
         var print = new PrintDialog();
         if (print.ShowDialog() != true) return;
         doc.PageWidth = print.PrintableAreaWidth; doc.PageHeight = print.PrintableAreaHeight;
-        print.PrintDocument(((IDocumentPaginatorSource)doc).DocumentPaginator, "Qrztweaks Performance Lab");
+        print.PrintDocument(((IDocumentPaginatorSource)doc).DocumentPaginator, "Qrztweaks Laboratório de desempenho");
     }
 
     // ===================== Histórico =====================
@@ -367,7 +361,7 @@ public partial class MainWindow
             System.Windows.Automation.AutomationProperties.SetName(delete, "Excluir " + r.Label);
             delete.Click += (_, _) =>
             {
-                if (Msg($"Excluir o teste \"{r.Label}\"?", "Performance Lab", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+                if (Msg($"Excluir o teste \"{r.Label}\"?", "Laboratório de desempenho", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes) return;
                 PerfLabStore.Default.Delete(r.Id); ShowPerformanceLab();
             };
             buttons.Children.Add(open); buttons.Children.Add(delete);
@@ -390,14 +384,14 @@ public partial class MainWindow
         if (dialog.ShowDialog(this) != true) return;
         try
         {
-            // Mesmo leitor do BIOS Advisor: cabeçalhos com aspas ou outra caixa e só o fluxo principal (processo + swapchain)
+            // Mesmo leitor do Assistente de BIOS: cabeçalhos com aspas ou outra caixa e só o fluxo principal (processo + swapchain)
             var (application, frames) = BiosAdvisor.Benchmark.FrametimeAnalyzer.BestStream(await File.ReadAllTextAsync(dialog.FileName));
             var conditions = await CaptureConditionsAsync();
             var result = PerfMetrics.Build(new PerfResult { Label = Path.GetFileNameWithoutExtension(dialog.FileName), Process = application, Source = "CSV importado", Conditions = conditions },
                 frames.Count >= 100 ? frames : null, Array.Empty<PerfSample>());
             if (!result.HasFrames) throw new FormatException("O log não tem quadros suficientes do processo principal.");
             PerfLabStore.Default.Save(result);
-            ShowToast("Performance Lab", $"Importado: {result.AverageFps:0} FPS médio.", "Success");
+            ShowToast("Laboratório de desempenho", $"Importado: {result.AverageFps:0} FPS médio.", "Success");
             ShowPerformanceLab();
         }
         catch (Exception ex) when (ex is FormatException or IOException or UnauthorizedAccessException) { ShowToast("Importação", ex.Message, "Warning"); }
@@ -454,7 +448,7 @@ public partial class MainWindow
         var tablePanel = new StackPanel();
         tablePanel.Children.Add(table);
         if (deltas.Count == 0) tablePanel.Children.Add(Label("Os dois testes não têm métricas em comum.", 13, true));
-        tablePanel.Children.Add(Label("Uma única gravação de cada lado não prova ganho: diferenças de poucos por cento estão dentro da variação normal. Para decidir sobre um ajuste, use o Optimization Lab (várias gravações e teste estatístico).", 12, true));
+        tablePanel.Children.Add(Label("Uma única gravação de cada lado não prova ganho: diferenças de poucos por cento estão dentro da variação normal. Para decidir sobre um ajuste, use o Laboratório de otimização (várias gravações e teste estatístico).", 12, true));
         var print = IconButton(Glyphs.Print, "Relatório PDF da comparação"); print.Click += (_, _) => PrintPerfReport(after, before);
         tablePanel.Children.Add(print);
         body.Children.Add(Surface(tablePanel));
@@ -466,11 +460,11 @@ public partial class MainWindow
         body.Children.Add(Surface(cond));
     }
 
-    // ===================== Optimization Lab =====================
+    // ===================== Laboratório de otimização =====================
     private void RenderLab(StackPanel body)
     {
         var intro = new StackPanel();
-        intro.Children.Add(SectionHeader("Optimization Lab", "Mede o efeito de um ajuste por vez: grave a mesma cena algumas vezes, aplique o ajuste, grave de novo e compare. Uma diferença só conta como ganho se for consistente e maior que 3%."));
+        intro.Children.Add(SectionHeader("Laboratório de otimização", "Mede o efeito de um ajuste por vez: grave a mesma cena algumas vezes, aplique o ajuste, grave de novo e compare. Uma diferença só conta como ganho se for consistente e maior que 3%."));
         intro.Children.Add(Label("1. Grave a referência  ·  2. Aplique um ajuste reversível  ·  3. Grave depois  ·  4. Mantenha ou reverta", 12.5, true));
         body.Children.Add(Surface(intro));
 
@@ -481,7 +475,7 @@ public partial class MainWindow
             var tweaks = TweakCatalog.All.Where(t => !t.OneOff && !t.RequiresReboot && !t.Revert.StartsWith("Não reversível", StringComparison.Ordinal) && !t.Revert.StartsWith("Reinstale", StringComparison.Ordinal) && PlanAccess.Allows(CurrentLicense, PlanAccess.OperationPage(t.Operation))).ToList();
             if (tweaks.Count == 0)
             {
-                setup.Children.Add(Label(CurrentLicense is null ? "No modo demonstração nenhum ajuste pode ser aplicado, então o Optimization Lab fica indisponível. Ative uma licença para usar." : "Nenhum ajuste do seu plano pode ser testado aqui.", 13, true));
+                setup.Children.Add(Label(CurrentLicense is null ? "No modo demonstração nenhum ajuste pode ser aplicado, então o Laboratório de otimização fica indisponível. Ative uma licença para usar." : "Nenhum ajuste do seu plano pode ser testado aqui.", 13, true));
                 body.Children.Add(Surface(setup));
                 return;
             }
@@ -504,9 +498,9 @@ public partial class MainWindow
             begin.Click += (_, _) =>
             {
                 var name = (process.Text ?? "").Trim();
-                if (name.Length == 0) { ShowToast("Optimization Lab", "Escolha o processo do jogo.", "Warning"); return; }
+                if (name.Length == 0) { ShowToast("Laboratório de otimização", "Escolha o processo do jogo.", "Warning"); return; }
                 if (!name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) name += ".exe";
-                if (tweakBox.SelectedItem is not ComboBoxItem { Tag: string tweakId }) { ShowToast("Optimization Lab", "Escolha o ajuste a testar.", "Warning"); return; }
+                if (tweakBox.SelectedItem is not ComboBoxItem { Tag: string tweakId }) { ShowToast("Laboratório de otimização", "Escolha o ajuste a testar.", "Warning"); return; }
                 _lab = new LabExperiment { TweakId = tweakId, Process = name, Seconds = (int)((ComboBoxItem)duration.SelectedItem).Tag };
                 ShowPerformanceLab();
             };
@@ -533,13 +527,13 @@ public partial class MainWindow
         Act(Glyphs.Play, "Gravar referência", !lab.Applied && lab.Before.Count < OptimizationLab.MinimumRuns, !lab.Applied, () => RecordLabRunAsync(status));
         Act(Glyphs.Lightning, "Aplicar o ajuste", lab.Before.Count >= OptimizationLab.MinimumRuns && !lab.Applied, lab.Before.Count >= OptimizationLab.MinimumRuns && !lab.Applied, async () =>
         {
-            if (Msg($"Aplicar \"{tweak.Name}\"? Ele fica no backup e pode ser revertido no fim do experimento.", "Optimization Lab", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+            if (Msg($"Aplicar \"{tweak.Name}\"? Ele fica no backup e pode ser revertido no fim do experimento.", "Laboratório de otimização", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes) return;
             var outcome = await RunLiveAsync(tweak.Operation, new[] { tweak.Step });
             // Só conta como aplicado se o Windows confirmar o novo estado; senão, as gravações "depois" não mediriam nada
             if (outcome is LiveOutcome.Completed or LiveOutcome.CompletedWithFailures)
             {
                 if (await TweakStateAsync(tweak) == TweakState.Applied) lab.Applied = true;
-                else ShowToast("Optimization Lab", "O ajuste não foi confirmado no Windows. Veja o registro da execução; o experimento continua sem o ajuste.", "Warning");
+                else ShowToast("Laboratório de otimização", "O ajuste não foi confirmado no Windows. Veja o registro da execução; o experimento continua sem o ajuste.", "Warning");
             }
             _perfTab = "lab"; NavigateTo("perflab");
         });
@@ -574,7 +568,7 @@ public partial class MainWindow
             if (lab.Applied && lab.After.Count >= OptimizationLab.MinimumRuns)
             {
                 var keep = IconButton(Glyphs.Check, "Manter", primary: outcome.Verdict == LabVerdict.LikelyGain);
-                keep.Click += (_, _) => { _log.Write("INFO", $"Optimization Lab: ajuste mantido ({tweak.Name}, {outcome.DeltaPercent:+0.#;-0.#;0}%)"); _lab = null; ShowPerformanceLab(); };
+                keep.Click += (_, _) => { _log.Write("INFO", $"Laboratório de otimização: ajuste mantido ({tweak.Name}, {outcome.DeltaPercent:+0.#;-0.#;0}%)"); _lab = null; ShowPerformanceLab(); };
                 var revert = IconButton(Glyphs.Undo, "Reverter o ajuste", primary: outcome.Verdict != LabVerdict.LikelyGain);
                 revert.Margin = new Thickness(8, 0, 0, 0);
                 revert.Click += async (_, _) =>
@@ -582,8 +576,8 @@ public partial class MainWindow
                     var o = await RunLiveAsync("reverter", new[] { tweak.Step });
                     // Revertido = o estado deixou de ser o do ajuste; se continuar aplicado, o experimento fica aberto
                     if (o is LiveOutcome.Completed or LiveOutcome.CompletedWithFailures && await TweakStateAsync(tweak) != TweakState.Applied)
-                    { _log.Write("INFO", $"Optimization Lab: ajuste revertido ({tweak.Name})"); _lab = null; }
-                    else ShowToast("Optimization Lab", "A reversão não foi confirmada. Confira em Atividade e reversão.", "Warning");
+                    { _log.Write("INFO", $"Laboratório de otimização: ajuste revertido ({tweak.Name})"); _lab = null; }
+                    else ShowToast("Laboratório de otimização", "A reversão não foi confirmada. Confira no Histórico.", "Warning");
                     _perfTab = "lab"; NavigateTo("perflab");
                 };
                 var decision = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 0) };

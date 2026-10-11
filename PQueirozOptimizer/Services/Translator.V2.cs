@@ -8,7 +8,7 @@ public static partial class Translator
     private static readonly Dictionary<string, string> V2Exact = new(StringComparer.Ordinal)
     {
         // ---------- Navegação e páginas ----------
-        ["Perfis"] = "Profiles", ["Perfil"] = "Profile", ["Command Center"] = "Command Center",
+        ["Perfis"] = "Profiles", ["Perfil"] = "Profile", ["Início"] = "Command Center",
         ["Análise do PC e ajustes recomendados pelo objetivo, com risco e reversão."] = "PC analysis and tweaks recommended by goal, with risk and rollback.",
         ["FPS, frametime e sensores reais, histórico e comparação antes/depois."] = "Real FPS, frametime and sensors, history and before/after comparison.",
         ["Perfis por jogo ou uso, com ativação automática do Modo Jogo."] = "Profiles per game or use, with automatic Game Mode activation.",
@@ -20,10 +20,10 @@ public static partial class Translator
 
         // ---------- Smart Optimize ----------
         ["Escolha o objetivo deste PC"] = "Choose this PC's goal",
-        ["O Smart Optimize lê o hardware e o estado de cada ajuste, recomenda só o que se aplica e mostra o risco, a reversão e a evidência de cada um. Nada é aplicado sem a sua revisão."] = "Smart Optimize reads the hardware and the state of each tweak, recommends only what applies and shows the risk, rollback and evidence of each one. Nothing is applied without your review.",
+        ["A Otimização inteligente lê o hardware e o estado de cada ajuste, recomenda só o que se aplica e mostra o risco, a reversão e a evidência de cada um. Nada é aplicado sem a sua revisão."] = "Smart Optimize reads the hardware and the state of each tweak, recommends only what applies and shows the risk, rollback and evidence of each one. Nothing is applied without your review.",
         ["Analisar este PC"] = "Analyze this PC", ["Analisar de novo"] = "Analyze again",
         ["Clique em \"Analisar este PC\" para detectar o hardware e conferir quais ajustes já estão aplicados. A análise só lê o sistema."] = "Click \"Analyze this PC\" to detect the hardware and check which tweaks are already applied. The analysis only reads the system.",
-        ["Gaming competitivo"] = "Competitive gaming", ["gaming competitivo"] = "competitive gaming", ["Notebook"] = "Laptop", ["notebook"] = "laptop", ["Programação"] = "Development", ["programação"] = "development",
+        ["Jogos competitivos"] = "Competitive gaming", ["jogos competitivos"] = "competitive gaming", ["Notebook"] = "Laptop", ["notebook"] = "laptop", ["Programação"] = "Development", ["programação"] = "development",
         ["Uso diário"] = "Daily use", ["uso diário"] = "daily use", ["Personalizado"] = "Custom", ["personalizado"] = "custom", ["Desktop"] = "Desktop",
         ["Frametime estável, responsividade e menos processos em segundo plano."] = "Stable frametime, responsiveness and fewer background processes.",
         ["Temperatura, autonomia, consumo e ruído."] = "Temperature, battery life, power draw and noise.",
@@ -50,9 +50,9 @@ public static partial class Translator
         ["Ryzen X3D com dois CCDs"] = "Ryzen X3D with two CCDs",
         ["O Windows usa a Game Bar e o plano Equilibrado para levar o jogo ao CCD com 3D V-Cache. Esses ajustes ficam bloqueados neste PC."] = "Windows uses the Game Bar and the Balanced plan to move the game to the CCD with 3D V-Cache. These tweaks are locked on this PC.",
         ["Virtualização em uso"] = "Virtualization in use",
-        ["O Smart Optimize não mexe em Hyper-V, WSL, Docker nem nos recursos de virtualização. Para desligá-los, use Serviços, de forma consciente."] = "Smart Optimize doesn't touch Hyper-V, WSL, Docker or virtualization features. To turn them off, use Services, knowingly.",
+        ["A Otimização inteligente não mexe em Hyper-V, WSL, Docker nem nos recursos de virtualização. Para desligá-los, use Serviços, de forma consciente."] = "Smart Optimize doesn't touch Hyper-V, WSL, Docker or virtualization features. To turn them off, use Services, knowingly.",
         ["Objetivo Notebook em um desktop"] = "Laptop goal on a desktop",
-        ["Este PC não tem bateria. O perfil Notebook prioriza consumo e temperatura; para jogos, escolha Gaming competitivo."] = "This PC has no battery. The Laptop profile prioritizes power and temperature; for games, choose Competitive gaming.",
+        ["Este PC não tem bateria. O perfil Notebook prioriza consumo e temperatura; para jogos, escolha Jogos competitivos."] = "This PC has no battery. The Laptop profile prioritizes power and temperature; for games, choose Competitive gaming.",
         ["Telemetria configurada duas vezes"] = "Telemetry set twice",
         ["\"Políticas de diagnóstico, nuvem e IA\" grava AllowTelemetry = 0 e \"Só dados de diagnóstico obrigatórios\" grava 1, desfazendo parte da primeira. Escolha só uma."] = "\"Diagnostics, cloud and AI policies\" writes AllowTelemetry = 0 and \"Required diagnostic data only\" writes 1, undoing part of the first. Choose only one.",
         ["Plano de energia com Modo Jogo ativo"] = "Power plan with Game Mode active",
@@ -61,14 +61,14 @@ public static partial class Translator
         ["Conflito"] = "Conflict", ["Precisam reiniciar para valer:"] = "Need a restart to take effect:",
         ["Resultado verificado"] = "Verified result", ["Reinicie o PC"] = "Restart the PC",
         ["Alguns ajustes só passam a valer depois de reiniciar o Windows."] = "Some tweaks only take effect after restarting Windows.",
-        ["O backup de cada item está em Atividade e reversão."] = "Each item's backup is in Activity and rollback.",
+        ["O backup de cada item está no Histórico."] = "Each item's backup is in History.",
         ["Ação pontual executada (não fica registrada como estado)."] = "One-off action executed (not recorded as a state).",
         ["A execução teve falhas; confira no registro se esta ação pontual foi concluída."] = "The run had failures; check the log to see whether this one-off action finished.",
         ["Escolha o ajuste a testar."] = "Choose the tweak to test.",
-        ["No modo demonstração nenhum ajuste pode ser aplicado, então o Optimization Lab fica indisponível. Ative uma licença para usar."] = "In demo mode no tweak can be applied, so the Optimization Lab is unavailable. Activate a license to use it.",
+        ["No modo demonstração nenhum ajuste pode ser aplicado, então o Laboratório de otimização fica indisponível. Ative uma licença para usar."] = "In demo mode no tweak can be applied, so the Optimization Lab is unavailable. Activate a license to use it.",
         ["Nenhum ajuste do seu plano pode ser testado aqui."] = "No tweak in your plan can be tested here.",
         ["O ajuste não foi confirmado no Windows. Veja o registro da execução; o experimento continua sem o ajuste."] = "The tweak wasn't confirmed in Windows. See the run log; the experiment continues without the tweak.",
-        ["A reversão não foi confirmada. Confira em Atividade e reversão."] = "The rollback wasn't confirmed. Check Activity and rollback.",
+        ["A reversão não foi confirmada. Confira no Histórico."] = "The rollback wasn't confirmed. Check History.",
         ["Estado lido no Windows depois da execução. Ajustes de ação pontual (limpeza, TRIM) não entram aqui."] = "State read from Windows after the run. One-off actions (cleanup, TRIM) are not included here.",
 
         // ---------- Catálogo: nomes e categorias ----------
@@ -191,7 +191,7 @@ public static partial class Translator
         ["Não altera configurações."] = "Doesn't change settings.", ["Não reversível (arquivos temporários)."] = "Not reversible (temporary files).",
 
         // ---------- Catálogo: evidência ----------
-        ["Reduz a latência de troca de estados de energia da CPU. O ganho em FPS varia por jogo e processador; meça no Optimization Lab."] = "Reduces the latency of CPU power-state transitions. The FPS gain varies by game and processor; measure it in the Optimization Lab.",
+        ["Reduz a latência de troca de estados de energia da CPU. O ganho em FPS varia por jogo e processador; meça no Laboratório de otimização."] = "Reduces the latency of CPU power-state transitions. The FPS gain varies by game and processor; measure it in the Optimization Lab.",
         ["Ganho de espaço em disco, documentado pela Microsoft (powercfg /hibernate). Não muda desempenho."] = "Disk space gain, documented by Microsoft (powercfg /hibernate). Doesn't change performance.",
         ["Afeta principalmente processos em segundo plano; o jogo em foco já não é limitado. Benefício pequeno e variável."] = "Mainly affects background processes; the game in focus isn't throttled already. Small, variable benefit.",
         ["Recurso oficial do Windows 10/11."] = "Official Windows 10/11 feature.",
@@ -284,7 +284,7 @@ public static partial class Translator
         ["Sem FPS: a captura não teve quadros do PresentMon (ferramenta não configurada, processo errado ou menos de 100 quadros). Os números de FPS não são estimados a partir de outras métricas."] = "No FPS: the capture had no PresentMon frames (tool not configured, wrong process or fewer than 100 frames). FPS numbers are not estimated from other metrics.",
         ["CPU sem temperatura: ler a temperatura da CPU exige um driver de kernel que o Qrztweaks não instala."] = "No CPU temperature: reading it requires a kernel driver that Qrztweaks doesn't install.",
         ["Exportar CSV"] = "Export CSV", ["Exportar JSON"] = "Export JSON", ["Relatório PDF"] = "PDF report", ["Exportado"] = "Exported", ["Exportação"] = "Export",
-        ["Qrztweaks · Relatório do Performance Lab"] = "Qrztweaks · Performance Lab report", ["Métrica"] = "Metric", ["Valor"] = "Value", ["Antes"] = "Before", ["Depois"] = "After", ["Diferença"] = "Difference",
+        ["Qrztweaks · Relatório do Laboratório de desempenho"] = "Qrztweaks · Performance Lab report", ["Métrica"] = "Metric", ["Valor"] = "Value", ["Antes"] = "Before", ["Depois"] = "After", ["Diferença"] = "Difference",
         ["FPS e frametime vêm de dados reais de apresentação de quadros (PresentMon). Métricas ausentes não foram medidas."] = "FPS and frametime come from real frame presentation data (PresentMon). Missing metrics were not measured.",
         ["Histórico de testes"] = "Test history", ["Nenhum teste salvo ainda."] = "No tests saved yet.", ["Importar CSV"] = "Import CSV", ["Ver"] = "View",
         ["Importar um log do PresentMon ou do CapFrameX"] = "Import a PresentMon or CapFrameX log", ["Importação"] = "Import",
@@ -293,7 +293,7 @@ public static partial class Translator
         ["Escolha dois testes. A comparação mostra a diferença absoluta e percentual e avisa quando as condições não são as mesmas."] = "Choose two tests. The comparison shows the absolute and percent difference and warns when the conditions aren't the same.",
         ["Grave pelo menos dois testes para comparar."] = "Record at least two tests to compare.", ["Condições diferentes"] = "Different conditions", ["Hardware diferente."] = "Different hardware.",
         ["Os dois testes não têm métricas em comum."] = "The two tests have no metrics in common.",
-        ["Uma única gravação de cada lado não prova ganho: diferenças de poucos por cento estão dentro da variação normal. Para decidir sobre um ajuste, use o Optimization Lab (várias gravações e teste estatístico)."] = "A single recording on each side doesn't prove a gain: differences of a few percent are within normal variation. To decide on a tweak, use the Optimization Lab (several recordings and a statistical test).",
+        ["Uma única gravação de cada lado não prova ganho: diferenças de poucos por cento estão dentro da variação normal. Para decidir sobre um ajuste, use o Laboratório de otimização (várias gravações e teste estatístico)."] = "A single recording on each side doesn't prove a gain: differences of a few percent are within normal variation. To decide on a tweak, use the Optimization Lab (several recordings and a statistical test).",
         ["Relatório PDF da comparação"] = "Comparison PDF report", ["Condições dos testes"] = "Test conditions",
         ["Uso de CPU"] = "CPU usage", ["Uso de GPU"] = "GPU usage", ["Temperatura da GPU (máx.)"] = "GPU temperature (max)", ["Clock da GPU"] = "GPU clock", ["Potência da GPU"] = "GPU power",
 
@@ -319,13 +319,13 @@ public static partial class Translator
 
         // ---------- Diagnóstico inteligente ----------
         ["Diagnóstico inteligente"] = "Smart diagnostics", ["Analisar desempenho"] = "Analyze performance",
-        ["Analisa o último teste do Performance Lab, o monitor ao vivo, discos, processos, energia e drivers. Cada conclusão mostra a evidência e o grau de confiança; sem dados suficientes, nada é afirmado."] = "Analyzes the last Performance Lab test, the live monitor, disks, processes, power and drivers. Each conclusion shows the evidence and the confidence level; without enough data, nothing is claimed.",
+        ["Analisa o último teste do Laboratório de desempenho, o monitor ao vivo, discos, processos, energia e drivers. Cada conclusão mostra a evidência e o grau de confiança; sem dados suficientes, nada é afirmado."] = "Analyzes the last Performance Lab test, the live monitor, disks, processes, power and drivers. Each conclusion shows the evidence and the confidence level; without enough data, nothing is claimed.",
         ["Coletando dados (alguns segundos)..."] = "Collecting data (a few seconds)...", ["Nenhum problema encontrado"] = "No problems found",
         ["Com os dados disponíveis, nada indica gargalo ou problema. Veja abaixo o que não pôde ser avaliado."] = "With the available data, nothing indicates a bottleneck or problem. See below what couldn't be evaluated.",
-        ["Não avaliado por falta de dados"] = "Not evaluated for lack of data", ["Abrir o Performance Lab"] = "Open the Performance Lab",
+        ["Não avaliado por falta de dados"] = "Not evaluated for lack of data", ["Abrir o Laboratório de desempenho"] = "Open the Performance Lab",
         ["Crítico"] = "Critical", ["Informativo"] = "Informational", ["Confiança alta"] = "High confidence", ["Confiança média"] = "Medium confidence", ["Confiança baixa"] = "Low confidence",
         ["Evidências"] = "Evidence", ["Possíveis causas"] = "Possible causes", ["Recomendações"] = "Recommendations", ["Como confirmar"] = "How to confirm", ["Riscos"] = "Risks",
-        ["Sem um teste do Performance Lab de pelo menos 20 segundos: limitações de CPU e GPU não podem ser avaliadas."] = "No Performance Lab test of at least 20 seconds: CPU and GPU limits can't be evaluated.",
+        ["Sem um teste do Laboratório de desempenho de pelo menos 20 segundos: limitações de CPU e GPU não podem ser avaliadas."] = "No Performance Lab test of at least 20 seconds: CPU and GPU limits can't be evaluated.",
         ["O Windows não informou o uso da GPU no último teste: gargalo de GPU não avaliado."] = "Windows didn't report GPU usage in the last test: GPU bottleneck not evaluated.",
         ["Poucas leituras de memória: deixe o monitor ao vivo rodando por alguns segundos."] = "Few memory readings: leave the live monitor running for a few seconds.",
         ["Limitado pela placa de vídeo no último teste"] = "Limited by the graphics card in the last test",
@@ -337,16 +337,16 @@ public static partial class Translator
         ["Possível limitação de CPU no último teste"] = "Possible CPU limit in the last test", ["Jogo limitado por um núcleo da CPU."] = "Game limited by one CPU core.",
         ["Limite de FPS no jogo ou no driver."] = "FPS cap in the game or the driver.", ["Memória lenta (XMP/EXPO desligado) ou processos em segundo plano."] = "Slow memory (XMP/EXPO off) or background processes.",
         ["Confira se não há limite de FPS ou V-Sync ligado."] = "Check that there's no FPS cap or V-Sync on.", ["Feche programas em segundo plano (Modo Jogo)."] = "Close background programs (Game Mode).",
-        ["Confira no BIOS Advisor se o perfil XMP/EXPO está ativo."] = "Check in the BIOS Advisor whether the XMP/EXPO profile is active.",
+        ["Confira no Assistente de BIOS se o perfil XMP/EXPO está ativo."] = "Check in the BIOS Advisor whether the XMP/EXPO profile is active.",
         ["Baixe a resolução: se o FPS não mudar, a CPU (ou um limite) é o gargalo."] = "Lower the resolution: if FPS doesn't change, the CPU (or a cap) is the bottleneck.",
         ["A CPU foi limitada durante o teste"] = "The CPU was limited during the test", ["Temperatura alta (cooler, pasta térmica, poeira)."] = "High temperature (cooler, thermal paste, dust).",
         ["Limite de energia da placa-mãe ou do plano de energia."] = "Power limit from the motherboard or the power plan.", ["Limpe o cooler e confira a pasta térmica."] = "Clean the cooler and check the thermal paste.",
-        ["Confira o plano de energia e, no BIOS Advisor, os limites de energia."] = "Check the power plan and, in the BIOS Advisor, the power limits.",
+        ["Confira o plano de energia e, no Assistente de BIOS, os limites de energia."] = "Check the power plan and, in the BIOS Advisor, the power limits.",
         ["Repita o teste com o gabinete aberto ou ventoinhas no máximo: se o limite sumir, é térmico."] = "Repeat the test with the case open or fans at maximum: if the limit goes away, it's thermal.",
         ["Limpeza interna exige cuidado com eletricidade estática."] = "Internal cleaning requires care with static electricity.",
         ["A placa de vídeo reduziu o clock no teste"] = "The graphics card lowered its clock in the test", ["Temperatura ou limite de energia da placa."] = "Card temperature or power limit.",
         ["Melhore o fluxo de ar do gabinete e limpe a placa."] = "Improve case airflow and clean the card.", ["Confira se os cabos de energia da GPU estão bem conectados."] = "Check that the GPU power cables are firmly connected.",
-        ["Acompanhe temperatura e clock no Performance Lab durante uma partida longa."] = "Watch temperature and clock in the Performance Lab during a long match.",
+        ["Acompanhe temperatura e clock no Laboratório de desempenho durante uma partida longa."] = "Watch temperature and clock in the Performance Lab during a long match.",
         ["Undervolt e mudanças de curva de ventoinha ficam por sua conta: o app não altera a GPU."] = "Undervolting and fan curve changes are up to you: the app doesn't change the GPU.",
         ["Memória RAM quase toda em uso"] = "RAM almost fully used", ["Programas demais abertos (navegador com muitas abas é comum)."] = "Too many programs open (a browser with many tabs is common).",
         ["Pouca memória instalada para o uso atual."] = "Too little memory installed for the current use.", ["Algum programa usando memória fora do normal."] = "Some program using an abnormal amount of memory.",
@@ -382,7 +382,7 @@ public static partial class Translator
         ["Compare a versão instalada com a mais recente no site do fabricante."] = "Compare the installed version with the latest on the manufacturer's site.",
         ["Drivers novos às vezes trazem problemas; a instalação limpa ajuda a voltar."] = "New drivers sometimes bring problems; the clean install helps you go back.",
         ["A CPU está limitada agora"] = "The CPU is limited right now", ["Temperatura, limite de energia ou plano de economia."] = "Temperature, power limit or power-saving plan.",
-        ["Grave um teste no Performance Lab durante uma carga real para confirmar."] = "Record a Performance Lab test under a real load to confirm.", ["Teste longo no Performance Lab."] = "Long test in the Performance Lab.",
+        ["Grave um teste no Laboratório de desempenho durante uma carga real para confirmar."] = "Record a Performance Lab test under a real load to confirm.", ["Teste longo no Laboratório de desempenho."] = "Long test in the Performance Lab.",
         ["Windows sem reiniciar há muito tempo"] = "Windows hasn't restarted in a long time", ["Atualizações e vazamentos de memória se acumulam."] = "Updates and memory leaks pile up.",
         ["Reinicie (Reiniciar, não Desligar) de vez em quando."] = "Restart (Restart, not Shut down) now and then.", ["Gerenciador de Tarefas → Desempenho → CPU mostra o tempo ligado."] = "Task Manager → Performance → CPU shows the uptime.",
         ["sem FPS medido"] = "no FPS measured", ["processo não informado"] = "process not reported", ["Ação pontual."] = "One-off action.",
@@ -396,9 +396,9 @@ public static partial class Translator
         ["Ativar ao abrir um jogo"] = "Activate when a game opens",
         ["Quando um jogo de um perfil com \"Modo Jogo automático\" abrir, o Modo Jogo temporário liga sozinho e é restaurado quando o jogo fechar. O app só lê a lista de processos: nada é injetado no jogo."] = "When a game from a profile with \"Automatic Game Mode\" opens, temporary Game Mode turns on by itself and is restored when the game closes. The app only reads the process list: nothing is injected into the game.",
         ["Modo Jogo automático"] = "Automatic Game Mode", ["Restaurar"] = "Restore",
-        ["Os ajustes de um perfil são aplicados pelo Smart Optimize, com backup de cada item. Para desfazer, use Atividade e reversão."] = "A profile's tweaks are applied by Smart Optimize, with a backup of each item. To undo, use Activity and rollback.",
-        ["Abrir Atividade e reversão"] = "Open Activity and rollback", ["Editar perfil"] = "Edit profile", ["Nome"] = "Name", ["Até 60 caracteres."] = "Up to 60 characters.", ["Descrição"] = "Description", ["Opcional."] = "Optional.",
-        ["Objetivo"] = "Goal", ["Usado nas recomendações do Smart Optimize."] = "Used in Smart Optimize recommendations.", ["Processos dos jogos"] = "Game processes",
+        ["Os ajustes de um perfil são aplicados pela Otimização inteligente, com backup de cada item. Para desfazer, use o Histórico."] = "A profile's tweaks are applied by Smart Optimize, with a backup of each item. To undo, use History.",
+        ["Abrir o Histórico"] = "Open History", ["Editar perfil"] = "Edit profile", ["Nome"] = "Name", ["Até 60 caracteres."] = "Up to 60 characters.", ["Descrição"] = "Description", ["Opcional."] = "Optional.",
+        ["Objetivo"] = "Goal", ["Usado nas recomendações da Otimização inteligente."] = "Used in Smart Optimize recommendations.", ["Processos dos jogos"] = "Game processes",
         ["Nomes dos executáveis, separados por vírgula."] = "Executable names, separated by commas.",
         ["Liga o Modo Jogo temporário quando um dos jogos abrir (requer \"Ativar ao abrir um jogo\")."] = "Turns on temporary Game Mode when one of the games opens (requires \"Activate when a game opens\").",
         ["Fechar programas em segundo plano"] = "Close background programs", ["No Modo Jogo automático, fecha os programas da lista do Modo Jogo que estiverem abertos."] = "In automatic Game Mode, closes the open programs from the Game Mode list.",
@@ -420,8 +420,8 @@ public static partial class Translator
         // ---------- Command Center ----------
         ["Computador"] = "Computer", ["Perfil ativo"] = "Active profile", ["Nenhum objetivo analisado"] = "No goal analyzed", ["nenhum objetivo analisado"] = "no goal analyzed",
         ["OTIMIZAÇÕES ATIVAS"] = "ACTIVE OPTIMIZATIONS", ["ÚLTIMA ANÁLISE"] = "LAST ANALYSIS", ["ÚLTIMO TESTE"] = "LAST TEST", ["ALERTAS"] = "ALERTS", ["TEMPERATURAS"] = "TEMPERATURES",
-        ["Analise o PC para ver"] = "Analyze the PC to see", ["Nenhuma ainda"] = "None yet", ["Nenhum teste no Performance Lab"] = "No test in the Performance Lab", ["Nenhum alerta"] = "No alerts",
-        ["Abrir o Smart Optimize"] = "Open Smart Optimize", ["Restauração do Modo Jogo pendente"] = "Game Mode restore pending", ["A licença vence hoje"] = "The license expires today",
+        ["Analise o PC para ver"] = "Analyze the PC to see", ["Nenhuma ainda"] = "None yet", ["Nenhum teste no Laboratório de desempenho"] = "No test in the Performance Lab", ["Nenhum alerta"] = "No alerts",
+        ["Abrir a Otimização inteligente"] = "Open Smart Optimize", ["Restauração do Modo Jogo pendente"] = "Game Mode restore pending", ["A licença vence hoje"] = "The license expires today",
         ["Ações rápidas"] = "Quick actions", ["Diagnóstico"] = "Diagnostics", ["Modo compacto"] = "Compact mode",
         ["Analisar o PC e revisar os ajustes recomendados"] = "Analyze the PC and review the recommended tweaks", ["Sessão de jogo temporária, restaurada ao desativar"] = "Temporary game session, restored when turned off",
         ["Medir FPS, frametime e sensores"] = "Measure FPS, frametime and sensors", ["Backups, reversão e pontos de restauração"] = "Backups, rollback and restore points",
@@ -430,7 +430,7 @@ public static partial class Translator
         ["GPU: sensor indisponível"] = "GPU: sensor unavailable", ["CPU: requer driver de kernel"] = "CPU: requires a kernel driver", ["Lendo..."] = "Reading...",
         ["Temperatura da GPU lida pelo driver NVIDIA. A da CPU exige um driver de kernel que o Qrztweaks não instala, por segurança."] = "GPU temperature read by the NVIDIA driver. The CPU's requires a kernel driver that Qrztweaks doesn't install, for safety.",
         ["Modo demonstração"] = "Demo mode", ["Ativar licença"] = "Activate license",
-        ["Veja o hardware, o monitor, o diagnóstico, o Performance Lab e as recomendações do Smart Optimize. Para aplicar qualquer ajuste, ative uma licença."] = "See the hardware, the monitor, diagnostics, the Performance Lab and Smart Optimize recommendations. To apply any tweak, activate a license.",
+        ["Veja o hardware, o monitor, o diagnóstico, o Laboratório de desempenho e as recomendações da Otimização inteligente. Para aplicar qualquer ajuste, ative uma licença."] = "See the hardware, the monitor, diagnostics, the Performance Lab and Smart Optimize recommendations. To apply any tweak, activate a license.",
 
         // ---------- Aparência ----------
         ["Meia-noite"] = "Midnight", ["Seguir a redução de movimento do Windows"] = "Follow Windows reduced motion",
@@ -438,14 +438,14 @@ public static partial class Translator
         ["Barra lateral compacta"] = "Compact sidebar", ["Mostra só os ícones; o nome de cada página aparece ao passar o mouse. Também alterna com Ctrl+B."] = "Shows only the icons; each page's name appears on hover. Also toggles with Ctrl+B.",
         ["Escolha o que aparece na página inicial."] = "Choose what appears on the home page.", ["Status e alertas"] = "Status and alerts",
         ["Otimizações ativas, última análise, último teste e alertas."] = "Active optimizations, last analysis, last test and alerts.",
-        ["Smart Optimize, Modo Jogo, Performance Lab, Restaurar e Diagnóstico."] = "Smart Optimize, Game Mode, Performance Lab, Restore and Diagnostics.",
+        ["Otimização inteligente, Modo Jogo, Laboratório de desempenho, Restaurar e Diagnóstico."] = "Smart Optimize, Game Mode, Performance Lab, Restore and Diagnostics.",
         ["Monitor em tempo real"] = "Real-time monitor", ["Gráficos de CPU, GPU, memória e rede."] = "CPU, GPU, memory and network charts.",
         ["Cards de hardware"] = "Hardware cards", ["Processador, memória, disco, placa de vídeo e temperaturas."] = "Processor, memory, disk, graphics card and temperatures.",
         ["Atividade recente"] = "Recent activity", ["Leitura rápida e as últimas operações."] = "Quick reading and the latest operations.",
 
         // ---------- Modo compacto ----------
         ["Temp."] = "Temp.", ["Sempre no topo"] = "Always on top", ["Fechar"] = "Close", ["Modo Jogo desligado"] = "Game Mode off", ["Modo Jogo: restauração pendente"] = "Game Mode: restore pending",
-        ["FPS só aparece durante uma captura do Performance Lab com o PresentMon."] = "FPS only shows during a Performance Lab capture with PresentMon.",
+        ["FPS só aparece durante uma captura do Laboratório de desempenho com o PresentMon."] = "FPS only shows during a Performance Lab capture with PresentMon.",
         ["Sem sensor de temperatura disponível (só GPUs NVIDIA pelo driver)."] = "No temperature sensor available (only NVIDIA GPUs through the driver).", ["Qrztweaks · Modo compacto"] = "Qrztweaks · Compact mode",
 
         // ---------- Licença e ativação ----------
@@ -459,11 +459,11 @@ public static partial class Translator
         ["Aberto em modo demonstração (sem licença)"] = "Opened in demo mode (no license)",
 
         // ---------- Patch notes 2.0.0 ----------
-        ["Smart Optimize: analisa o PC, lê o estado de cada ajuste e recomenda pelo objetivo (gaming competitivo, notebook, programação, uso diário ou personalizado), com risco, reversão e evidência de cada item."] = "Smart Optimize: analyzes the PC, reads the state of each tweak and recommends by goal (competitive gaming, laptop, development, daily use or custom), with the risk, rollback and evidence of each item.",
+        ["Otimização inteligente: analisa o PC, lê o estado de cada ajuste e recomenda pelo objetivo (jogos competitivos, notebook, programação, uso diário ou personalizado), com risco, reversão e evidência de cada item."] = "Smart Optimize: analyzes the PC, reads the state of each tweak and recommends by goal (competitive gaming, laptop, development, daily use or custom), with the risk, rollback and evidence of each item.",
         ["Depois de aplicar, o estado é lido de novo no Windows: um ajuste só aparece como concluído quando a mudança é confirmada."] = "After applying, the state is read again from Windows: a tweak only shows as done when the change is confirmed.",
-        ["Performance Lab: FPS médio, mínimo, 1% low, 0,1% low e frametime P95/P99 pelo PresentMon, sensores a cada segundo, histórico, comparação antes/depois e exportação em CSV, JSON e PDF."] = "Performance Lab: average, minimum, 1% low and 0.1% low FPS and P95/P99 frametime through PresentMon, per-second sensors, history, before/after comparison and CSV, JSON and PDF export.",
-        ["Optimization Lab: testa um ajuste por vez com várias gravações; diferenças pequenas aparecem como sem diferença comprovada."] = "Optimization Lab: tests one tweak at a time with several recordings; small differences show as no proven difference.",
-        ["Diagnóstico inteligente com evidências e grau de confiança, Command Center com alertas e ações rápidas, modo compacto para segundo monitor e perfis por jogo."] = "Smart diagnostics with evidence and confidence level, Command Center with alerts and quick actions, compact mode for a second monitor and per-game profiles.",
+        ["Laboratório de desempenho: FPS médio, mínimo, 1% low, 0,1% low e frametime P95/P99 pelo PresentMon, sensores a cada segundo, histórico, comparação antes/depois e exportação em CSV, JSON e PDF."] = "Performance Lab: average, minimum, 1% low and 0.1% low FPS and P95/P99 frametime through PresentMon, per-second sensors, history, before/after comparison and CSV, JSON and PDF export.",
+        ["Laboratório de otimização: testa um ajuste por vez com várias gravações; diferenças pequenas aparecem como sem diferença comprovada."] = "Optimization Lab: tests one tweak at a time with several recordings; small differences show as no proven difference.",
+        ["Diagnóstico inteligente com evidências e grau de confiança, tela inicial com alertas e ações rápidas, modo compacto para segundo monitor e perfis por jogo."] = "Smart diagnostics with evidence and confidence level, Command Center with alerts and quick actions, compact mode for a second monitor and per-game profiles.",
         ["Segurança: atualizações com hash assinado, exclusões amplas do Defender recusadas, BIOS validada antes de gravar e aviso de operação interrompida."] = "Security: updates with a signed hash, broad Defender exclusions refused, BIOS validated before writing and a notice for interrupted operations.",
         ["Modo demonstração sem licença (só leitura) e pedido de transferência para quem trocou de PC ou reinstalou o Windows."] = "Demo mode without a license (read-only) and a transfer request for anyone who changed PCs or reinstalled Windows.",
 
@@ -478,8 +478,8 @@ public static partial class Translator
     private static readonly (Regex Regex, Func<Match, string> Build)[] V2Patterns =
     {
         P(@"^Análise de (.+)\. Dados lidos do Windows \(WMI e registro\)\.$", m => $"Analysis of {m.Groups[1].Value}. Data read from Windows (WMI and registry)."),
-        P(@"^Smart Optimize: análise concluída \((\d+) recomendados, (\d+) já aplicados\)$", m => $"Smart Optimize: analysis finished ({m.Groups[1].Value} recommended, {m.Groups[2].Value} already applied)"),
-        P(@"^Smart Optimize: (\d+) de (\d+) ajustes confirmados pelo Windows$", m => $"Smart Optimize: {m.Groups[1].Value} of {m.Groups[2].Value} tweaks confirmed by Windows"),
+        P(@"^Otimização inteligente: análise concluída \((\d+) recomendados, (\d+) já aplicados\)$", m => $"Smart Optimize: analysis finished ({m.Groups[1].Value} recommended, {m.Groups[2].Value} already applied)"),
+        P(@"^Otimização inteligente: (\d+) de (\d+) ajustes confirmados pelo Windows$", m => $"Smart Optimize: {m.Groups[1].Value} of {m.Groups[2].Value} tweaks confirmed by Windows"),
         P(@"^Recomendações para (.+)$", m => $"Recommendations for {T(m, 1)}"),
         P(@"^(Recomendado|Já aplicado|Não aplicável|Incompatível|Requer revisão|Falha na leitura): (\d+)$", m => $"{T(m, 1)}: {m.Groups[2].Value}"),
         P(@"^(.+) livres de (.+)$", m => $"{m.Groups[1].Value} free of {m.Groups[2].Value}"),
@@ -524,8 +524,8 @@ public static partial class Translator
         P(@"^Versão do Windows diferente \(build (.+) e (.+)\)\.$", m => $"Different Windows version (build {m.Groups[1].Value} and {m.Groups[2].Value})."),
         P(@"^Resolução ou taxa de atualização diferente \((.+) e (.+)\)\.$", m => $"Different resolution or refresh rate ({m.Groups[1].Value} and {m.Groups[2].Value})."),
         P(@"^Plano de energia diferente \((.+) e (.+)\)\.$", m => $"Different power plan ({T(m, 1)} and {T(m, 2)})."),
-        P(@"^Performance Lab: captura iniciada \((.+), (\d+) s\)$", m => $"Performance Lab: capture started ({T(m, 1)}, {m.Groups[2].Value} s)"),
-        P(@"^Performance Lab: captura salva \((.+?)(, (\d+) FPS médio)?\)$", m => $"Performance Lab: capture saved ({T(m, 1)}" + (m.Groups[3].Success ? $", {m.Groups[3].Value} average FPS" : "") + ")"),
+        P(@"^Laboratório de desempenho: captura iniciada \((.+), (\d+) s\)$", m => $"Performance Lab: capture started ({T(m, 1)}, {m.Groups[2].Value} s)"),
+        P(@"^Laboratório de desempenho: captura salva \((.+?)(, (\d+) FPS médio)?\)$", m => $"Performance Lab: capture saved ({T(m, 1)}" + (m.Groups[3].Success ? $", {m.Groups[3].Value} average FPS" : "") + ")"),
         P(@"^Escolha o executável do PresentMon \(PresentMon-2\.x-x64\.exe\)\.$", _ => "Choose the PresentMon executable (PresentMon-2.x-x64.exe)."),
         P(@"^Arquivo grande demais para ser o PresentMon\.$", _ => "File too large to be PresentMon."),
         P(@"^Não foi possível iniciar o PresentMon\.$", _ => "Could not start PresentMon."),
@@ -542,8 +542,8 @@ public static partial class Translator
         P(@"^Temperatura da GPU diferente entre as fases \((.+) °C e (.+) °C\): o aquecimento muda o clock\.$", m => $"Different GPU temperature between phases ({m.Groups[1].Value} °C and {m.Groups[2].Value} °C): heat changes the clock."),
         P(@"^Uso de CPU muito diferente \((.+)% e (.+)%\): pode haver outro programa interferindo\.$", m => $"Very different CPU usage ({m.Groups[1].Value}% and {m.Groups[2].Value}%): another program may be interfering."),
         P(@"^Sem diferença comprovada \(mínimo prático: (\d+)% com p < 0,05\)\. Se o ajuste não tem outro motivo, reverter é o mais simples\.$", m => $"No proven difference (practical minimum: {m.Groups[1].Value}% with p < 0.05). If the tweak has no other reason, reverting is simplest."),
-        P(@"^Optimization Lab: ajuste mantido \((.+), (.+)%\)$", m => $"Optimization Lab: tweak kept ({T(m, 1)}, {m.Groups[2].Value}%)"),
-        P(@"^Optimization Lab: ajuste revertido \((.+)\)$", m => $"Optimization Lab: tweak reverted ({T(m, 1)})"),
+        P(@"^Laboratório de otimização: ajuste mantido \((.+), (.+)%\)$", m => $"Optimization Lab: tweak kept ({T(m, 1)}, {m.Groups[2].Value}%)"),
+        P(@"^Laboratório de otimização: ajuste revertido \((.+)\)$", m => $"Optimization Lab: tweak reverted ({T(m, 1)})"),
 
         // Diagnóstico
         P(@"^Abrir (.+)$", m => $"Open {T(m, 1)}"),

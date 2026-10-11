@@ -71,7 +71,7 @@ public partial class MainWindow
         };
         translucent.Unchecked += (_, _) => { if (!reverting) Update(s => s.Translucent = false); };
         panel.Children.Add(SettingRow("Janela translúcida", ThemeService.TranslucencySupported
-            ? "O fundo da janela fica desfocado e deixa ver o que está atrás, como nos apps do Windows 11. Se precisar, liga também os efeitos de transparência do Windows (o app avisa antes)."
+            ? "O fundo da janela fica desfocado e deixa ver o que está atrás, como nos aplicativos do Windows 11. Se precisar, liga também os efeitos de transparência do Windows (o app avisa antes)."
             : "Disponível só no Windows 11 (versão 22H2 ou mais nova).", translucent));
         if (ThemeService.TranslucencySupported && current.Translucent && !ThemeService.SystemTransparencyEnabled)
         {
@@ -114,7 +114,7 @@ public partial class MainWindow
     {
         if (ThemeService.SystemTransparencyEnabled) return true;
         var answer = Msg("Para a janela ficar translúcida, o app vai ligar os \"Efeitos de transparência\" do Windows (Personalização → Cores).\n\n"
-            + "Isso vale para o Windows todo: a barra de tarefas, o menu Iniciar e outros apps também ficam translúcidos. Dá para desligar depois em Personalização → Cores.\n\nLigar agora?",
+            + "Isso vale para o Windows todo: a barra de tarefas, o menu Iniciar e outros aplicativos também ficam translúcidos. Dá para desligar depois em Personalização → Cores.\n\nLigar agora?",
             "Efeitos de transparência", MessageBoxButton.YesNo, MessageBoxImage.Information, MessageBoxResult.No);
         if (answer != MessageBoxResult.Yes) return false;
         if (ThemeService.EnableSystemTransparency()) return true;

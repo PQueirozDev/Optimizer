@@ -125,7 +125,7 @@ public partial class MainWindow
         catch (OperationCanceledException) when (cts.IsCancellationRequested)
         {
             _snapshot = null;
-            OperationStatus.Text = title + " — cancelado. O que já foi aplicado aparece em Atividade e reversão.";
+            OperationStatus.Text = title + " — cancelado. O que já foi aplicado aparece no Histórico.";
             TitleOptChip.Text = "Cancelado";
             ShowToast(title, "Cancelado", "Warning");
         }
@@ -149,7 +149,7 @@ public partial class MainWindow
     private bool ConfirmCancelOperation()
     {
         if (_operationCts is not { IsCancellationRequested: false } cts) return false;
-        if (Msg("Cancelar a operação agora? O que já foi aplicado continua registrado no backup e pode ser revertido em Atividade e reversão.",
+        if (Msg("Cancelar a operação agora? O que já foi aplicado continua registrado no backup e pode ser revertido no Histórico.",
                 "Cancelar operação", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return false;
         // A operação pode ter terminado enquanto a pergunta estava aberta
         if (_operationCts != cts) return false;
@@ -236,10 +236,10 @@ public partial class MainWindow
 
             var intro = new StackPanel();
             intro.Children.Add(SectionHeader("Escolha exatamente o que deseja aplicar",
-                "Um ponto de restauração é criado antes dos ajustes; se ele falhar, nada é alterado. Alterações de energia, registro e serviços têm backup e podem ser revertidas em “Atividade e reversão”."));
+                "Um ponto de restauração é criado antes dos ajustes; se ele falhar, nada é alterado. Alterações de energia, registro e serviços têm backup e podem ser revertidas em “Histórico”."));
             var notice = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
             notice.Children.Add(GlyphIcon(Glyphs.Warning, 13, "WarningBrush"));
-            var noticeText = Label("Remoções de apps e arquivos não são desfeitas pelo backup. Alguns ajustes só valem depois de reiniciar o Windows. Cada ajuste mostra o risco: Seguro, Moderado ou Arriscado. Ajustes que não se aplicam a este PC ficam ocultos.", 12, true);
+            var noticeText = Label("Remoções de aplicativos e arquivos não são desfeitas pelo backup. Alguns ajustes só valem depois de reiniciar o Windows. Cada ajuste mostra o risco: Seguro, Moderado ou Arriscado. Ajustes que não se aplicam a este PC ficam ocultos.", 12, true);
             noticeText.Margin = new Thickness(8, 0, 0, 0);
             notice.Children.Add(noticeText);
             intro.Children.Add(notice);
@@ -250,7 +250,7 @@ public partial class MainWindow
             {
                 var (pill, tone, detail) = step.Effect switch
                 {
-                    StepEffect.Irreversible => ("Não reversível", "Warning", "Remove arquivos ou apps: não é desfeito pela reversão."),
+                    StepEffect.Irreversible => ("Não reversível", "Warning", "Remove arquivos ou aplicativos: não é desfeito pela reversão."),
                     StepEffect.OneOff => ("Ação pontual", "Info", "Não altera configurações, então não precisa de backup."),
                     _ => ("Com backup", "Success", ""),
                 };
@@ -262,7 +262,7 @@ public partial class MainWindow
                 };
                 var check = new CheckBox { Tag = step.Name, IsChecked = false };
                 checks.Add(check);
-                root.Children.Add(ChoiceRow(check, step.Name, string.Join(" ", new[] { riskDetail, detail }.Where(s => s.Length > 0)), pill, tone, riskPill, riskTone));
+                root.Children.Add(ChoiceRow(check, step.Name, string.Join(" ", new[] { riskDetail, detail }.Where(s => s.Length > 0).Select(Translator.Tr)), pill, tone, riskPill, riskTone));
             }
 
             var selectedLabel = Label("Nenhum ajuste selecionado", 13, true);

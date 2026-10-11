@@ -13,7 +13,7 @@ using PQueirozOptimizer.Models;
 
 namespace PQueirozOptimizer;
 
-/// <summary>Atividade e reversão: backups, snapshots e o registro de atividade.</summary>
+/// <summary>Histórico: backups, snapshots e o registro de atividade.</summary>
 public partial class MainWindow
 {
     private void History_Click(object sender, RoutedEventArgs e) => NavigateTo("history");
@@ -33,7 +33,7 @@ public partial class MainWindow
         };
         _log.Write("WARN", $"Operação interrompida detectada: {name} (iniciada em {entry.StartedAtUtc.ToLocalTime():dd/MM/yyyy HH:mm})");
         OperationJournal.Default.Acknowledge();
-        if (Msg($"A operação \"{name}\", iniciada em {entry.StartedAtUtc.ToLocalTime():dd/MM/yyyy HH:mm}, não terminou: o Qrztweaks fechou durante a execução.\n\nO que foi aplicado até ali tem backup. Abrir Atividade e reversão para conferir ou reverter?",
+        if (Msg($"A operação \"{name}\", iniciada em {entry.StartedAtUtc.ToLocalTime():dd/MM/yyyy HH:mm}, não terminou: o Qrztweaks fechou durante a execução.\n\nO que foi aplicado até ali tem backup. Abrir o Histórico para conferir ou reverter?",
                 "Operação interrompida", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.Yes) == MessageBoxResult.Yes)
             NavigateTo("history");
     }
@@ -193,21 +193,26 @@ public partial class MainWindow
         ScrollViewer.SetHorizontalScrollBarVisibility(logRows, ScrollBarVisibility.Disabled);
         var itemStyle = new Style(typeof(ListBoxItem), (Style)FindResource(typeof(ListBoxItem)));
         itemStyle.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch));
-        itemStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(6)));
+        itemStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(6, 0, 6, 0)));
         logRows.ItemContainerStyle = itemStyle;
         logRows.ItemTemplate = (DataTemplate)System.Windows.Markup.XamlReader.Parse("""
             <DataTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                           xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-              <Border x:Name="row" BorderThickness="3,0,0,0" BorderBrush="{DynamicResource InfoBrush}" Padding="10,2" Margin="0,0,0,4" ToolTip="{Binding Raw}">
-                <StackPanel>
-                  <TextBlock Text="{Binding Heading}" FontSize="11" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,4"/>
-                  <TextBlock Text="{Binding Message}" FontSize="12" Foreground="{DynamicResource TextBrush}" TextWrapping="Wrap"/>
+              <!-- Linha do tempo: uma linha vertical contínua e um ponto colorido por registro (cor = resultado) -->
+              <Grid ToolTip="{Binding Raw}">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <Rectangle Width="2" Fill="{DynamicResource BorderBrush}" HorizontalAlignment="Center"/>
+                <Ellipse x:Name="dot" Width="11" Height="11" Fill="{DynamicResource AccentBrush}" Stroke="{DynamicResource SurfaceBrush}" StrokeThickness="2"
+                         HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,3,0,0"/>
+                <StackPanel Grid.Column="1" Margin="8,0,0,14">
+                  <TextBlock Text="{Binding Heading}" FontSize="11" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,3"/>
+                  <TextBlock Text="{Binding Message}" FontSize="12.5" Foreground="{DynamicResource TextBrush}" TextWrapping="Wrap"/>
                 </StackPanel>
-              </Border>
+              </Grid>
               <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding Level}" Value="ERROR"><Setter TargetName="row" Property="BorderBrush" Value="{DynamicResource DangerBrush}"/></DataTrigger>
-                <DataTrigger Binding="{Binding Level}" Value="WARN"><Setter TargetName="row" Property="BorderBrush" Value="{DynamicResource WarningBrush}"/></DataTrigger>
-                <DataTrigger Binding="{Binding Level}" Value="SUCCESS"><Setter TargetName="row" Property="BorderBrush" Value="{DynamicResource SuccessBrush}"/></DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="ERROR"><Setter TargetName="dot" Property="Fill" Value="{DynamicResource DangerBrush}"/></DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="WARN"><Setter TargetName="dot" Property="Fill" Value="{DynamicResource WarningBrush}"/></DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="SUCCESS"><Setter TargetName="dot" Property="Fill" Value="{DynamicResource SuccessBrush}"/></DataTrigger>
               </DataTemplate.Triggers>
             </DataTemplate>
             """);

@@ -48,7 +48,7 @@ public sealed record PerfResult
     public IReadOnlyList<string> ThrottleReasons { get; init; } = Array.Empty<string>();
     public CaptureConditions? Conditions { get; init; }
     public IReadOnlyList<PerfSample> Samples { get; init; } = Array.Empty<PerfSample>();
-    /// <summary>Experimento do Optimization Lab a que pertence (antes/depois), se houver.</summary>
+    /// <summary>Experimento do Laboratório de otimização a que pertence (antes/depois), se houver.</summary>
     public string? LabExperiment { get; init; }
     public string? LabPhase { get; init; }
     public bool HasFrames => AverageFps is not null;

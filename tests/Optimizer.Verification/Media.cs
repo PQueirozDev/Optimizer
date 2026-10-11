@@ -141,7 +141,7 @@ internal static class Media
         encoder.Save(stream);
     }
 
-    /// <summary>Legenda no canto inferior esquerdo: cartão de vidro escuro com barra em gradiente.</summary>
+    /// <summary>Legenda no canto inferior esquerdo: cartão escuro com barra em gradiente azul.</summary>
     static BitmapSource Caption(string title, string subtitle)
     {
         const int width = 1920, height = 1080;
@@ -154,7 +154,7 @@ internal static class Media
             var s = new FormattedText(subtitle, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, subFace, 26, new SolidColorBrush(Color.FromRgb(0xC9, 0xCF, 0xE0)), 1.0);
             var boxW = Math.Max(t.Width, s.Width) + 96;
             const double boxH = 150, x = 72, y = height - boxH - 72;
-            var violet = Color.FromRgb(0x8B, 0x5C, 0xF6); var cyan = Color.FromRgb(0x22, 0xD3, 0xEE);
+            var violet = Color.FromRgb(0x3B, 0x82, 0xF6); var cyan = Color.FromRgb(0x5C, 0xC8, 0xFF); // azul e azul-céu da marca
             // Sombra suave e cartão
             for (var i = 6; i >= 1; i--) dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromArgb((byte)(10 * (7 - i)), 0, 0, 0)), null, new Rect(x - i * 3, y - i * 3 + 8, boxW + i * 6, boxH + i * 6), 26 + i * 3, 26 + i * 3);
             dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromArgb(0xE6, 0x0C, 0x0E, 0x16)), new Pen(new LinearGradientBrush(Color.FromArgb(0xC0, violet.R, violet.G, violet.B), Color.FromArgb(0x60, cyan.R, cyan.G, cyan.B), 0), 2), new Rect(x, y, boxW, boxH), 26, 26);

@@ -64,7 +64,7 @@ public partial class App : Application
             _showingError = true;
             try
             {
-                MessageBox.Show(Services.Translator.Tr("Ocorreu um erro inesperado, mas o aplicativo continua aberto. Os detalhes foram salvos em Atividade e reversão.") + "\n\n" + args.Exception.Message,
+                MessageBox.Show(Services.Translator.Tr("Ocorreu um erro inesperado, mas o aplicativo continua aberto. Os detalhes foram salvos no Histórico.") + "\n\n" + args.Exception.Message,
                     "Qrztweaks", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             finally { _showingError = false; }

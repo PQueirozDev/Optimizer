@@ -67,7 +67,7 @@ public partial class MainWindow : Window
             if (!_operationRunning && PendingSystemMutations == 0) return;
             e.Cancel = true;
             if (_closeAfterOperation) return;
-            if (Msg("Há uma operação em andamento. Deseja cancelá-la e fechar o aplicativo? O que já foi aplicado continua registrado no backup e pode ser revertido em Atividade e reversão.",
+            if (Msg("Há uma operação em andamento. Deseja cancelá-la e fechar o aplicativo? O que já foi aplicado continua registrado no backup e pode ser revertido no Histórico.",
                     "Cancelar operação", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes)
             {
                 OperationStatus.Text = "Aguarde a operação terminar antes de fechar.";
@@ -221,8 +221,8 @@ public partial class MainWindow : Window
             if (part.RenderTransform is not TranslateTransform slide) continue;
             var begin = TimeSpan.FromMilliseconds(delay);
             var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
-            part.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(240)) { BeginTime = begin, EasingFunction = ease });
-            slide.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(12, 0, TimeSpan.FromMilliseconds(300)) { BeginTime = begin, EasingFunction = ease });
+            part.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200)) { BeginTime = begin, EasingFunction = ease });
+            slide.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(10, 0, TimeSpan.FromMilliseconds(220)) { BeginTime = begin, EasingFunction = ease });
             delay += 40;
         }
     }
@@ -512,7 +512,7 @@ public partial class MainWindow : Window
         if (!m.Success || m.Groups[2].Value == "INFO") return; // só resultados (sucesso, aviso, erro)
         var tone = m.Groups[2].Value switch { "ERROR" => "DangerBrush", "WARN" => "WarningBrush", _ => "SuccessBrush" };
         LastActivityDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, tone);
-        LastActivityText.Text = $"{m.Groups[1].Value} · {Translator.Tr(m.Groups[3].Value.Trim())}";
+        LastActivityText.Text = $"{m.Groups[1].Value} · {Translator.LogText(m.Groups[3].Value.Trim())}";
         LastActivityText.ToolTip = line;
         LastActivityPanel.Visibility = Visibility.Visible;
     }

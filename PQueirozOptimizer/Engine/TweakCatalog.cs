@@ -3,7 +3,7 @@ using PQueirozOptimizer.Services;
 
 namespace PQueirozOptimizer.Engine;
 
-/// <summary>Objetivo principal do PC no Smart Optimize.</summary>
+/// <summary>Objetivo principal do PC na Otimização inteligente.</summary>
 public enum OptimizationGoal { CompetitiveGaming, Laptop, Development, DailyUse, Custom }
 
 /// <summary>Estado de um ajuste neste PC, lido antes de recomendar.</summary>
@@ -93,8 +93,8 @@ public static class TweakCatalog
         ["gamer|Plano de energia Qrz"] = "mesma etapa da Versão Padrão",
         ["gamer|Limpando cache DNS"] = "mesma etapa da Versão Padrão",
         ["gamer|Otimizando unidades de disco"] = "mesma ação do TRIM da Versão Padrão",
-        ["gamer|Desativando experiencias personalizadas com dados de diagnostico"] = "mesma etapa do Debloat",
-        ["gamer|Ajustando efeitos visuais p/ desempenho"] = "mesma ação do Debloat",
+        ["gamer|Desativando experiencias personalizadas com dados de diagnostico"] = "mesma etapa da remoção de aplicativos",
+        ["gamer|Ajustando efeitos visuais p/ desempenho"] = "mesma ação da remoção de aplicativos",
         ["debloat|Arquivos temporarios removidos"] = "a limpeza de arquivos é feita pela Limpeza rápida, com análise antes",
     };
 
@@ -171,7 +171,7 @@ public static class TweakCatalog
             SideEffects = "Mais consumo e calor em repouso. Em notebooks reduz a bateria (por isso só aparece em desktops).",
             Verification = "O plano ativo passa a ser o Qrz (powercfg /getactivescheme).",
             Revert = "Volta ao plano anterior pela reversão ou pela página Modo Jogo.",
-            Evidence = "Reduz a latência de troca de estados de energia da CPU. O ganho em FPS varia por jogo e processador; meça no Optimization Lab.",
+            Evidence = "Reduz a latência de troca de estados de energia da CPU. O ganho em FPS varia por jogo e processador; meça no Laboratório de otimização.",
             Goals = GoalSet.Gaming,
             AvoidFor = new Dictionary<OptimizationGoal, string> { [OptimizationGoal.Laptop] = "Aumenta o consumo e reduz a autonomia.", [OptimizationGoal.DailyUse] = "Consome mais energia sem ganho perceptível no uso comum." },
             Read = c =>
@@ -480,7 +480,7 @@ public static class TweakCatalog
         new()
         {
             Id = "app.bloat", Operation = "debloat", Step = "Apps desnecessarios removidos", Name = "Remover apps pré-instalados",
-            Description = "Remove Notícias, Clima, Solitaire, Teams pessoal, Skype, Vincular ao Celular, Mapas e outros.", Category = "Apps", Risk = StepRisk.Moderate,
+            Description = "Remove Notícias, Clima, Solitaire, Teams pessoal, Skype, Vincular ao Celular, Mapas e outros.", Category = "Aplicativos", Risk = StepRisk.Moderate,
             SideEffects = "Os apps somem para todos os usuários. A reversão não reinstala: use a Microsoft Store.", Verification = "Nenhum dos pacotes da lista continua instalado.",
             Revert = "Não reversível pelo backup; reinstale pela Microsoft Store.", Evidence = "Libera espaço e tarefas em segundo plano desses apps.", Goals = GoalSet.Gaming,
             AvoidFor = new Dictionary<OptimizationGoal, string> { [OptimizationGoal.Development] = "Remove o Teams e o Vincular ao Celular, usados em trabalho.", [OptimizationGoal.DailyUse] = "Pode remover apps que você usa (Teams, Clima, Celular)." },
@@ -488,13 +488,13 @@ public static class TweakCatalog
         },
         new()
         {
-            Id = "app.cortana", Operation = "debloat", Step = "Cortana removida", Name = "Remover a Cortana", Description = "Remove o app Cortana.", Category = "Apps", Risk = StepRisk.Moderate,
+            Id = "app.cortana", Operation = "debloat", Step = "Cortana removida", Name = "Remover a Cortana", Description = "Remove o app Cortana.", Category = "Aplicativos", Risk = StepRisk.Moderate,
             SideEffects = "Não reversível pelo backup; reinstale pela Microsoft Store.", Verification = "O pacote Microsoft.549981C3F5F10 não está instalado.", Revert = "Reinstale pela Microsoft Store.",
             Evidence = "A Cortana foi descontinuada pela Microsoft.", Goals = GoalSet.Gaming | GoalSet.Daily, Read = AppxAbsent("A Cortana não está instalada.", "*Microsoft.549981C3F5F10*"),
         },
         new()
         {
-            Id = "app.widgets", Operation = "debloat", Step = "Widgets removidos", Name = "Remover os Widgets", Description = "Remove o painel de Widgets (Web Experience).", Category = "Apps", Risk = StepRisk.Moderate,
+            Id = "app.widgets", Operation = "debloat", Step = "Widgets removidos", Name = "Remover os Widgets", Description = "Remove o painel de Widgets (Web Experience).", Category = "Aplicativos", Risk = StepRisk.Moderate,
             SideEffects = "O painel de Widgets e o clima da barra de tarefas somem. Não reversível pelo backup.", Verification = "O pacote WebExperience não está instalado.", Revert = "Reinstale pela Microsoft Store.",
             Evidence = "O painel carrega conteúdo da web em segundo plano.", Goals = GoalSet.Gaming,
             AvoidFor = new Dictionary<OptimizationGoal, string> { [OptimizationGoal.DailyUse] = "Remove o clima e as notícias da barra de tarefas." },
@@ -502,7 +502,7 @@ public static class TweakCatalog
         },
         new()
         {
-            Id = "app.onedrive", Operation = "debloat", Step = "OneDrive removido", Name = "Remover o OneDrive", Description = "Desinstala o OneDrive.", Category = "Apps", Risk = StepRisk.Moderate,
+            Id = "app.onedrive", Operation = "debloat", Step = "OneDrive removido", Name = "Remover o OneDrive", Description = "Desinstala o OneDrive.", Category = "Aplicativos", Risk = StepRisk.Moderate,
             SideEffects = "Arquivos deixam de sincronizar com a nuvem. Confira se tudo está salvo localmente antes.", Verification = "O OneDrive não está mais instalado.",
             Revert = "No Windows 10 a reversão reinstala; no 11, baixe no site da Microsoft.", Evidence = "Remove a sincronização em segundo plano. Só faça se não usar o OneDrive.",
             Goals = GoalSet.None,

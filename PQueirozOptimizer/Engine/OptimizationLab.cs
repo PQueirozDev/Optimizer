@@ -8,7 +8,7 @@ public sealed record LabOutcome(
     double CvBefore, double CvAfter, double? Low1DeltaPercent, IReadOnlyList<string> Warnings, string Recommendation);
 
 /// <summary>
-/// Optimization Lab (fase 5): compara gravações antes e depois de um único ajuste. Uma diferença só conta como
+/// Laboratório de otimização (fase 5): compara gravações antes e depois de um único ajuste. Uma diferença só conta como
 /// ganho (ou perda) se for estatisticamente consistente (Welch, p &lt; 0,05) <b>e</b> maior que o mínimo prático;
 /// diferenças pequenas ficam como "sem diferença comprovada".
 /// </summary>

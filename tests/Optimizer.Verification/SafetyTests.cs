@@ -175,7 +175,7 @@ internal static class SafetyTests
             var english = Translator.Tr(summary);
             Check(english.StartsWith("Risky") && english.Contains("Not reversible") && english.EndsWith("Apply anyway?"), "Confirmação de ajustes traduzida");
             Check(Translator.Tr(DefenderService.ExclusionProblem(@"\\servidor\x")) == "Network folders can't be excluded.", "Aviso do Defender traduzido");
-            Check(Translator.Tr("A operação \"Versão Padrão\", iniciada em 10/10/2026 12:00, não terminou: o Qrztweaks fechou durante a execução.\n\nO que foi aplicado até ali tem backup. Abrir Atividade e reversão para conferir ou reverter?")
+            Check(Translator.Tr("A operação \"Versão Padrão\", iniciada em 10/10/2026 12:00, não terminou: o Qrztweaks fechou durante a execução.\n\nO que foi aplicado até ali tem backup. Abrir o Histórico para conferir ou reverter?")
                 is var interrupted && interrupted.StartsWith("The operation \"Standard Mode\"") && interrupted.Contains("did not finish"), "Aviso de operação interrompida traduzido");
         }
         finally { Translator.IsEnglish = false; }

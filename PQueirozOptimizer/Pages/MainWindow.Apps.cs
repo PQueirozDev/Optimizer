@@ -21,7 +21,7 @@ public partial class MainWindow
         PageTitle.Text = "Aplicativos";
         PageBadge.Visibility = Visibility.Collapsed;
         var root = new StackPanel();
-        root.Children.Add(Tabs(new[] { (Glyphs.Lightning, "Otimizar apps"), (Glyphs.Delete, "Desinstalar") }, _appsTab, tab => { _appsTab = tab; ShowApps(); AnimatePageIn(); }));
+        root.Children.Add(Tabs(new[] { (Glyphs.Lightning, "Otimizar aplicativos"), (Glyphs.Delete, "Desinstalar") }, _appsTab, tab => { _appsTab = tab; ShowApps(); AnimatePageIn(); }));
         if (_appsTab == 0) root.Children.Add(AppOptimizerCard());
         else root.Children.Add(UninstallCard());
         ContentHost.Children.Clear();
@@ -31,7 +31,7 @@ public partial class MainWindow
     private Border AppOptimizerCard()
     {
         var panel = new StackPanel();
-        panel.Children.Add(SectionHeader("Otimizador de apps", "Apps que ficam abertos enquanto você joga também usam GPU e CPU. Cada ajuste é reversível: desmarque para voltar ao que era."));
+        panel.Children.Add(SectionHeader("Otimizador de aplicativos", "Aplicativos que ficam abertos enquanto você joga também usam GPU e CPU. Cada ajuste é reversível: desmarque para voltar ao que era."));
         var service = new AppOptimizerService(_log);
         foreach (var tweak in AppOptimizerService.Tweaks)
         {
@@ -93,11 +93,11 @@ public partial class MainWindow
     {
         var panel = new StackPanel();
         var head = new DockPanel();
-        var auto = IconButton(Glyphs.Shield, "Debloat automático", primary: true);
+        var auto = IconButton(Glyphs.Shield, "Remoção automática", primary: true);
         auto.VerticalAlignment = VerticalAlignment.Top;
         auto.Click += (_, _) => _ = PrepareOperationAsync("debloat");
         DockPanel.SetDock(auto, Dock.Right); head.Children.Add(auto);
-        head.Children.Add(SectionHeader("Desinstalar programas", "Programas da área de trabalho abrem o desinstalador do fabricante; apps da Loja são removidos direto. O Debloat automático remove os apps que vêm com o Windows e quase ninguém usa."));
+        head.Children.Add(SectionHeader("Desinstalar programas", "Programas da área de trabalho abrem o desinstalador do fabricante; aplicativos da Loja são removidos direto. A remoção automática tira os aplicativos que vêm com o Windows e quase ninguém usa."));
         panel.Children.Add(head);
 
         var bar = new DockPanel { Margin = new Thickness(0, 0, 0, 12) };

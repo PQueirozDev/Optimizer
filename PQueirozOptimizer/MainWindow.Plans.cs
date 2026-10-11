@@ -21,11 +21,26 @@ public partial class MainWindow
 
     private static bool PageAllowed(string page) => PlanAccess.Allows(CurrentLicense, page);
 
+    /// <summary>
+    /// Nome do perfil para exibir. O perfil pronto "Modo Debloat &amp; Privacidade" continua com esse nome nas
+    /// preferências salvas (trocar criaria um perfil duplicado), mas aparece em português.
+    /// </summary>
+    internal static string ProfileDisplayName(string name) =>
+        name.Equals("Modo Debloat & Privacidade", StringComparison.OrdinalIgnoreCase) ? "Modo remoção de aplicativos e privacidade" : name;
+
+    /// <summary>Ícone vetorial de cada otimização (no lugar dos emojis antigos).</summary>
+    internal static string OptimizationGlyph(string id) => id switch
+    {
+        "padrao" => Glyphs.Speed, "gamer" or "gamerservicos" => Glyphs.Game, "debloat" => Glyphs.Shield, "quickclean" => Glyphs.Broom,
+        "analisar" => Glyphs.Diagnostic, "benchmark" => Glyphs.AreaChart, "update" => Glyphs.Refresh, "reverter" => Glyphs.Undo,
+        _ => Glyphs.Repair,
+    };
+
     /// <summary>O que cada nível acrescenta, para a tela de bloqueio e a seção Minha licença.</summary>
     internal static string TierFeatures(PlanTier tier) => tier switch
     {
         PlanTier.Base => "Otimizações, Inicialização, Correções, Ferramentas e Limpeza rápida.",
-        PlanTier.Intermediate => "Tudo do Base + Serviços, Apps, Drivers, Rede, Recursos e Central de diagnóstico.",
+        PlanTier.Intermediate => "Tudo do Base + Serviços, Aplicativos, Drivers, Rede, Recursos e Central de diagnóstico.",
         _ => "O app completo: tudo do Intermediário + Modo Jogo, Personalizar Windows, BIOS / UEFI e Modo de energia.",
     };
 
@@ -73,7 +88,7 @@ public partial class MainWindow
         title.FontWeight = FontWeights.Bold; title.Margin = new Thickness(0);
         titles.Children.Add(title);
         var current = CurrentLicense?.PlanName ?? "—";
-        var subtitle = Label(string.Format(Translator.Tr("Seu plano atual é o {0}. Faça o upgrade para liberar esta página; o que você já aplicou continua funcionando e pode ser revertido em Atividade e reversão."), Translator.Tr(current)), 12.5, true);
+        var subtitle = Label(string.Format(Translator.Tr("Seu plano atual é o {0}. Faça o upgrade para liberar esta página; o que você já aplicou continua funcionando e pode ser revertido no Histórico."), Translator.Tr(current)), 12.5, true);
         subtitle.Margin = new Thickness(0, 3, 0, 0);
         titles.Children.Add(subtitle);
         top.Children.Add(titles);

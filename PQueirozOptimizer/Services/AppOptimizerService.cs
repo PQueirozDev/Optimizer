@@ -14,7 +14,7 @@ public sealed record AppTweak(string Id, string App, string Title, string Descri
 public sealed record InstalledApp(string Name, string Publisher, string Version, bool IsStore, string Uninstall, string? Package);
 
 /// <summary>
-/// Otimizador de apps: desliga a aceleração por hardware e a execução em segundo plano de Discord, navegadores e
+/// Otimizador de aplicativos: desliga a aceleração por hardware e a execução em segundo plano de Discord, navegadores e
 /// Spotify (eles disputam a GPU e a CPU com o jogo). Tudo reversível: arquivos de configuração são copiados antes
 /// e as políticas de navegador usam o armazenamento de ajustes reversíveis.
 /// </summary>

@@ -26,7 +26,7 @@ public sealed class AppearanceSettings
     [JsonPropertyName("followSystemMotion")] public bool FollowSystemMotion { get; set; }
     /// <summary>Barra lateral só com ícones (os nomes aparecem nas dicas).</summary>
     [JsonPropertyName("compactSidebar")] public bool CompactSidebar { get; set; }
-    // Seções do Command Center
+    // Seções do Início
     [JsonPropertyName("dashStatus")] public bool DashboardStatus { get; set; } = true;
     [JsonPropertyName("dashQuickActions")] public bool DashboardQuickActions { get; set; } = true;
     [JsonPropertyName("dashLive")] public bool DashboardLive { get; set; } = true;

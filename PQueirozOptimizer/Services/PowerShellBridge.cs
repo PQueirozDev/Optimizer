@@ -188,7 +188,7 @@ public sealed class PowerShellBridge
             _log.Write("WARN", $"Operação cancelada pelo usuário: {operation}");
             throw new OperationCanceledException(cancellationToken);
         }
-        if (process.ExitCode != 0) throw new InvalidOperationException($"A execução terminou com falhas (código {process.ExitCode}). Consulte a atividade e a reversão para alterações parciais.");
+        if (process.ExitCode != 0) throw new InvalidOperationException($"A execução terminou com falhas (código {process.ExitCode}). Consulte o Histórico para alterações parciais.");
         _log.Write("SUCCESS", $"Execução concluída: {operation}");
     }
 }

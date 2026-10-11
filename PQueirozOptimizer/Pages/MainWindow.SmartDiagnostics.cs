@@ -17,7 +17,7 @@ public partial class MainWindow
         var run = IconButton(Glyphs.Diagnostic, "Analisar desempenho", primary: true);
         DockPanel.SetDock(run, Dock.Right); head.Children.Add(run);
         head.Children.Add(SectionHeader("Diagnóstico inteligente",
-            "Analisa o último teste do Performance Lab, o monitor ao vivo, discos, processos, energia e drivers. Cada conclusão mostra a evidência e o grau de confiança; sem dados suficientes, nada é afirmado."));
+            "Analisa o último teste do Laboratório de desempenho, o monitor ao vivo, discos, processos, energia e drivers. Cada conclusão mostra a evidência e o grau de confiança; sem dados suficientes, nada é afirmado."));
         panel.Children.Add(head);
         var results = new StackPanel();
         panel.Children.Add(results);
@@ -59,9 +59,9 @@ public partial class MainWindow
             var missing = new StackPanel { Margin = new Thickness(0, 6, 0, 0) };
             var t = Label("Não avaliado por falta de dados", 13); t.FontWeight = FontWeights.SemiBold; missing.Children.Add(t);
             foreach (var m in report.MissingData) missing.Children.Add(Label("• " + m, 12.5, true));
-            if (report.MissingData.Any(m => m.Contains("Performance Lab", StringComparison.Ordinal)))
+            if (report.MissingData.Any(m => m.Contains("Laboratório de desempenho", StringComparison.Ordinal)))
             {
-                var go = IconButton(Glyphs.Speed, "Abrir o Performance Lab");
+                var go = IconButton(Glyphs.Speed, "Abrir o Laboratório de desempenho");
                 go.HorizontalAlignment = HorizontalAlignment.Left;
                 go.Click += (_, _) => NavigateTo("perflab");
                 missing.Children.Add(go);

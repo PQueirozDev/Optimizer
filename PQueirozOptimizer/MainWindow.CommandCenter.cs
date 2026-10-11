@@ -52,7 +52,7 @@ public partial class MainWindow
         var text = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
         var t = Label("Modo demonstração", 14); t.FontWeight = FontWeights.SemiBold; t.Margin = new Thickness(0);
         text.Children.Add(t);
-        var d = Label("Veja o hardware, o monitor, o diagnóstico, o Performance Lab e as recomendações do Smart Optimize. Para aplicar qualquer ajuste, ative uma licença.", 12, true);
+        var d = Label("Veja o hardware, o monitor, o diagnóstico, o Laboratório de desempenho e as recomendações da Otimização inteligente. Para aplicar qualquer ajuste, ative uma licença.", 12, true);
         d.Margin = new Thickness(0, 2, 0, 0); text.Children.Add(d);
         dock.Children.Add(text);
         var card = Surface(dock);
