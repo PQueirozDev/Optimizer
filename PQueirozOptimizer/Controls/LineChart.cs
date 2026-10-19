@@ -79,6 +79,9 @@ public sealed class LineChart : FrameworkElement
 
     private string Describe(double value) => Format?.Invoke(value) ?? $"{value.ToString(value < 10 && value % 1 != 0 ? "0.#" : "0", CultureInfo.CurrentCulture)}{Unit}";
 
+    private Pen? _baselinePen;
+    private Brush? _baselineBrush;
+
     protected override void OnRender(DrawingContext dc)
     {
         var w = ActualWidth; var h = ActualHeight;
@@ -105,10 +108,16 @@ public sealed class LineChart : FrameworkElement
         }
         if (present.Count == 0)
         {
-            // Ainda sem leitura: linha de base tracejada onde a curva vai aparecer, em vez de um vazio
-            var baseline = new Pen(TryFindResource("BorderBrush") as Brush ?? Brushes.Gray, 1) { DashStyle = new DashStyle(new double[] { 3, 4 }, 0) };
-            baseline.Freeze();
-            dc.DrawLine(baseline, new Point(0, Math.Round(h - 4) + 0.5), new Point(w, Math.Round(h - 4) + 0.5));
+            // Ainda sem leitura: linha de base tracejada onde a curva vai aparecer, em vez de um vazio. A caneta só é
+            // recriada quando o tema troca o pincel (sem sensor, o gráfico redesenha a cada amostra vazia)
+            var baseBrush = TryFindResource("BorderBrush") as Brush ?? Brushes.Gray;
+            if (_baselinePen is null || !ReferenceEquals(_baselineBrush, baseBrush))
+            {
+                _baselinePen = new Pen(baseBrush, 1) { DashStyle = new DashStyle(new double[] { 3, 4 }, 0) };
+                _baselinePen.Freeze();
+                _baselineBrush = baseBrush;
+            }
+            dc.DrawLine(_baselinePen, new Point(0, Math.Round(h - 4) + 0.5), new Point(w, Math.Round(h - 4) + 0.5));
             return;
         }
         var step = w / Math.Max(1, Capacity - 1);
@@ -132,7 +141,8 @@ public sealed class LineChart : FrameworkElement
                     ctx.LineTo(new Point(segment[^1].X, h), false, false);
                 }
                 area.Freeze();
-                if (fill != null) dc.DrawGeometry(fill, null, area);
+                // Com dois pontos colados na borda direita a área vira um bloco sólido: só a linha até haver três
+                if (fill != null && segment.Count >= 3) dc.DrawGeometry(fill, null, area);
                 var line = new StreamGeometry();
                 using (var ctx = line.Open())
                 {

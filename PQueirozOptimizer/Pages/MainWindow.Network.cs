@@ -83,9 +83,8 @@ public partial class MainWindow
         grid.Children.Add(results);
 
         var card = Surface(grid);
-        card.Padding = new Thickness(28, 24, 28, 24);
+        card.Padding = new Thickness(AppearanceService.Space(28), AppearanceService.Space(24), AppearanceService.Space(24), AppearanceService.Space(6));
         card.SetResourceReference(Border.BackgroundProperty, "HeroBrush");
-        card.SetResourceReference(Border.BorderBrushProperty, "AccentSoftBrush");
         return card;
     }
 
@@ -99,23 +98,27 @@ public partial class MainWindow
         return s.DownloadMbps >= 50 ? "Conexão ótima para jogar e transmitir" : "Conexão boa para jogar";
     }
 
+    /// <summary>
+    /// Um número do teste, sem caixa própria (o destaque já é o card): rótulo em legenda, valor e unidade, e um fio à
+    /// esquerda separando as colunas. A cor do tom só aparece com um resultado; antes, o traço fica neutro.
+    /// </summary>
     private Border SpeedStat(string label, string value, string unit, string tone)
     {
+        var empty = value == "--";
         var stack = new StackPanel();
         var l = new TextBlock { Text = label, FontSize = 11, FontWeight = FontWeights.SemiBold };
         l.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         stack.Children.Add(l);
-        var line = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0) };
-        var v = new TextBlock { Text = value, FontSize = 24, FontWeight = FontWeights.Bold, Tag = Translator.SystemDataTag };
+        var line = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
+        var v = new TextBlock { Text = empty ? "—" : value, FontSize = 24, FontWeight = FontWeights.SemiBold, Tag = Translator.SystemDataTag };
         v.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
-        v.SetResourceReference(TextBlock.ForegroundProperty, tone + "Brush");
-        var u = new TextBlock { Text = unit, FontSize = 12.5, Margin = new Thickness(5, 0, 0, 5), VerticalAlignment = VerticalAlignment.Bottom, Tag = Translator.SystemDataTag };
+        v.SetResourceReference(TextBlock.ForegroundProperty, empty ? "MutedBrush" : tone + "Brush");
+        var u = new TextBlock { Text = unit, FontSize = 12, Margin = new Thickness(5, 0, 0, 4), VerticalAlignment = VerticalAlignment.Bottom, Tag = Translator.SystemDataTag };
         u.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         line.Children.Add(v); line.Children.Add(u);
         stack.Children.Add(line);
-        var cell = new Border { Child = stack, Padding = new Thickness(14, 10, 14, 10), Margin = new Thickness(0, 0, 10, 10), CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1) };
-        cell.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
-        cell.SetResourceReference(Border.BorderBrushProperty, "BorderSubtleBrush");
+        var cell = new Border { Child = stack, Padding = new Thickness(16, 4, 12, 4), Margin = new Thickness(0, 0, 0, 18), BorderThickness = new Thickness(1, 0, 0, 0) };
+        cell.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
         return cell;
     }
 
@@ -223,7 +226,7 @@ public partial class MainWindow
         panel.Children.Add(SectionHeader("Reparos de rede", "Resolvem a maioria dos problemas de conexão, DNS e login em jogos."));
         var grid = Responsive(new UniformGrid { Columns = 3, Margin = new Thickness(0, 0, -12, 0) }, 260, 3);
 
-        var flush = RepairTile(Glyphs.Broom, "Limpar cache DNS", "Resolve sites e servidores que não abrem depois de mudarem de endereço.", "Limpar");
+        var flush = RepairTile(Glyphs.Broom, "Limpar cache DNS", "Resolve sites e servidores que não abrem depois de mudarem de endereço.", "Limpar", first: true);
         ((Button)flush.Tag).Click += async (_, _) => await ExecuteTrackedAsync("Limpando cache DNS", async _ => await Network.FlushDnsAsync());
         var time = RepairTile(Glyphs.Clock, "Sincronizar relógio", "Relógio errado causa falha de login, de certificado e de anti-cheat em jogos.", "Sincronizar");
         ((Button)time.Tag).Click += async (_, _) => await ExecuteTrackedAsync("Sincronizando relógio", async _ =>
@@ -242,8 +245,11 @@ public partial class MainWindow
         return Surface(panel);
     }
 
-    /// <summary>Bloco com ícone, texto e botão; o botão fica em Tag para quem cria ligar o clique.</summary>
-    private Border RepairTile(string glyph, string title, string detail, string action)
+    /// <summary>
+    /// Coluna com ícone, texto e botão, separada da anterior por um fio (sem caixa dentro do card). O botão fica em
+    /// Tag para quem cria ligar o clique.
+    /// </summary>
+    private Border RepairTile(string glyph, string title, string detail, string action, bool first = false)
     {
         var dock = new DockPanel();
         var button = IconButton(Glyphs.ChevronRight, action);
@@ -257,8 +263,7 @@ public partial class MainWindow
         var d = Label(detail, 11.5, true); d.Margin = new Thickness(0);
         stack.Children.Add(d);
         dock.Children.Add(stack);
-        var tile = new Border { Child = dock, Padding = new Thickness(16), Margin = new Thickness(0, 0, 12, 0), CornerRadius = new CornerRadius(14), BorderThickness = new Thickness(1), Tag = button };
-        tile.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
+        var tile = new Border { Child = dock, Padding = new Thickness(first ? 0 : 20, 4, 16, 4), Margin = new Thickness(0, 0, 12, 0), BorderThickness = new Thickness(first ? 0 : 1, 0, 0, 0), Tag = button };
         tile.SetResourceReference(Border.BorderBrushProperty, "BorderSubtleBrush");
         return tile;
     }

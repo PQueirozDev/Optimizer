@@ -99,7 +99,7 @@ public partial class MainWindow
             if (_smartAnalysis is null) { ShowSmartOptimize(); return; }
             await RunSmartAnalysisAsync(rereadSystem: false);
         };
-        var border = new Border { Child = button, CornerRadius = new CornerRadius(14), BorderThickness = new Thickness(selected ? 2 : 1), Margin = new Thickness(0, 0, 10, 0) };
+        var border = new Border { Child = button, CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(selected ? 2 : 1), Margin = new Thickness(0, 0, 10, 0) };
         border.SetResourceReference(Border.BorderBrushProperty, selected ? "AccentBrush" : "BorderSubtleBrush");
         border.SetResourceReference(Border.BackgroundProperty, selected ? "AccentSoftBrush" : "CardBgBrush");
         button.Margin = new Thickness(0);

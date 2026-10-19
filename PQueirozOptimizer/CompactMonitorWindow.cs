@@ -62,7 +62,7 @@ public sealed class CompactMonitorWindow : Window
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         Grid.SetRow(footer, row); Grid.SetColumnSpan(footer, 3); grid.Children.Add(footer);
 
-        var card = new Border { Child = grid, CornerRadius = new CornerRadius(14), BorderThickness = new Thickness(1) };
+        var card = new Border { Child = grid, CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1) };
         card.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
         card.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
         Content = card;

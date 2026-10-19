@@ -151,8 +151,8 @@ public partial class MainWindow
 
     private Border ListRow(UIElement content)
     {
-        var border = new Border { Child = content, Padding = new Thickness(16, 12, 16, 12), CornerRadius = new CornerRadius(14), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 8) };
-        border.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
+        var border = new Border { Child = content, Padding = new Thickness(16, 12, 16, 12), CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 8) };
+        border.SetResourceReference(Border.BackgroundProperty, "CardInsetBrush");
         border.SetResourceReference(Border.BorderBrushProperty, "BorderSubtleBrush");
         return border;
     }

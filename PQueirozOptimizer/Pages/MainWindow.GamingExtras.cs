@@ -143,7 +143,7 @@ public partial class MainWindow
             text.Children.Add(note);
             body.Children.Add(text);
 
-            var card = new Border { Child = body, Padding = new Thickness(18), Margin = new Thickness(0, 0, 12, 12), CornerRadius = new CornerRadius(16), BorderThickness = new Thickness(1) };
+            var card = new Border { Child = body, Padding = new Thickness(18), Margin = new Thickness(0, 0, 12, 12), CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1) };
             card.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
             card.SetResourceReference(Border.BorderBrushProperty, applied ? "SuccessSoftBrush" : "BorderSubtleBrush");
             grid.Children.Add(card);

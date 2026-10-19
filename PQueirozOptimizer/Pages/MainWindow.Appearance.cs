@@ -98,7 +98,7 @@ public partial class MainWindow
         var restore = IconButton(Glyphs.Undo, "Restaurar padrão");
         restore.HorizontalAlignment = HorizontalAlignment.Left;
         restore.IsEnabled = !IsDefaultAppearance(current);
-        restore.Click += (_, _) => { SaveAppearance(AppearanceService.Defaults()); ShowToast("Aparência", "Padrão restaurado: tema Azul meia-noite, cores originais, densidade Padrão, cards Médios e animações ligadas.", "Success"); };
+        restore.Click += (_, _) => { SaveAppearance(AppearanceService.Defaults()); ShowToast("Aparência", "Padrão restaurado: tema Grafite ciano, cores originais, densidade Padrão, cards Médios e animações ligadas.", "Success"); };
         panel.Children.Add(restore);
 
         var card = Surface(panel);
@@ -140,7 +140,7 @@ public partial class MainWindow
     /// <summary>Ordem e nomes dos temas na galeria.</summary>
     internal static readonly (ThemeMode Mode, string Name)[] Themes =
     {
-        (ThemeMode.Dark, "Azul meia-noite"), (ThemeMode.Oled, "OLED"), (ThemeMode.Light, "Claro"), (ThemeMode.Graphite, "Grafite"),
+        (ThemeMode.Dark, "Grafite ciano"), (ThemeMode.Oled, "OLED"), (ThemeMode.Light, "Claro"), (ThemeMode.Graphite, "Cinza"),
         (ThemeMode.Ocean, "Oceano"), (ThemeMode.Forest, "Floresta"), (ThemeMode.Plum, "Ameixa"), (ThemeMode.Midnight, "Roxo meia-noite"), (ThemeMode.Sand, "Areia"), (ThemeMode.Auto, "Automático"),
     };
 
@@ -349,7 +349,7 @@ public partial class MainWindow
 
     private Border MetricShell(UIElement content, string tone)
     {
-        var card = new Border { Child = content, Padding = new Thickness(AppearanceService.Space(14) * AppearanceService.CardScale), CornerRadius = new CornerRadius(14), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, AppearanceService.Gap, 0), Tag = tone };
+        var card = new Border { Child = content, Padding = new Thickness(AppearanceService.Space(14) * AppearanceService.CardScale), CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, AppearanceService.Gap, 0), Tag = tone };
         card.SetResourceReference(Border.BackgroundProperty, "SurfaceSecondaryBrush");
         card.SetResourceReference(Border.BorderBrushProperty, "BorderSubtleBrush");
         return card;

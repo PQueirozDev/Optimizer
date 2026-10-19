@@ -81,7 +81,7 @@ public partial class MainWindow
         text.Children.Add(t); if (!string.IsNullOrWhiteSpace(message)) text.Children.Add(m);
         dock.Children.Add(text);
 
-        var toast = new Border { Child = dock, Padding = new Thickness(14, 12, 14, 12), CornerRadius = new CornerRadius(16), BorderThickness = new Thickness(1), Margin = new Thickness(0, 10, 0, 0), Opacity = 0 };
+        var toast = new Border { Child = dock, Padding = new Thickness(14, 12, 14, 12), CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), Margin = new Thickness(0, 10, 0, 0), Opacity = 0 };
         toast.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
         toast.SetResourceReference(Border.BorderBrushProperty, tone + "Brush");
         toast.Effect = new DropShadowEffect { BlurRadius = 28, ShadowDepth = 6, Opacity = 0.4, Color = Colors.Black };
@@ -128,7 +128,7 @@ public partial class MainWindow
             button.Click += (_, _) => onSelect(index);
             row.Children.Add(button);
         }
-        var bar = new Border { Child = row, Padding = new Thickness(5), CornerRadius = new CornerRadius(16), BorderThickness = new Thickness(1), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 18) };
+        var bar = new Border { Child = row, Padding = new Thickness(5), CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 18) };
         bar.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
         bar.SetResourceReference(Border.BorderBrushProperty, "BorderSubtleBrush");
         return bar;

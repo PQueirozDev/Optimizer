@@ -211,7 +211,7 @@ public partial class MainWindow
             text.Children.Add(h);
         }
         row.Children.Add(text);
-        var border = new Border { Child = row, Padding = new Thickness(16, 12, 16, 12), CornerRadius = new CornerRadius(14), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 8) };
+        var border = new Border { Child = row, Padding = new Thickness(16, 12, 16, 12), CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 8) };
         border.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
         border.SetResourceReference(Border.BorderBrushProperty, s.Changed ? "AccentBrush" : "BorderSubtleBrush");
         return border;

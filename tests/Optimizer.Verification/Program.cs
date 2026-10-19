@@ -313,6 +313,35 @@ internal static class Program
         }
         finally { Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(key, false); }
 
+        // Contraste do design system em todos os temas e intensidades (WCAG AA): texto 4,5:1, texto apagado 4,5:1 sobre o
+        // card, texto do botão principal 4,5:1 e marcas sobre os tons de estado 3:1 (elemento gráfico)
+        static double Lum(System.Windows.Media.Color c)
+        {
+            static double Ch(byte v) { var x = v / 255.0; return x <= 0.03928 ? x / 12.92 : Math.Pow((x + 0.055) / 1.055, 2.4); }
+            return 0.2126 * Ch(c.R) + 0.7152 * Ch(c.G) + 0.0722 * Ch(c.B);
+        }
+        static double Ratio(System.Windows.Media.Color a, System.Windows.Media.Color b) { var (x, y) = (Lum(a), Lum(b)); return (Math.Max(x, y) + 0.05) / (Math.Min(x, y) + 0.05); }
+        var contrastFailures = new List<string>();
+        foreach (var theme in Enum.GetValues<PQueirozOptimizer.Models.ThemeMode>().Where(t => t != PQueirozOptimizer.Models.ThemeMode.Auto))
+            foreach (var intensity in Enum.GetValues<PQueirozOptimizer.Models.AccentIntensity>())
+            {
+                var rd = new ResourceDictionary();
+                ThemeService.Apply(rd, new PQueirozOptimizer.Models.AppearanceSettings { Theme = theme, Accent = intensity }, forceLight: ThemeService.IsLightTheme(theme));
+                System.Windows.Media.Color Of(string key) => ((System.Windows.Media.SolidColorBrush)rd[key]).Color;
+                void Need(string what, System.Windows.Media.Color fg, System.Windows.Media.Color bg, double min)
+                {
+                    var r = Ratio(fg, bg);
+                    if (r < min) contrastFailures.Add($"{theme}/{intensity} {what} {r:0.00}:1 (mín. {min})");
+                }
+                Need("texto/fundo", Of("TextBrush"), Of("BackgroundBrush"), 4.5);
+                Need("texto/card", Of("TextBrush"), Of("SurfaceBrush"), 4.5);
+                Need("apagado/card", Of("MutedBrush"), Of("SurfaceBrush"), 4.5);
+                Need("botão principal", Of("OnPrimaryBrush"), Of("PrimaryFillBrush"), 4.5);
+                foreach (var tone in new[] { "Success", "Warning", "Danger", "Info" })
+                    Need($"marca sobre {tone}", Of("On" + tone + "Brush"), Of(tone + "Brush"), 3);
+            }
+        Assert(contrastFailures.Count == 0, "Contraste AA em todos os temas e intensidades" + (contrastFailures.Count > 0 ? ": " + string.Join("; ", contrastFailures.Take(12)) : ""));
+
         var monitor = DisplayService.Primary();
         Assert(monitor is null || (monitor.MaxHz >= monitor.CurrentHz && monitor.Width > 0 && monitor.BelowMax == (monitor.MaxHz > monitor.CurrentHz)), "Taxa do monitor principal lida (atual nunca acima da máxima)");
         if (monitor != null) Console.WriteLine($"  Monitor: {monitor.Width}x{monitor.Height} {monitor.CurrentHz} Hz (máx. {monitor.MaxHz} Hz)");

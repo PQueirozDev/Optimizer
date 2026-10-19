@@ -135,7 +135,7 @@ public partial class MainWindow
             };
             Grid.SetColumn(action, 2); grid.Children.Add(action);
         }
-        var row = new Border { Child = grid, Padding = new Thickness(18, 12, 18, 12), CornerRadius = new CornerRadius(14), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 8) };
+        var row = new Border { Child = grid, Padding = new Thickness(18, 12, 18, 12), CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 8) };
         row.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
         row.SetResourceReference(Border.BorderBrushProperty, state.Exists && !state.Running && ServiceStateService.CheckedServices.Contains(state.Name) ? "WarningBrush" : "BorderSubtleBrush");
         return row;

@@ -50,7 +50,8 @@ public partial class MainWindow
         card.RenderTransform = lift;
         void Hover(bool on)
         {
-            card.SetResourceReference(Border.BorderBrushProperty, on ? "BorderHoverBrush" : "CardBorderBrush");
+            // Foco pelo teclado com o destaque sólido (3:1 em todos os temas); o hover do mouse fica mais suave
+            card.SetResourceReference(Border.BorderBrushProperty, !on ? "CardBorderBrush" : card.IsKeyboardFocused ? "AccentBrush" : "BorderHoverBrush");
             if (AppearanceService.AnimationsEnabled)
                 lift.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(on ? -2 : 0, TimeSpan.FromMilliseconds(160)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
         }

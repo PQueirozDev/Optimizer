@@ -186,10 +186,15 @@ public partial class MainWindow
         check.HorizontalContentAlignment = HorizontalAlignment.Stretch;
         check.Margin = new Thickness(0);
 
-        var row = new Border { Child = check, Padding = new Thickness(18, 14, 18, 14), CornerRadius = new CornerRadius(14), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 10) };
-        row.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
-        row.SetResourceReference(Border.BorderBrushProperty, "BorderSubtleBrush");
-        void Highlight() => row.SetResourceReference(Border.BorderBrushProperty, check.IsChecked == true ? "AccentBrush" : "BorderSubtleBrush");
+        var row = new Border { Child = check, Padding = new Thickness(18, 14, 18, 14), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 8) };
+        row.SetResourceReference(Border.CornerRadiusProperty, "InsetRadius");
+        // Marcada: o mesmo véu do item ativo da navegação (a borda ciano sólida em toda linha marcada pesava na lista)
+        void Highlight()
+        {
+            var on = check.IsChecked == true;
+            row.SetResourceReference(Border.BackgroundProperty, on ? "NavSelectedBrush" : "CardInsetBrush");
+            row.SetResourceReference(Border.BorderBrushProperty, on ? "NavSelectedBorderBrush" : "BorderSubtleBrush");
+        }
         check.Checked += (_, _) => Highlight();
         check.Unchecked += (_, _) => Highlight();
         // A linha inteira funciona como área de clique
@@ -207,7 +212,8 @@ public partial class MainWindow
         DockPanel.SetDock(actions, Dock.Right);
         dock.Children.Add(actions);
         dock.Children.Add(summary);
-        var bar = new Border { Child = dock, Padding = new Thickness(18, 14, 18, 14), CornerRadius = new CornerRadius(14), Margin = new Thickness(0, 8, 0, 8) };
+        var bar = new Border { Child = dock, Padding = new Thickness(18, 14, 18, 14), Margin = new Thickness(0, 8, 0, 8) };
+        bar.SetResourceReference(Border.CornerRadiusProperty, "InsetRadius");
         bar.SetResourceReference(Border.BackgroundProperty, "HeroBrush");
         return bar;
     }

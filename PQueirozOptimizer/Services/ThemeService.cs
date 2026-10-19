@@ -253,8 +253,11 @@ public static class ThemeService
 
         // Botões: o principal é preenchido com o destaque nos dois temas (texto escuro ou claro conforme o contraste);
         // o secundário é o destaque translúcido
-        Brush("PrimaryFillBrush", accent);
-        Brush("OnPrimaryBrush", BestAccentText(accent) == Colors.Black ? C("#04151A") : Colors.White);
+        // O texto do botão é pequeno (12,5 px): exige 4,5:1, e não os 3:1 de ícones. Sem contraste suficiente com
+        // branco nem com o escuro, o preenchimento escurece até alcançar (ex.: ciano Vibrante no tema claro).
+        var (primaryFill, onPrimary) = PrimaryPair(accent);
+        Brush("PrimaryFillBrush", primaryFill);
+        Brush("OnPrimaryBrush", onPrimary);
         Brush("SecondaryFillBrush", WithAlpha(accent, (byte)(dark ? 0x24 : 0x16)));
         Brush("SecondaryBorderBrush", WithAlpha(accent, (byte)(dark ? 0x4D : 0x3A)));
         Brush("OnSecondaryBrush", dark ? Blend(accent, Colors.White, 0.55) : Blend(accent, Colors.Black, 0.18));
@@ -315,6 +318,32 @@ public static class ThemeService
         // Ícones e textos curtos sobre o destaque: branco sempre que tiver contraste de elemento gráfico (3:1)
         return whiteContrast >= 3 || whiteContrast >= blackContrast ? Colors.White : Colors.Black;
     }
+    /// <summary>Preenchimento do botão principal e a cor do texto sobre ele, com pelo menos 4,5:1 entre os dois.</summary>
+    internal static (Color Fill, Color Text) PrimaryPair(Color accent)
+    {
+        var dark = C("#04151A");
+        for (var i = 0; i <= 40; i++)
+        {
+            var fill = Blend(accent, Colors.Black, i / 100.0);
+            var onWhite = ContrastRatio(fill, Colors.White);
+            var onDark = ContrastRatio(fill, dark);
+            if (Math.Max(onWhite, onDark) >= 4.5) return (fill, onDark >= onWhite ? dark : Colors.White);
+        }
+        return (Blend(accent, Colors.Black, 0.4), Colors.White);
+    }
+
+    internal static double ContrastRatio(Color a, Color b)
+    {
+        static double Channel(byte value)
+        {
+            var v = value / 255.0;
+            return v <= 0.03928 ? v / 12.92 : Math.Pow((v + 0.055) / 1.055, 2.4);
+        }
+        static double L(Color c) => 0.2126 * Channel(c.R) + 0.7152 * Channel(c.G) + 0.0722 * Channel(c.B);
+        var (x, y) = (L(a), L(b));
+        return (Math.Max(x, y) + 0.05) / (Math.Min(x, y) + 0.05);
+    }
+
     private static Color EnsureAccentContrast(Color color)
     {
         static double L(Color c)

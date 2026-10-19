@@ -208,7 +208,8 @@ public partial class MainWindow
     /// </summary>
     private Border? NewLookBanner()
     {
-        const string offerId = "redesign-tema-azul";
+        // Identificador novo no visual Grafite ciano: quem dispensou o convite do tema azul antigo vê este uma vez
+        const string offerId = "redesign-grafite-ciano";
         if (AppearanceService.Current.Theme == ThemeMode.Dark || _configService.IsTutorialCompleted(offerId)) return null;
         var dock = new DockPanel();
         Border? card = null;
@@ -229,7 +230,7 @@ public partial class MainWindow
         var text = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
         var title = Label("Novo visual do Qrztweaks", 14); title.FontWeight = FontWeights.SemiBold; title.Margin = new Thickness(0);
         text.Children.Add(title);
-        var sub = Label("O tema Azul meia-noite (preto, branco e azul) foi feito para o novo design. Seu tema atual continua disponível em Configurações → Aparência.", 12, true);
+        var sub = Label("O tema Grafite ciano (grafite com destaque em ciano) foi feito para o novo design. Seu tema atual continua disponível em Configurações → Aparência.", 12, true);
         sub.Margin = new Thickness(0, 2, 0, 0);
         text.Children.Add(sub);
         dock.Children.Add(text);

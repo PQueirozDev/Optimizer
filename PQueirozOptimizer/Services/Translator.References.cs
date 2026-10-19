@@ -106,6 +106,14 @@ public static partial class Translator
         ["Relógio errado faz launchers e jogos recusarem o login, quebra sites com HTTPS e atrapalha o Windows Update."] = "A wrong clock makes launchers and games reject sign-in, breaks HTTPS sites and disrupts Windows Update.",
         ["Reaplicando ajustes desfeitos"] = "Reapplying undone settings",
 
+        // ---------- Redesign Grafite ciano ----------
+        ["Grafite ciano"] = "Cyan graphite",
+        ["Cinza"] = "Gray",
+        ["ao vivo"] = "live",
+        ["Lendo…"] = "Reading…",
+        ["O tema Grafite ciano (grafite com destaque em ciano) foi feito para o novo design. Seu tema atual continua disponível em Configurações → Aparência."] = "The Cyan graphite theme (graphite with a cyan accent) was made for the new design. Your current theme is still available in Settings → Appearance.",
+        ["Padrão restaurado: tema Grafite ciano, cores originais, densidade Padrão, cards Médios e animações ligadas."] = "Defaults restored: Cyan graphite theme, original colors, Default density, Medium cards and animations on.",
+
         // ---------- Catálogo da Otimização inteligente: etapas novas do Debloat ----------
         ["Desligar a Cortana e a pesquisa na nuvem"] = "Turn off Cortana and cloud search",
         ["A Cortana deixa de rodar e a busca do Iniciar não envia consultas à nuvem."] = "Cortana stops running and Start search doesn't send queries to the cloud.",

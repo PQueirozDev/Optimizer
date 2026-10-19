@@ -35,7 +35,8 @@
             <Border x:Name="btnBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                     BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{Binding (local:QrzUi.CornerRadius), RelativeSource={RelativeSource TemplatedParent}}"/>
             <Border x:Name="hover" Background="{TemplateBinding Foreground}" CornerRadius="{Binding (local:QrzUi.CornerRadius), RelativeSource={RelativeSource TemplatedParent}}" Opacity="0" IsHitTestVisible="False"/>
-            <Border x:Name="focusRing" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1.5" CornerRadius="{Binding (local:QrzUi.CornerRadius), RelativeSource={RelativeSource TemplatedParent}}" Opacity="0" IsHitTestVisible="False"/>
+            <!-- Anel de foco por fora do botão (Margin -3): visível também no botão principal, que já é preenchido com o destaque -->
+            <Border x:Name="focusRing" Margin="-3" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1.5" CornerRadius="{Binding (local:QrzUi.CornerRadius), RelativeSource={RelativeSource TemplatedParent}}" Opacity="0" IsHitTestVisible="False"/>
             <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                               VerticalAlignment="Center" RecognizesAccessKey="True">
               <!-- Texto sem cor própria segue a cor do botão (o estilo global de texto deixaria tudo branco) -->
