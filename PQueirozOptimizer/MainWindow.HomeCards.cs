@@ -58,7 +58,8 @@ public partial class MainWindow
         card.MouseEnter += (_, _) => Hover(true);
         card.MouseLeave += (_, _) => { if (!card.IsKeyboardFocused) Hover(false); };
         card.GotKeyboardFocus += (_, _) => Hover(true);
-        card.LostKeyboardFocus += (_, _) => { if (!card.IsMouseOver) Hover(false); };
+        // Sem foco: volta ao hover suave se o mouse ainda está em cima, senão à borda normal
+        card.LostKeyboardFocus += (_, _) => Hover(card.IsMouseOver);
         card.MouseLeftButtonUp += (_, e) => { if (!e.Handled) click(); };
         card.KeyDown += (_, e) => { if (e.Key is Key.Enter or Key.Space) { e.Handled = true; click(); } };
     }

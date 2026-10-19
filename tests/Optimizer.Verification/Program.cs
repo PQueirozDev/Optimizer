@@ -334,9 +334,22 @@ internal static class Program
                     if (r < min) contrastFailures.Add($"{theme}/{intensity} {what} {r:0.00}:1 (mín. {min})");
                 }
                 Need("texto/fundo", Of("TextBrush"), Of("BackgroundBrush"), 4.5);
+                // Cards e destaque reais são degradês: mede contra cada parada, não só a cor sólida
+                foreach (var surfaceKey in new[] { "CardBgBrush", "HeroBrush" })
+                    foreach (var stop in ((System.Windows.Media.GradientBrush)rd[surfaceKey]).GradientStops)
+                    {
+                        Need($"texto/{surfaceKey}", Of("TextBrush"), stop.Color, 4.5);
+                        Need($"apagado/{surfaceKey}", Of("MutedBrush"), stop.Color, 4.5);
+                    }
                 Need("texto/card", Of("TextBrush"), Of("SurfaceBrush"), 4.5);
                 Need("apagado/card", Of("MutedBrush"), Of("SurfaceBrush"), 4.5);
-                Need("botão principal", Of("OnPrimaryBrush"), Of("PrimaryFillBrush"), 4.5);
+                // Botão principal em repouso, hover (7%) e pressionado (14%): o realce é a cor do texto por cima (Motion.cs)
+                foreach (var overlay in new[] { 0.0, 0.07, 0.14 })
+                {
+                    var fill = Of("PrimaryFillBrush"); var text = Of("OnPrimaryBrush");
+                    var mixed = System.Windows.Media.Color.FromRgb((byte)(fill.R + (text.R - fill.R) * overlay), (byte)(fill.G + (text.G - fill.G) * overlay), (byte)(fill.B + (text.B - fill.B) * overlay));
+                    Need($"botão principal ({overlay:P0})", text, mixed, 4.5);
+                }
                 foreach (var tone in new[] { "Success", "Warning", "Danger", "Info" })
                     Need($"marca sobre {tone}", Of("On" + tone + "Brush"), Of(tone + "Brush"), 3);
             }

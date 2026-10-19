@@ -25,7 +25,7 @@ public static class ThemeService
     // Grafite ciano (padrão): grafite levemente frio em degraus bem definidos (fundo → barra lateral → card → hover),
     // texto quase branco e o ciano como destaque. Os degraus de luminosidade separam os blocos sem precisar de borda forte.
     private static readonly Palette Dark = new("#0A0C0F", "#F20D1014", "#151A20", "#1C222A", "#F2121619", "#262D36", "#1B2128",
-        "#EEF2F6", "#B6C0CC", "#808B99", "#34D399", "#FBBF24", "#F87171", "#000000");
+        "#EEF2F6", "#B6C0CC", "#8792A0", "#34D399", "#FBBF24", "#F87171", "#000000");
 
     // OLED: preto puro no fundo; superfícies quase pretas para continuar havendo separação entre os blocos
     private static readonly Palette Oled = new("#000000", "#FF000000", "#0A0A0E", "#14141B", "#FF050507", "#22222C", "#131319",
@@ -280,7 +280,7 @@ public static class ThemeService
         // Destaque de cartões principais: o destaque vem do canto superior direito (onde fica o anel de saúde) e some
         // antes do meio, deixando o texto sobre o grafite
         var hero = new LinearGradientBrush { StartPoint = new Point(1, 0), EndPoint = new Point(0, 1) };
-        hero.GradientStops.Add(new GradientStop(Surf(Blend(baseColor, accent, dark ? 0.12 : 0.05)), 0));
+        hero.GradientStops.Add(new GradientStop(Surf(Blend(baseColor, accent, dark ? 0.10 : 0.05)), 0));
         hero.GradientStops.Add(new GradientStop(Surf(baseColor), 0.6));
         resources["HeroBrush"] = Frozen(hero);
         // Brilho azul bem discreto no alto da área de conteúdo (pincel estático: não custa nada parado)
@@ -318,18 +318,25 @@ public static class ThemeService
         // Ícones e textos curtos sobre o destaque: branco sempre que tiver contraste de elemento gráfico (3:1)
         return whiteContrast >= 3 || whiteContrast >= blackContrast ? Colors.White : Colors.Black;
     }
-    /// <summary>Preenchimento do botão principal e a cor do texto sobre ele, com pelo menos 4,5:1 entre os dois.</summary>
+    /// <summary>
+    /// Realce dos botões (Motion.cs): a cor do texto por cima do fundo a 7% no hover e 14% pressionado. O par do botão
+    /// principal precisa manter o contraste nos três estados, não só em repouso.
+    /// </summary>
+    internal static readonly double[] ButtonOverlays = { 0, 0.07, 0.14 };
+
+    /// <summary>Preenchimento do botão principal e a cor do texto sobre ele, com pelo menos 4,5:1 em repouso, hover e pressionado.</summary>
     internal static (Color Fill, Color Text) PrimaryPair(Color accent)
     {
         var dark = C("#04151A");
-        for (var i = 0; i <= 40; i++)
+        double Worst(Color fill, Color text) => ButtonOverlays.Min(o => ContrastRatio(Blend(fill, text, o), text));
+        for (var i = 0; i <= 50; i++)
         {
             var fill = Blend(accent, Colors.Black, i / 100.0);
-            var onWhite = ContrastRatio(fill, Colors.White);
-            var onDark = ContrastRatio(fill, dark);
+            var onWhite = Worst(fill, Colors.White);
+            var onDark = Worst(fill, dark);
             if (Math.Max(onWhite, onDark) >= 4.5) return (fill, onDark >= onWhite ? dark : Colors.White);
         }
-        return (Blend(accent, Colors.Black, 0.4), Colors.White);
+        return (Blend(accent, Colors.Black, 0.5), Colors.White);
     }
 
     internal static double ContrastRatio(Color a, Color b)

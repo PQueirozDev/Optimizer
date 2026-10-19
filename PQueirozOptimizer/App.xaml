@@ -12,68 +12,68 @@
         <ResourceDictionary Source="Themes/Controls.xaml"/>
       </ResourceDictionary.MergedDictionaries>
 
-      <!-- Paleta inicial (Azul meia-noite). ThemeService.Apply substitui estes valores em tempo de execução;
+      <!-- Paleta inicial (Grafite ciano). ThemeService.Apply substitui estes valores em tempo de execução;
            eles ficam aqui para o designer e para os testes que montam a interface sem abrir o app. -->
-      <SolidColorBrush x:Key="BackgroundBrush" Color="#07080B"/>
-      <SolidColorBrush x:Key="HeaderBrush" Color="#07080B"/>
-      <SolidColorBrush x:Key="SidebarBrush" Color="#0A0B0F"/>
-      <SolidColorBrush x:Key="PanelBrush" Color="#111318"/>
-      <SolidColorBrush x:Key="PanelHoverBrush" Color="#181B22"/>
-      <SolidColorBrush x:Key="SurfaceSecondaryBrush" Color="#111318"/>
-      <SolidColorBrush x:Key="SurfaceBrush" Color="#0F1116"/>
-      <SolidColorBrush x:Key="CardBgBrush" Color="#0F1116"/>
+      <SolidColorBrush x:Key="BackgroundBrush" Color="#0A0C0F"/>
+      <SolidColorBrush x:Key="HeaderBrush" Color="#0A0C0F"/>
+      <SolidColorBrush x:Key="SidebarBrush" Color="#0D1014"/>
+      <SolidColorBrush x:Key="PanelBrush" Color="#151A20"/>
+      <SolidColorBrush x:Key="PanelHoverBrush" Color="#1C222A"/>
+      <SolidColorBrush x:Key="SurfaceSecondaryBrush" Color="#151A20"/>
+      <SolidColorBrush x:Key="SurfaceBrush" Color="#121619"/>
+      <SolidColorBrush x:Key="CardBgBrush" Color="#121619"/>
       <SolidColorBrush x:Key="CardInsetBrush" Color="#0A0B0F"/>
       <SolidColorBrush x:Key="CardElevatedBrush" Color="#16181D"/>
-      <SolidColorBrush x:Key="BorderBrush" Color="#23262E"/>
-      <SolidColorBrush x:Key="BorderSubtleBrush" Color="#1A1C22"/>
+      <SolidColorBrush x:Key="BorderBrush" Color="#262D36"/>
+      <SolidColorBrush x:Key="BorderSubtleBrush" Color="#1B2128"/>
       <SolidColorBrush x:Key="BorderStrongBrush" Color="#3A3D45"/>
-      <SolidColorBrush x:Key="TextBrush" Color="#F4F6FA"/>
-      <SolidColorBrush x:Key="TextSecondaryBrush" Color="#C1C7D2"/>
-      <SolidColorBrush x:Key="MutedBrush" Color="#8A92A1"/>
-      <SolidColorBrush x:Key="AccentBrush" Color="#3B82F6"/>
-      <SolidColorBrush x:Key="AccentHoverBrush" Color="#60A5FA"/>
-      <SolidColorBrush x:Key="AccentSoftBrush" Color="#2B3B82F6"/>
-      <SolidColorBrush x:Key="AccentTextBrush" Color="#629BF8"/>
+      <SolidColorBrush x:Key="TextBrush" Color="#EEF2F6"/>
+      <SolidColorBrush x:Key="TextSecondaryBrush" Color="#B6C0CC"/>
+      <SolidColorBrush x:Key="MutedBrush" Color="#8792A0"/>
+      <SolidColorBrush x:Key="AccentBrush" Color="#1FC8E3"/>
+      <SolidColorBrush x:Key="AccentHoverBrush" Color="#5ADAEE"/>
+      <SolidColorBrush x:Key="AccentSoftBrush" Color="#261FC8E3"/>
+      <SolidColorBrush x:Key="AccentTextBrush" Color="#4CD3E9"/>
       <SolidColorBrush x:Key="OnAccentBrush" Color="#000000"/>
-      <SolidColorBrush x:Key="PrimaryFillBrush" Color="#EAF1FE"/>
-      <SolidColorBrush x:Key="OnPrimaryBrush" Color="#0A0F1C"/>
-      <SolidColorBrush x:Key="SecondaryFillBrush" Color="#243B82F6"/>
-      <SolidColorBrush x:Key="SecondaryBorderBrush" Color="#4D3B82F6"/>
-      <SolidColorBrush x:Key="OnSecondaryBrush" Color="#AACBFB"/>
+      <SolidColorBrush x:Key="PrimaryFillBrush" Color="#1FC8E3"/>
+      <SolidColorBrush x:Key="OnPrimaryBrush" Color="#04151A"/>
+      <SolidColorBrush x:Key="SecondaryFillBrush" Color="#241FC8E3"/>
+      <SolidColorBrush x:Key="SecondaryBorderBrush" Color="#4D1FC8E3"/>
+      <SolidColorBrush x:Key="OnSecondaryBrush" Color="#9BE6F2"/>
       <SolidColorBrush x:Key="SuccessBrush" Color="#34D399"/>
       <SolidColorBrush x:Key="SuccessSoftBrush" Color="#2434D399"/>
       <SolidColorBrush x:Key="WarningBrush" Color="#FBBF24"/>
       <SolidColorBrush x:Key="WarningSoftBrush" Color="#24FBBF24"/>
       <SolidColorBrush x:Key="DangerBrush" Color="#F87171"/>
       <SolidColorBrush x:Key="DangerSoftBrush" Color="#24F87171"/>
-      <SolidColorBrush x:Key="InfoBrush" Color="#5CC8FF"/>
-      <SolidColorBrush x:Key="InfoSoftBrush" Color="#245CC8FF"/>
-      <SolidColorBrush x:Key="NavSelectedBrush" Color="#0EFFFFFF"/>
-      <SolidColorBrush x:Key="NavSelectedBorderBrush" Color="#10FFFFFF"/>
+      <SolidColorBrush x:Key="InfoBrush" Color="#4C8DFF"/>
+      <SolidColorBrush x:Key="InfoSoftBrush" Color="#244C8DFF"/>
+      <SolidColorBrush x:Key="NavSelectedBrush" Color="#171FC8E3"/>
+      <SolidColorBrush x:Key="NavSelectedBorderBrush" Color="#261FC8E3"/>
       <SolidColorBrush x:Key="NavHoverBrush" Color="#08FFFFFF"/>
-      <SolidColorBrush x:Key="ChartLineBrush" Color="#3B82F6"/>
-      <SolidColorBrush x:Key="ChartSecondaryBrush" Color="#5CC8FF"/>
+      <SolidColorBrush x:Key="ChartLineBrush" Color="#1FC8E3"/>
+      <SolidColorBrush x:Key="ChartSecondaryBrush" Color="#4C8DFF"/>
       <SolidColorBrush x:Key="ChartGridBrush" Color="#0CF4F6FA"/>
       <LinearGradientBrush x:Key="ChartFillBrush" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#553B82F6" Offset="0"/>
-        <GradientStop Color="#003B82F6" Offset="1"/>
+        <GradientStop Color="#551FC8E3" Offset="0"/>
+        <GradientStop Color="#001FC8E3" Offset="1"/>
       </LinearGradientBrush>
       <Color x:Key="ShadowColor">#000000</Color>
-      <Color x:Key="AccentColor">#3B82F6</Color>
-      <Color x:Key="InfoColor">#5CC8FF</Color>
+      <Color x:Key="AccentColor">#1FC8E3</Color>
+      <Color x:Key="InfoColor">#4C8DFF</Color>
       <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#3B82F6" Offset="0"/>
-        <GradientStop Color="#3B82F6" Offset="1"/>
+        <GradientStop Color="#1FC8E3" Offset="0"/>
+        <GradientStop Color="#1FC8E3" Offset="1"/>
       </LinearGradientBrush>
       <RadialGradientBrush x:Key="GlowBrush" Center="0.78,0" GradientOrigin="0.78,0" RadiusX="0.7" RadiusY="0.85">
-        <GradientStop Color="#163B82F6" Offset="0"/>
-        <GradientStop Color="#003B82F6" Offset="1"/>
+        <GradientStop Color="#161FC8E3" Offset="0"/>
+        <GradientStop Color="#001FC8E3" Offset="1"/>
       </RadialGradientBrush>
       <SolidColorBrush x:Key="HeroBrush" Color="#121722"/>
-      <SolidColorBrush x:Key="CardBorderBrush" Color="#1A1C22"/>
-      <SolidColorBrush x:Key="CardHoverBorderBrush" Color="#23262E"/>
-      <SolidColorBrush x:Key="BorderHoverBrush" Color="#803B82F6"/>
-      <Color x:Key="GlowColor">#3B82F6</Color>
+      <SolidColorBrush x:Key="CardBorderBrush" Color="#1B2128"/>
+      <SolidColorBrush x:Key="CardHoverBorderBrush" Color="#262D36"/>
+      <SolidColorBrush x:Key="BorderHoverBrush" Color="#801FC8E3"/>
+      <Color x:Key="GlowColor">#1FC8E3</Color>
     </ResourceDictionary>
   </Application.Resources>
 </Application>
