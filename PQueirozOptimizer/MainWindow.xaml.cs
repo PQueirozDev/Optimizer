@@ -86,6 +86,7 @@ public partial class MainWindow : Window
         AppearanceService.Changed += onAppearance;
         Closed += (_, _) => AppearanceService.Changed -= onAppearance;
         Closed += (_, _) => { _compact?.Close(); _capture?.Dispose(); _capture = null; };
+        Closed += (_, _) => DisposeTray();
         UpdatePageHeader(_currentPage);
         _loc.SetLanguage(_configService.Config.Language ?? "pt");
         UpdateLanguageUi();
@@ -177,6 +178,7 @@ public partial class MainWindow : Window
 
     private void Window_StateChanged(object sender, EventArgs e)
     {
+        HandleTrayOnStateChanged();
         if (WindowState == WindowState.Maximized)
         {
             MainRootBorder.BorderThickness = new Thickness(0);

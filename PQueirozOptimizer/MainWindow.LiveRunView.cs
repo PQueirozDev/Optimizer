@@ -423,6 +423,14 @@ public partial class MainWindow
         // Sem etapas anunciadas (diagnósticos, verificação de corrupção), o registro é o resultado
         if (steps.Count == 0) SelectTab(1);
 
+        // Rodar de novo só o que falhou (o script aceita a lista de etapas escolhidas); o resto já foi aplicado
+        var failedSteps = mainSteps.Where(s => s.State == LiveStepState.Failed).Select(s => s.Name).ToList();
+        if (!cancelled && failedSteps.Count > 0 && operation is "padrao" or "gamer" or "gamerservicos" or "debloat" or "inteligente")
+        {
+            var retry = IconButton(Glyphs.Refresh, failedSteps.Count == 1 ? "Tentar de novo a etapa que falhou" : $"Tentar de novo as {failedSteps.Count} etapas que falharam");
+            retry.Click += async (_, _) => await RunLiveAsync(operation, failedSteps);
+            actions.Children.Add(retry);
+        }
         if (operation is "padrao" or "gamer" or "gamerservicos" or "debloat" or "reverter")
         {
             var history = IconButton(Glyphs.History, "Ver backup e reversão"); history.Click += History_Click;

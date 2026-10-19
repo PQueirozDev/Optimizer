@@ -20,6 +20,13 @@ public sealed class WindowsCustomizeService
     private const string Advanced = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced";
     private const string DesktopIcons = @"Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel";
     private const string ClassicMenu = @"Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}";
+    private const string Dsh = @"SOFTWARE\Policies\Microsoft\Dsh";
+    private const string ExplorerSerialize = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize";
+    private const string UpdateUx = @"SOFTWARE\Microsoft\WindowsUpdate\UX\Settings";
+    private const string PushNotifications = @"Software\Microsoft\Windows\CurrentVersion\PushNotifications";
+    private const string SystemPolicies = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System";
+    private const string GameBar = @"Software\Microsoft\GameBar";
+    private const string GameConfigStore = @"System\GameConfigStore";
 
     private readonly ActivityLog _log;
     public WindowsCustomizeService(ActivityLog log) => _log = log;
@@ -45,6 +52,17 @@ public sealed class WindowsCustomizeService
         yield return new("Barra de tarefas", "Pesquisa só como ícone", "Troca a caixa de pesquisa larga por uma lupa, liberando espaço na barra.",
             () => Dword(Registry.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\Search", "SearchboxTaskbarMode", 2) == 1,
             on => SetDword(Registry.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\Search", "SearchboxTaskbarMode", on ? 1 : 2), NeedsExplorerRestart: true);
+        yield return new("Barra de tarefas", "Widgets (notícias e clima)", "Botão e painel de Widgets da barra, que carregam notícias e anúncios em segundo plano.",
+            () => Dword(Registry.LocalMachine, Dsh, "AllowNewsAndInterests", 1) != 0 && Dword(Registry.CurrentUser, Advanced, "TaskbarDa", 1) != 0,
+            on =>
+            {
+                // A política vale mesmo quando o Windows 11 24H2 bloqueia a gravação direta do TaskbarDa
+                if (on) DeleteValue(Registry.LocalMachine, Dsh, "AllowNewsAndInterests"); else SetDword(Registry.LocalMachine, Dsh, "AllowNewsAndInterests", 0);
+                try { SetDword(Registry.CurrentUser, Advanced, "TaskbarDa", on ? 1 : 0); }
+                catch (UnauthorizedAccessException) { }
+            }, Recommended: false, NeedsExplorerRestart: true, Requires: "win11");
+        yield return new("Barra de tarefas", "Clique no app abre a última janela", "Com várias janelas do mesmo programa, um clique no ícone volta direto para a que você usou por último.",
+            () => Dword(Registry.CurrentUser, Advanced, "LastActiveClick", 0) == 1, on => SetDword(Registry.CurrentUser, Advanced, "LastActiveClick", on ? 1 : 0), NeedsExplorerRestart: true);
 
         // Explorador de Arquivos
         yield return new("Explorador de Arquivos", "Mostrar extensões dos arquivos", "Exibe o .exe, .pdf, .zip no nome: evita abrir um \"documento.pdf.exe\" por engano.",
@@ -62,8 +80,12 @@ public sealed class WindowsCustomizeService
             }, NeedsExplorerRestart: true, Requires: "win11");
         yield return new("Explorador de Arquivos", "Caixas de seleção nos itens", "Marque vários arquivos com o mouse, sem segurar Ctrl.",
             () => Dword(Registry.CurrentUser, Advanced, "AutoCheckSelect", 0) == 1, on => SetDword(Registry.CurrentUser, Advanced, "AutoCheckSelect", on ? 1 : 0), NeedsExplorerRestart: true);
+        yield return new("Explorador de Arquivos", "Modo compacto", "Diminui o espaço entre os itens das pastas, mostrando mais arquivos de uma vez.",
+            () => Dword(Registry.CurrentUser, Advanced, "UseCompactMode", 0) == 1, on => SetDword(Registry.CurrentUser, Advanced, "UseCompactMode", on ? 1 : 0), NeedsExplorerRestart: true, Requires: "win11");
 
         // Área de trabalho (0 = mostrar, 1 = ocultar; sem valor, só a Lixeira aparece)
+        yield return new("Área de trabalho", "Mostrar ícones da área de trabalho", "Desligado, a área de trabalho fica limpa (os arquivos continuam lá, só não aparecem).",
+            () => Dword(Registry.CurrentUser, Advanced, "HideIcons", 0) == 0, on => SetDword(Registry.CurrentUser, Advanced, "HideIcons", on ? 0 : 1), NeedsExplorerRestart: true);
         yield return DesktopIcon("\"Este Computador\" na área de trabalho", "{20D04FE0-3AEA-1069-A2D8-08002B30309D}", shownByDefault: false);
         yield return DesktopIcon("Lixeira na área de trabalho", "{645FF040-5081-101B-9F08-00AA002F954E}", shownByDefault: true);
         yield return DesktopIcon("Pasta do usuário na área de trabalho", "{59031a47-3f72-44a7-89c5-5595fe6b30ee}", shownByDefault: false);
@@ -102,6 +124,23 @@ public sealed class WindowsCustomizeService
             () => Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop")?.GetValue("MenuShowDelay") as string == "0",
             on => { using var key = Registry.CurrentUser.CreateSubKey(@"Control Panel\Desktop"); key.SetValue("MenuShowDelay", on ? "0" : "400", RegistryValueKind.String); },
             Recommended: true, NeedsExplorerRestart: true);
+        yield return new("Sistema", "Programas da inicialização sem espera", "O Windows segura os apps da inicialização por alguns segundos depois do login; ligado, eles abrem na hora.",
+            () => Dword(Registry.CurrentUser, ExplorerSerialize, "StartupDelayInMSec", -1) == 0,
+            on => { if (on) SetDword(Registry.CurrentUser, ExplorerSerialize, "StartupDelayInMSec", 0); else DeleteValue(Registry.CurrentUser, ExplorerSerialize, "StartupDelayInMSec"); }, Recommended: true);
+        yield return new("Sistema", "Pausar atualizações por até 1 ano", "Libera prazos maiores em Configurações → Windows Update → Pausar atualizações (o padrão é no máximo 5 semanas).",
+            // Outras ferramentas gravam 0xFFFFFFFF, que o .NET lê como -1
+            () => (uint)Dword(Registry.LocalMachine, UpdateUx, "FlightSettingsMaxPauseDays", 0) >= 365,
+            on => { if (on) SetDword(Registry.LocalMachine, UpdateUx, "FlightSettingsMaxPauseDays", 365); else DeleteValue(Registry.LocalMachine, UpdateUx, "FlightSettingsMaxPauseDays"); });
+        yield return new("Sistema", "Sugestões de layout no botão maximizar", "Passar o mouse no botão maximizar mostra os layouts para dividir a tela entre janelas.",
+            () => Dword(Registry.CurrentUser, Advanced, "EnableSnapAssistFlyout", 1) == 1, on => SetDword(Registry.CurrentUser, Advanced, "EnableSnapAssistFlyout", on ? 1 : 0), Requires: "win11");
+        yield return new("Sistema", "Notificações do Windows", "Os avisos que aparecem no canto da tela (e na tela de bloqueio) para apps e para o sistema.",
+            () => Dword(Registry.CurrentUser, PushNotifications, "ToastEnabled", 1) == 1,
+            on => { SetDword(Registry.CurrentUser, PushNotifications, "ToastEnabled", on ? 1 : 0); SetDword(Registry.CurrentUser, PushNotifications, "LockScreenToastEnabled", on ? 1 : 0); });
+        yield return new("Sistema", "Mensagens detalhadas ao ligar e desligar", "Em vez de só \"Aguarde\", o Windows mostra o que está fazendo; ajuda a descobrir o que trava o desligamento.",
+            () => Dword(Registry.LocalMachine, SystemPolicies, "VerboseStatus", 0) == 1, on => SetDword(Registry.LocalMachine, SystemPolicies, "VerboseStatus", on ? 1 : 0));
+        yield return new("Sistema", "Porcentagem da bateria na barra", "Mostra o número da carga ao lado do ícone da bateria.",
+            () => Dword(Registry.CurrentUser, Advanced, "IsBatteryPercentageEnabled", 0) == 1, on => SetDword(Registry.CurrentUser, Advanced, "IsBatteryPercentageEnabled", on ? 1 : 0),
+            NeedsExplorerRestart: true, Requires: "notebook, win11-24h2");
 
         // Teclado e mouse
         yield return new("Teclado e mouse", "Precisão do ponteiro (aceleração do mouse)", "Com ela ligada, o ponteiro anda mais quanto mais rápido você move o mouse; desligada, a mira fica consistente nos jogos.",
@@ -125,6 +164,29 @@ public sealed class WindowsCustomizeService
                 var flags = ParseLong(key.GetValue("Flags") as string ?? "510");
                 key.SetValue("Flags", (on ? flags | 4 : flags & ~4L).ToString(), RegistryValueKind.String);
             }, Recommended: false);
+        yield return new("Teclado e mouse", "Repetição de tecla sem atraso", "Segurar uma tecla repete o caractere quase na hora e na velocidade máxima (o padrão do Windows espera cerca de meio segundo).",
+            () => Registry.CurrentUser.OpenSubKey(@"Control Panel\Keyboard")?.GetValue("KeyboardDelay") as string == "0",
+            on =>
+            {
+                // SPI_SETKEYBOARDDELAY (0 a 3) e SPI_SETKEYBOARDSPEED (0 a 31) gravam no perfil e valem na hora
+                Check(SystemParametersInfo(0x0017, on ? 0u : 1u, IntPtr.Zero, SpifSave));
+                Check(SystemParametersInfo(0x000B, 31, IntPtr.Zero, SpifSave));
+            }, Recommended: true);
+
+        // Jogos
+        yield return new("Jogos", "Atalho da Xbox Game Bar (Win + G)", "Win + G e o botão Xbox do controle abrem a Game Bar por cima do jogo. Em Ryzen X3D com dois CCDs, mantenha ligada: o Windows usa a Game Bar para levar o jogo ao CCD com 3D V-Cache.",
+            () => Dword(Registry.CurrentUser, GameBar, "UseNexusForGameBarEnabled", 1) == 1,
+            on => { SetDword(Registry.CurrentUser, GameBar, "UseNexusForGameBarEnabled", on ? 1 : 0); SetDword(Registry.CurrentUser, GameBar, "ShowStartupPanel", on ? 1 : 0); });
+        yield return new("Jogos", "Otimizações de tela cheia (todos os jogos)", "O Windows troca a tela cheia exclusiva por uma janela otimizada, o que deixa o Alt + Tab rápido. Alguns jogos antigos em DirectX 9/11 rodam mais estáveis com ela desligada.",
+            // Instalações limpas já trazem FSEBehaviorMode = 2 com a otimização ligada; desligada é o par com HonorUser = 1
+            () => !(Dword(Registry.CurrentUser, GameConfigStore, "GameDVR_FSEBehaviorMode", 0) == 2 && Dword(Registry.CurrentUser, GameConfigStore, "GameDVR_HonorUserFSEBehaviorMode", 0) == 1),
+            on =>
+            {
+                SetDword(Registry.CurrentUser, GameConfigStore, "GameDVR_FSEBehaviorMode", on ? 0 : 2);
+                SetDword(Registry.CurrentUser, GameConfigStore, "GameDVR_FSEBehavior", on ? 0 : 2);
+                SetDword(Registry.CurrentUser, GameConfigStore, "GameDVR_HonorUserFSEBehaviorMode", on ? 0 : 1);
+                SetDword(Registry.CurrentUser, GameConfigStore, "GameDVR_DXGIHonorFSEWindowsCompatible", on ? 0 : 1);
+            });
 
         foreach (var effect in VisualEffects()) yield return effect;
     }
@@ -220,6 +282,12 @@ public sealed class WindowsCustomizeService
     {
         using var key = hive.CreateSubKey(path);
         key.SetValue(name, value, RegistryValueKind.DWord);
+    }
+
+    private static void DeleteValue(RegistryKey hive, string path, string name)
+    {
+        using var key = hive.OpenSubKey(path, writable: true);
+        key?.DeleteValue(name, throwOnMissingValue: false);
     }
 
     private static long ParseLong(string? text) => long.TryParse(text, out var value) ? value : 0;

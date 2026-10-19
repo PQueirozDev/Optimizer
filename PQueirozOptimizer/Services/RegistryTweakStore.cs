@@ -145,6 +145,64 @@ public sealed class RegistryTweakStore
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException) { return false; }
     }
 
+    /// <summary>
+    /// Ajustes aplicados por completo cujos valores já não estão no registro: o Windows (atualização, reset de
+    /// política, outro programa) desfez o que o app gravou. O backup continua valendo para reaplicar ou reverter.
+    /// </summary>
+    public IReadOnlyList<AppliedTweak> ListReset()
+    {
+        if (!Directory.Exists(_directory)) return Array.Empty<AppliedTweak>();
+        var result = new List<AppliedTweak>();
+        foreach (var file in Directory.EnumerateFiles(_directory, "*.json"))
+        {
+            try
+            {
+                var backup = JsonSerializer.Deserialize<Backup>(File.ReadAllText(file));
+                if (backup is { Status: "Applied" } && backup.Entries.Count > 0 && !backup.Entries.All(IsCurrent))
+                    result.Add(new AppliedTweak(backup.Id, backup.Title, backup.Meta, backup.AppliedAtUtc));
+            }
+            catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException) { }
+        }
+        return result.OrderBy(t => t.Title, StringComparer.CurrentCultureIgnoreCase).ToList();
+    }
+
+    /// <summary>
+    /// Grava de novo os valores de um ajuste desfeito, mantendo o backup original. Só vale para arquivos criados
+    /// por administradores: o processo é elevado e não pode gravar no registro o que um usuário comum plantou ali.
+    /// </summary>
+    public int Reapply(string id)
+    {
+        var path = PathFor(id);
+        if (!File.Exists(path)) throw new FileNotFoundException("Este ajuste não tem mais backup.");
+        if (!OwnedByAdministrators(path)) throw new UnauthorizedAccessException("O backup deste ajuste não foi criado pelo app; reaplique pelo próprio ajuste.");
+        var backup = JsonSerializer.Deserialize<Backup>(File.ReadAllText(path)) ?? throw new InvalidDataException("Backup inválido.");
+        if (backup.Status != "Applied") throw new InvalidOperationException("O ajuste não estava aplicado por completo.");
+        var written = 0;
+        foreach (var e in backup.Entries.Where(e => !IsCurrent(e)))
+        {
+            if (!Enum.TryParse<RegistryHive>(e.Hive, out var hive) || hive is not (RegistryHive.LocalMachine or RegistryHive.CurrentUser)
+                || !Enum.TryParse<RegistryValueKind>(e.TargetKind, out var kind) || e.TargetData is not { } data) continue;
+            using var root = RegistryKey.OpenBaseKey(hive, RegistryView.Registry64);
+            using var key = root.CreateSubKey(e.Key, writable: true) ?? throw new InvalidOperationException("Não foi possível abrir " + e.Key);
+            key.SetValue(e.Name, Deserialize(kind, data), kind);
+            written++;
+        }
+        if (!backup.Entries.All(IsCurrent)) throw new InvalidOperationException("O Windows bloqueou parte dos valores; tente de novo depois de reiniciar.");
+        return written;
+    }
+
+    private static bool OwnedByAdministrators(string path)
+    {
+        try
+        {
+            var owner = new FileInfo(path).GetAccessControl().GetOwner(typeof(SecurityIdentifier)) as SecurityIdentifier;
+            // Processo elevado grava arquivos com dono "Administradores"; um arquivo do próprio usuário sem elevação
+            // (mesmo SID da conta) não passa
+            return owner != null && (owner.IsWellKnown(WellKnownSidType.BuiltinAdministratorsSid) || owner.IsWellKnown(WellKnownSidType.LocalSystemSid));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { return false; }
+    }
+
     /// <summary>Restaura o que havia antes. Itens fora de <paramref name="allowed"/> são ignorados.</summary>
     public int Revert(string id, Func<RegistryHive, string, string, bool> allowed)
     {

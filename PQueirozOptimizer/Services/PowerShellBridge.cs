@@ -177,7 +177,9 @@ public sealed class PowerShellBridge
             {
                 if (string.IsNullOrWhiteSpace(line)) continue;
                 line = level == "ERROR" ? NormalizeError(line) : line;
-                _log.Write(level, line);
+                // O plano é só para a tela de progresso; a etapa vai para o histórico em texto legível
+                if (line.StartsWith("[ETAPA] ", StringComparison.Ordinal)) _log.Write(level, "Etapa: " + line[8..].Trim());
+                else if (!line.StartsWith("[PLANO] ", StringComparison.Ordinal)) _log.Write(level, line);
                 // Erros vão marcados para a tela destacá-los e contá-los como falha
                 progress?.Report(level == "ERROR" ? "[ERRO] " + line : line);
             }

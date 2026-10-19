@@ -94,6 +94,22 @@ public partial class MainWindow
                     catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException) { ShowToast(preset.Name, ex.Message, "Danger"); }
                 };
                 actions.Children.Add(restore);
+                var locked = GameConfigService.IsLocked(preset);
+                var lockButton = IconButton(Glyphs.Lock, locked ? "Destravar arquivo" : "Travar arquivo");
+                lockButton.ToolTip = locked
+                    ? "O arquivo está como somente leitura: o jogo não desfaz o preset, mas também não salva o que você mudar no menu dele."
+                    : "Deixa o arquivo como somente leitura para o jogo não desfazer o preset ao abrir. Mudanças feitas no menu do jogo deixam de ser salvas até destravar.";
+                lockButton.Click += (_, _) =>
+                {
+                    try
+                    {
+                        GameConfigs.SetLocked(preset, !locked);
+                        ShowToast(preset.Name, locked ? "Arquivo destravado: o jogo volta a salvar as configurações." : "Arquivo travado: o jogo não consegue mais desfazer o preset.", "Success");
+                        ShowGaming();
+                    }
+                    catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException) { ShowToast(preset.Name, ex.Message, "Danger"); }
+                };
+                actions.Children.Add(lockButton);
             }
             DockPanel.SetDock(actions, Dock.Bottom); body.Children.Add(actions);
 
@@ -192,9 +208,63 @@ public partial class MainWindow
         var summary = Label("Vale para todos os jogos. Perfis específicos de jogo no painel da NVIDIA continuam tendo prioridade.", 12, true);
         summary.Margin = new Thickness(0); summary.VerticalAlignment = VerticalAlignment.Center;
         panel.Children.Add(ActionBar(summary, buttons.ToArray()));
+        panel.Children.Add(NvidiaGameProfileRow(() => checks.Where(c => c.Check.IsChecked == true).Select(c => c.Id).ToList()));
         var card = Surface(panel);
         card.SetResourceReference(Border.BackgroundProperty, "HeroBrush");
         return card;
+    }
+
+    private string _nvidiaGameChoice = GameConfigService.Presets[0].Id;
+
+    /// <summary>
+    /// O perfil que a NVIDIA traz para cada jogo tem prioridade sobre o global: aplicar só nele garante o valor
+    /// naquele jogo, sem mexer nos demais. Usa as mesmas configurações marcadas acima.
+    /// </summary>
+    private FrameworkElement NvidiaGameProfileRow(Func<List<uint>> selectedIds)
+    {
+        var box = new StackPanel { Margin = new Thickness(0, 18, 0, 0) };
+        var title = Label("Só para um jogo", 13.5); title.FontWeight = FontWeights.SemiBold; title.Margin = new Thickness(0, 0, 0, 4);
+        box.Children.Add(title);
+        var hint = Label("Grava as configurações marcadas no perfil que o driver tem para o jogo escolhido. Útil quando o perfil do jogo sobrepõe o global.", 12, true);
+        hint.Margin = new Thickness(0, 0, 0, 10);
+        box.Children.Add(hint);
+
+        var preset = GameConfigService.Presets.FirstOrDefault(p => p.Id == _nvidiaGameChoice) ?? GameConfigService.Presets[0];
+        var exe = preset.Processes[0] + ".exe";
+        var combo = new ComboBox { Width = 220, Height = 34, VerticalAlignment = VerticalAlignment.Center, Padding = new Thickness(8, 5, 8, 5) };
+        foreach (var p in GameConfigService.Presets) combo.Items.Add(new ComboBoxItem { Content = p.Name, Tag = p.Id, IsSelected = p.Id == preset.Id });
+        combo.SelectionChanged += (_, _) => { if (combo.SelectedItem is ComboBoxItem { Tag: string id } && id != _nvidiaGameChoice) { _nvidiaGameChoice = id; ShowGaming(); } };
+
+        var applied = NvidiaProfileService.IsAppliedToGame(exe);
+        var apply = IconButton(Glyphs.Check, applied ? "Reaplicar no jogo" : "Aplicar no jogo");
+        apply.Click += async (_, _) =>
+        {
+            var ids = selectedIds();
+            if (ids.Count == 0) { ShowToast("Perfil NVIDIA", "Marque pelo menos uma configuração.", "Warning"); return; }
+            var found = true;
+            await ExecuteTrackedAsync($"Aplicando perfil NVIDIA no {preset.Name}", async _ => found = await Task.Run(() => new NvidiaProfileService(_log).ApplyToGame(exe, preset.Name, ids)));
+            if (!found) ShowToast(preset.Name, "O driver não tem um perfil para este jogo; o perfil global já vale para ele.", "Info");
+            if (_currentPage == "gaming") ShowGaming();
+        };
+        var row = new WrapPanel { VerticalAlignment = VerticalAlignment.Center };
+        row.Children.Add(combo);
+        apply.Margin = new Thickness(10, 0, 0, 0);
+        row.Children.Add(apply);
+        if (applied)
+        {
+            var restore = IconButton(Glyphs.Undo, "Restaurar o jogo");
+            restore.Margin = new Thickness(8, 0, 0, 0);
+            restore.Click += async (_, _) =>
+            {
+                await ExecuteTrackedAsync($"Restaurando o perfil NVIDIA do {preset.Name}", async _ => await Task.Run(() => new NvidiaProfileService(_log).RestoreGame(exe, preset.Name)));
+                if (_currentPage == "gaming") ShowGaming();
+            };
+            row.Children.Add(restore);
+            var pill = Pill("Aplicado neste jogo", "Success"); pill.Margin = new Thickness(10, 0, 0, 0); pill.VerticalAlignment = VerticalAlignment.Center;
+            row.Children.Add(pill);
+        }
+        box.Children.Add(row);
+        return box;
     }
 
     // ================= Windows Defender =================

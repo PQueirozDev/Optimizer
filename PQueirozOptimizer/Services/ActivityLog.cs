@@ -28,7 +28,8 @@ public sealed class ActivityLog
     {
         lock (_gate)
         {
-            try { return File.Exists(_path) ? File.ReadLines(_path).TakeLast(150).ToArray() : Array.Empty<string>(); }
+            // Versões anteriores gravavam o plano interno do script ("[PLANO] {json}"), que não é para o usuário
+            try { return File.Exists(_path) ? File.ReadLines(_path).Where(l => !l.Contains("] [PLANO] ", StringComparison.Ordinal)).TakeLast(150).ToArray() : Array.Empty<string>(); }
             catch (IOException) { return Array.Empty<string>(); }
             catch (UnauthorizedAccessException) { return Array.Empty<string>(); }
         }

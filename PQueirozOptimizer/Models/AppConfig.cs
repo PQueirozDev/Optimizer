@@ -32,6 +32,10 @@ public class AppConfig
     /// <summary>Tutoriais já vistos ("inicio", "recursos", "modo-jogo"...): cada um aparece só na primeira vez.</summary>
     [JsonPropertyName("completedTutorials")]
     public List<string> CompletedTutorials { get; set; } = new();
+
+    /// <summary>Minimizar esconde a janela e deixa só o ícone perto do relógio.</summary>
+    [JsonPropertyName("minimizeToTray")]
+    public bool MinimizeToTray { get; set; }
 }
 
 public class OptimizationProfile

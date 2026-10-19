@@ -327,6 +327,12 @@ public class ConfigService
         Save();
     }
 
+    public void SaveMinimizeToTray(bool enabled)
+    {
+        _config.MinimizeToTray = enabled;
+        Save();
+    }
+
     /// <summary>Preferências de aparência; quem usava o tema claro antigo passa para "Automático".</summary>
     public static AppearanceSettings EffectiveAppearance(AppConfig config)
     {

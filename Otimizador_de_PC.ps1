@@ -22,7 +22,7 @@
 #>
 
 param(
-    [ValidateSet("", "analisar", "inteligente", "padrao", "gamer", "gamerservicos", "debloat", "reverter", "sfc", "dism", "chkdsk", "update", "benchmark", "reparar", "corrupcao")]
+    [ValidateSet("", "analisar", "inteligente", "padrao", "gamer", "gamerservicos", "debloat", "reverter", "reaplicar", "sfc", "dism", "chkdsk", "update", "benchmark", "reparar", "corrupcao")]
     [string]$Operation = "",
     [switch]$UiMode,
     [string]$SelectedStepsBase64 = ""
@@ -63,6 +63,7 @@ $script:DadosDir     = "$env:ProgramData\OtimizadorPC"
 $script:SnapshotDir  = Join-Path $script:DadosDir "Snapshots"
 $script:SnapshotPath = Join-Path $script:SnapshotDir "ultima_otimizacao.json"
 $script:LimiteHistorico = 20
+$script:TocadosSessao = @{}
 
 # Somente estes itens podem ser capturados e restaurados. O Reverter roda como
 # administrador, entao nunca confia cegamente no conteudo do arquivo de backup.
@@ -103,7 +104,18 @@ $script:RegistroPermitido = @(
     "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot",
     "HKCU:\Software\Policies\Microsoft\Windows\WindowsAI",
     "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy",
-    "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power"
+    "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power",
+    "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search",
+    "HKLM:\SOFTWARE\Policies\Microsoft\Dsh",
+    "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Feeds",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer",
+    "HKCU:\Software\Microsoft\Siuf\Rules",
+    "HKCU:\Software\Policies\Microsoft\Assistance\Client\1.0",
+    "HKCU:\Software\Microsoft\InputPersonalization",
+    "HKCU:\Software\Microsoft\InputPersonalization\TrainedDataStore",
+    "HKLM:\SOFTWARE\Policies\Microsoft\Windows\HandwritingErrorReports",
+    "HKLM:\SOFTWARE\Policies\Microsoft\FindMyDevice",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications"
 )
 $script:TarefasPermitidas = @(
     "\Microsoft\Windows\Application Experience\Microsoft Compatibility Appraiser",
@@ -340,6 +352,7 @@ function Iniciar-Snapshot($nome) {
         }
     }
     Limpar-HistoricoAntigo
+    $script:TocadosSessao = @{}
     $script:ContAplicados = 0
     $script:ContPulados   = 0
     $script:ContFalhas    = 0
@@ -403,10 +416,71 @@ function Salvar-Snapshot {
     } Catch { throw "Nao foi possivel salvar o backup: $($_.Exception.Message)" }
 }
 
+# Fim de uma otimizacao concluida: guarda o valor que cada chave mexida nesta sessao ficou. O app compara
+# com o registro depois para avisar quando uma atualizacao do Windows desfez o ajuste. So roda no fim: numa
+# execucao cancelada os itens ficam sem valor aplicado e nao geram aviso (nem reaplicacao) errados.
+function Registrar-ValoresAplicados {
+    foreach ($item in $script:SnapshotAtual) {
+        if ($item.Tipo -ne "Registro" -or -not $script:TocadosSessao.ContainsKey("$($item.Caminho)|$($item.Nome)")) { continue }
+        $existe = $false; $valor = $null; $tipo = $null
+        $key = Get-Item -LiteralPath $item.Caminho -ErrorAction SilentlyContinue
+        if ($key -and $key.GetValueNames() -contains $item.Nome) {
+            $existe = $true
+            $valor = $key.GetValue($item.Nome, $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+            $tipo = $key.GetValueKind($item.Nome).ToString()
+        }
+        $item | Add-Member -NotePropertyName AplicadoExiste -NotePropertyValue $existe -Force
+        $item | Add-Member -NotePropertyName ValorAplicado -NotePropertyValue $valor -Force
+        $item | Add-Member -NotePropertyName TipoAplicado -NotePropertyValue $tipo -Force
+    }
+}
+
+function Finalizar-Snapshot {
+    Registrar-ValoresAplicados
+    Salvar-Snapshot
+}
+
+# Grava de novo o valor aplicado das chaves que o Windows (ou outro programa) trocou depois da otimizacao.
+# Usa a mesma lista permitida do Reverter: o arquivo de backup nunca e confiado cegamente.
+function Reaplicar-AjustesDesfeitos {
+    if (-not (Test-Path -LiteralPath $script:SnapshotPath)) { Write-Host "[INFO] Nenhuma otimizacao registrada para reaplicar."; return }
+    $snapshot = Get-Content -LiteralPath $script:SnapshotPath -Raw | ConvertFrom-Json
+    $script:ContAplicados = 0; $script:ContFalhas = 0
+    foreach ($item in @($snapshot.Itens | Where-Object { $_ -and $_.Tipo -eq "Registro" -and $null -ne $_.AplicadoExiste })) {
+        if (-not (Test-ItemPermitido $item) -or ($item.AplicadoExiste -and $item.TipoAplicado -and $script:TiposRegistroPermitidos -notcontains $item.TipoAplicado)) {
+            Write-Host "[IGNORADO] Item fora da lista permitida: $($item.Caminho) $($item.Nome)"; continue
+        }
+        Try {
+            if ($item.AplicadoExiste) {
+                $value = $item.ValorAplicado
+                if ($item.TipoAplicado -eq 'Binary') { $value = [byte[]]$value }
+                if ($item.TipoAplicado -eq 'MultiString') { $value = [string[]]$value }
+                Garantir-Chave $item.Caminho
+                New-ItemProperty -Path $item.Caminho -Name $item.Nome -Value $value -PropertyType $item.TipoAplicado -Force -ErrorAction Stop | Out-Null
+            } elseif ((Get-ItemProperty -Path $item.Caminho -ErrorAction SilentlyContinue).PSObject.Properties.Name -contains $item.Nome) {
+                Remove-ItemProperty -Path $item.Caminho -Name $item.Nome -ErrorAction Stop
+            } else { continue }
+            $script:ContAplicados++
+            Write-Resultado $true "Reaplicado: $($item.Nome)"
+        } Catch {
+            $script:ContFalhas++
+            Write-Host "[FALHA] $($item.Nome): $($_.Exception.Message)"
+        }
+    }
+    Write-Host "[INFO] Ajustes reaplicados: $script:ContAplicados, falhas: $script:ContFalhas"
+}
+
 # Guarda o valor ATUAL de uma chave/valor de registro antes de ele ser alterado
 function Capturar-Registro($caminho, $nome) {
     if (-not (Test-RegistroPermitido $caminho $nome)) { throw "Chave de registro fora da lista permitida: $caminho" }
-    if (Ja-Capturado "Registro" "$caminho|$nome") { return }
+    $script:TocadosSessao["$caminho|$nome"] = $true
+    if (Ja-Capturado "Registro" "$caminho|$nome") {
+        # Esta sessao vai gravar de novo: o valor aplicado antigo deixa de valer ate a sessao terminar
+        foreach ($item in $script:SnapshotAtual | Where-Object { $_.Tipo -eq "Registro" -and "$($_.Caminho)|$($_.Nome)" -eq "$caminho|$nome" }) {
+            $item.PSObject.Properties.Remove('AplicadoExiste'); $item.PSObject.Properties.Remove('ValorAplicado'); $item.PSObject.Properties.Remove('TipoAplicado')
+        }
+        return
+    }
     $existia = $false
     $valorAnterior = $null
     $tipoAnterior = $null
@@ -694,7 +768,8 @@ function Otimizar-Padrao {
                 $cdm = "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
                 foreach ($nome in @("SilentInstalledAppsEnabled", "PreInstalledAppsEnabled", "OemPreInstalledAppsEnabled", "SystemPaneSuggestionsEnabled",
                                     "SoftLandingEnabled", "SubscribedContent-338388Enabled", "SubscribedContent-338389Enabled",
-                                    "SubscribedContent-353694Enabled", "SubscribedContent-353696Enabled")) {
+                                    "SubscribedContent-353694Enabled", "SubscribedContent-353696Enabled", "SubscribedContent-353698Enabled",
+                                    "SubscribedContent-338387Enabled", "PreInstalledAppsEverEnabled")) {
                     Set-PoliticaDword $cdm $nome 0
                 }
                 Set-PoliticaDword "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "ShowSyncProviderNotifications" 0
@@ -716,7 +791,7 @@ function Otimizar-Padrao {
             } }
     )
     Executar-Etapas "Otimizacao Padrao" $etapas
-    Salvar-Snapshot
+    Finalizar-Snapshot
 
     Write-Host ""
     Linha "="
@@ -1055,7 +1130,7 @@ function Otimizar-Gamer {
             } }
     )
     Executar-Etapas "Otimizacao Avancada" $etapas
-    Salvar-Snapshot
+    Finalizar-Snapshot
 
     Write-Host ""
     Linha "="
@@ -1300,6 +1375,9 @@ function Otimizar-Debloat {
             Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI" "DisableAIDataAnalysis" 1
             Set-PoliticaDword "HKCU:\Software\Policies\Microsoft\Windows\WindowsAI" "DisableAIDataAnalysis" 1
             Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI" "AllowRecallEnablement" 0
+            # Politica antiga (pre-lancamento) que alguns builds ainda leem para salvar as capturas
+            Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI" "TurnOffSavingSnapshots" 1
+            Set-PoliticaDword "HKCU:\Software\Policies\Microsoft\Windows\WindowsAI" "TurnOffSavingSnapshots" 1
         } $modoRapido
 
     # 14c. Click To Do (sobreposicao de IA que analisa o que esta na tela)
@@ -1310,6 +1388,79 @@ function Otimizar-Debloat {
             # requer: win11-24h2
             Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI" "DisableClickToDo" 1
             Set-PoliticaDword "HKCU:\Software\Policies\Microsoft\Windows\WindowsAI" "DisableClickToDo" 1
+        } $modoRapido
+
+    # 14d. Cortana e pesquisa na nuvem (politicas; valem mesmo sem o app da Cortana)
+    Executar-Se-Confirmado "Desativar a Cortana e a pesquisa na nuvem do menu Iniciar?" `
+        "Cortana e pesquisa na nuvem desativadas" `
+        {
+            # risco: moderado
+            $busca = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search"
+            Set-PoliticaDword $busca "AllowCortana" 0
+            Set-PoliticaDword $busca "AllowCortanaAboveLock" 0
+            Set-PoliticaDword $busca "AllowCloudSearch" 0
+            Set-PoliticaDword $busca "AllowSearchToUseLocation" 0
+            Set-PoliticaDword $busca "ConnectedSearchUseWeb" 0
+        } $modoRapido
+
+    # 14e. Noticias e interesses / Widgets (politica, sem remover o app)
+    Executar-Se-Confirmado "Desativar Noticias e interesses / Widgets na barra de tarefas?" `
+        "Noticias e interesses desativados" `
+        {
+            # risco: moderado
+            Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Dsh" "AllowNewsAndInterests" 0
+            Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Feeds" "EnableFeeds" 0
+        } $modoRapido
+
+    # 14f. Botao "Reunir agora" do Skype (so existe no Windows 10)
+    Executar-Se-Confirmado "Ocultar o botao Reunir agora da barra de tarefas?" `
+        "Botao Reunir agora oculto" `
+        {
+            # risco: moderado
+            # requer: win10
+            Set-PoliticaDword "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" "HideSCAMeetNow" 1
+        } $modoRapido
+
+    # 14g. Pesquisas de feedback e telemetria extra
+    Executar-Se-Confirmado "Desativar pesquisas de feedback e dados extras da telemetria (nome do PC, inventario de apps)?" `
+        "Feedback e telemetria extra desativados" `
+        {
+            # risco: moderado
+            Set-PoliticaDword "HKCU:\Software\Microsoft\Siuf\Rules" "NumberOfSIUFInPeriod" 0
+            $coleta = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"
+            Set-PoliticaDword $coleta "DoNotShowFeedbackNotifications" 1
+            Set-PoliticaDword $coleta "AllowDeviceNameInTelemetry" 0
+            Set-PoliticaDword $coleta "AllowCommercialDataPipeline" 0
+            Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppCompat" "AITEnable" 0
+            Set-PoliticaDword "HKCU:\Software\Policies\Microsoft\Assistance\Client\1.0" "NoExplicitFeedback" 1
+        } $modoRapido
+
+    # 14h. Coleta de escrita a mao e digitacao (personalizacao de entrada)
+    Executar-Se-Confirmado "Desativar a coleta de escrita e digitacao para personalizar o teclado?" `
+        "Coleta de escrita e digitacao desativada" `
+        {
+            # risco: moderado
+            Set-PoliticaDword "HKCU:\Software\Microsoft\InputPersonalization" "RestrictImplicitInkCollection" 1
+            Set-PoliticaDword "HKCU:\Software\Microsoft\InputPersonalization" "RestrictImplicitTextCollection" 1
+            Set-PoliticaDword "HKCU:\Software\Microsoft\InputPersonalization\TrainedDataStore" "HarvestContacts" 0
+            Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\Windows\HandwritingErrorReports" "PreventHandwritingErrorReports" 1
+        } $modoRapido
+
+    # 14i. Localizar meu dispositivo
+    Executar-Se-Confirmado "Desativar o Localizar meu dispositivo (envia a localizacao do PC para a conta Microsoft)?" `
+        "Localizar meu dispositivo desativado" `
+        {
+            # risco: moderado
+            Set-PoliticaDword "HKLM:\SOFTWARE\Policies\Microsoft\FindMyDevice" "AllowFindMyDevice" 0
+        } $modoRapido
+
+    # 14j. Apps da Microsoft Store em segundo plano
+    Executar-Se-Confirmado "Bloquear apps da Microsoft Store em segundo plano (economiza RAM; esses apps param de mandar notificacoes fechados)?" `
+        "Apps em segundo plano bloqueados" `
+        {
+            # risco: moderado
+            Set-PoliticaDword "HKCU:\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications" "GlobalUserDisabled" 1
+            Set-PoliticaDword "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" "BackgroundAppGlobalToggle" 0
         } $modoRapido
 
     # 15. Efeitos visuais
@@ -1330,7 +1481,7 @@ function Otimizar-Debloat {
             Remove-Item "$env:SystemRoot\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
         } $modoRapido
 
-    Salvar-Snapshot
+    Finalizar-Snapshot
 
     Write-Host ""
     Linha "="
@@ -2289,7 +2440,7 @@ function Otimizar-Inteligente {
     $etapas += @{ Nome = "Verificando arquivos do sistema (sfc /verifyonly)"; Risco = "seguro"; Acao = { sfc /verifyonly } }
 
     Executar-Etapas "Otimizacao Inteligente" $etapas
-    Salvar-Snapshot
+    Finalizar-Snapshot
 
     Write-Host ""
     Linha "="
@@ -2826,6 +2977,7 @@ try {
             "gamerservicos" { Ativar-ModoSemServicos; Otimizar-Gamer }
             "debloat" { Otimizar-Debloat }
             "reverter" { Reverter-UltimaOtimizacao }
+            "reaplicar" { Reaplicar-AjustesDesfeitos }
             "sfc" { Executar-VerificarSFC }
             "dism" { Executar-RepararDISM }
             "chkdsk" { Executar-VerificarDisco }

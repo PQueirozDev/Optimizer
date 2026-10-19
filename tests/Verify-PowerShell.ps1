@@ -20,6 +20,19 @@ foreach ($assignment in $ast.EndBlock.Statements | Where-Object { $_ -is [System
     . ([scriptblock]::Create($assignment.Extent.Text))
 }
 if (-not $script:ServicosPermitidos) { throw 'Allowlists were not loaded' }
+# Every registry value a step writes through the capture helpers must be in the allowlist; otherwise the step
+# fails at runtime with "fora da lista permitida" (tests never run the real steps, so check the source).
+$scriptLines = Get-Content -LiteralPath (Join-Path $projectRoot 'Otimizador_de_PC.ps1')
+$variables = @{}
+$outside = @()
+foreach ($line in $scriptLines) {
+    if ($line -match '^\s*\$(\w+)\s*=\s*"(HK(?:LM|CU):\\[^"$]+)"\s*$') { $variables[$Matches[1]] = $Matches[2]; continue }
+    if ($line -notmatch '\b(Set-PoliticaDword|Capturar-Registro)\s+("(?<lit>HK[^"]+)"|\$(?<var>\w+))\s+"(?<name>[^"]+)"') { continue }
+    $path = if ($Matches['lit']) { $Matches['lit'] } else { $variables[$Matches['var']] }
+    if (-not $path -or $path -match '\$') { continue }
+    if (-not (Test-RegistroPermitido $path $Matches['name'])) { $outside += "$path|$($Matches['name'])" }
+}
+Assert ($outside.Count -eq 0) ("Every captured registry value is in the allowlist" + $(if ($outside) { ": " + ($outside -join '; ') }))
 $UiMode = $true
 $script:SnapshotDir = [IO.Path]::GetFullPath($OutputDirectory)
 if (Test-Path -LiteralPath $script:SnapshotDir) { Get-ChildItem -LiteralPath $script:SnapshotDir -Filter '*.json' | Remove-Item -Force }
@@ -122,6 +135,28 @@ New-Item -Path "$chaveTeste\Sub" -Force | Out-Null
 Set-ItemProperty $chaveTeste -Name 'Existente' -Value 1 -Type DWord
 Garantir-Chave $chaveTeste
 Assert (((Get-ItemProperty $chaveTeste).Existente -eq 1) -and (Test-Path "$chaveTeste\Sub")) 'Garantir-Chave preserves existing values and subkeys'
+
+# Valor aplicado: gravado só ao finalizar; o Windows desfaz; reaplicar volta ao valor da otimização
+$script:RegistroPermitido += $chaveTeste
+Remove-Item -LiteralPath $script:SnapshotPath -Force -ErrorAction SilentlyContinue
+Iniciar-Snapshot 'Aplicado'
+Set-PoliticaDword $chaveTeste 'Ajuste' 5
+Finalizar-Snapshot
+$salvo = (Get-Content -LiteralPath $script:SnapshotPath -Raw | ConvertFrom-Json).Itens | Where-Object Nome -eq 'Ajuste'
+Assert ($salvo.AplicadoExiste -and $salvo.ValorAplicado -eq 5 -and $salvo.TipoAplicado -eq 'DWord' -and -not $salvo.Existia) 'Finishing an optimization records the applied value next to the original'
+Set-ItemProperty $chaveTeste -Name 'Ajuste' -Value 1 -Type DWord
+Reaplicar-AjustesDesfeitos
+Assert ((Get-ItemProperty $chaveTeste).Ajuste -eq 5 -and $script:ContAplicados -eq 1) 'Reapply writes back the value Windows changed'
+# Nova sessão interrompida antes do fim: o valor aplicado antigo deixa de valer e nada é reaplicado
+Iniciar-Snapshot 'Cancelada'
+Set-PoliticaDword $chaveTeste 'Ajuste' 7
+Salvar-Snapshot
+$salvo = (Get-Content -LiteralPath $script:SnapshotPath -Raw | ConvertFrom-Json).Itens | Where-Object Nome -eq 'Ajuste'
+Assert ($null -eq $salvo.AplicadoExiste -and -not $salvo.Existia) 'An unfinished session leaves no stale applied value (and keeps the original)'
+Reaplicar-AjustesDesfeitos
+Assert ((Get-ItemProperty $chaveTeste).Ajuste -eq 7) 'Reapply never writes a value from an unfinished session'
+Remove-Item -LiteralPath $script:SnapshotPath -Force -ErrorAction SilentlyContinue
+$script:RegistroPermitido = @($script:RegistroPermitido | Where-Object { $_ -ne $chaveTeste })
 Remove-Item $chaveTeste -Recurse -Force
 $ast2 = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $projectRoot 'Otimizador_de_PC.ps1'), [ref]$null, [ref]$null)
 function Test-ProtegidoPorTestPath($node) {

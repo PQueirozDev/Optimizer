@@ -11,6 +11,8 @@ public partial class MainWindow
     private WindowsCustomizeService? _customize;
     private WindowsCustomizeService Customize => _customize ??= new WindowsCustomizeService(_log);
     private bool _explorerRestartPending;
+    private Action? _refreshCustomizeSwitches;
+    private bool _customizeActivationHooked;
 
     private void ShowCustomize()
     {
@@ -110,6 +112,28 @@ public partial class MainWindow
                 panel.Children.Add(SettingRow(setting.Title, setting.Description, control));
             }
             root.Children.Add(Surface(panel));
+        }
+
+        // Voltar ao app (depois de mexer nas Configurações do Windows, por exemplo) relê cada interruptor no lugar,
+        // sem redesenhar a página nem perder a rolagem; o que está gravando agora fica como está
+        _refreshCustomizeSwitches = () =>
+        {
+            foreach (var (setting, check) in switches)
+            {
+                if (check.Tag is true) continue;
+                bool value;
+                try { value = setting.Read(); }
+                catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException) { continue; }
+                if (check.IsChecked == value) continue;
+                applying = true;
+                try { check.IsChecked = value; }
+                finally { applying = false; }
+            }
+        };
+        if (!_customizeActivationHooked)
+        {
+            _customizeActivationHooked = true;
+            Activated += (_, _) => { if (_currentPage == "customize") _refreshCustomizeSwitches?.Invoke(); };
         }
 
         recommended.Click += async (_, _) =>

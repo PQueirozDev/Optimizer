@@ -182,9 +182,20 @@ internal static class Program
             service.Apply(valorant, "otimizado");
             Assert(Value(accountFile, "EAresIntSettingName::UIQuality") == "0" && Value(accountFile, "EAresIntSettingName::AnisotropicFiltering") == "4" && GameConfigService.AppliedProfile(valorant) == "otimizado",
                 "VALORANT: troca para o perfil Otimizado");
+            // Travar: os dois arquivos ficam somente leitura; reaplicar grava e mantém a trava
+            service.SetLocked(valorant, true);
+            Assert(GameConfigService.IsLocked(valorant) && File.GetAttributes(gameFile).HasFlag(FileAttributes.ReadOnly), "Travar deixa os arquivos do jogo como somente leitura");
+            service.Apply(valorant, "qrz");
+            Assert(GameConfigService.IsLocked(valorant) && Value(accountFile, "EAresIntSettingName::UIQuality") == "2", "Reaplicar num arquivo travado grava e mantém a trava");
             service.Restore(valorant);
             Assert(File.ReadAllBytes(gameFile).SequenceEqual(originalGame) && File.ReadAllBytes(accountFile).SequenceEqual(originalAccount) && GameConfigService.AppliedProfile(valorant) is null,
                 "VALORANT: restaurar devolve os dois arquivos originais, byte a byte");
+            Assert(!GameConfigService.IsLocked(valorant), "Restaurar destrava os arquivos");
+            // Original já somente leitura (truque de guias): a cópia herda o atributo e o Restaurar ainda consegue apagá-la
+            File.SetAttributes(gameFile, FileAttributes.ReadOnly);
+            service.Apply(valorant, "qrz");
+            service.Restore(valorant);
+            Assert(!GameConfigService.HasBackup(valorant) && File.ReadAllBytes(gameFile).SequenceEqual(originalGame), "Restaurar funciona com o arquivo original somente leitura");
         }
         finally
         {
@@ -280,10 +291,77 @@ internal static class Program
             });
             store.Apply("teste", "Teste", new[] { new RegistryWrite(Microsoft.Win32.RegistryHive.CurrentUser, key, "Existente", Microsoft.Win32.RegistryValueKind.DWord, 11) });
             using (var k = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(key)) Assert((int)k!.GetValue("Existente")! == 11 && (string)k.GetValue("Novo")! == "x" && store.IsApplied("teste"), "Ajuste aplicado e backup criado");
+            Assert(store.ListReset().Count == 0, "Ajuste em vigor não aparece como desfeito");
+            // O "Windows" troca o valor depois: o ajuste vira desfeito e pode ser reaplicado sem perder o original
+            using (var k = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(key, true)) k!.SetValue("Existente", 1, Microsoft.Win32.RegistryValueKind.DWord);
+            Assert(store.ListReset().Select(t => t.Id).SequenceEqual(new[] { "teste" }) && !store.IsApplied("teste"), "Ajuste trocado por fora aparece como desfeito pelo Windows");
+            var elevated = new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent()).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+            if (elevated)
+            {
+                Assert(store.Reapply("teste") == 1 && store.IsApplied("teste") && store.ListReset().Count == 0, "Reaplicar grava de novo só o valor desfeito");
+            }
+            else
+            {
+                // Sem elevação o backup pertence ao usuário comum: reaplicar como administrador seria gravar o que qualquer um plantou
+                var refused = false;
+                try { store.Reapply("teste"); } catch (UnauthorizedAccessException) { refused = true; }
+                Assert(refused, "Reaplicar recusa backup que não pertence aos administradores");
+                using (var k = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(key, true)) k!.SetValue("Existente", 11, Microsoft.Win32.RegistryValueKind.DWord);
+            }
             store.Revert("teste", (_, _, name) => name == "Existente");
             using (var k = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(key)) Assert((int)k!.GetValue("Existente")! == 5 && k.GetValue("Novo") is not null && !store.IsApplied("teste"), "Reverter restaura o valor original e ignora itens fora da lista permitida");
         }
         finally { Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(key, false); }
+
+        var monitor = DisplayService.Primary();
+        Assert(monitor is null || (monitor.MaxHz >= monitor.CurrentHz && monitor.Width > 0 && monitor.BelowMax == (monitor.MaxHz > monitor.CurrentHz)), "Taxa do monitor principal lida (atual nunca acima da máxima)");
+        if (monitor != null) Console.WriteLine($"  Monitor: {monitor.Width}x{monitor.Height} {monitor.CurrentHz} Hz (máx. {monitor.MaxHz} Hz)");
+
+        // Presets Unreal novos: só grupos de qualidade e chaves da seção do próprio jogo, sem mexer no resto do arquivo
+        var pubg = GameConfigService.Presets.Single(p => p.Id == "pubg");
+        var (pubgText, pubgChanges) = GameConfigService.SetIniValues("[/Script/TslGame.TslGameUserSettings]\r\nbUseVSync=True\r\nMouseSensitivity=50\r\n\r\n[ScalabilityGroups]\r\nsg.ShadowQuality=3\r\nsg.TextureQuality=3\r\n", pubg.Values);
+        Assert(pubgChanges == pubg.Values.Length && pubgText.Contains("bUseVSync=False") && pubgText.Contains("MouseSensitivity=50") && pubgText.Contains("sg.ShadowQuality=0") && pubgText.Contains("sg.TextureQuality=3"),
+            "Preset do PUBG troca sombras e V-Sync e preserva texturas e sensibilidade");
+        Assert(new[] { "pubg", "thefinals", "marvelrivals", "deadbydaylight", "overwatch", "rainbowsix", "dota2", "deadlock", "rust", "battlefield6" }.All(id => GameArtService.SteamAppId(id) is not null), "Jogos novos têm capa da Steam");
+        Assert(GameConfigService.Presets.Select(p => p.Id).Distinct().Count() == GameConfigService.Presets.Length, "IDs dos presets são únicos");
+
+        // Formatos novos: Overwatch (Chave = "valor"), Rust e Battlefield (chave valor) e Tarkov (JSON)
+        var (owText, owChanges) = GameConfigService.SetIniValues("[Render.13]\r\nDirectionalShadowDetail = \"2\"\r\nFrameRateCap = \"300.000000\"\r\n", new ConfigValue[]
+            { new("Render.13", "DirectionalShadowDetail", "0"), new("Render.13", "LightQuality", "0"), new("Cinematics.1", "ShowIntro", "0") }, quoted: true);
+        Assert(owChanges == 3 && owText.Contains("DirectionalShadowDetail = \"0\"") && owText.Contains("FrameRateCap = \"300.000000\"") && owText.Contains("LightQuality = \"0\"") && owText.Contains("[Cinematics.1]\r\nShowIntro = \"0\""),
+            "Overwatch: valores entre aspas trocados e acrescentados, o resto preservado");
+        var (rustText, rustChanges) = GameConfigService.SetSpacedValues("graphics.vsync \"1\"\r\nfps.limit \"144\"\r\n", new ConfigValue[] { new("", "graphics.vsync", "0"), new("", "effects.ao", "False") });
+        Assert(rustChanges == 2 && rustText.Contains("graphics.vsync \"0\"") && rustText.Contains("fps.limit \"144\"") && rustText.Contains("effects.ao \"False\""), "Rust: linhas chave \"valor\" mantêm as aspas");
+        var (bfText, _) = GameConfigService.SetSpacedValues("GstRender.VSyncMode 1\r\nGstRender.Dx12Enabled 1\r\n", new ConfigValue[] { new("", "GstRender.VSyncMode", "0"), new("", "GstRender.FilmGrain", "0") });
+        Assert(bfText.Contains("GstRender.VSyncMode 0") && bfText.Contains("GstRender.Dx12Enabled 1") && bfText.Contains("GstRender.FilmGrain 0") && !bfText.Contains('"'), "Battlefield: linhas chave valor sem aspas");
+        var (tarkovText, tarkovChanges) = GameConfigService.SetJsonValues("{\"ZBlur\":true,\"ShadowsQuality\":2,\"Ssao\":\"High\",\"Other\":5}", new ConfigValue[]
+            { new("", "ZBlur", "false"), new("", "ShadowsQuality", "0"), new("", "Ssao", "Off") });
+        using (var tarkovJson = JsonDocument.Parse(tarkovText))
+            Assert(tarkovChanges == 3 && tarkovJson.RootElement.GetProperty("ZBlur").ValueKind == JsonValueKind.False && tarkovJson.RootElement.GetProperty("ShadowsQuality").GetInt32() == 0
+                && tarkovJson.RootElement.GetProperty("Ssao").GetString() == "Off" && tarkovJson.RootElement.GetProperty("Other").GetInt32() == 5, "Tarkov: JSON mantém os tipos (booleano, número, texto) e o resto");
+        foreach (var preset in GameConfigService.Presets.Where(p => GameConfigService.ConfigPath(p) != null)) Console.WriteLine($"  Jogo encontrado neste PC: {preset.Name} → {GameConfigService.ConfigPath(preset)}");
+        Console.WriteLine($"  Bibliotecas da Steam: {string.Join(" | ", GameConfigService.SteamLibraries())}");
+
+        // Valores das otimizações do script: só o que tem valor aplicado e foi trocado depois conta como desfeito
+        const string driftKey = @"Software\PQueirozOptimizer-Deriva";
+        using (var k = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(driftKey)) { k.SetValue("Igual", 5, Microsoft.Win32.RegistryValueKind.DWord); k.SetValue("Trocado", 1, Microsoft.Win32.RegistryValueKind.DWord); k.SetValue("Texto", "a"); k.SetValue("Grande", -1, Microsoft.Win32.RegistryValueKind.DWord); }
+        try
+        {
+            var driftFile = Path.Combine(root, "deriva.json");
+            string Item(string name, string applied) => $"{{\"Tipo\":\"Registro\",\"Etapa\":\"Etapa {name}\",\"Caminho\":\"HKCU:\\\\{driftKey.Replace("\\", "\\\\")}\",\"Nome\":\"{name}\",\"Existia\":false{applied}}}";
+            File.WriteAllText(driftFile, "{\"Nome\":\"Teste\",\"Itens\":[" + string.Join(",",
+                Item("Igual", ",\"AplicadoExiste\":true,\"ValorAplicado\":5,\"TipoAplicado\":\"DWord\""),
+                Item("Trocado", ",\"AplicadoExiste\":true,\"ValorAplicado\":0,\"TipoAplicado\":\"DWord\""),
+                Item("Texto", ",\"AplicadoExiste\":true,\"ValorAplicado\":\"a\",\"TipoAplicado\":\"String\""),
+                Item("Grande", ",\"AplicadoExiste\":true,\"ValorAplicado\":4294967295,\"TipoAplicado\":\"DWord\""),
+                Item("Apagado", ",\"AplicadoExiste\":false,\"ValorAplicado\":null,\"TipoAplicado\":null"),
+                Item("SemValorAplicado", ""),
+                Item("Recriado", ",\"AplicadoExiste\":false,\"ValorAplicado\":null,\"TipoAplicado\":null")) + "]}");
+            using (var k = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(driftKey, true)) k!.SetValue("Recriado", 3, Microsoft.Win32.RegistryValueKind.DWord);
+            var drifted = ScriptTweakDrift.Find(driftFile).Select(d => d.Name).OrderBy(n => n).ToList();
+            Assert(drifted.SequenceEqual(new[] { "Recriado", "Trocado" }), $"Otimizações desfeitas: só valores trocados ou recriados depois (achados: {string.Join(", ", drifted)})");
+        }
+        finally { Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(driftKey, false); }
 
         // BIOS (formato do SCEWIN): mover o "*" só altera o item escolhido e preserva o resto do bloco
         var nvram = "// AMISCE Utility. Ver 5.05\r\nHIICrc32= 8DE3D5A6\r\n\r\n" +
@@ -321,6 +399,11 @@ internal static class Program
             var current = NvidiaProfileService.ReadCurrent();
             Assert(current.Count == NvidiaProfileService.Settings.Length, "Configurações NVIDIA lidas do driver");
             foreach (var s in NvidiaProfileService.Settings) Console.WriteLine($"  NVIDIA {s.Title}: {s.Describe(current[s.Id])}");
+            // Perfil por jogo (só leitura): o driver traz perfil pronto para jogos conhecidos e não para um nome inventado
+            var cs2Profile = NvidiaProfileService.ReadGame("cs2.exe");
+            Assert(cs2Profile is { } p && p.Count == NvidiaProfileService.Settings.Length, "Perfil NVIDIA do jogo encontrado pelo executável (cs2.exe)");
+            Assert(NvidiaProfileService.ReadGame("pqo-executavel-inexistente-123.exe") is null, "Executável sem perfil no driver é reconhecido como ausente");
+            Console.WriteLine($"  NVIDIA perfil cs2.exe: {string.Join(", ", NvidiaProfileService.Settings.Select(s => $"{s.Title}={s.Describe(cs2Profile![s.Id])}"))}");
         }
         else Console.WriteLine("SKIP NVIDIA indisponível neste PC");
         // As máquinas do GitHub Actions não têm placa de vídeo
@@ -482,7 +565,7 @@ internal static class Program
             Assert(LicenseService.ExtractKey($"Sua chave:\n{sampleKey[..60]}\n{sampleKey[60..]}\nObrigado!") == sampleKey, "Chave extraída de mensagem com quebras de linha");
             Assert(LicenseService.ExtractKey("sem chave aqui") is null, "Texto sem chave é ignorado");
             Assert(!new LicenseService().TryActivate(sampleKey, out _, out _), "Chave com assinatura falsa é recusada");
-            Assert(bridge.GetSteps("debloat").Count == 15 + If("win11") + 2 * If("win11-24h2") + If("win11-pre24h2"), "Plano debloat contém as etapas atuais e condições do Windows");
+            Assert(bridge.GetSteps("debloat").Count == 21 + If("win10") + If("win11") + 2 * If("win11-24h2") + If("win11-pre24h2"), "Plano debloat contém as etapas atuais e condições do Windows");
             // O aviso da tela de revisão vem do código da etapa, não de palavras do nome
             StepEffect Effect(string operation, string step) => bridge.GetSteps(operation).First(s => s.Name == step).Effect;
             Assert(Effect("debloat", "Pesquisa na web removida do menu Iniciar") == StepEffect.Backup, "Ajuste de registro com backup não é marcado como irreversível pelo nome");
@@ -850,8 +933,14 @@ internal static class Program
                 typeof(MainWindow).GetField("_gamingTab", flags)!.SetValue(window, 1);
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "gaming" });
                 Render("gaming-games-tall", 1320, 2000);
+                // Perfil NVIDIA inteiro, com a seção "Só para um jogo" no fim
+                typeof(MainWindow).GetField("_gamingTab", flags)!.SetValue(window, 2);
+                typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "gaming" });
+                Render("gaming-nvidia-tall", 1320, 1500);
                 typeof(MainWindow).GetField("_gamingTab", flags)!.SetValue(window, 0);
-                // Assistente de BIOS inteiro e o guia "Ver como configurar" (perfil fixo de teste)
+                typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "settings" });
+                Render("settings-tall", 1320, 3200);
+                // BIOS Advisor inteiro e o guia "Ver como configurar" (perfil fixo de teste)
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "biosadvisor" });
                 Render("biosadvisor-tall", 1320, 4600);
                 var advisorReport = typeof(MainWindow).GetField("_advisorReport", flags)!.GetValue(window)!;

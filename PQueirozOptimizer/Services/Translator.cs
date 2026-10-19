@@ -99,7 +99,7 @@ public static partial class Translator
     private static bool Lookup(string text, out string translated) =>
         RedesignExact.TryGetValue(text, out translated!) || Exact.TryGetValue(text, out translated!) || GamingExact.TryGetValue(text, out translated!) || ExtrasExact.TryGetValue(text, out translated!)
             || ParagonExact.TryGetValue(text, out translated!) || CustomizeExact.TryGetValue(text, out translated!) || PlansExact.TryGetValue(text, out translated!)
-            || V2Exact.TryGetValue(text, out translated!);
+            || V2Exact.TryGetValue(text, out translated!) || ReferencesExact.TryGetValue(text, out translated!);
 
     private static string? TranslateTrimmed(string core)
     {
@@ -107,7 +107,7 @@ public static partial class Translator
 
         // Os padrões da 2.0 vêm primeiro: todos começam com texto fixo, então não engolem frases de outras telas,
         // e os padrões genéricos antigos (vírgulas, parênteses) não os interceptam
-        foreach (var (regex, build) in RedesignPatterns.Concat(V2Patterns).Concat(Patterns).Concat(GamingPatterns).Concat(ExtrasPatterns).Concat(ParagonPatterns).Concat(CustomizePatterns))
+        foreach (var (regex, build) in RedesignPatterns.Concat(V2Patterns).Concat(Patterns).Concat(GamingPatterns).Concat(ExtrasPatterns).Concat(ParagonPatterns).Concat(CustomizePatterns).Concat(ReferencesPatterns))
         {
             var m = regex.Match(core);
             if (m.Success) return build(m);

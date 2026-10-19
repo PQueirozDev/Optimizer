@@ -26,6 +26,20 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v2.2.0", "18/10/2026", new[]
+        {
+            "Personalizar Windows ganhou 14 interruptores novos (Widgets, modo compacto, inicialização sem espera, pausar atualizações por até 1 ano, repetição de tecla sem atraso, Game Bar, tela cheia e outros) e a seção Jogos.",
+            "Debloat com 7 etapas novas de privacidade (Cortana, notícias e interesses, feedback, coleta de escrita, Localizar meu dispositivo e apps em segundo plano). Todas podem ser revertidas.",
+            "Presets de jogos para PUBG, THE FINALS, Marvel Rivals, Dead by Daylight, Overwatch 2, Rainbow Six Siege, Dota 2, Deadlock, Rust, Battlefield 6 e Escape from Tarkov.",
+            "Travar arquivo: deixa a configuração do jogo somente leitura, para o jogo não desfazer o preset ao abrir.",
+            "Perfil NVIDIA também pode ser aplicado só em um jogo, no perfil que o driver já tem para ele.",
+            "Avisos na Visão geral: ajustes que o Windows desfez (com botão Reaplicar), taxa de atualização do monitor abaixo do máximo e relógio do Windows errado.",
+            "Nova categoria de limpeza: cache de shaders da placa de vídeo (desmarcada por padrão).",
+            "Minimizar para a bandeja, em Configurações.",
+            "Enquanto uma otimização roda, o Windows adia o desligamento e mostra o motivo; a instalação limpa de driver continua reiniciando o PC.",
+            "Tentar de novo só as etapas que falharam, no fim de uma otimização.",
+            "Corrigido: o histórico de atividade mostrava linhas internas do script e textos sem tradução para inglês.",
+        }),
         ("v2.1.0", "11/10/2026", new[]
         {
             "Novo visual: tema Azul meia-noite (preto, branco e azul) como padrão, ícone azul e barra lateral em categorias recolhíveis, com o monitor ao vivo e a licença no rodapé.",

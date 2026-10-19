@@ -49,6 +49,13 @@ public sealed class QuickCleanService
         if (File.Exists(memoryDump) && new FileInfo(memoryDump) is { } dump && dump.LastWriteTimeUtc <= DateTime.UtcNow.AddDays(-2))
             categories.Add(new CleanCategory("Despejo de memória completo", windows, new[] { new CleanFile(dump.FullName, dump.Length, dump.LastWriteTimeUtc) }, 0, Extended: true));
 
+        // Shaders compilados pelos drivers e pelo DirectX: corrompidos causam engasgos e travamentos em jogos.
+        // Começa desmarcada porque o primeiro carregamento de cada jogo depois da limpeza recompila tudo.
+        var shaderRoots = new[] { @"NVIDIA\DXCache", @"NVIDIA\GLCache", @"AMD\DxCache", @"AMD\DxcCache", @"AMD\VkCache", @"Intel\ShaderCache", "D3DSCache" }
+            .Select(r => Path.Combine(localAppData, r)).Where(Directory.Exists).Select(r => ScanFolder("", r, extended: true, token)).ToList();
+        if (shaderRoots.Count > 0)
+            categories.Add(new CleanCategory("Cache de shaders da placa de vídeo", localAppData, shaderRoots.SelectMany(c => c.Files).ToList(), shaderRoots.Sum(c => c.Ignored), Extended: true, OptIn: true));
+
         var bin = new RecycleBinInfo { Size = System.Runtime.InteropServices.Marshal.SizeOf<RecycleBinInfo>() };
         if (SHQueryRecycleBin(null, ref bin) == 0)
             categories.Add(new CleanCategory("Lixeira", "Todas as unidades", Array.Empty<CleanFile>(), 0, Extended: true, OptIn: true, RecycleBinBytes: bin.Bytes, RecycleBinItems: bin.Items));

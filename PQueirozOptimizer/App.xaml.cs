@@ -226,11 +226,12 @@ public partial class App : Application
     {
         try
         {
-            if (await Services.RevocationService.Default.RefreshAsync() is not { } serverTime) return false;
+            if (await Services.RevocationService.Default.RefreshAsync() is not { } serverTime) { Services.ClockCheck.Unavailable(); return false; }
+            Services.ClockCheck.Record(serverTime, DateTime.UtcNow);
             Services.LicenseClock.Default.SetTrusted(serverTime);
             return true;
         }
-        catch (Exception ex) when (ex is System.Net.Http.HttpRequestException or TaskCanceledException) { return false; }
+        catch (Exception ex) when (ex is System.Net.Http.HttpRequestException or TaskCanceledException) { Services.ClockCheck.Unavailable(); return false; }
     }
 
     /// <summary>

@@ -76,7 +76,12 @@ public partial class MainWindow
             if (Msg($"O driver de vídeo atual será removido e o PC vai reiniciar sozinho. Depois de entrar no Windows, o instalador \"{Path.GetFileName(_cleanInstaller)}\" abre automaticamente.\n\nSalve seus trabalhos e feche os programas. Continuar?",
                     "Instalação limpa de driver", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
             var progress = new Progress<string>(line => { OperationStatus.Text = line; _log.Write("INFO", line); });
-            await ExecuteTrackedAsync("Instalação limpa de driver", async _ => await new DriverCleanService(_log).RunCleanInstallAsync(vendor, _cleanInstaller!, progress));
+            await ExecuteTrackedAsync("Instalação limpa de driver", async _ =>
+            {
+                // O DDU reinicia o PC no meio do processo: a trava de desligamento não pode segurá-lo
+                AllowShutdownDuringOperation();
+                await new DriverCleanService(_log).RunCleanInstallAsync(vendor, _cleanInstaller!, progress);
+            });
         };
         actions.Children.Add(site); actions.Children.Add(pick); actions.Children.Add(run);
         panel.Children.Add(actions);

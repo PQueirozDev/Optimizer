@@ -108,6 +108,7 @@ public partial class MainWindow
     {
         if (_operationRunning) { OperationStatus.Text = "Aguarde a operação em andamento."; return false; }
         _operationRunning = true;
+        BeginShutdownGuard(title);
         using var cts = new CancellationTokenSource();
         _operationCts = cts;
         OperationProgress.Visibility = Visibility.Visible;
@@ -139,6 +140,7 @@ public partial class MainWindow
         finally
         {
             _operationRunning = false; _operationCts = null; OperationProgress.Visibility = Visibility.Collapsed;
+            EndShutdownGuard();
             // O usuário pediu para fechar durante a operação: fecha assim que ela termina de ser cancelada
             if (_closeAfterOperation) Close();
         }

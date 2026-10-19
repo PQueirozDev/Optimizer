@@ -18,7 +18,12 @@ public static class GameArtService
     private static readonly string CacheDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PQueirozOptimizer", "GameArt");
 
     /// <summary>ID da Steam dos jogos com preset (o Fortnite só existe na Epic).</summary>
-    public static int? SteamAppId(string presetId) => presetId switch { "cs2" => 730, "apex" => 1172470, "rocketleague" => 252950, _ => null };
+    public static int? SteamAppId(string presetId) => presetId switch
+    {
+        "cs2" => 730, "apex" => 1172470, "rocketleague" => 252950, "pubg" => 578080, "thefinals" => 2073850,
+        "marvelrivals" => 2767030, "deadbydaylight" => 381210, "overwatch" => 2357570, "rainbowsix" => 359550, "dota2" => 570,
+        "deadlock" => 1422450, "rust" => 252490, "battlefield6" => 2807960, _ => null,
+    };
 
     public static string? SteamPath()
     {

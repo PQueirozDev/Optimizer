@@ -102,6 +102,9 @@ public partial class MainWindow
             if ((Application.Current as App)?.ActiveLicense is { IsExpiringSoon: true } expiring) root.Children.Add(LicenseRenewalBanner(expiring));
             if (PlanAccess.DemoMode && CurrentLicense is null) root.Children.Add(DemoBanner());
             if (NewLookBanner() is { } offer) root.Children.Add(offer);
+            var notices = new StackPanel();
+            root.Children.Add(notices);
+            _ = FillDashboardNoticesAsync(notices);
 
             var prefs = AppearanceService.Current;
             var (score, headline, tone) = HealthScore(snapshot);

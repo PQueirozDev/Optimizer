@@ -419,6 +419,55 @@ public static class TweakCatalog
         },
         new()
         {
+            Id = "privacy.cortana", Operation = "debloat", Step = "Cortana e pesquisa na nuvem desativadas", Name = "Desligar a Cortana e a pesquisa na nuvem",
+            Description = "A Cortana deixa de rodar e a busca do Iniciar não envia consultas à nuvem.", Category = "Privacidade", Risk = StepRisk.Moderate,
+            SideEffects = "A Cortana some do Windows; a busca local continua.", Verification = "Policies\\Windows Search\\AllowCortana = 0.", Revert = "Volta ao valor anterior pela reversão.", Evidence = "Opção oficial de privacidade do Windows.", Goals = GoalSet.All,
+            Read = c => Dword(c, HKLM, @"SOFTWARE\Policies\Microsoft\Windows\Windows Search", "AllowCortana") == 0 ? Applied("Já desligada.") : Pending("Ligada."),
+        },
+        new()
+        {
+            Id = "privacy.news", Operation = "debloat", Step = "Noticias e interesses desativados", Name = "Desligar notícias e interesses",
+            Description = "A barra de tarefas deixa de carregar notícias e clima em segundo plano.", Category = "Privacidade", Risk = StepRisk.Moderate,
+            SideEffects = "O painel de Notícias e interesses some da barra.", Verification = "Policies\\Dsh\\AllowNewsAndInterests = 0.", Revert = "Volta ao valor anterior pela reversão.", Evidence = "Opção oficial de privacidade do Windows.", Goals = GoalSet.All,
+            Read = c => Dword(c, HKLM, @"SOFTWARE\Policies\Microsoft\Dsh", "AllowNewsAndInterests") == 0 ? Applied("Já desligado.") : Pending("Ligado."),
+        },
+        new()
+        {
+            Id = "privacy.meetnow", Operation = "debloat", Step = "Botao Reunir agora oculto", Name = "Ocultar o botão Reunir agora",
+            Description = "Some o botão Reunir agora (Teams) da barra de tarefas.", Category = "Privacidade", Risk = StepRisk.Moderate,
+            SideEffects = "O botão Reunir agora deixa de aparecer.", Verification = "Policies\\Explorer\\HideSCAMeetNow = 1.", Revert = "Volta ao valor anterior pela reversão.", Evidence = "Opção oficial de privacidade do Windows.", Goals = GoalSet.All,
+            Read = c => Dword(c, HKCU, @"Software\Microsoft\Windows\CurrentVersion\Policies\Explorer", "HideSCAMeetNow") == 1 ? Applied("Já oculto.") : Pending("Visível."),
+        },
+        new()
+        {
+            Id = "privacy.feedback", Operation = "debloat", Step = "Feedback e telemetria extra desativados", Name = "Desligar pesquisas de feedback e dados extras",
+            Description = "Para de mostrar pesquisas de feedback e de enviar nome do PC e inventário de apps.", Category = "Privacidade", Risk = StepRisk.Moderate,
+            SideEffects = "Pesquisas de feedback do Windows deixam de aparecer.", Verification = "Siuf\\Rules\\NumberOfSIUFInPeriod = 0.", Revert = "Volta ao valor anterior pela reversão.", Evidence = "Opção oficial de privacidade do Windows.", Goals = GoalSet.All,
+            Read = c => Dword(c, HKCU, @"SOFTWARE\Microsoft\Siuf\Rules", "NumberOfSIUFInPeriod") == 0 ? Applied("Já desligado.") : Pending("Ligado."),
+        },
+        new()
+        {
+            Id = "privacy.inking", Operation = "debloat", Step = "Coleta de escrita e digitacao desativada", Name = "Desligar coleta de escrita e digitação",
+            Description = "O Windows para de coletar escrita à mão e digitação para personalizar o teclado.", Category = "Privacidade", Risk = StepRisk.Moderate,
+            SideEffects = "A correção de texto aprendida pelo Windows deixa de ser personalizada.", Verification = "InputPersonalization\\RestrictImplicitInkCollection = 1.", Revert = "Volta ao valor anterior pela reversão.", Evidence = "Opção oficial de privacidade do Windows.", Goals = GoalSet.All,
+            Read = c => Dword(c, HKCU, @"Software\Microsoft\InputPersonalization", "RestrictImplicitInkCollection") == 1 ? Applied("Já desligada.") : Pending("Ligada."),
+        },
+        new()
+        {
+            Id = "privacy.finddevice", Operation = "debloat", Step = "Localizar meu dispositivo desativado", Name = "Desligar Localizar meu dispositivo",
+            Description = "O PC deixa de enviar a localização para a conta Microsoft.", Category = "Privacidade", Risk = StepRisk.Moderate,
+            SideEffects = "O recurso Localizar meu dispositivo deixa de funcionar.", Verification = "FindMyDevice\\AllowFindMyDevice = 0.", Revert = "Volta ao valor anterior pela reversão.", Evidence = "Opção oficial de privacidade do Windows.", Goals = GoalSet.All,
+            Read = c => Dword(c, HKLM, @"SOFTWARE\Policies\Microsoft\FindMyDevice", "AllowFindMyDevice") == 0 ? Applied("Já desligado.") : Pending("Ligado."),
+        },
+        new()
+        {
+            Id = "sys.bgapps", Operation = "debloat", Step = "Apps em segundo plano bloqueados", Name = "Bloquear apps da Store em segundo plano",
+            Description = "Apps da Microsoft Store deixam de rodar fechados; economiza memória.", Category = "Sistema", Risk = StepRisk.Moderate,
+            SideEffects = "Apps da Store param de mandar notificações com o app fechado.", Verification = "BackgroundAccessApplications\\GlobalUserDisabled = 1.", Revert = "Volta ao valor anterior pela reversão.", Evidence = "Opção oficial de privacidade do Windows.", Goals = GoalSet.All,
+            Read = c => Dword(c, HKCU, @"Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications", "GlobalUserDisabled") == 1 ? Applied("Já bloqueados.") : Pending("Liberados."),
+        },
+        new()
+        {
             Id = "privacy.websearch", Operation = "debloat", Step = "Pesquisa na web removida do menu Iniciar", Name = "Pesquisa do Iniciar sem resultados da web",
             Description = "A pesquisa do menu Iniciar mostra só o que está no PC.", Category = "Privacidade", Risk = StepRisk.Safe,
             SideEffects = "Sem sugestões do Bing na pesquisa.", Verification = "DisableSearchBoxSuggestions = 1.", Revert = "Volta ao valor anterior pela reversão.",

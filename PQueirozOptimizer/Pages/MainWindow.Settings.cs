@@ -284,6 +284,7 @@ public partial class MainWindow
         // 2. Aparência (tema, roxo, densidade, cards, animações) e tutoriais
         root.Children.Insert(0, AppearanceSection());
         root.Children.Add(TutorialsSection());
+        root.Children.Add(WindowBehaviorSection());
 
         // 3. Language Section (App-wide language switch)
         var langSection = Surface(new StackPanel());
