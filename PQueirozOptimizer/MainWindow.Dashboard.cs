@@ -117,18 +117,19 @@ public partial class MainWindow
             // 2. Números ao vivo (o detalhe de cada um fica no Meu PC)
             if (prefs.DashboardHardware)
             {
+                root.Children.Add(HomeBandTitle("Desempenho", live: prefs.DashboardLive));
                 var metrics = HomeGrid(200);
                 var cpu = cpuInfo;
-                metrics.Children.Add(MetricTile("Processador",
+                metrics.Children.Add(MetricTile(Glyphs.Chip, "Processador",
                     s => ($"{s.Cpu:0}%", s.CpuMhz is { } mhz ? (mhz / 1000).ToString("0.00", System.Globalization.CultureInfo.CurrentCulture) + " GHz" : cpu.BaseMhz is { } b ? (b / 1000).ToString("0.00", System.Globalization.CultureInfo.CurrentCulture) + " GHz" : ShortCpuName(snapshot.Processor)),
                     s => s.Cpu, 100, prefs.DashboardLive));
-                metrics.Children.Add(MetricTile("Memória",
+                metrics.Children.Add(MetricTile(Glyphs.Memory, "Memória",
                     s => ($"{s.Ram:0}%", $"{Gb(s.RamUsedGb)} {Tr("de")} {Gb(s.RamTotalGb)}"),
                     s => s.Ram, 100, prefs.DashboardLive));
-                metrics.Children.Add(MetricTile("Placa de vídeo",
+                metrics.Children.Add(MetricTile(Glyphs.Monitor, "Placa de vídeo",
                     s => (s.Gpu is { } g ? $"{g:0}%" : "--", s.GpuTempC is { } t ? $"{t:0} °C" : FirstGpu(snapshot.Graphics)),
                     s => s.Gpu, 100, prefs.DashboardLive));
-                metrics.Children.Add(MetricTile("Rede",
+                metrics.Children.Add(MetricTile(Glyphs.Network, "Rede",
                     s => (s.PingMs is { } p ? $"{p:0} ms" : "--", $"↓ {FormatRate(s.DownBytesPerSec)}  ↑ {FormatRate(s.UpBytesPerSec)}"),
                     s => s.DownBytesPerSec * 8 / 1_000_000, null, prefs.DashboardLive));
                 root.Children.Add(metrics);
@@ -137,6 +138,7 @@ public partial class MainWindow
             // 3. Atalhos
             if (prefs.DashboardQuickActions)
             {
+                root.Children.Add(HomeBandTitle("Acesso rápido"));
                 var shortcuts = HomeGrid(200);
                 var analysis = SmartHistory.Default.LastAnalysis;
                 var lastTest = PerfLabStore.Default.List().FirstOrDefault();

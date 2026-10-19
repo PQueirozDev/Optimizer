@@ -195,15 +195,17 @@ public partial class MainWindow
     {
         var label = new TextBlock { Text = text, FontSize = 11, FontWeight = FontWeights.SemiBold };
         label.SetResourceReference(TextBlock.ForegroundProperty, tone == "Accent" ? "AccentTextBrush" : tone + "Brush");
-        var pill = new Border { CornerRadius = new CornerRadius(8), Padding = new Thickness(8, 3, 8, 3), Child = label, VerticalAlignment = VerticalAlignment.Center };
+        var pill = new Border { Padding = new Thickness(8, 3, 8, 3), Child = label, VerticalAlignment = VerticalAlignment.Center };
+        pill.SetResourceReference(Border.CornerRadiusProperty, "BadgeRadius");
         pill.SetResourceReference(Border.BackgroundProperty, tone + "SoftBrush");
         return pill;
     }
 
-    /// <summary>Card (QrzCard): superfície com leve gradiente, borda fina e cantos de 16 px; sem sombra.</summary>
+    /// <summary>Card (QrzCard): superfície grafite com fio de luz no alto da borda e cantos do token CardRadius; sem sombra.</summary>
     private Border Surface(UIElement content)
     {
-        var border = new Border { Child = content, Padding = AppearanceService.CardPadding, CornerRadius = new CornerRadius(16), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, AppearanceService.Space(16)) };
+        var border = new Border { Child = content, Padding = AppearanceService.CardPadding, BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, AppearanceService.Space(16)) };
+        border.SetResourceReference(Border.CornerRadiusProperty, "CardRadius");
         border.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
         border.SetResourceReference(Border.BorderBrushProperty, "CardBorderBrush");
         return border;
@@ -212,7 +214,8 @@ public partial class MainWindow
     /// <summary>Caixa interna mais escura dentro de um card (gráficos "ao vivo", listas, valores agrupados).</summary>
     private static Border Inset(UIElement content, double padding = 12)
     {
-        var box = new Border { Child = content, Padding = new Thickness(padding), CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1) };
+        var box = new Border { Child = content, Padding = new Thickness(padding), BorderThickness = new Thickness(1) };
+        box.SetResourceReference(Border.CornerRadiusProperty, "InsetRadius");
         box.SetResourceReference(Border.BackgroundProperty, "CardInsetBrush");
         box.SetResourceReference(Border.BorderBrushProperty, "BorderSubtleBrush");
         return box;
@@ -226,7 +229,7 @@ public partial class MainWindow
         button.ClearValue(Button.ForegroundProperty);
     }
 
-    /// <summary>Botão com ícone à esquerda do texto (QrzButton). Principal = claro; neutro = ícone azul.</summary>
+    /// <summary>Botão com ícone à esquerda do texto (QrzButton). Principal = preenchido no destaque; neutro = ícone no destaque.</summary>
     private static Button IconButton(string glyph, string text, bool primary = false)
     {
         var content = new StackPanel { Orientation = Orientation.Horizontal };
@@ -326,7 +329,8 @@ public partial class MainWindow
         Grid.SetColumn(text, 1);
         grid.Children.Add(text);
 
-        var card = new Border { Padding = new Thickness(AppearanceService.Space(16) * scale), CornerRadius = new CornerRadius(14), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 14, AppearanceService.Space(14)), Child = grid };
+        var card = new Border { Padding = new Thickness(AppearanceService.Space(16) * scale), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 14, AppearanceService.Space(14)), Child = grid };
+        card.SetResourceReference(Border.CornerRadiusProperty, "CardRadius");
         card.SetResourceReference(Border.BackgroundProperty, "CardBgBrush");
         card.SetResourceReference(Border.BorderBrushProperty, "CardBorderBrush");
         return card;

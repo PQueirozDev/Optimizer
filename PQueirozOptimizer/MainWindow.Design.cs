@@ -96,6 +96,7 @@ public partial class MainWindow
         if (AppearanceService.AnimationsEnabled) slide.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(40, 0, TimeSpan.FromMilliseconds(320)) { EasingFunction = ease });
         void Dismiss()
         {
+            if (!AppearanceService.AnimationsEnabled) { ToastHost.Children.Remove(toast); return; }
             var fade = new DoubleAnimation(toast.Opacity, 0, TimeSpan.FromMilliseconds(200));
             fade.Completed += (_, _) => ToastHost.Children.Remove(toast);
             toast.BeginAnimation(OpacityProperty, fade);

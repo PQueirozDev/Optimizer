@@ -15,4 +15,11 @@
   <sys:Double x:Key="FontSizeSection">18</sys:Double>
   <sys:Double x:Key="FontSizeValue">26</sys:Double>
   <sys:Double x:Key="FontSizePageTitle">28</sys:Double>
+
+  <!-- Raios em degraus (Fluent). O ThemeService publica os mesmos valores em runtime; estes servem ao designer e aos
+       testes que montam a interface sem o tema aplicado. -->
+  <CornerRadius x:Key="CardRadius">12</CornerRadius>
+  <CornerRadius x:Key="InsetRadius">10</CornerRadius>
+  <CornerRadius x:Key="ControlRadius">8</CornerRadius>
+  <CornerRadius x:Key="BadgeRadius">6</CornerRadius>
 </ResourceDictionary>

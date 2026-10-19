@@ -19,7 +19,8 @@
   <Style x:Key="PageTitleText" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
     <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
     <Setter Property="FontSize" Value="{StaticResource FontSizePageTitle}"/>
-    <Setter Property="FontWeight" Value="Bold"/>
+    <!-- SemiBold na fonte Display: firme sem o peso do Bold, como os títulos do Windows 11 -->
+    <Setter Property="FontWeight" Value="SemiBold"/>
   </Style>
   <Style x:Key="CardTitleText" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
     <Setter Property="FontSize" Value="{StaticResource FontSizeCardTitle}"/>

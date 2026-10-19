@@ -37,8 +37,10 @@ public partial class MainWindow
             var swatch = new Border { Width = 22, Height = 22, CornerRadius = new CornerRadius(11), Margin = new Thickness(0, 0, 8, 0), BorderThickness = new Thickness(2), Cursor = System.Windows.Input.Cursors.Hand, Tag = tone, ToolTip = tone };
             swatch.SetResourceReference(Border.BackgroundProperty, tone + "Brush");
             swatch.BorderBrush = System.Windows.Media.Brushes.Transparent;
-            var selected = new TextBlock { Text = "✓", FontSize = 12, FontWeight = FontWeights.Bold, Foreground = Brushes.White,
+            var selected = new TextBlock { Text = "✓", FontSize = 12, FontWeight = FontWeights.Bold,
                 HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Visibility = tone == color ? Visibility.Visible : Visibility.Collapsed };
+            // A marca segue o contraste de cada cor (branco sumia no amarelo e no verde)
+            selected.SetResourceReference(TextBlock.ForegroundProperty, "On" + tone + "Brush");
             swatch.Child = selected;
             swatch.MouseLeftButtonUp += (_, _) =>
             {

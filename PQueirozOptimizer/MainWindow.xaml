@@ -25,7 +25,7 @@
 
      <!-- Rodapé: monitor ao vivo (CPU, GPU, RAM e ping), licença, configurações e tema -->
      <StackPanel x:Name="SidebarFooter" DockPanel.Dock="Bottom" Margin="12,6,12,14">
-      <Border x:Name="HudPanel" Margin="0,0,0,8" Padding="12,10,12,11" CornerRadius="12" Background="{DynamicResource CardInsetBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1">
+      <Border x:Name="HudPanel" Margin="0,0,0,8" Padding="12,10,12,11" CornerRadius="{DynamicResource InsetRadius}" Background="{DynamicResource CardInsetBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1">
        <StackPanel>
         <DockPanel Margin="0,0,0,9">
          <TextBlock x:Name="HudPing" DockPanel.Dock="Right" Text="-- ms" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Tag="dado-do-sistema" ToolTip="Latência até 1.1.1.1"/>
@@ -48,7 +48,7 @@
         </UniformGrid>
        </StackPanel>
       </Border>
-      <Border x:Name="LicenseCard" Padding="10,9" CornerRadius="12" Background="{DynamicResource CardBgBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1">
+      <Border x:Name="LicenseCard" Padding="10,9" CornerRadius="{DynamicResource InsetRadius}" Background="{DynamicResource CardBgBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
        <DockPanel>
         <Button x:Name="ThemeButton" DockPanel.Dock="Right" Style="{StaticResource RoundIconButton}" Width="30" Height="30" Click="ThemeButton_Click"/>
         <Button x:Name="SidebarSettingsButton" DockPanel.Dock="Right" Style="{StaticResource RoundIconButton}" Width="30" Height="30" Margin="0,0,6,0" ToolTip="Configurações" Click="SidebarSettings_Click"><TextBlock Text="&#xE713;" Style="{StaticResource IconText}" FontSize="13" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/></Button>

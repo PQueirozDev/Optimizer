@@ -168,10 +168,12 @@ public partial class MainWindow
         {
             var glow = new Border { Width = ring.Width, Height = ring.Height, CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(2), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(ring.X, ring.Y, 0, 0), IsHitTestVisible = false };
             glow.SetResourceReference(Border.BorderBrushProperty, "AccentGradientBrush");
-            glow.Effect = new DropShadowEffect { BlurRadius = 24, ShadowDepth = 0, Opacity = 0.9, Color = Color.FromRgb(0x8B, 0x5C, 0xF6) };
+            // Brilho na cor de destaque do tema (era um roxo fixo, que destoava do ciano e das cores personalizadas)
+            glow.Effect = new DropShadowEffect { BlurRadius = 24, ShadowDepth = 0, Opacity = 0.9, Color = Application.Current?.TryFindResource("AccentColor") is Color accent ? accent : Color.FromRgb(0x1F, 0xC8, 0xE3) };
             TutorialLayer.Children.Add(glow);
-            // Pulsa suavemente para chamar a atenção
-            glow.BeginAnimation(OpacityProperty, new DoubleAnimation(1, 0.55, TimeSpan.FromMilliseconds(900)) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever });
+            // Pulsa suavemente para chamar a atenção (parado quando o usuário desligou as animações)
+            if (AppearanceService.AnimationsEnabled)
+                glow.BeginAnimation(OpacityProperty, new DoubleAnimation(1, 0.55, TimeSpan.FromMilliseconds(900)) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever });
         }
 
         var card = TutorialCard(step);

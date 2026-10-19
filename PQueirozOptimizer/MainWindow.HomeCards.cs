@@ -25,31 +25,65 @@ public partial class MainWindow
 
     private static string Tr(string text) => Translator.Tr(text);
 
-    /// <summary>Superfície dos cards da grade (sem a margem inferior do Surface).</summary>
+    /// <summary>Superfície dos cards da grade: a mesma do Surface (raio e borda do design system), sem a margem inferior.</summary>
     private static Border HomeCard(UIElement content, string background = "CardBgBrush")
     {
-        var card = new Border { Child = content, Padding = new Thickness(AppearanceService.Space(20)), CornerRadius = new CornerRadius(16), BorderThickness = new Thickness(1) };
+        var card = new Border { Child = content, Padding = new Thickness(AppearanceService.Space(20)), BorderThickness = new Thickness(1) };
+        card.SetResourceReference(Border.CornerRadiusProperty, "CardRadius");
         card.SetResourceReference(Border.BackgroundProperty, background);
         card.SetResourceReference(Border.BorderBrushProperty, "CardBorderBrush");
         return card;
     }
 
-    /// <summary>Card clicável: a borda clareia e o card sobe 2 px ao passar o mouse (160 ms).</summary>
+    /// <summary>
+    /// Card clicável: a borda acende no destaque e o card sobe 2 px ao passar o mouse (160 ms). Também é alcançável
+    /// pelo Tab e abre com Enter ou Espaço, com o mesmo realce de borda como indicação de foco.
+    /// </summary>
     private static void MakeClickable(Border card, Action click, string? tooltip = null)
     {
         card.Cursor = Cursors.Hand;
+        card.Focusable = true;
+        card.FocusVisualStyle = null;
+        System.Windows.Automation.AutomationProperties.SetName(card, tooltip ?? "");
         if (tooltip != null) card.ToolTip = tooltip;
         var lift = new TranslateTransform();
         card.RenderTransform = lift;
         void Hover(bool on)
         {
-            card.SetResourceReference(Border.BorderBrushProperty, on ? "BorderStrongBrush" : "CardBorderBrush");
+            card.SetResourceReference(Border.BorderBrushProperty, on ? "BorderHoverBrush" : "CardBorderBrush");
             if (AppearanceService.AnimationsEnabled)
                 lift.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(on ? -2 : 0, TimeSpan.FromMilliseconds(160)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
         }
         card.MouseEnter += (_, _) => Hover(true);
-        card.MouseLeave += (_, _) => Hover(false);
+        card.MouseLeave += (_, _) => { if (!card.IsKeyboardFocused) Hover(false); };
+        card.GotKeyboardFocus += (_, _) => Hover(true);
+        card.LostKeyboardFocus += (_, _) => { if (!card.IsMouseOver) Hover(false); };
         card.MouseLeftButtonUp += (_, e) => { if (!e.Handled) click(); };
+        card.KeyDown += (_, e) => { if (e.Key is Key.Enter or Key.Space) { e.Handled = true; click(); } };
+    }
+
+    /// <summary>
+    /// Título discreto de uma faixa do Início (legenda em maiúsculas, como nos apps de hardware), com um ponto verde
+    /// opcional de "ao vivo" e uma ação à direita.
+    /// </summary>
+    private FrameworkElement HomeBandTitle(string title, bool live = false, FrameworkElement? right = null)
+    {
+        var dock = new DockPanel { Margin = new Thickness(2, AppearanceService.Space(6), 2, AppearanceService.Space(10)) };
+        if (right != null) { DockPanel.SetDock(right, Dock.Right); dock.Children.Add(right); }
+        var row = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        var t = new TextBlock { Text = Tr(title).ToUpper(CultureInfo.CurrentCulture), FontSize = 11, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
+        t.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+        row.Children.Add(t);
+        if (live)
+        {
+            var dot = StatusDot("Success", 6); dot.Margin = new Thickness(8, 0, 0, 0);
+            row.Children.Add(dot);
+            var l = new TextBlock { Text = Tr("ao vivo"), FontSize = 11, Margin = new Thickness(5, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+            l.SetResourceReference(TextBlock.ForegroundProperty, "SuccessBrush");
+            row.Children.Add(l);
+        }
+        dock.Children.Add(row);
+        return dock;
     }
 
     private Button OpenButton(string tooltip, Action open)
@@ -208,33 +242,40 @@ public partial class MainWindow
 
     // ================= Números ao vivo =================
     /// <summary>
-    /// Card de um número (QrzStatCard enxuto): rótulo, valor grande, uma linha de detalhe e a curva do último minuto.
-    /// Clicar abre o Meu PC com os detalhes.
+    /// Card de um número (QrzStatCard): ícone no destaque e rótulo, valor grande, uma linha de detalhe e a curva do
+    /// último minuto. Antes da primeira leitura mostra "Lendo…" apagado e a linha de base do gráfico, para o card
+    /// nunca parecer vazio. Clicar abre o Meu PC com os detalhes.
     /// </summary>
-    private Border MetricTile(string label, Func<HardwareSample, (string Value, string Detail)> read, Func<HardwareSample, double?> point, double? max, bool live)
+    private Border MetricTile(string glyph, string label, Func<HardwareSample, (string Value, string Detail)> read, Func<HardwareSample, double?> point, double? max, bool live, string tone = "Accent")
     {
         var stack = new StackPanel();
-        var l = new TextBlock { Text = Tr(label), FontSize = 13 };
-        l.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
-        stack.Children.Add(l);
-        var value = new TextBlock { Text = "--", FontSize = 30 * AppearanceService.CardScale, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 6, 0, 0), Tag = Translator.SystemDataTag };
+        var head = new StackPanel { Orientation = Orientation.Horizontal };
+        var chip = IconChip(glyph, tone, 28); chip.Margin = new Thickness(0, 0, 10, 0);
+        head.Children.Add(chip);
+        var l = new TextBlock { Text = Tr(label), FontSize = 13, FontWeight = FontWeights.Medium, VerticalAlignment = VerticalAlignment.Center };
+        l.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondaryBrush");
+        head.Children.Add(l);
+        stack.Children.Add(head);
+        var value = new TextBlock { Text = "—", FontSize = 28 * AppearanceService.CardScale, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 14, 0, 0), Tag = Translator.SystemDataTag };
         value.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
-        value.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+        value.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         stack.Children.Add(value);
-        var detail = new TextBlock { Text = " ", FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 2, 0, 0), Tag = Translator.SystemDataTag };
+        var detail = new TextBlock { Text = Tr("Lendo…"), FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 2, 0, 0), Tag = Translator.SystemDataTag };
         detail.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         stack.Children.Add(detail);
         LineChart? chart = null;
         if (live)
         {
-            chart = new LineChart { Height = 46 * AppearanceService.CardScale, Margin = new Thickness(0, 16, 0, 0), Maximum = max, MinimumScale = 1, ShowScale = false, ShowGrid = false, SecondsPerSample = 1, Capacity = HardwareMonitorService.HistoryLength };
+            chart = new LineChart { Height = 42 * AppearanceService.CardScale, Margin = new Thickness(0, 14, 0, 0), Maximum = max, MinimumScale = 1, ShowScale = false, ShowGrid = false, SecondsPerSample = 1, Capacity = HardwareMonitorService.HistoryLength };
             chart.SetValues(HardwareMonitorService.Shared.History.Select(point));
             stack.Children.Add(chart);
         }
+        var first = true;
         _homeLive.Add(s =>
         {
             var (v, d) = read(s);
             value.Text = v; detail.Text = d;
+            if (first) { first = false; value.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush"); }
             chart?.Push(point(s));
         });
         var card = HomeCard(stack);
@@ -243,21 +284,26 @@ public partial class MainWindow
     }
 
     // ================= Atalhos =================
+    /// <summary>Atalho em linha (mais baixo que as métricas, para as duas faixas não competirem): ícone, título, estado e seta.</summary>
     private Border ShortcutTile(string glyph, string title, string status, Action run)
     {
         var dock = new DockPanel();
-        var arrow = GlyphIcon(Glyphs.ChevronRight, 10, "MutedBrush"); arrow.VerticalAlignment = VerticalAlignment.Top; arrow.Margin = new Thickness(8, 4, 0, 0);
+        var arrow = GlyphIcon(Glyphs.ChevronRight, 10, "MutedBrush"); arrow.Margin = new Thickness(10, 0, 0, 0);
         DockPanel.SetDock(arrow, Dock.Right); dock.Children.Add(arrow);
-        var stack = new StackPanel();
-        stack.Children.Add(new Border { HorizontalAlignment = HorizontalAlignment.Left, Child = GlyphIcon(glyph, 18, "AccentBrush") });
-        var t = new TextBlock { Text = Tr(title), FontSize = 15, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 14, 0, 0), TextWrapping = TextWrapping.Wrap };
+        var chip = IconChip(glyph, "Accent", 36); chip.Margin = new Thickness(0, 0, 12, 0);
+        chip.SetResourceReference(Border.BackgroundProperty, "AccentSoftBrush");
+        DockPanel.SetDock(chip, Dock.Left); dock.Children.Add(chip);
+        var stack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        // Até duas linhas: "Laboratório de desempenho" não cabe numa coluna de 1/4 da tela
+        var t = new TextBlock { Text = Tr(title), FontSize = 13.5, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.CharacterEllipsis, MaxHeight = 13.5 * 2.8, ToolTip = Tr(title) };
         t.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
-        var s = new TextBlock { Text = status, FontSize = 12.5, Margin = new Thickness(0, 3, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis, Tag = Translator.SystemDataTag };
+        var s = new TextBlock { Text = status, FontSize = 12, Margin = new Thickness(0, 2, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis, Tag = Translator.SystemDataTag };
         s.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         stack.Children.Add(t); stack.Children.Add(s);
         dock.Children.Add(stack);
         var card = HomeCard(dock);
-        MakeClickable(card, run);
+        card.Padding = new Thickness(AppearanceService.Space(14), AppearanceService.Space(12), AppearanceService.Space(16), AppearanceService.Space(12));
+        MakeClickable(card, run, Tr(title));
         return card;
     }
 

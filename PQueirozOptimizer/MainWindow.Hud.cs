@@ -21,6 +21,17 @@ public partial class MainWindow
 
     private void UpdateHud(HardwareSample s)
     {
+        // Janela minimizada ou na bandeja: os medidores da barra lateral não são vistos, então não são redesenhados.
+        // As curvas do Início continuam recebendo as leituras, para não mostrarem um minuto velho ao voltar.
+        if (IsVisible && WindowState != WindowState.Minimized) UpdateSidebarMeters(s);
+
+        // Os cards do Início (e do Meu PC) só são atualizados enquanto estão na tela
+        if (_homeRoot is null || _homeLive.Count == 0 || !IsInContent(_homeRoot)) return;
+        foreach (var update in _homeLive) update(s);
+    }
+
+    private void UpdateSidebarMeters(HardwareSample s)
+    {
         SetMeter(HudCpuBar, HudCpuText, s.Cpu);
         SetMeter(HudRamBar, HudRamText, s.Ram);
         if (s.Gpu is { } gpu) SetMeter(HudGpuBar, HudGpuText, gpu);
@@ -28,10 +39,6 @@ public partial class MainWindow
         HudPing.Text = s.PingMs is { } ping ? $"{ping:0} ms" : "-- ms";
         HudPing.SetResourceReference(TextBlock.ForegroundProperty, s.PingMs switch { null => "MutedBrush", < 60 => "SuccessBrush", < 120 => "WarningBrush", _ => "DangerBrush" });
         HudLiveDot.Opacity = HudLiveDot.Opacity > 0.6 ? 0.45 : 1; // pisca a cada leitura: mostra que está ao vivo
-
-        // Os cards do Início (e do Meu PC) só são atualizados enquanto estão na tela
-        if (_homeRoot is null || _homeLive.Count == 0 || !IsInContent(_homeRoot)) return;
-        foreach (var update in _homeLive) update(s);
     }
 
     private bool IsInContent(DependencyObject element)

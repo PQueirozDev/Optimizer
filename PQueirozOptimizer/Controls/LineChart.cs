@@ -100,10 +100,17 @@ public sealed class LineChart : FrameworkElement
         // Sem dados e sem teto fixo, a escala ("1") não significa nada
         if (ShowScale && (Maximum is not null || present.Count > 0))
         {
-            var scale = new FormattedText(Describe(max), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), 10, muted, dpi);
+            var scale = new FormattedText(Describe(max), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI Variable Text, Segoe UI"), 10, muted, dpi);
             dc.DrawText(scale, new Point(4, 2));
         }
-        if (present.Count == 0) return;
+        if (present.Count == 0)
+        {
+            // Ainda sem leitura: linha de base tracejada onde a curva vai aparecer, em vez de um vazio
+            var baseline = new Pen(TryFindResource("BorderBrush") as Brush ?? Brushes.Gray, 1) { DashStyle = new DashStyle(new double[] { 3, 4 }, 0) };
+            baseline.Freeze();
+            dc.DrawLine(baseline, new Point(0, Math.Round(h - 4) + 0.5), new Point(w, Math.Round(h - 4) + 0.5));
+            return;
+        }
         var step = w / Math.Max(1, Capacity - 1);
         var offset = Capacity - _values.Count;
         double Y(double v) => h - Math.Clamp(v / max, 0, 1) * (h - 8) - 4;
@@ -166,7 +173,7 @@ public sealed class LineChart : FrameworkElement
             dc.DrawEllipse(text, new Pen(stroke, 2), point, 3.6, 3.6);
             var ago = SecondsPerSample > 0 ? (_values.Count - 1 - index) * SecondsPerSample : -1;
             var label = Describe(hv) + (ago > 0.5 ? "  ·  " + string.Format(Services.Translator.Tr("há {0} s"), ago.ToString("0", CultureInfo.CurrentCulture)) : "");
-            var ft = new FormattedText(label, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal), 11, text, dpi);
+            var ft = new FormattedText(label, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface(new FontFamily("Segoe UI Variable Text, Segoe UI"), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal), 11, text, dpi);
             var boxW = ft.Width + 14; var boxH = ft.Height + 8;
             var bx = Math.Clamp(x - boxW / 2, 0, Math.Max(0, w - boxW));
             var by = point.Y - boxH - 10 < 0 ? point.Y + 10 : point.Y - boxH - 10;

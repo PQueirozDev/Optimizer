@@ -44,8 +44,12 @@ public partial class MainWindow
         {
             var row = new DockPanel { Margin = new Thickness(0, 0, 0, 12) };
             var badge = new Border { Width = 26, Height = 26, CornerRadius = new CornerRadius(13), Margin = new Thickness(0, 0, 12, 0), VerticalAlignment = VerticalAlignment.Top };
-            badge.SetResourceReference(Border.BackgroundProperty, number == "2" && _cleanInstaller != null ? "SuccessBrush" : "AccentGradientBrush");
-            badge.Child = new TextBlock { Text = number == "2" && _cleanInstaller != null ? "✓" : number, Foreground = System.Windows.Media.Brushes.White, FontWeight = FontWeights.Bold, FontSize = 12.5, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Tag = Translator.SystemDataTag };
+            var done = number == "2" && _cleanInstaller != null;
+            badge.SetResourceReference(Border.BackgroundProperty, done ? "SuccessBrush" : "AccentGradientBrush");
+            // Cor do número pelo contraste com o fundo (branco sobre o verde ou o ciano ficava ilegível)
+            var badgeText = new TextBlock { Text = done ? "✓" : number, FontWeight = FontWeights.Bold, FontSize = 12.5, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Tag = Translator.SystemDataTag };
+            badgeText.SetResourceReference(TextBlock.ForegroundProperty, done ? "OnSuccessBrush" : "OnPrimaryBrush");
+            badge.Child = badgeText;
             DockPanel.SetDock(badge, Dock.Left); row.Children.Add(badge);
             var text = new StackPanel();
             var t = Label(title, 13); t.FontWeight = FontWeights.SemiBold; t.Margin = new Thickness(0);

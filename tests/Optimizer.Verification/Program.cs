@@ -865,6 +865,9 @@ internal static class Program
             {
                 var app = CreateTestApp();
                 SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher)); var window = new MainWindow();
+                // A janela aplica a aparência salva deste PC (com translucidez, sem papel de parede atrás a captura sai
+                // cinza): as telas partem da aparência de fábrica, opaca, que é a que um usuário novo vê
+                PQueirozOptimizer.Services.AppearanceService.Apply(PQueirozOptimizer.Services.AppearanceService.Defaults());
                 PrepareBiosAdvisor(window);
                 var flags = BindingFlags.NonPublic | BindingFlags.Instance;
                 void Pump(Task task)
@@ -876,6 +879,17 @@ internal static class Program
                     task.GetAwaiter().GetResult();
                 }
                 Pump((Task)typeof(MainWindow).GetMethod("RenderDashboardAsync", flags)!.Invoke(window, null)!);
+                Render("dashboard-empty", 1320, 860);
+                // O teste não tem monitor ao vivo: um minuto de leituras sintéticas mostra o Início como o usuário o vê
+                var homeLive = (List<Action<HardwareSample>>)typeof(MainWindow).GetField("_homeLive", flags)!.GetValue(window)!;
+                for (var i = 0; i < 60; i++)
+                {
+                    var wave = Math.Sin(i / 6.0);
+                    var sample = new HardwareSample(22 + 9 * wave + (i % 7), 54 + 3 * Math.Sin(i / 11.0), 8.6, 16, 31 + 14 * Math.Sin(i / 4.0), 2_400_000 + 900_000 * Math.Abs(wave), 310_000, 14 + (i % 5),
+                        CpuMhz: 4650, GpuTempC: 56);
+                    foreach (var update in homeLive.ToList()) update(sample);
+                }
+                Render("dashboard-live", 1320, 860);
                 void Render(string name, int width, int height)
                 {
                     var visual = (FrameworkElement)window.Content;
