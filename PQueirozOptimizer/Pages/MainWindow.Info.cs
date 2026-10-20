@@ -26,6 +26,17 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v2.3.0", "19/10/2026", new[]
+        {
+            "Novo visual Grafite ciano como padrão: grafite em degraus, destaque em ciano e botões principais preenchidos, no estilo dos apps de hardware.",
+            "Início reformulado: números ao vivo com ícone e curva, faixas \"Desempenho\" e \"Acesso rápido\" e atalhos mais compactos.",
+            "Cantos, espaçamentos e listas padronizados em todas as páginas; a Rede ficou mais limpa, sem caixas dentro de caixas.",
+            "Interruptores e caixas de seleção no padrão do Windows 11, com foco visível pelo teclado também nos botões preenchidos.",
+            "Cards do Início abrem pelo teclado (Tab, Enter e Espaço).",
+            "Contraste revisado em todos os temas e intensidades de cor, inclusive ao passar o mouse e ao clicar.",
+            "O monitor da barra lateral não redesenha com a janela minimizada ou na bandeja.",
+            "O tema Grafite agora se chama Cinza; os demais temas e cores personalizadas continuam disponíveis em Configurações → Aparência.",
+        }),
         ("v2.2.0", "18/10/2026", new[]
         {
             "Personalizar Windows ganhou 14 interruptores novos (Widgets, modo compacto, inicialização sem espera, pausar atualizações por até 1 ano, repetição de tecla sem atraso, Game Bar, tela cheia e outros) e a seção Jogos.",

@@ -106,6 +106,16 @@ public static partial class Translator
         ["Relógio errado faz launchers e jogos recusarem o login, quebra sites com HTTPS e atrapalha o Windows Update."] = "A wrong clock makes launchers and games reject sign-in, breaks HTTPS sites and disrupts Windows Update.",
         ["Reaplicando ajustes desfeitos"] = "Reapplying undone settings",
 
+        // ---------- Notas da v2.3.0 ----------
+        ["Novo visual Grafite ciano como padrão: grafite em degraus, destaque em ciano e botões principais preenchidos, no estilo dos apps de hardware."] = "New Cyan graphite look by default: stepped graphite, cyan accent and filled primary buttons, in the style of hardware apps.",
+        ["Início reformulado: números ao vivo com ícone e curva, faixas \"Desempenho\" e \"Acesso rápido\" e atalhos mais compactos."] = "Redesigned Home: live numbers with icon and curve, \"Performance\" and \"Quick access\" bands and more compact shortcuts.",
+        ["Cantos, espaçamentos e listas padronizados em todas as páginas; a Rede ficou mais limpa, sem caixas dentro de caixas."] = "Corners, spacing and lists standardized on every page; Network is cleaner, without boxes inside boxes.",
+        ["Interruptores e caixas de seleção no padrão do Windows 11, com foco visível pelo teclado também nos botões preenchidos."] = "Switches and checkboxes in the Windows 11 style, with visible keyboard focus on filled buttons too.",
+        ["Cards do Início abrem pelo teclado (Tab, Enter e Espaço)."] = "Home cards open from the keyboard (Tab, Enter and Space).",
+        ["Contraste revisado em todos os temas e intensidades de cor, inclusive ao passar o mouse e ao clicar."] = "Contrast reviewed in every theme and color intensity, including on hover and click.",
+        ["O monitor da barra lateral não redesenha com a janela minimizada ou na bandeja."] = "The sidebar monitor doesn't redraw while the window is minimized or in the tray.",
+        ["O tema Grafite agora se chama Cinza; os demais temas e cores personalizadas continuam disponíveis em Configurações → Aparência."] = "The Graphite theme is now called Gray; the other themes and custom colors are still available in Settings → Appearance.",
+
         // ---------- Redesign Grafite ciano ----------
         ["Grafite ciano"] = "Cyan graphite",
         ["Cinza"] = "Gray",
