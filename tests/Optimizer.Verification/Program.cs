@@ -903,6 +903,77 @@ internal static class Program
                 window.Close();
             }
 
+            if (args.Contains("--site-shots"))
+            {
+                // Fotos para o site (qrztwk.vercel.app): mesmas telas, na proporção 1.6 e em 2x (nítidas). Aparência de
+                // fábrica, opaca. Os PNGs saem em 2700x1688 e são reduzidos para 2160x1350 JPG fora daqui (ffmpeg).
+                var app = CreateTestApp();
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
+                var window = new MainWindow();
+                PQueirozOptimizer.Services.AppearanceService.Apply(PQueirozOptimizer.Services.AppearanceService.Defaults());
+                PrepareBiosAdvisor(window);
+                var flags = BindingFlags.NonPublic | BindingFlags.Instance;
+                const int W = 1350, H = 844; // 1.5995 ≈ 1.6
+                void Pump(Task task)
+                {
+                    var frame = new DispatcherFrame();
+                    var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(20) };
+                    timer.Tick += (_, _) => { if (task.IsCompleted) frame.Continue = false; };
+                    timer.Start(); Dispatcher.PushFrame(frame); timer.Stop();
+                    task.GetAwaiter().GetResult();
+                }
+                void Shot(string name)
+                {
+                    var visual = (FrameworkElement)window.Content;
+                    visual.Measure(new Size(W, H)); visual.Arrange(new Rect(0, 0, W, H)); visual.UpdateLayout();
+                    var bitmap = new RenderTargetBitmap(W * 2, H * 2, 192, 192, PixelFormats.Pbgra32); bitmap.Render(visual);
+                    var png = new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(bitmap));
+                    using var stream = File.Create(Path.Combine(root, name + ".png")); png.Save(stream);
+                    Console.WriteLine("SHOT " + name);
+                }
+                void Nav(string page) => typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { page });
+                void GamingTab(int tab) { typeof(MainWindow).GetField("_gamingTab", flags)!.SetValue(window, tab); Nav("gaming"); }
+                // Visão geral com um minuto de leituras sintéticas (como o usuário vê o monitor ao vivo)
+                Pump((Task)typeof(MainWindow).GetMethod("RenderDashboardAsync", flags)!.Invoke(window, null)!);
+                // Enche o histórico longo (de onde o gráfico de carga lê) com 5 min de leituras sintéticas
+                var monitor = HardwareMonitorService.Shared;
+                var longHistory = (System.Collections.Generic.Queue<HardwareSample>)typeof(HardwareMonitorService).GetField("_longHistory", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(monitor)!;
+                longHistory.Clear();
+                for (var i = 0; i < 300; i++)
+                {
+                    var t = i / 9.0;
+                    var cpu = 26 + 16 * Math.Abs(Math.Sin(t)) + 6 * Math.Sin(t * 2.3);
+                    var gpu = 40 + 30 * Math.Abs(Math.Sin(t / 1.7 + 1)) + 5 * Math.Sin(t * 3.1);
+                    longHistory.Enqueue(new HardwareSample(cpu, 54, 8.6, 16, gpu, 2_400_000, 310_000, 14 + (i % 5), CpuMhz: 4650, GpuTempC: 56));
+                }
+                var homeLive = (List<Action<HardwareSample>>)typeof(MainWindow).GetField("_homeLive", flags)!.GetValue(window)!;
+                for (var i = 0; i < 60; i++)
+                {
+                    var wave = Math.Sin(i / 6.0);
+                    var sample = new HardwareSample(22 + 9 * wave + (i % 7), 54 + 3 * Math.Sin(i / 11.0), 8.6, 16, 31 + 14 * Math.Sin(i / 4.0), 2_400_000 + 900_000 * Math.Abs(wave), 310_000, 14 + (i % 5), CpuMhz: 4650, GpuTempC: 56);
+                    foreach (var update in homeLive.ToList()) update(sample);
+                }
+                Shot("visao-geral");
+                GamingTab(0); Shot("modo-jogo");
+                GamingTab(1); Shot("jogos");
+                GamingTab(2); Shot("nvidia");
+                GamingTab(3); Shot("sistema"); // Plano Qrz e Windows Defender
+                typeof(MainWindow).GetField("_gamingTab", flags)!.SetValue(window, 0);
+                Nav("network"); Shot("rede");
+                Nav("drivers"); Shot("drivers");
+                Nav("bios"); Shot("bios");
+                Nav("optimization"); Shot("otimizacoes");
+                // Páginas novas da 2.4 (leem WMI/log/lojas em segundo plano; espera a leitura)
+                Nav("health"); Pump(Task.Delay(6000)); Shot("saude");
+                Nav("devices"); Pump(Task.Delay(6000)); Shot("dispositivos");
+                Nav("stress"); Pump(Task.Delay(400)); Shot("stress");
+                // Tema claro
+                PQueirozOptimizer.Services.AppearanceService.Apply(new PQueirozOptimizer.Models.AppearanceSettings { Theme = PQueirozOptimizer.Models.ThemeMode.Light });
+                typeof(MainWindow).GetMethod("ApplyTheme", flags)!.Invoke(window, new object[] { false, false });
+                Nav("dashboard"); Pump((Task)typeof(MainWindow).GetMethod("RenderDashboardAsync", flags)!.Invoke(window, null)!);
+                Shot("visao-geral-claro");
+                return 0;
+            }
             if (args.Contains("--render"))
             {
                 var app = CreateTestApp();
