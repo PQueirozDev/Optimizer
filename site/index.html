@@ -82,6 +82,7 @@
         <a href="#optimizer">Qrztweaks</a>
         <a href="#smart-optimize">Smart Optimize</a>
         <a href="#performance-lab">Performance Lab</a>
+        <a href="#hardware">Hardware</a>
         <a href="#seguranca">Segurança</a>
         <a href="#recursos">Recursos</a>
         <a href="#galeria">Galeria</a>
@@ -135,8 +136,8 @@
     <!-- Faixa de recursos -->
     <div class="marquee" aria-label="Recursos do Qrztweaks">
       <div class="marquee-track">
-        <span>Modo Jogo</span><span>Perfil NVIDIA no driver</span><span>Plano de energia Qrz</span><span>Editor de BIOS (SCEWIN)</span><span>Instalação limpa com DDU</span><span>Presets de Fortnite, Apex, CS2 e Rocket League</span><span>Monitor ao vivo</span><span>Teste de velocidade e DNS</span><span>Backup e reversão</span><span>Busca rápida (Ctrl+K)</span>
-        <span aria-hidden="true">Modo Jogo</span><span aria-hidden="true">Perfil NVIDIA no driver</span><span aria-hidden="true">Plano de energia Qrz</span><span aria-hidden="true">Editor de BIOS (SCEWIN)</span><span aria-hidden="true">Instalação limpa com DDU</span><span aria-hidden="true">Presets de Fortnite, Apex, CS2 e Rocket League</span><span aria-hidden="true">Monitor ao vivo</span><span aria-hidden="true">Teste de velocidade e DNS</span><span aria-hidden="true">Backup e reversão</span><span aria-hidden="true">Busca rápida (Ctrl+K)</span>
+        <span>Modo Jogo</span><span>Perfil NVIDIA no driver</span><span>Plano de energia Qrz</span><span>Saúde do hardware</span><span>Stress test de CPU e memória</span><span>Overlay com FPS real</span><span>Biblioteca de jogos</span><span>Editor de BIOS (SCEWIN)</span><span>Instalação limpa com DDU</span><span>Presets de Fortnite, Apex, CS2 e Rocket League</span><span>Monitor ao vivo</span><span>Teste de velocidade e DNS</span><span>Backup e reversão</span><span>Busca rápida (Ctrl+K)</span>
+        <span aria-hidden="true">Modo Jogo</span><span aria-hidden="true">Perfil NVIDIA no driver</span><span aria-hidden="true">Plano de energia Qrz</span><span aria-hidden="true">Saúde do hardware</span><span aria-hidden="true">Stress test de CPU e memória</span><span aria-hidden="true">Overlay com FPS real</span><span aria-hidden="true">Biblioteca de jogos</span><span aria-hidden="true">Editor de BIOS (SCEWIN)</span><span aria-hidden="true">Instalação limpa com DDU</span><span aria-hidden="true">Presets de Fortnite, Apex, CS2 e Rocket League</span><span aria-hidden="true">Monitor ao vivo</span><span aria-hidden="true">Teste de velocidade e DNS</span><span aria-hidden="true">Backup e reversão</span><span aria-hidden="true">Busca rápida (Ctrl+K)</span>
       </div>
     </div>
 
@@ -223,6 +224,24 @@
         </div>
         <p class="fine reveal">Metodologia: mesma cena do jogo, mesmas configurações e resolução, pelo menos 3 gravações de 60 s antes e depois, PC aquecido e sem outros programas abertos. O ganho só conta se for consistente (teste t de Welch, p &lt; 0,05) e maior que 3%.</p>
       </div>
+    </section>
+
+    <!-- Novo na 2.4 -->
+    <section id="hardware" class="section">
+      <div class="container narrow center">
+        <p class="kicker reveal">Novo na 2.4</p>
+        <h2 class="reveal">Visual Aurora e ferramentas de hardware</h2>
+        <p class="section-lead reveal">O app ganhou um visual novo — preto azulado com destaque em azul, menu no topo e ícones de traço fino — e cinco páginas que vão além da otimização: diagnóstico, teste de estabilidade e tudo o que você joga num só lugar.</p>
+      </div>
+      <div class="container cards-3">
+        <article class="card spotlight reveal"><span class="card-icon"><svg class="icon"><use href="#i-chart"/></svg></span><h3>Saúde do hardware</h3><p>Vida útil e temperatura dos discos (S.M.A.R.T.), desgaste da bateria e erros de hardware dos últimos dias (WHEA e reinícios do driver de vídeo). Exporta um relatório do PC em HTML.</p></article>
+        <article class="card spotlight reveal" style="--d: 60ms"><span class="card-icon"><svg class="icon"><use href="#i-cpu"/></svg></span><h3>Stress test</h3><p>Testa processador e memória conferindo cada passada e os erros durante o teste. No fim, diz se o PC está estável, instável ou se o resultado é inconclusivo — útil para validar XMP/EXPO e overclock.</p></article>
+        <article class="card spotlight reveal" style="--d: 120ms"><span class="card-icon"><svg class="icon"><use href="#i-zap"/></svg></span><h3>Overlay no jogo</h3><p>FPS medido de verdade, tempo de quadro, 1% low e uso de CPU, GPU e RAM por cima do jogo, sem injetar nada. Funciona em jogos DirectX 9 a 12, em janela ou tela cheia sem bordas.</p></article>
+        <article class="card spotlight reveal" style="--d: 180ms"><span class="card-icon"><svg class="icon"><use href="#i-layers"/></svg></span><h3>Biblioteca de jogos</h3><p>Reúne os jogos da Steam, Epic, GOG e Ubisoft, mais os que você adicionar à mão. Cada jogo abre pela própria loja.</p></article>
+        <article class="card spotlight reveal" style="--d: 240ms"><span class="card-icon"><svg class="icon"><use href="#i-broom"/></svg></span><h3>Dispositivos</h3><p>Remove dispositivos "fantasmas" (lembrados pelo Windows, mas desconectados) e libera portas COM reservadas sem uso, com backup e opção de desfazer.</p></article>
+        <article class="card spotlight reveal" style="--d: 300ms"><span class="card-icon"><svg class="icon"><use href="#i-undo"/></svg></span><h3>Mesma transparência</h3><p>As ferramentas novas seguem as regras do app: só leem e medem, guardam o original antes de mexer e pedem confirmação no que não dá para desfazer sozinho.</p></article>
+      </div>
+      <p class="container narrow center fine reveal">A temperatura do processador não é lida: ela exige um driver que o Windows Defender bloqueia por ser vulnerável.</p>
     </section>
 
     <!-- Segurança -->
