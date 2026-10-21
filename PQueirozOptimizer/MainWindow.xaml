@@ -6,20 +6,20 @@
  WindowStyle="None" Background="{DynamicResource BackgroundBrush}" FontFamily="{StaticResource UiFont}"
  TextOptions.TextFormattingMode="Display" UseLayoutRounding="True"
  Icon="pack://application:,,,/Qrztweaks;component/Assets/app.ico" Loaded="Window_Loaded" StateChanged="Window_StateChanged" PreviewKeyDown="Window_PreviewKeyDown">
- <WindowChrome.WindowChrome><WindowChrome CaptionHeight="56" ResizeBorderThickness="6" GlassFrameThickness="0" UseAeroCaptionButtons="False" CornerRadius="0"/></WindowChrome.WindowChrome>
+ <WindowChrome.WindowChrome><WindowChrome CaptionHeight="64" ResizeBorderThickness="6" GlassFrameThickness="0" UseAeroCaptionButtons="False" CornerRadius="0"/></WindowChrome.WindowChrome>
  <Border x:Name="MainRootBorder" Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
   <Grid x:Name="RootGrid">
-   <Grid.ColumnDefinitions><ColumnDefinition Width="236"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+   <Grid.ColumnDefinitions><ColumnDefinition Width="0"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
 
    <!-- ============ BARRA LATERAL ============ -->
-   <Border x:Name="SidebarBorder" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,1,0">
+   <!-- Barra lateral antiga: fica escondida só como fonte dos itens de navegação e do estado da licença -->
+   <Border x:Name="SidebarBorder" Visibility="Collapsed" Margin="12,12,0,12" CornerRadius="20" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1">
     <DockPanel>
      <!-- Logo e versão (fazem parte da área de arrastar a janela) -->
      <StackPanel x:Name="SidebarLogo" DockPanel.Dock="Top" Orientation="Horizontal" Margin="20,16,14,10">
       <Image Source="pack://application:,,,/Qrztweaks;component/Assets/app.png" Width="32" Height="32" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center"/>
       <StackPanel x:Name="SidebarLogoText" Margin="11,0,0,0" VerticalAlignment="Center">
        <TextBlock Text="Qrztweaks" FontSize="15" FontWeight="Bold" FontFamily="{StaticResource DisplayFont}" Tag="dado-do-sistema"/>
-       <TextBlock x:Name="VersionLabel" FontSize="11" Foreground="{DynamicResource MutedBrush}" Margin="0,1,0,0" Tag="dado-do-sistema"/>
       </StackPanel>
      </StackPanel>
 
@@ -51,10 +51,7 @@
       <Border x:Name="LicenseCard" Padding="10,9" CornerRadius="{DynamicResource InsetRadius}" Background="{DynamicResource CardBgBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
        <DockPanel>
         <Button x:Name="ThemeButton" DockPanel.Dock="Right" Style="{StaticResource RoundIconButton}" Width="30" Height="30" Click="ThemeButton_Click"/>
-        <Button x:Name="SidebarSettingsButton" DockPanel.Dock="Right" Style="{StaticResource RoundIconButton}" Width="30" Height="30" Margin="0,0,6,0" ToolTip="Configurações" Click="SidebarSettings_Click"><TextBlock Text="&#xE713;" Style="{StaticResource IconText}" FontSize="13" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/></Button>
-        <Border x:Name="LicenseAvatar" Width="32" Height="32" CornerRadius="16" Background="{DynamicResource SecondaryFillBrush}" BorderBrush="{DynamicResource SecondaryBorderBrush}" BorderThickness="1" VerticalAlignment="Center">
-         <TextBlock x:Name="LicenseAvatarText" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource OnSecondaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" Tag="dado-do-sistema"/>
-        </Border>
+        <Button x:Name="SidebarSettingsButton" DockPanel.Dock="Right" Style="{StaticResource RoundIconButton}" Width="30" Height="30" Margin="0,0,6,0" ToolTip="Configurações" Click="SidebarSettings_Click"><TextBlock Text="&#xE157;" Style="{StaticResource IconText}" FontSize="13" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/></Button>
         <StackPanel x:Name="LicenseInfoText" Margin="9,0,6,0" VerticalAlignment="Center">
          <TextBlock x:Name="LicenseLabel" FontSize="12.5" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
          <Border x:Name="LicensePlanBadge" HorizontalAlignment="Left" CornerRadius="6" Padding="6,1" Margin="0,3,0,0" Background="{DynamicResource AccentSoftBrush}">
@@ -67,121 +64,131 @@
 
      <ScrollViewer x:Name="SidebarScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="12,0,12,0">
       <StackPanel x:Name="NavStack" KeyboardNavigation.DirectionalNavigation="Cycle" Margin="0,0,0,6">
-       <!-- PRINCIPAL -->
-       <ToggleButton x:Name="NavCatMain" Tag="main" Style="{StaticResource NavCategoryButton}" IsChecked="True" Margin="0,2,0,3" Click="NavCategory_Click"><TextBlock Text="PRINCIPAL"/></ToggleButton>
+       <!-- Itens de navegação (escondidos): a barra superior monta as abas e sub-abas a partir deles (MainWindow.TopNav.cs) -->
+       <ToggleButton x:Name="NavCatMain" Tag="main" Style="{StaticResource NavCategoryButton}" IsChecked="True" Click="NavCategory_Click"><TextBlock Text="INÍCIO"/></ToggleButton>
        <StackPanel x:Name="NavGroupMain" Tag="main">
         <RadioButton x:Name="NavDashboard" Tag="dashboard" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE80F;" Style="{StaticResource NavIcon}"/><TextBlock Text="Início" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE0F8;" Style="{StaticResource NavIcon}"/><TextBlock Text="Início" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
         <RadioButton x:Name="NavMyPc" Tag="mypc" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE977;" Style="{StaticResource NavIcon}"/><TextBlock Text="Meu PC" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE44A;" Style="{StaticResource NavIcon}"/><TextBlock Text="Meu PC" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+        </RadioButton>
+        <RadioButton x:Name="NavHistory" Tag="history" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE1F4;" Style="{StaticResource NavIcon}"/><TextBlock Text="Histórico" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
        </StackPanel>
-
-       <!-- OTIMIZAÇÃO -->
-       <ToggleButton x:Name="NavCatOptimize" Tag="optimize" Style="{StaticResource NavCategoryButton}" IsChecked="True" Click="NavCategory_Click"><TextBlock Text="OTIMIZAÇÃO"/></ToggleButton>
+       <ToggleButton x:Name="NavCatOptimize" Tag="optimize" Style="{StaticResource NavCategoryButton}" IsChecked="True" Click="NavCategory_Click"><TextBlock Text="OTIMIZAR"/></ToggleButton>
        <StackPanel x:Name="NavGroupOptimize" Tag="optimize">
         <RadioButton x:Name="NavSmart" Tag="smart" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE945;" Style="{StaticResource NavIcon}"/><TextBlock Text="Otimização inteligente" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE1B3;" Style="{StaticResource NavIcon}"/><TextBlock Text="Otimização inteligente" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
         <RadioButton x:Name="NavOpt" Tag="optimization" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
          <DockPanel>
           <Border x:Name="NavOptBadge" DockPanel.Dock="Right" Padding="7,1" CornerRadius="7" Background="{DynamicResource AccentSoftBrush}" VerticalAlignment="Center">
            <TextBlock x:Name="NavOptBadgeText" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentTextBrush}"/>
           </Border>
-          <TextBlock Text="&#xE9E9;" Style="{StaticResource NavIcon}"/>
+          <TextBlock Text="&#xE299;" Style="{StaticResource NavIcon}"/>
           <TextBlock x:Name="NavOptText" Text="Otimizações" VerticalAlignment="Center" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
          </DockPanel>
         </RadioButton>
         <RadioButton x:Name="NavServices" Tag="services" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE912;" Style="{StaticResource NavIcon}"/><TextBlock Text="Serviços" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE156;" Style="{StaticResource NavIcon}"/><TextBlock Text="Serviços" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
         <RadioButton x:Name="NavApps" Tag="apps" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE71D;" Style="{StaticResource NavIcon}"/><TextBlock Text="Aplicativos" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE104;" Style="{StaticResource NavIcon}"/><TextBlock Text="Aplicativos" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
         <RadioButton x:Name="NavStartup" Tag="startup" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE7E8;" Style="{StaticResource NavIcon}"/><TextBlock Text="Inicialização" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE143;" Style="{StaticResource NavIcon}"/><TextBlock Text="Inicialização" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
         <RadioButton x:Name="NavDrivers" Tag="drivers" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE772;" Style="{StaticResource NavIcon}"/><TextBlock Text="Drivers" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE3A5;" Style="{StaticResource NavIcon}"/><TextBlock Text="Drivers" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
         <RadioButton x:Name="NavCustomize" Tag="customize" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE771;" Style="{StaticResource NavIcon}"/><TextBlock Text="Personalizar Windows" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE2E6;" Style="{StaticResource NavIcon}"/><TextBlock Text="Personalizar Windows" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
         <RadioButton x:Name="NavIsos" Tag="isos" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE958;" Style="{StaticResource NavIcon}"/><TextBlock Text="Imagens do Windows" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE498;" Style="{StaticResource NavIcon}"/><TextBlock Text="Imagens do Windows" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
        </StackPanel>
-
-       <!-- DESEMPENHO -->
        <ToggleButton x:Name="NavCatPerformance" Tag="performance" Style="{StaticResource NavCategoryButton}" IsChecked="True" Click="NavCategory_Click"><TextBlock Text="DESEMPENHO"/></ToggleButton>
        <StackPanel x:Name="NavGroupPerformance" Tag="performance">
         <RadioButton x:Name="NavPerfLab" Tag="perflab" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xF196;" Style="{StaticResource NavIcon}"/><TextBlock Text="Laboratório" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE0DA;" Style="{StaticResource NavIcon}"/><TextBlock Text="Laboratório" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
+        <RadioButton x:Name="NavStress" Tag="stress" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE1B3;" Style="{StaticResource NavIcon}"/><TextBlock Text="Stress test" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+        </RadioButton>
+        <RadioButton x:Name="NavOverlay" Tag="overlay" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE120;" Style="{StaticResource NavIcon}"/><TextBlock Text="Overlay" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+        </RadioButton>
+        <RadioButton x:Name="NavNetwork" Tag="network" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE1AD;" Style="{StaticResource NavIcon}"/><TextBlock Text="Rede" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+        </RadioButton>
+       </StackPanel>
+       <ToggleButton x:Name="NavCatGames" Tag="games" Style="{StaticResource NavCategoryButton}" IsChecked="True" Click="NavCategory_Click"><TextBlock Text="JOGOS"/></ToggleButton>
+       <StackPanel x:Name="NavGroupGames" Tag="games">
         <RadioButton x:Name="NavGaming" Tag="gaming" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
          <DockPanel>
           <Border x:Name="NavGamingBadge" DockPanel.Dock="Right" Padding="7,1" CornerRadius="7" Background="{DynamicResource SuccessSoftBrush}" VerticalAlignment="Center" Visibility="Collapsed">
            <TextBlock Text="ATIVO" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource SuccessBrush}"/>
           </Border>
-          <TextBlock Text="&#xE7FC;" Style="{StaticResource NavIcon}"/>
+          <TextBlock Text="&#xE0E2;" Style="{StaticResource NavIcon}"/>
           <TextBlock Text="Modo Jogo" VerticalAlignment="Center" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
          </DockPanel>
         </RadioButton>
-        <RadioButton x:Name="NavProfiles" Tag="profiles" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE77B;" Style="{StaticResource NavIcon}"/><TextBlock Text="Perfis" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+        <RadioButton x:Name="NavLibrary" Tag="library" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE105;" Style="{StaticResource NavIcon}"/><TextBlock Text="Biblioteca" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
-        <RadioButton x:Name="NavNetwork" Tag="network" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE968;" Style="{StaticResource NavIcon}"/><TextBlock Text="Rede" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+        <RadioButton x:Name="NavProfiles" Tag="profiles" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE19E;" Style="{StaticResource NavIcon}"/><TextBlock Text="Perfis" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
        </StackPanel>
-
-       <!-- FERRAMENTAS -->
        <ToggleButton x:Name="NavCatTools" Tag="tools" Style="{StaticResource NavCategoryButton}" IsChecked="True" Click="NavCategory_Click"><TextBlock Text="FERRAMENTAS"/></ToggleButton>
        <StackPanel x:Name="NavGroupTools" Tag="tools">
         <RadioButton x:Name="NavDiagnostics" Tag="diagnostics" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE9D9;" Style="{StaticResource NavIcon}"/><TextBlock Text="Diagnóstico" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE038;" Style="{StaticResource NavIcon}"/><TextBlock Text="Diagnóstico" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+        </RadioButton>
+        <RadioButton x:Name="NavHealth" Tag="health" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE371;" Style="{StaticResource NavIcon}"/><TextBlock Text="Saúde do hardware" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+        </RadioButton>
+        <RadioButton x:Name="NavDevices" Tag="devices" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE359;" Style="{StaticResource NavIcon}"/><TextBlock Text="Dispositivos" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
         <RadioButton x:Name="NavBiosAdvisor" Tag="biosadvisor" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xEA80;" Style="{StaticResource NavIcon}"/><TextBlock Text="Assistente de BIOS" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE407;" Style="{StaticResource NavIcon}"/><TextBlock Text="Assistente de BIOS" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
         <RadioButton x:Name="NavBios" Tag="bios" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE950;" Style="{StaticResource NavIcon}"/><TextBlock Text="Editor de BIOS" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE0AD;" Style="{StaticResource NavIcon}"/><TextBlock Text="Editor de BIOS" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
         <RadioButton x:Name="NavRestore" Tag="restore" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE777;" Style="{StaticResource NavIcon}"/><TextBlock Text="Restauração" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE2CC;" Style="{StaticResource NavIcon}"/><TextBlock Text="Restauração" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
         <RadioButton x:Name="NavFixes" Tag="fixes" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE90F;" Style="{StaticResource NavIcon}"/><TextBlock Text="Correções" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE1B0;" Style="{StaticResource NavIcon}"/><TextBlock Text="Correções" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
         <RadioButton x:Name="NavTools" Tag="tools" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE9F5;" Style="{StaticResource NavIcon}"/><TextBlock Text="Utilitários" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE0EF;" Style="{StaticResource NavIcon}"/><TextBlock Text="Utilitários" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
         <RadioButton x:Name="NavResources" Tag="resources" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8F1;" Style="{StaticResource NavIcon}"/><TextBlock Text="Recursos" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
-        </RadioButton>
-        <RadioButton x:Name="NavHistory" Tag="history" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE81C;" Style="{StaticResource NavIcon}"/><TextBlock Text="Histórico" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE105;" Style="{StaticResource NavIcon}"/><TextBlock Text="Recursos" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
        </StackPanel>
-
-       <!-- SISTEMA -->
        <ToggleButton x:Name="NavCatSystem" Tag="system" Style="{StaticResource NavCategoryButton}" IsChecked="True" Click="NavCategory_Click"><TextBlock Text="SISTEMA"/></ToggleButton>
        <StackPanel x:Name="NavGroupSystem" Tag="system">
         <RadioButton x:Name="NavSettings" Tag="settings" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE713;" Style="{StaticResource NavIcon}"/><TextBlock Text="Configurações" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE157;" Style="{StaticResource NavIcon}"/><TextBlock Text="Configurações" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
         <RadioButton x:Name="NavAdmin" Tag="admin" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8D7;" Style="{StaticResource NavIcon}"/><TextBlock Text="Licença" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE4A7;" Style="{StaticResource NavIcon}"/><TextBlock Text="Licença" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
         <RadioButton x:Name="NavUpdates" Tag="updates" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xEBD3;" Style="{StaticResource NavIcon}"/><TextBlock Text="Atualizações" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE08D;" Style="{StaticResource NavIcon}"/><TextBlock Text="Atualizações" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
         <RadioButton x:Name="NavPatchNotes" Tag="patchnotes" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8A5;" Style="{StaticResource NavIcon}"/><TextBlock Text="Novidades" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE0D0;" Style="{StaticResource NavIcon}"/><TextBlock Text="Novidades" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
         <RadioButton x:Name="NavAbout" Tag="about" Style="{StaticResource NavButtonStyle}" Click="Navigate_Click">
-         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE946;" Style="{StaticResource NavIcon}"/><TextBlock Text="Sobre" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
+         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE0FE;" Style="{StaticResource NavIcon}"/><TextBlock Text="Sobre" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
         </RadioButton>
        </StackPanel>
       </StackPanel>
@@ -191,28 +198,42 @@
 
    <!-- ============ ÁREA PRINCIPAL ============ -->
    <Grid x:Name="ContentArea" Grid.Column="1">
-    <Grid.RowDefinitions><RowDefinition Height="60"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <Grid.RowDefinitions><RowDefinition Height="72"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
     <!-- Brilho azul discreto no alto (pincel estático, sem custo com a tela parada) -->
     <Border Grid.RowSpan="4" Background="{DynamicResource GlowBrush}" IsHitTestVisible="False"/>
 
-    <!-- Barra superior: Otimizar, estado, alertas, busca (Ctrl+K), idioma, configurações e controles da janela -->
-    <DockPanel Grid.Row="0" LastChildFill="False">
-     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
-      <Border x:Name="TitleOptChipHost" CornerRadius="15" Padding="11,0" Height="30" Margin="0,15,8,0" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1" Visibility="Collapsed">
+    <!-- Barra superior (Aurora): logo, abas das categorias, estado, alertas, busca (Ctrl+K), idioma, conta e janela -->
+    <Grid Grid.Row="0" Margin="24,0,0,0">
+     <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+      <Border Width="36" Height="36" CornerRadius="11" Background="{DynamicResource AccentGradientBrush}">
+       <Image Source="pack://application:,,,/Qrztweaks;component/Assets/app.png" Width="24" Height="24" RenderOptions.BitmapScalingMode="HighQuality"/>
+      </Border>
+      <StackPanel x:Name="TopLogoText" Margin="10,0,0,0" VerticalAlignment="Center">
+       <TextBlock Text="Qrztweaks" FontSize="15" FontWeight="Bold" FontFamily="{StaticResource DisplayFont}" Tag="dado-do-sistema"/>
+       <TextBlock x:Name="VersionLabel" FontSize="10.5" Foreground="{DynamicResource MutedBrush}" Tag="dado-do-sistema"/>
+      </StackPanel>
+      <!-- Abas das categorias (MainWindow.TopNav.cs) -->
+      <Border x:Name="TopTabsHost" Margin="22,0,0,0" Padding="5" CornerRadius="14" Background="{DynamicResource NavHoverBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1" WindowChrome.IsHitTestVisibleInChrome="True">
+       <StackPanel x:Name="TopTabs" Orientation="Horizontal" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+      </Border>
+     </StackPanel>
+     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+      <Border x:Name="TitleOptChipHost" CornerRadius="15" Padding="11,0" Height="30" Margin="0,0,8,0" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1" Visibility="Collapsed">
        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-        <TextBlock Text="&#xE9D9;" Style="{StaticResource IconText}" FontSize="12" Foreground="{DynamicResource AccentBrush}" Margin="0,0,7,0"/>
+        <TextBlock Text="&#xE038;" Style="{StaticResource IconText}" FontSize="12" Foreground="{DynamicResource AccentBrush}" Margin="0,0,7,0"/>
         <TextBlock x:Name="TitleOptChip" Text="Pronto" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
        </StackPanel>
       </Border>
-      <Border x:Name="TitleAdminChipHost" CornerRadius="15" Padding="11,0" Height="30" Margin="0,15,8,0" Background="{DynamicResource WarningSoftBrush}" Visibility="Collapsed"
+      <Border x:Name="TitleAdminChipHost" CornerRadius="15" Padding="11,0" Height="30" Margin="0,0,8,0" Background="{DynamicResource WarningSoftBrush}" Visibility="Collapsed"
               ToolTip="O Qrztweaks está sem permissão de administrador: o Windows pode bloquear ajustes, serviços e atualizações.">
        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
         <Ellipse x:Name="TitleAdminDot" Width="7" Height="7" Fill="{DynamicResource MutedBrush}" Margin="0,0,7,0"/>
         <TextBlock x:Name="TitleAdminChip" Text="Verificando" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
        </StackPanel>
       </Border>
-      <Grid Margin="0,13,8,0" WindowChrome.IsHitTestVisibleInChrome="True">
-       <Button x:Name="AlertsButton" Style="{StaticResource RoundIconButton}" ToolTip="Alertas" Click="AlertsButton_Click"><TextBlock Text="&#xEA8F;" Style="{StaticResource IconText}" FontSize="13" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/></Button>
+      <Grid Margin="0,0,8,0" WindowChrome.IsHitTestVisibleInChrome="True">
+       <Button x:Name="AlertsButton" Style="{StaticResource RoundIconButton}" ToolTip="Alertas" Click="AlertsButton_Click"><TextBlock Text="&#xE05D;" Style="{StaticResource IconText}" FontSize="13" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/></Button>
        <Ellipse x:Name="AlertsDot" Width="8" Height="8" Fill="{DynamicResource DangerBrush}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,5,0" IsHitTestVisible="False" Visibility="Collapsed"/>
        <Popup x:Name="AlertsPopup" PlacementTarget="{Binding ElementName=AlertsButton}" Placement="Bottom" HorizontalOffset="-300" VerticalOffset="8" AllowsTransparency="True" StaysOpen="False" PopupAnimation="Fade">
         <Border Width="340" Background="{DynamicResource CardElevatedBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="12" Padding="8">
@@ -220,10 +241,10 @@
         </Border>
        </Popup>
       </Grid>
-      <Grid x:Name="SearchHost" Width="250" Margin="0,13,8,0" VerticalAlignment="Top" WindowChrome.IsHitTestVisibleInChrome="True">
-       <Border x:Name="SearchBorder" CornerRadius="17" Height="34" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1">
+      <Grid x:Name="SearchHost" Width="250" Margin="0,0,8,0" VerticalAlignment="Center" WindowChrome.IsHitTestVisibleInChrome="True">
+       <Border x:Name="SearchBorder" CornerRadius="12" Height="38" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1">
         <DockPanel Margin="13,0,6,0">
-         <TextBlock DockPanel.Dock="Left" Text="&#xE721;" Style="{StaticResource IconText}" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,0,9,0"/>
+         <TextBlock DockPanel.Dock="Left" Text="&#xE154;" Style="{StaticResource IconText}" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,0,9,0"/>
          <Border DockPanel.Dock="Right" CornerRadius="7" Padding="6,1" Background="{DynamicResource CardInsetBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center">
           <TextBlock Text="Ctrl K" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" Tag="dado-do-sistema"/>
          </Border>
@@ -240,30 +261,43 @@
         </Border>
        </Popup>
       </Grid>
-      <Button x:Name="LangButton" Content="PT" Style="{StaticResource GhostButton}" Padding="10,0" Height="34" Margin="0,13,10,0" FontSize="11.5" Click="LangButton_Click" WindowChrome.IsHitTestVisibleInChrome="True"/>
-
-      <Button Style="{StaticResource TitleBarBtnStyle}" Content="&#xE921;" ToolTip="Minimizar" Click="BtnMinimize_Click" WindowChrome.IsHitTestVisibleInChrome="True"/>
-      <Button x:Name="BtnMaximize" Style="{StaticResource TitleBarBtnStyle}" Content="&#xE922;" Click="BtnMaximize_Click" WindowChrome.IsHitTestVisibleInChrome="True"/>
-      <Button Style="{StaticResource TitleBarCloseBtnStyle}" Content="&#xE8BB;" ToolTip="Fechar" Click="BtnClose_Click" WindowChrome.IsHitTestVisibleInChrome="True"/>
+      <Button x:Name="LangButton" Content="PT" Style="{StaticResource GhostButton}" Padding="10,0" Height="34" Margin="0,0,8,0" FontSize="11.5" Click="LangButton_Click" WindowChrome.IsHitTestVisibleInChrome="True"/>
+      <!-- Conta: iniciais da licença; abre o menu com configurações, licença, tema e sobre -->
+      <Button x:Name="AvatarButton" Style="{StaticResource GhostButton}" Width="38" Height="38" Padding="0" Margin="0,0,10,0" Click="AvatarButton_Click" WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="Conta e configurações">
+       <Border x:Name="LicenseAvatar" Width="36" Height="36" CornerRadius="11" Background="{DynamicResource AccentGradientBrush}">
+        <TextBlock x:Name="LicenseAvatarText" FontSize="12.5" FontWeight="Bold" Foreground="{DynamicResource OnAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" Tag="dado-do-sistema"/>
+       </Border>
+      </Button>
+      <Popup x:Name="AvatarPopup" PlacementTarget="{Binding ElementName=AvatarButton}" Placement="Bottom" HorizontalOffset="-222" VerticalOffset="10" AllowsTransparency="True" StaysOpen="False" PopupAnimation="Fade">
+       <Border Width="260" Background="{DynamicResource CardElevatedBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="16" Padding="8">
+        <StackPanel x:Name="AvatarMenu"/>
+       </Border>
+      </Popup>
+      <Button Style="{StaticResource TitleBarBtnStyle}" Content="&#xE11F;" ToolTip="Minimizar" Click="BtnMinimize_Click" WindowChrome.IsHitTestVisibleInChrome="True"/>
+      <Button x:Name="BtnMaximize" Style="{StaticResource TitleBarBtnStyle}" Content="&#xE16A;" Click="BtnMaximize_Click" WindowChrome.IsHitTestVisibleInChrome="True"/>
+      <Button Style="{StaticResource TitleBarCloseBtnStyle}" Content="&#xE1B1;" ToolTip="Fechar" Click="BtnClose_Click" WindowChrome.IsHitTestVisibleInChrome="True"/>
      </StackPanel>
-     <Button x:Name="OptimizeButton" DockPanel.Dock="Left" Style="{StaticResource PillButton}" Margin="28,13,0,0" VerticalAlignment="Top" Height="34" Click="OptimizeButton_Click" WindowChrome.IsHitTestVisibleInChrome="True"
+     <Button x:Name="OptimizeButton" Visibility="Collapsed" Style="{StaticResource PillButton}" Margin="28,13,0,0" VerticalAlignment="Top" Height="34" Click="OptimizeButton_Click" WindowChrome.IsHitTestVisibleInChrome="True"
              ToolTip="Analisar o PC e revisar os ajustes recomendados">
       <StackPanel Orientation="Horizontal">
-       <TextBlock Text="&#xE945;" Style="{StaticResource IconText}" FontSize="12" Margin="0,0,8,0" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+       <TextBlock Text="&#xE1B3;" Style="{StaticResource IconText}" FontSize="12" Margin="0,0,8,0" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
        <TextBlock Text="Otimizar" VerticalAlignment="Center" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
       </StackPanel>
      </Button>
-    </DockPanel>
+    </Grid>
 
-    <!-- Cabeçalho da página: linha discreta, título grande e subtítulo; ações da página à direita -->
-    <Grid Grid.Row="1" Margin="28,6,36,18">
+    <!-- Cabeçalho da página: sub-abas da categoria, título e subtítulo; ações da página à direita -->
+    <Grid Grid.Row="1" Margin="26,4,36,16">
+     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-     <StackPanel VerticalAlignment="Bottom">
+     <WrapPanel x:Name="SubTabs" Margin="0,0,0,14" VerticalAlignment="Center" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+     <StackPanel x:Name="PageHeading" Grid.Row="1" Grid.ColumnSpan="2" VerticalAlignment="Bottom">
       <TextBlock x:Name="PageEyebrow" Style="{StaticResource EyebrowText}" TextTrimming="CharacterEllipsis"/>
       <TextBlock x:Name="PageTitle" Text="Início" Style="{StaticResource PageTitleText}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
       <TextBlock x:Name="PageSubtitle" FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0" TextTrimming="CharacterEllipsis"/>
      </StackPanel>
-     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="16,0,0,2">
+     <!-- Ações da página na linha das sub-abas, à direita -->
+     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" Margin="16,0,0,14">
       <StackPanel x:Name="PageActions" Orientation="Horizontal" VerticalAlignment="Center"/>
       <Border x:Name="PageBadge" Visibility="Collapsed" VerticalAlignment="Center" Background="{DynamicResource AccentSoftBrush}" BorderBrush="{DynamicResource AccentSoftBrush}" BorderThickness="1" CornerRadius="12" Padding="12,6" Margin="8,0,0,0">
        <TextBlock x:Name="PageBadgeText" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentTextBrush}"/>
@@ -271,7 +305,7 @@
      </StackPanel>
     </Grid>
 
-    <ScrollViewer x:Name="ContentScroll" Grid.Row="2" Margin="28,0,14,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <ScrollViewer x:Name="ContentScroll" Grid.Row="2" Margin="26,0,14,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
      <Grid x:Name="ContentHost" Margin="0,0,14,20" MaxWidth="1880"/>
     </ScrollViewer>
 
@@ -284,7 +318,7 @@
         <Ellipse x:Name="LastActivityDot" Width="6" Height="6" Fill="{DynamicResource SuccessBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
         <TextBlock x:Name="LastActivityText" MaxWidth="440" FontSize="11" Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Tag="dado-do-sistema"/>
        </StackPanel>
-       <TextBlock Text="&#xE946;" Style="{StaticResource IconText}" FontSize="12.5" Foreground="{DynamicResource MutedBrush}" Margin="0,0,10,0"/>
+       <TextBlock Text="&#xE0FE;" Style="{StaticResource IconText}" FontSize="12.5" Foreground="{DynamicResource MutedBrush}" Margin="0,0,10,0"/>
        <TextBlock x:Name="OperationStatus" Text="Pronto para começar" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" FontSize="12" Foreground="{DynamicResource MutedBrush}"/>
       </DockPanel>
       <ProgressBar x:Name="OperationProgress" Height="2" VerticalAlignment="Top" Visibility="Collapsed" IsIndeterminate="True"/>

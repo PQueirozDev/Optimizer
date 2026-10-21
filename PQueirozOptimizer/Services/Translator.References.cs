@@ -106,6 +106,18 @@ public static partial class Translator
         ["Relógio errado faz launchers e jogos recusarem o login, quebra sites com HTTPS e atrapalha o Windows Update."] = "A wrong clock makes launchers and games reject sign-in, breaks HTTPS sites and disrupts Windows Update.",
         ["Reaplicando ajustes desfeitos"] = "Reapplying undone settings",
 
+        // ---------- Notas da v2.4.0 ----------
+        ["Novo visual Aurora como padrão: preto azulado com brilho azul, cards de vidro fosco e botões azuis."] = "New Aurora look by default: bluish black with a blue glow, frosted glass cards and blue buttons.",
+        ["Menu no topo: a barra lateral deu lugar a 5 abas (Início, Otimizar, Desempenho, Jogos e Ferramentas), com as páginas de cada uma logo abaixo."] = "Top menu: the sidebar gave way to 5 tabs (Home, Optimize, Performance, Games and Tools), with each one's pages right below.",
+        ["Menu da conta no canto direito, com Configurações, Licença, Atualizações, Novidades, Sobre, Tema e modo compacto."] = "Account menu in the top right corner, with Settings, License, Updates, What's new, About, Theme and compact mode.",
+        ["Ícones novos, de traço fino e arredondado, em todo o app."] = "New thin, rounded line icons across the app.",
+        ["Início reformulado: saúde do PC com nota e indicadores reais, medidores de CPU, GPU e RAM, gráfico de carga de 1, 5 ou 15 minutos e acesso rápido."] = "Redesigned Home: PC health with a score and real indicators, CPU, GPU and RAM gauges, a 1, 5 or 15 minute load chart and quick access.",
+        ["Nova página Saúde do hardware: vida útil e erros dos discos, desgaste da bateria, erros WHEA e reinícios do driver de vídeo, com relatório do PC em HTML."] = "New Hardware health page: disk lifespan and errors, battery wear, WHEA errors and graphics driver resets, with an HTML PC report.",
+        ["Nova página Stress test: testa CPU e memória e diz se o PC está estável, instável ou se o resultado é inconclusivo."] = "New Stress test page: tests CPU and memory and tells whether the PC is stable, unstable or the result is inconclusive.",
+        ["Nova página Biblioteca: jogos da Steam, Epic, GOG, Ubisoft e adicionados à mão num só lugar."] = "New Library page: Steam, Epic, GOG, Ubisoft and manually added games in one place.",
+        ["Novo Overlay de jogo com FPS medido de verdade, além de CPU, GPU e RAM, sem atrapalhar os cliques."] = "New in-game Overlay with truly measured FPS, plus CPU, GPU and RAM, without getting in the way of clicks.",
+        ["Nova página Dispositivos: remove aparelhos fantasmas e libera portas COM reservadas sem dono, com backup e desfazer."] = "New Devices page: removes ghost devices and frees ownerless reserved COM ports, with backup and undo.",
+
         // ---------- Notas da v2.3.0 ----------
         ["Novo visual Grafite ciano como padrão: grafite em degraus, destaque em ciano e botões principais preenchidos, no estilo dos apps de hardware."] = "New Cyan graphite look by default: stepped graphite, cyan accent and filled primary buttons, in the style of hardware apps.",
         ["Início reformulado: números ao vivo com ícone e curva, faixas \"Desempenho\" e \"Acesso rápido\" e atalhos mais compactos."] = "Redesigned Home: live numbers with icon and curve, \"Performance\" and \"Quick access\" bands and more compact shortcuts.",

@@ -48,8 +48,6 @@ public partial class MainWindow
         panel.Children.Add(SettingRow("Seguir a redução de movimento do Windows",
             "Desliga as animações quando \"Mostrar animações no Windows\" estiver desligado. Fica desligado por padrão porque o ajuste de efeitos visuais do próprio app desliga essa opção do Windows.",
             Switch(current.FollowSystemMotion, on => Update(s => s.FollowSystemMotion = on))));
-        panel.Children.Add(SettingRow("Barra lateral compacta", "Mostra só os ícones; o nome de cada página aparece ao passar o mouse. Também alterna com Ctrl+B.",
-            Switch(current.CompactSidebar, on => Update(s => s.CompactSidebar = on))));
 
         var dashTitle = Label("Tela inicial", 13.5); dashTitle.FontWeight = FontWeights.SemiBold; dashTitle.Margin = new Thickness(0, 8, 0, 2);
         panel.Children.Add(dashTitle);
@@ -140,7 +138,7 @@ public partial class MainWindow
     /// <summary>Ordem e nomes dos temas na galeria.</summary>
     internal static readonly (ThemeMode Mode, string Name)[] Themes =
     {
-        (ThemeMode.Dark, "Grafite ciano"), (ThemeMode.Oled, "OLED"), (ThemeMode.Light, "Claro"), (ThemeMode.Graphite, "Cinza"),
+        (ThemeMode.Dark, "Aurora"), (ThemeMode.Oled, "OLED"), (ThemeMode.Light, "Claro"), (ThemeMode.Graphite, "Cinza"),
         (ThemeMode.Ocean, "Oceano"), (ThemeMode.Forest, "Floresta"), (ThemeMode.Plum, "Ameixa"), (ThemeMode.Midnight, "Roxo meia-noite"), (ThemeMode.Sand, "Areia"), (ThemeMode.Auto, "Automático"),
     };
 

@@ -44,19 +44,15 @@ public partial class MainWindow
     private List<TutorialStep> WelcomeTour() => new()
     {
         new(() => null, "Bem-vindo ao Qrztweaks!", "Em menos de um minuto você conhece o essencial. Use Próximo para avançar ou Pular para começar a usar agora."),
-        new(() => NavDashboard, "Início", "A saúde do PC, o monitor ao vivo, os alertas e as ações rápidas ficam aqui."),
-        new(() => NavSmart, "Otimização inteligente", "Escolha o objetivo do PC: o app lê o estado de cada ajuste e recomenda só o que se aplica, com risco e reversão."),
-        new(() => NavResources, "Recursos — comece por aqui", "Verificação de arquivos corrompidos do Windows, instalação de runtimes para jogos e reinstalação limpa do driver de vídeo."),
-        new(() => NavFixes, "Correções", "Soluções rápidas para problemas comuns: Windows Update travado, Loja, áudio, pesquisa, ícones e mais."),
-        new(() => NavRestore, "Pontos de restauração", "Crie um ponto de restauração antes de grandes mudanças e volte a ele quando quiser."),
-        new(() => NavOpt, "Otimizações", "Os ajustes de desempenho, privacidade e manutenção. Você revisa cada item antes de aplicar, e o que tem backup pode ser revertido."),
-        new(() => NavServices, "Serviços", "Desligue grupos de serviços em segundo plano — Windows Update, telemetria, Bluetooth, Xbox — e ligue de volta quando quiser."),
-        new(() => NavApps, "Aplicativos", "Ajuste Discord, navegadores e Spotify para não disputarem a placa de vídeo com o jogo, e desinstale o que não usa."),
-        new(() => NavGaming, "Modo Jogo", "Sessão de jogo temporária, perfis por jogo, presets dos jogos, perfil NVIDIA, plano de energia Qrz e Defender."),
-        new(() => NavBios, "BIOS", "Ajustes de BIOS por grupos (memória, Resizable BAR, energia) aplicados pelo Windows, com cópia original para voltar."),
+        new(() => TopTabFor("dashboard"), "Início", "A saúde do PC, o monitor ao vivo, os alertas e as ações rápidas ficam aqui."),
+        new(() => Marked("home.hud"), "Monitor ao vivo", "CPU, placa de vídeo, memória e ping em tempo real, em qualquer página."),
+        new(() => TopTabFor("smart"), "Otimizar", "Otimização inteligente, ajustes revisados item por item, serviços, aplicativos, inicialização e drivers. Você revisa tudo antes de aplicar."),
+        new(() => TopTabFor("perflab"), "Desempenho", "Laboratório de FPS, stress test, overlay no jogo e rede."),
+        new(() => TopTabFor("gaming"), "Jogos", "Modo Jogo, biblioteca com todos os seus jogos e perfis por jogo."),
+        new(() => TopTabFor("resources"), "Ferramentas", "Diagnóstico, saúde do hardware, dispositivos, BIOS, correções e pontos de restauração."),
+        new(() => SubTabs, "Páginas da categoria", "Cada categoria mostra as páginas dela aqui, logo abaixo das abas."),
         new(() => SearchHost, "Busca rápida", "Pressione Ctrl+K e digite o que procura para abrir qualquer página ou recurso."),
-        new(() => HudPanel, "Monitor ao vivo", "CPU, placa de vídeo, memória e ping em tempo real, em qualquer página."),
-        new(() => NavHistory, "Histórico", "Tudo o que foi feito fica registrado aqui, com a opção de desfazer."),
+        new(() => AvatarButton, "Sua conta", "Configurações, licença, atualizações, tema e o modo compacto ficam neste menu."),
         new(() => null, "Tudo pronto!", "Você pode rever os tutoriais quando quiser em Configurações → Tutoriais. Bom jogo!"),
     };
 

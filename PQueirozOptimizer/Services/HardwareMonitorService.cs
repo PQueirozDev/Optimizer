@@ -20,8 +20,11 @@ public sealed class HardwareMonitorService : IDisposable
     public static HardwareMonitorService Shared { get; } = new();
 
     public const int HistoryLength = 60;
+    /// <summary>15 minutos de leituras para o gráfico de carga do Início (1, 5 ou 15 min), independente da página aberta.</summary>
+    public const int LongHistoryLength = 900;
     private readonly object _gate = new();
     private readonly Queue<HardwareSample> _history = new();
+    private readonly Queue<HardwareSample> _longHistory = new();
     private event Action<HardwareSample>? SampledCore;
     private CancellationTokenSource? _loop;
     private int _subscribers;
@@ -35,6 +38,7 @@ public sealed class HardwareMonitorService : IDisposable
 
     public HardwareSample? Latest { get { lock (_gate) return _history.Count == 0 ? null : _history.Last(); } }
     public IReadOnlyList<HardwareSample> History { get { lock (_gate) return _history.ToList(); } }
+    public IReadOnlyList<HardwareSample> LongHistory { get { lock (_gate) return _longHistory.ToList(); } }
 
     private void Start()
     {
@@ -82,6 +86,8 @@ public sealed class HardwareMonitorService : IDisposable
                 {
                     _history.Enqueue(sample);
                     while (_history.Count > HistoryLength) _history.Dequeue();
+                    _longHistory.Enqueue(sample);
+                    while (_longHistory.Count > LongHistoryLength) _longHistory.Dequeue();
                     handlers = SampledCore;
                 }
                 handlers?.Invoke(sample);

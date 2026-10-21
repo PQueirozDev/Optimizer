@@ -38,6 +38,11 @@ public partial class MainWindow
         ["diagnostics"] = ("Ferramentas", Glyphs.Diagnostic, "Uma leitura guiada dos principais componentes do Windows."),
         ["gaming"] = ("Desempenho", Glyphs.Game, "Sessão de jogo, perfis, NVIDIA, configurações dos jogos e Defender."),
         ["network"] = ("Desempenho", Glyphs.Network, "Velocidade, DNS, latência e reparos de conexão."),
+        ["library"] = ("Desempenho", Glyphs.Library, "Todos os jogos instalados, de qualquer loja, num só lugar."),
+        ["overlay"] = ("Desempenho", Glyphs.Monitor, "FPS, tempo de quadro e uso do hardware por cima do jogo."),
+        ["stress"] = ("Desempenho", Glyphs.Lightning, "Teste de estabilidade de CPU e memória com conferência de erros."),
+        ["health"] = ("Ferramentas", Glyphs.Health, "Discos, bateria e erros de hardware lidos do Windows."),
+        ["devices"] = ("Ferramentas", Glyphs.Devices, "Dispositivos fantasmas, drivers com problema e portas COM."),
         ["settings"] = ("Sistema", Glyphs.Settings, "Aparência, licença, idioma, tutoriais e atualizações."),
         ["bios"] = ("Ferramentas", Glyphs.Chip, "Editor de BIOS pelo SCEWIN e ajustes recomendados."),
         ["biosadvisor"] = ("Ferramentas", Glyphs.Diagnostic, "Análise do hardware e recomendações de BIOS, sem alterar nada automaticamente."),
@@ -50,7 +55,8 @@ public partial class MainWindow
         PageActions.Children.Clear();
         if (!PageHeaders.TryGetValue(page, out var header)) return;
         PageEyebrow.Tag = null;
-        PageEyebrow.Text = header.Eyebrow;
+        // A linha acima do título é a categoria da barra superior em que a página está
+        PageEyebrow.Text = CategoryOf(page) is { } category && TopCategories.FirstOrDefault(c => c.Tag == category).Title is { } title ? title : header.Eyebrow;
         PageSubtitle.Text = header.Subtitle;
         // Título e subtítulo entram com um leve deslize (160 ms); sem animação, trocam direto
         if (!AppearanceService.AnimationsEnabled || !IsLoaded) return;
@@ -167,6 +173,12 @@ public partial class MainWindow
         new("Configurações dos jogos", "Jogos e Rede", Glyphs.Settings, "fortnite apex cs2 rocket league preset competitivo ini", () => OpenGamingTab(1)),
         new("Perfil NVIDIA", "Jogos e Rede", Glyphs.Monitor, "nvidia painel de controle baixa latencia vsync shader cache inspector", () => OpenGamingTab(2)),
         new("Windows Defender", "Jogos e Rede", Glyphs.Shield, "antivirus defender exclusao protecao tempo real", () => OpenGamingTab(3)),
+        new("Biblioteca", "Jogos", Glyphs.Library, "jogos instalados steam epic gog ubisoft jogar launcher library", () => NavigateTo("library")),
+        new("Overlay", "Desempenho", Glyphs.Monitor, "fps contador overlay na tela tempo de quadro 1% low hud jogo", () => NavigateTo("overlay")),
+        new("Stress test", "Desempenho", Glyphs.Fire, "estresse estabilidade cpu memoria ram overclock undervolt xmp expo whea teste", () => NavigateTo("stress")),
+        new("Saúde do hardware", "Ferramentas", Glyphs.Health, "smart disco ssd hd desgaste temperatura bateria whea erros relatorio hardware health", () => NavigateTo("health")),
+        new("Relatório do PC", "Ferramentas", Glyphs.Document, "relatorio exportar html suporte hardware report", () => _ = ExportReportAsync()),
+        new("Dispositivos", "Ferramentas", Glyphs.Devices, "dispositivos fantasmas usb remover porta com serial arduino drivers com problema devices", () => NavigateTo("devices")),
         new("Runtimes para jogos", "Jogos e Rede", Glyphs.Package, "visual c++ directx net xna redistribuivel dll", () => OpenGamingTab(1)),
         new("Memória em espera", "Jogos e Rede", Glyphs.Memory, "ram standby islc liberar memoria", () => OpenGamingTab(3)),
         new("Rede", "Desempenho", Glyphs.Network, "internet conexao", () => NavigateTo("network")),

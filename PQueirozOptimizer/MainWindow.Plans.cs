@@ -15,7 +15,7 @@ public partial class MainWindow
     {
         ["optimization"] = "Otimizações", ["startup"] = "Inicialização", ["fixes"] = "Correções", ["tools"] = "Utilitários",
         ["services"] = "Serviços", ["apps"] = "Aplicativos", ["drivers"] = "Drivers", ["network"] = "Rede", ["resources"] = "Recursos",
-        ["diagnostics"] = "Central de diagnóstico", ["smart"] = "Otimização inteligente", ["perflab"] = "Laboratório de desempenho", ["profiles"] = "Perfis", ["gaming"] = "Modo Jogo", ["customize"] = "Personalizar Windows", ["bios"] = "Editor de BIOS", ["biosadvisor"] = "Assistente de BIOS",
+        ["diagnostics"] = "Central de diagnóstico", ["health"] = "Saúde do hardware", ["devices"] = "Dispositivos", ["stress"] = "Stress test", ["library"] = "Biblioteca", ["overlay"] = "Overlay", ["smart"] = "Otimização inteligente", ["perflab"] = "Laboratório de desempenho", ["profiles"] = "Perfis", ["gaming"] = "Modo Jogo", ["customize"] = "Personalizar Windows", ["bios"] = "Editor de BIOS", ["biosadvisor"] = "Assistente de BIOS",
         ["dashboard"] = "Início", ["mypc"] = "Meu PC", ["history"] = "Histórico", ["restore"] = "Pontos de restauração", ["settings"] = "Configurações", ["patchnotes"] = "Novidades", ["about"] = "Sobre",
     };
 
@@ -54,6 +54,7 @@ public partial class MainWindow
             button.Opacity = allowed ? 1 : 0.5;
             button.ToolTip = allowed ? null : string.Format(Translator.Tr("Disponível a partir do plano {0}"), Translator.Tr(LicensePlans.TierName(PlanAccess.Required(page))));
         }
+        RefreshTopNav(_topNavPage);
     }
 
     /// <summary>Copia o pedido de upgrade (titular, plano desejado e ID do PC) e abre o Discord para o ticket.</summary>

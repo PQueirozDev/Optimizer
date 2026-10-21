@@ -26,6 +26,19 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v2.4.0", "21/10/2026", new[]
+        {
+            "Novo visual Aurora como padrão: preto azulado com brilho azul, cards de vidro fosco e botões azuis.",
+            "Menu no topo: a barra lateral deu lugar a 5 abas (Início, Otimizar, Desempenho, Jogos e Ferramentas), com as páginas de cada uma logo abaixo.",
+            "Menu da conta no canto direito, com Configurações, Licença, Atualizações, Novidades, Sobre, Tema e modo compacto.",
+            "Ícones novos, de traço fino e arredondado, em todo o app.",
+            "Início reformulado: saúde do PC com nota e indicadores reais, medidores de CPU, GPU e RAM, gráfico de carga de 1, 5 ou 15 minutos e acesso rápido.",
+            "Nova página Saúde do hardware: vida útil e erros dos discos, desgaste da bateria, erros WHEA e reinícios do driver de vídeo, com relatório do PC em HTML.",
+            "Nova página Stress test: testa CPU e memória e diz se o PC está estável, instável ou se o resultado é inconclusivo.",
+            "Nova página Biblioteca: jogos da Steam, Epic, GOG, Ubisoft e adicionados à mão num só lugar.",
+            "Novo Overlay de jogo com FPS medido de verdade, além de CPU, GPU e RAM, sem atrapalhar os cliques.",
+            "Nova página Dispositivos: remove aparelhos fantasmas e libera portas COM reservadas sem dono, com backup e desfazer.",
+        }),
         ("v2.3.0", "19/10/2026", new[]
         {
             "Novo visual Grafite ciano como padrão: grafite em degraus, destaque em ciano e botões principais preenchidos, no estilo dos apps de hardware.",

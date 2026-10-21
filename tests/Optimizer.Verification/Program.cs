@@ -781,7 +781,7 @@ internal static class Program
                 var flags = BindingFlags.NonPublic | BindingFlags.Instance;
                 void Wait(int ms) { var frame = new DispatcherFrame(); var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(ms) }; timer.Tick += (_, _) => { timer.Stop(); frame.Continue = false; }; timer.Start(); Dispatcher.PushFrame(frame); }
                 var portuguese = new System.Text.RegularExpressions.Regex(@"[áàâãéêíóôõúçÁÉÍÓÚÇÃÕ]|\b(de|do|da|dos|das|para|com|seu|sua|você|não|nao|um|uma|os|pelo|pela|ou|está|são|ativo|ativa|ativar|desativado|pronto|salvar|excluir|abrir|revisar|baixar|voltar|copiar|sair|limpar|todos|todas|nenhum|nenhuma|\w+ando|\w+endo|\w+cao|\w+coes)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-                var ignore = new System.Text.RegularExpressions.Regex(@"Pedro Queiroz|PQueiroz|pqueiroz|\\|NVIDIA|Intel|AMD|Microsoft Windows|GeForce|Ryzen|Radeon|Click To Do|https?://|\.exe|\.lnk");
+                var ignore = new System.Text.RegularExpressions.Regex(@"Pedro Queiroz|PQueiroz|pqueiroz|\\|NVIDIA|Intel|AMD|Microsoft Windows|GeForce|Ryzen|Radeon|Click To Do|\bCOM (ports|PORTS)\b|https?://|\.exe|\.lnk");
                 var found = new SortedSet<string>();
                 void Collect(DependencyObject node)
                 {
@@ -823,7 +823,7 @@ internal static class Program
                 foreach (var page in new[] { "resources", "gaming", "network", "services", "bios" })
                     if (typeof(MainWindow).GetMethod("PageTutorial", flags)!.Invoke(window, new object[] { page }) is System.Collections.IList pageSteps) WalkTutorial("pagina-" + page, page, pageSteps);
                 PrepareBiosAdvisor(window);
-                foreach (var page in new[] { "dashboard", "mypc", "optimization", "startup", "drivers", "tools", "gaming", "network", "restore", "resources", "fixes", "services", "apps", "history", "settings", "about", "patchnotes", "bios", "biosadvisor", "smart", "perflab", "profiles", "diagnostics" })
+                foreach (var page in new[] { "dashboard", "mypc", "optimization", "startup", "drivers", "tools", "gaming", "network", "restore", "resources", "fixes", "services", "apps", "history", "settings", "about", "patchnotes", "bios", "biosadvisor", "smart", "perflab", "profiles", "diagnostics", "health", "devices", "stress", "library", "overlay" })
                 {
                     typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { page });
                     Wait(page is "dashboard" or "mypc" ? 4000 : page == "startup" ? 8000 : 600);
@@ -974,6 +974,13 @@ internal static class Program
                 foreach (var page in new[] { "drivers", "startup", "tools", "gaming", "network", "restore", "resources", "fixes", "services", "apps", "settings", "about", "patchnotes", "bios", "biosadvisor" })
                 {
                     typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { page });
+                    Render(page + "-dark", 1320, 860);
+                }
+                // Páginas de hardware: leem WMI, log e lojas em segundo plano; espera a leitura terminar antes da captura
+                foreach (var page in new[] { "health", "devices", "stress", "library", "overlay" })
+                {
+                    typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { page });
+                    Pump(Task.Delay(page is "health" or "devices" or "library" ? 6000 : 400));
                     Render(page + "-dark", 1320, 860);
                 }
                 typeof(MainWindow).GetField("_servicesTab", flags)!.SetValue(window, 1);

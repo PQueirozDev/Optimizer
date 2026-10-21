@@ -176,14 +176,14 @@
   </Style>
 
   <!-- ================= Navegação lateral ================= -->
-  <!-- Item: fundo neutro um degrau mais claro e barrinha azul quando selecionado; ícone azul no item ativo -->
+  <!-- Item: 38 px de altura, cantos de 12; selecionado = fundo um degrau mais claro e texto forte (sem barrinha) -->
   <Style x:Key="NavButtonStyle" TargetType="RadioButton">
     <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/>
     <Setter Property="FontSize" Value="13"/>
     <Setter Property="FontWeight" Value="Medium"/>
     <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
     <Setter Property="Margin" Value="0,1"/>
-    <Setter Property="Padding" Value="12,8"/>
+    <Setter Property="Padding" Value="14,10"/>
     <Setter Property="Cursor" Value="Hand"/>
     <Setter Property="GroupName" Value="Navigation"/>
     <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -192,9 +192,7 @@
       <Setter.Value>
         <ControlTemplate TargetType="RadioButton">
           <Grid Background="Transparent">
-            <Border x:Name="bg" CornerRadius="{DynamicResource ControlRadius}" Background="Transparent" BorderThickness="1" BorderBrush="Transparent"/>
-            <Border x:Name="indicator" Width="3" Height="16" CornerRadius="1.5" HorizontalAlignment="Left" Margin="0,0,0,0"
-                    Background="{DynamicResource AccentBrush}" Opacity="0"/>
+            <Border x:Name="bg" CornerRadius="12" Background="Transparent" BorderThickness="1" BorderBrush="Transparent"/>
             <ContentPresenter x:Name="content" Margin="{TemplateBinding Padding}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
           </Grid>
           <ControlTemplate.Triggers>
@@ -205,7 +203,6 @@
             <Trigger Property="IsChecked" Value="True">
               <Setter TargetName="bg" Property="Background" Value="{DynamicResource NavSelectedBrush}"/>
               <Setter TargetName="bg" Property="BorderBrush" Value="{DynamicResource NavSelectedBorderBrush}"/>
-              <Setter TargetName="indicator" Property="Opacity" Value="1"/>
               <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
               <Setter Property="FontWeight" Value="SemiBold"/>
             </Trigger>
@@ -590,7 +587,7 @@
         <ControlTemplate TargetType="MenuItem">
           <Border x:Name="bd" CornerRadius="8" Padding="10,7" Background="Transparent">
             <DockPanel>
-              <TextBlock x:Name="tick" DockPanel.Dock="Right" Text="&#xE73E;" FontFamily="{StaticResource IconFont}" FontSize="11" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="12,0,0,0" Visibility="Collapsed"/>
+              <TextBlock x:Name="tick" DockPanel.Dock="Right" Text="&#xE070;" FontFamily="{StaticResource IconFont}" FontSize="11" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="12,0,0,0" Visibility="Collapsed"/>
               <ContentPresenter x:Name="icon" ContentSource="Icon" DockPanel.Dock="Left" Margin="0,0,10,0" VerticalAlignment="Center"/>
               <ContentPresenter ContentSource="Header" VerticalAlignment="Center" RecognizesAccessKey="True"/>
             </DockPanel>

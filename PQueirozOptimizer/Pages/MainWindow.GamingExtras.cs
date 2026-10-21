@@ -21,8 +21,10 @@ public partial class MainWindow
     private Border GameBanner(string title, double height, double radius, Func<Task<System.Windows.Media.Imaging.BitmapSource?>> load)
     {
         var host = new Grid();
-        var fallback = new TextBlock { Text = title, FontSize = height > 60 ? 22 : 13, FontWeight = FontWeights.Bold, Foreground = System.Windows.Media.Brushes.White, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Opacity = 0.9, Tag = Translator.SystemDataTag, TextTrimming = TextTrimming.CharacterEllipsis };
+        var fallback = new TextBlock { Text = title, FontSize = height > 60 ? 22 : 13, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Opacity = 0.9, Tag = Translator.SystemDataTag, TextTrimming = TextTrimming.CharacterEllipsis };
         fallback.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
+        // Cor pelo contraste com o destaque (no tema monocromático o degradê é claro e o texto fica escuro)
+        fallback.SetResourceReference(TextBlock.ForegroundProperty, "OnAccentBrush");
         host.Children.Add(fallback);
         var banner = new Border { Height = height, CornerRadius = new CornerRadius(radius), Child = host, ClipToBounds = true };
         banner.SetResourceReference(Border.BackgroundProperty, "AccentGradientBrush");

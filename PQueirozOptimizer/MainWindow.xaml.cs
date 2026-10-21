@@ -357,12 +357,18 @@ public partial class MainWindow : Window
             case "diagnostics": ShowDiagnostics(); break;
             case "services": ShowServices(); break;
             case "apps": ShowApps(); break;
+            case "health": ShowHardwareHealth(); break;
+            case "devices": ShowDevices(); break;
+            case "stress": ShowStressTest(); break;
+            case "library": ShowLibrary(); break;
+            case "overlay": ShowOverlay(); break;
         }
     }
 
     private void UpdateActiveNavButton(string page)
     {
         foreach (var b in NavItems()) b.IsChecked = b.Tag?.ToString() == page;
+        RefreshTopNav(page);
     }
 
     /// <summary>Rola até uma seção marcada com Tag "section:nome" (Configurações: licença, atualizações) e a destaca.</summary>
@@ -398,9 +404,12 @@ public partial class MainWindow : Window
 
     #region Theming
     /// <summary>Botão de tema do rodapé da barra lateral: menu com os temas da galeria (o atual marcado).</summary>
-    private void ThemeButton_Click(object sender, RoutedEventArgs e)
+    private void ThemeButton_Click(object sender, RoutedEventArgs e) => ShowThemeMenu(ThemeButton, PlacementMode.Top);
+
+    /// <summary>Menu com os temas da galeria (o atual marcado), aberto junto do botão que o chamou.</summary>
+    private void ShowThemeMenu(UIElement target, PlacementMode placement)
     {
-        var menu = new ContextMenu { PlacementTarget = ThemeButton, Placement = PlacementMode.Top, VerticalOffset = -6 };
+        var menu = new ContextMenu { PlacementTarget = target, Placement = placement, VerticalOffset = placement == PlacementMode.Top ? -6 : 6 };
         menu.Items.Add(new MenuItem { Header = Translator.Tr("Tema"), IsEnabled = false, FontWeight = FontWeights.SemiBold });
         foreach (var (mode, name) in Themes)
         {

@@ -17,7 +17,7 @@ public partial class MainWindow
     {
         "perflab", "smart", "optimization", "services", "apps", "startup", "drivers", "tools", "customize", "history",
         "resources", "fixes", "diagnostics", "restore", "gaming", "profiles", "network", "settings", "bios", "biosadvisor",
-        "patchnotes", "about", "dashboard",
+        "patchnotes", "about", "dashboard", "health", "devices", "stress", "library", "overlay",
     };
 
     private async Task RunProfilePassAsync()

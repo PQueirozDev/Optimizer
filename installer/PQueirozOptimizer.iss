@@ -1,6 +1,6 @@
 #define MyAppName "Qrztweaks"
 #ifndef MyAppVersion
-  #define MyAppVersion "2.3.0"
+  #define MyAppVersion "2.4.0"
 #endif
 #ifndef MyAppPublisher
   #define MyAppPublisher "Pedro Queiroz"

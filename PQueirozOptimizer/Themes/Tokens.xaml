@@ -1,8 +1,9 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
-  <!-- Fontes: Segoe UI Variable (Windows 11) com Segoe UI como reserva; ícones vetoriais Segoe Fluent / MDL2 -->
-  <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+  <!-- Fontes: Segoe UI Variable (Windows 11) com Segoe UI como reserva. Ícones: Lucide (traço fino e arredondado, embutida em
+       Assets/Fonts, licença ISC); um código que a Lucide não tem cai, caractere por caractere, na Segoe Fluent / MDL2 -->
+  <FontFamily x:Key="IconFont">pack://application:,,,/Qrztweaks;component/Assets/Fonts/#lucide, Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
   <FontFamily x:Key="UiFont">Segoe UI Variable Text, Segoe UI</FontFamily>
   <FontFamily x:Key="DisplayFont">Segoe UI Variable Display, Segoe UI</FontFamily>
   <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas</FontFamily>
@@ -18,8 +19,8 @@
 
   <!-- Raios em degraus (Fluent). O ThemeService publica os mesmos valores em runtime; estes servem ao designer e aos
        testes que montam a interface sem o tema aplicado. -->
-  <CornerRadius x:Key="CardRadius">12</CornerRadius>
-  <CornerRadius x:Key="InsetRadius">10</CornerRadius>
-  <CornerRadius x:Key="ControlRadius">8</CornerRadius>
-  <CornerRadius x:Key="BadgeRadius">6</CornerRadius>
+  <CornerRadius x:Key="CardRadius">20</CornerRadius>
+  <CornerRadius x:Key="InsetRadius">12</CornerRadius>
+  <CornerRadius x:Key="ControlRadius">10</CornerRadius>
+  <CornerRadius x:Key="BadgeRadius">8</CornerRadius>
 </ResourceDictionary>

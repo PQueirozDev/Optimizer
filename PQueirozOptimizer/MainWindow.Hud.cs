@@ -94,5 +94,6 @@ public partial class MainWindow
             label.Text = Translator.Tr(pending ? "Pendente" : "ATIVO");
             label.SetResourceReference(TextBlock.ForegroundProperty, pending ? "WarningBrush" : "SuccessBrush");
         }
+        if (SubTabs != null) RefreshTopNav(_topNavPage);
     }
 }

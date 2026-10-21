@@ -60,6 +60,8 @@ public static class PlanAccess
         ["optimization"] = PlanTier.Base, ["startup"] = PlanTier.Base, ["fixes"] = PlanTier.Base, ["tools"] = PlanTier.Base,
         ["services"] = PlanTier.Intermediate, ["apps"] = PlanTier.Intermediate, ["drivers"] = PlanTier.Intermediate,
         ["network"] = PlanTier.Intermediate, ["resources"] = PlanTier.Intermediate, ["diagnostics"] = PlanTier.Intermediate,
+        // Leitura e biblioteca abrem no Base; o que altera o sistema ou mede desempenho, no Intermediário
+        ["health"] = PlanTier.Base, ["library"] = PlanTier.Base, ["devices"] = PlanTier.Intermediate, ["stress"] = PlanTier.Intermediate, ["overlay"] = PlanTier.Intermediate,
         // Otimização inteligente abre no Base; cada ajuste confere o nível da operação que o aplica (Debloat e Avançada)
         ["smart"] = PlanTier.Base, ["perflab"] = PlanTier.Intermediate, ["profiles"] = PlanTier.Full,
         ["gaming"] = PlanTier.Full, ["customize"] = PlanTier.Full, ["bios"] = PlanTier.Full, ["biosadvisor"] = PlanTier.Full,
@@ -87,7 +89,7 @@ public static class PlanAccess
     /// por <see cref="Allows"/> com licença nula, que nega — então a demonstração não aplica nada.
     /// </summary>
     public static bool DemoMode { get; set; }
-    public static readonly IReadOnlySet<string> DemoPages = new HashSet<string>(StringComparer.Ordinal) { "smart", "diagnostics", "perflab" };
+    public static readonly IReadOnlySet<string> DemoPages = new HashSet<string>(StringComparer.Ordinal) { "smart", "diagnostics", "perflab", "health" };
 
     /// <summary>Páginas só de leitura que a demonstração também abre (Início, Meu PC, Configurações, Novidades e Sobre).</summary>
     public static readonly IReadOnlySet<string> DemoOpenPages = new HashSet<string>(StringComparer.Ordinal) { "dashboard", "mypc", "settings", "patchnotes", "about" };

@@ -9,12 +9,12 @@ namespace PQueirozOptimizer;
 
 /// <summary>
 /// Barra lateral: categorias recolhíveis (PRINCIPAL, OTIMIZAÇÃO, DESEMPENHO, FERRAMENTAS, SISTEMA) e modo compacto
-/// só com ícones (72 px) com o nome nas dicas, por preferência, Ctrl+B ou automaticamente em janelas estreitas.
+/// só com ícones (86 px, com a margem do painel flutuante) com o nome nas dicas, por preferência, Ctrl+B ou automaticamente em janelas estreitas.
 /// A navegação por teclado (Tab e setas) funciona nos dois modos. A barra superior também se adapta à largura.
 /// </summary>
 public partial class MainWindow
 {
-    private const double SidebarWidth = 236, SidebarCompactWidth = 72;
+    private const double SidebarWidth = 250, SidebarCompactWidth = 86;
     private bool _sidebarCompactApplied;
     private bool? _sidebarForcedByWidth;
 
@@ -108,6 +108,11 @@ public partial class MainWindow
 
     private void ApplySidebarMode()
     {
+        // Visual Aurora: a navegação fica na barra superior; a coluna da barra lateral antiga não ocupa espaço
+        RootGrid.ColumnDefinitions[0].Width = new GridLength(0);
+        RefreshNavTooltips(false);
+        return;
+#pragma warning disable CS0162 // código mantido para quem quiser voltar a barra lateral
         var compact = SidebarShouldBeCompact;
         if (compact == _sidebarCompactApplied && RootGrid.ColumnDefinitions[0].Width.Value is SidebarCompactWidth or SidebarWidth) { RefreshNavTooltips(compact); return; }
         _sidebarCompactApplied = compact;
@@ -133,10 +138,12 @@ public partial class MainWindow
             foreach (var text in NavTexts(nav)) text.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
         }
         RefreshNavTooltips(compact);
+#pragma warning restore CS0162
     }
 
     private bool _showOperationChip, _showAdminWarning;
     private double _topBarWidth;
+    private bool _topTabsIconOnly;
 
     /// <summary>
     /// Barra superior limpa: o estado da operação e o aviso de administrador só aparecem quando informam algo
@@ -146,9 +153,13 @@ public partial class MainWindow
     {
         if (windowWidth > 0 && !double.IsNaN(windowWidth)) _topBarWidth = windowWidth;
         var width = _topBarWidth;
-        TitleOptChipHost.Visibility = _showOperationChip && width >= 1120 ? Visibility.Visible : Visibility.Collapsed;
-        TitleAdminChipHost.Visibility = _showAdminWarning && width >= 1000 ? Visibility.Visible : Visibility.Collapsed;
-        SearchHost.Width = width is > 0 and < 900 ? 170 : 250;
+        // As abas de categoria dividem a barra com a busca: os extras somem antes de as abas perderem o nome
+        TitleOptChipHost.Visibility = _showOperationChip && width >= 1600 ? Visibility.Visible : Visibility.Collapsed;
+        TitleAdminChipHost.Visibility = _showAdminWarning && width >= 1500 ? Visibility.Visible : Visibility.Collapsed;
+        SearchHost.Width = width is > 0 and < 1200 ? 150 : width is > 0 and < 1440 ? 190 : 250;
+        TopLogoText.Visibility = width is > 0 and < 1360 ? Visibility.Collapsed : Visibility.Visible;
+        var iconOnly = width is > 0 and < 1240;
+        if (iconOnly != _topTabsIconOnly) { _topTabsIconOnly = iconOnly; RefreshTopNav(_topNavPage); }
     }
 
     private void ShowOperationChip(string text)

@@ -20,6 +20,7 @@
   <ItemGroup>
     <Resource Include="Assets\app.ico" />
     <Resource Include="Assets\app.png" />
+    <Resource Include="Assets\Fonts\lucide.ttf" />
     <Resource Include="Assets\Qrz.powerplan.txt" />
     <Content Include="Assets\Qrz.powerplan.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

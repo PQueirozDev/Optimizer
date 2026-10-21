@@ -109,50 +109,10 @@ public partial class MainWindow
             var prefs = AppearanceService.Current;
             var (score, headline, tone) = HealthScore(snapshot);
 
-            // 1. Destaque: estado do PC, ação principal, nota de saúde e indicadores
-            var hero = HomeHero(snapshot, score, headline, tone, prefs.DashboardStatus);
-            hero.Margin = new Thickness(0, 0, 0, AppearanceService.Space(16));
-            root.Children.Add(hero);
-
-            // 2. Números ao vivo (o detalhe de cada um fica no Meu PC)
-            if (prefs.DashboardHardware)
-            {
-                root.Children.Add(HomeBandTitle("Desempenho", live: prefs.DashboardLive));
-                var metrics = HomeGrid(200);
-                var cpu = cpuInfo;
-                metrics.Children.Add(MetricTile(Glyphs.Chip, "Processador",
-                    s => ($"{s.Cpu:0}%", s.CpuMhz is { } mhz ? (mhz / 1000).ToString("0.00", System.Globalization.CultureInfo.CurrentCulture) + " GHz" : cpu.BaseMhz is { } b ? (b / 1000).ToString("0.00", System.Globalization.CultureInfo.CurrentCulture) + " GHz" : ShortCpuName(snapshot.Processor)),
-                    s => s.Cpu, 100, prefs.DashboardLive));
-                metrics.Children.Add(MetricTile(Glyphs.Memory, "Memória",
-                    s => ($"{s.Ram:0}%", $"{Gb(s.RamUsedGb)} {Tr("de")} {Gb(s.RamTotalGb)}"),
-                    s => s.Ram, 100, prefs.DashboardLive));
-                metrics.Children.Add(MetricTile(Glyphs.Monitor, "Placa de vídeo",
-                    s => (s.Gpu is { } g ? $"{g:0}%" : "--", s.GpuTempC is { } t ? $"{t:0} °C" : FirstGpu(snapshot.Graphics)),
-                    s => s.Gpu, 100, prefs.DashboardLive));
-                metrics.Children.Add(MetricTile(Glyphs.Network, "Rede",
-                    s => (s.PingMs is { } p ? $"{p:0} ms" : "--", $"↓ {FormatRate(s.DownBytesPerSec)}  ↑ {FormatRate(s.UpBytesPerSec)}"),
-                    s => s.DownBytesPerSec * 8 / 1_000_000, null, prefs.DashboardLive));
-                root.Children.Add(metrics);
-            }
-
-            // 3. Atalhos
-            if (prefs.DashboardQuickActions)
-            {
-                root.Children.Add(HomeBandTitle("Acesso rápido"));
-                var shortcuts = HomeGrid(200);
-                var analysis = SmartHistory.Default.LastAnalysis;
-                var lastTest = PerfLabStore.Default.List().FirstOrDefault();
-                var session = GamingService.ActiveSession();
-                shortcuts.Children.Add(ShortcutTile(Glyphs.Lightning, "Otimização inteligente",
-                    analysis is null ? Tr("Analise o PC") : string.Format(Tr("{0} ajustes recomendados"), analysis.Recommended), () => NavigateTo("smart")));
-                shortcuts.Children.Add(ShortcutTile(Glyphs.Flask, "Laboratório de desempenho",
-                    lastTest is null ? Tr("Meça FPS e tempo de quadro") : $"{Tr("Último teste")}: {lastTest.StartedAt:dd/MM}", () => NavigateTo("perflab")));
-                shortcuts.Children.Add(ShortcutTile(Glyphs.Diagnostic, "Diagnóstico",
-                    string.Format(Tr("Saúde {0} de 100"), score), () => NavigateTo("diagnostics")));
-                shortcuts.Children.Add(ShortcutTile(Glyphs.Game, "Modo Jogo",
-                    session is null ? Tr("Desligado") : session.RecoveryPending ? Tr("Restauração pendente") : Tr("Ativo"), () => NavigateTo("gaming")));
-                root.Children.Add(shortcuts);
-            }
+            // 1. Saúde (nota, indicadores e ação principal) e o HUD com os medidores ao vivo
+            root.Children.Add(AuroraTopRow(snapshot, cpuInfo, score, headline, tone, prefs));
+            // 2. Carga de CPU e GPU (1, 5 ou 15 min) e o acesso rápido
+            if (prefs.DashboardLive || prefs.DashboardQuickActions) root.Children.Add(AuroraSecondRow(score, prefs));
 
             // 4. Atividade recente (só as últimas três linhas)
             if (prefs.DashboardActivity) root.Children.Add(RecentActivity());
@@ -208,8 +168,8 @@ public partial class MainWindow
     /// </summary>
     private Border? NewLookBanner()
     {
-        // Identificador novo no visual Grafite ciano: quem dispensou o convite do tema azul antigo vê este uma vez
-        const string offerId = "redesign-grafite-ciano";
+        // Identificador novo no visual Aurora: quem dispensou o convite de um tema anterior vê este uma vez
+        const string offerId = "redesign-aurora";
         if (AppearanceService.Current.Theme == ThemeMode.Dark || _configService.IsTutorialCompleted(offerId)) return null;
         var dock = new DockPanel();
         Border? card = null;
@@ -230,7 +190,7 @@ public partial class MainWindow
         var text = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
         var title = Label("Novo visual do Qrztweaks", 14); title.FontWeight = FontWeights.SemiBold; title.Margin = new Thickness(0);
         text.Children.Add(title);
-        var sub = Label("O tema Grafite ciano (grafite com destaque em ciano) foi feito para o novo design. Seu tema atual continua disponível em Configurações → Aparência.", 12, true);
+        var sub = Label("O tema Aurora (preto com azul) foi feito para o novo design. Seu tema atual continua disponível em Configurações → Aparência.", 12, true);
         sub.Margin = new Thickness(0, 2, 0, 0);
         text.Children.Add(sub);
         dock.Children.Add(text);

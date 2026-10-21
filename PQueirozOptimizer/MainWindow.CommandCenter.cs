@@ -22,7 +22,8 @@ public partial class MainWindow
     private void OpenCompactMonitor()
     {
         if (_compact is { IsVisible: true }) { _compact.Activate(); return; }
-        _compact = new CompactMonitorWindow(() => _capture?.Samples.LastOrDefault()?.Fps,
+        // FPS da captura do Laboratório ou, com o overlay ligado, do contador ETW (jogo em primeiro plano)
+        _compact = new CompactMonitorWindow(() => _capture?.Samples.LastOrDefault()?.Fps ?? (FrameMonitor.Shared.Running ? FrameMonitor.Shared.GetForegroundStats()?.Fps : null),
             () => SmartHistory.Default.LastAnalysis?.Goal is { } g ? Translator.Tr(GoalTitle(g)) : Translator.Tr("nenhum objetivo analisado"));
         _compact.Closed += (_, _) => _compact = null;
         _compact.Show();

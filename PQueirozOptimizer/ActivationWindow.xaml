@@ -21,7 +21,7 @@
       <!-- Por que a licença salva não abriu o app (expirada ou inválida) -->
       <Border x:Name="ProblemBanner" Visibility="Collapsed" CornerRadius="12" Padding="14,12" Margin="0,-6,0,22" Background="{DynamicResource WarningSoftBrush}">
         <DockPanel>
-          <TextBlock x:Name="ProblemIcon" Text="&#xE7BA;" Style="{StaticResource IconText}" FontSize="14" Foreground="{DynamicResource WarningBrush}" VerticalAlignment="Top" Margin="0,1,12,0"/>
+          <TextBlock x:Name="ProblemIcon" Text="&#xE192;" Style="{StaticResource IconText}" FontSize="14" Foreground="{DynamicResource WarningBrush}" VerticalAlignment="Top" Margin="0,1,12,0"/>
           <StackPanel>
             <TextBlock x:Name="ProblemTitle" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"/>
             <TextBlock x:Name="ProblemText" FontSize="12.5" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" LineHeight="18" Margin="0,3,0,0"/>

@@ -9,7 +9,7 @@ namespace PQueirozOptimizer;
 public static class QrzUi
 {
     public static readonly DependencyProperty CornerRadiusProperty = DependencyProperty.RegisterAttached(
-        "CornerRadius", typeof(CornerRadius), typeof(QrzUi), new FrameworkPropertyMetadata(new CornerRadius(8)));
+        "CornerRadius", typeof(CornerRadius), typeof(QrzUi), new FrameworkPropertyMetadata(new CornerRadius(10)));
 
     public static CornerRadius GetCornerRadius(DependencyObject d) => (CornerRadius)d.GetValue(CornerRadiusProperty);
     public static void SetCornerRadius(DependencyObject d, CornerRadius value) => d.SetValue(CornerRadiusProperty, value);
