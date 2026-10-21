@@ -49,7 +49,7 @@ public sealed class GameOverlayWindow : Window
     private readonly TextBlock _fps = Line(22, bold: true), _detail = Line(12), _system = Line(12);
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(500) };
     private HardwareSample? _sample;
-    private int _ticks;
+    private IntPtr _monitor;
 
     public GameOverlayWindow(OverlaySettings settings)
     {
@@ -108,18 +108,36 @@ public sealed class GameOverlayWindow : Window
         }
         _system.Text = string.Join("  ·  ", system);
         _system.Visibility = system.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-        // A cada 2 s volta para o topo, caso outro programa "sempre no topo" tenha passado na frente
-        if (++_ticks % 4 == 0) { Topmost = false; Topmost = true; }
+        // A cada tick volta para o topo e para a tela do jogo: o jogo em tela cheia pode ter passado na frente,
+        // trocado a resolução ou estar em outro monitor
+        Place(followForeground: frames is not null);
     }
 
-    private void Place()
+    /// <summary>Jogo em tela cheia exclusiva (Direct3D): nenhuma janela aparece por cima, só overlays injetados.</summary>
+    public static bool IsExclusiveFullscreen() => SHQueryUserNotificationState(out var state) == 0 && state == QunsRunningD3DFullScreen;
+
+    private void Place(bool followForeground = false)
     {
-        const double margin = 16;
+        var hwnd = new WindowInteropHelper(this).Handle;
+        if (hwnd == IntPtr.Zero || !GetWindowRect(hwnd, out var own)) return;
+        // Segue o monitor do jogo em primeiro plano (só quando ele está desenhando quadros): clicar no navegador
+        // em outro monitor não leva o overlay junto
+        var foreground = followForeground ? GetForegroundWindow() : IntPtr.Zero;
+        if (foreground != IntPtr.Zero && GetWindowThreadProcessId(foreground, out var pid) != 0 && pid != Environment.ProcessId)
+            _monitor = MonitorFromWindow(foreground, MonitorDefaultToPrimary);
+        if (_monitor == IntPtr.Zero) _monitor = MonitorFromWindow(hwnd, MonitorDefaultToPrimary);
+        var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
+        if (!GetMonitorInfo(_monitor, ref info)) { _monitor = IntPtr.Zero; return; }
+
+        // Tela cheia sem bordas cobre a barra de tarefas: usa o monitor inteiro, não só a área de trabalho.
+        // Tudo em pixels do monitor, lido na hora: o jogo pode trocar a resolução ao abrir
+        var margin = (int)Math.Round(16 * VisualTreeHelper.GetDpi(this).DpiScaleX);
+        int width = own.Right - own.Left, height = own.Bottom - own.Top;
         var right = _settings.Corner.EndsWith("Right", StringComparison.Ordinal);
         var bottom = _settings.Corner.StartsWith("Bottom", StringComparison.Ordinal);
-        // Tela cheia sem bordas cobre a barra de tarefas: usa a tela inteira, não só a área de trabalho
-        Left = right ? SystemParameters.PrimaryScreenWidth - ActualWidth - margin : margin;
-        Top = bottom ? SystemParameters.PrimaryScreenHeight - ActualHeight - margin : margin;
+        var x = right ? info.Monitor.Right - width - margin : info.Monitor.Left + margin;
+        var y = bottom ? info.Monitor.Bottom - height - margin : info.Monitor.Top + margin;
+        SetWindowPos(hwnd, HwndTopmost, x, y, 0, 0, SwpNoSize | SwpNoActivate | SwpShowWindow);
     }
 
     private void MakeClickThrough()
@@ -138,4 +156,32 @@ public sealed class GameOverlayWindow : Window
     private static extern IntPtr GetWindowLongPtr(IntPtr hwnd, int index);
     [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")]
     private static extern IntPtr SetWindowLongPtr(IntPtr hwnd, int index, IntPtr value);
+
+    private static readonly IntPtr HwndTopmost = new(-1);
+    private const uint SwpNoSize = 0x0001, SwpNoActivate = 0x0010, SwpShowWindow = 0x0040, MonitorDefaultToPrimary = 1;
+    private const int QunsRunningD3DFullScreen = 3;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Rect { public int Left, Top, Right, Bottom; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MonitorInfo { public int Size; public Rect Monitor, Work; public uint Flags; }
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out int processId);
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint flags);
+    [DllImport("user32.dll", EntryPoint = "GetMonitorInfoW")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetWindowRect(IntPtr hwnd, out Rect rect);
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetWindowPos(IntPtr hwnd, IntPtr insertAfter, int x, int y, int cx, int cy, uint flags);
+    [DllImport("shell32.dll")]
+    private static extern int SHQueryUserNotificationState(out int state);
 }

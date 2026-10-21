@@ -26,6 +26,11 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v2.4.1", "21/10/2026", new[]
+        {
+            "O overlay de jogo agora fica por cima do jogo em tela cheia sem bordas, no monitor onde o jogo está, mesmo quando o jogo muda a resolução ao abrir.",
+            "Quando o jogo está em tela cheia exclusiva (modo em que nenhuma janela aparece por cima), a página do Overlay avisa e explica como resolver.",
+        }),
         ("v2.4.0", "21/10/2026", new[]
         {
             "Novo visual Aurora como padrão: preto azulado com brilho azul, cards de vidro fosco e botões azuis.",

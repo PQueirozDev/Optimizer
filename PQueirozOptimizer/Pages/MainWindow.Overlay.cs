@@ -51,7 +51,8 @@ public partial class MainWindow
         var tiles = HomeGrid(200);
         foreach (var t in new[] { fps, frame, low, process }) tiles.Children.Add(t.Card);
         preview.Children.Add(tiles);
-        var hint = Label(L("Com o overlay ligado, abra um jogo DirectX (9 a 12): os números aparecem aqui e no canto da tela.", "With the overlay on, open a DirectX (9 to 12) game: the numbers show up here and in the corner of the screen."), 12, true);
+        var hintText = L("Com o overlay ligado, abra um jogo DirectX (9 a 12): os números aparecem aqui e no canto da tela.", "With the overlay on, open a DirectX (9 to 12) game: the numbers show up here and in the corner of the screen.");
+        var hint = Label(hintText, 12, true);
         hint.Tag = Translator.SystemDataTag;
         preview.Children.Add(hint);
         root.Children.Add(preview);
@@ -90,6 +91,10 @@ public partial class MainWindow
             frame.Value.Text = stats is { } s2 ? $"{s2.FrameTimeMs:0.0} ms" : "—";
             low.Value.Text = stats is { } s3 ? $"{s3.Low1Fps:0}" : "—";
             process.Value.Text = stats?.ProcessName ?? (FrameMonitor.Shared.Error ?? "—");
+            hint.Text = _overlay is { IsVisible: true } && GameOverlayWindow.IsExclusiveFullscreen()
+                ? L("O jogo está em tela cheia exclusiva: nesse modo nenhuma janela aparece por cima dele. Mude o jogo para tela cheia sem bordas (ou deixe ligadas as otimizações de tela cheia do Windows) para ver o overlay.",
+                    "The game is in exclusive fullscreen: in this mode no window can show on top of it. Switch the game to borderless fullscreen (or keep Windows fullscreen optimizations on) to see the overlay.")
+                : hintText;
         }
         Update();
         // Timer desta montagem: o Unloaded da página antiga não pode parar o da nova

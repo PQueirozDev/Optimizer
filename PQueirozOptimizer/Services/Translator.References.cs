@@ -106,6 +106,10 @@ public static partial class Translator
         ["Relógio errado faz launchers e jogos recusarem o login, quebra sites com HTTPS e atrapalha o Windows Update."] = "A wrong clock makes launchers and games reject sign-in, breaks HTTPS sites and disrupts Windows Update.",
         ["Reaplicando ajustes desfeitos"] = "Reapplying undone settings",
 
+        // ---------- Notas da v2.4.1 ----------
+        ["O overlay de jogo agora fica por cima do jogo em tela cheia sem bordas, no monitor onde o jogo está, mesmo quando o jogo muda a resolução ao abrir."] = "The in-game overlay now stays on top of games in borderless fullscreen, on the monitor the game is on, even when the game changes resolution as it starts.",
+        ["Quando o jogo está em tela cheia exclusiva (modo em que nenhuma janela aparece por cima), a página do Overlay avisa e explica como resolver."] = "When the game is in exclusive fullscreen (a mode where no window can show on top), the Overlay page warns you and explains how to fix it.",
+
         // ---------- Notas da v2.4.0 ----------
         ["Novo visual Aurora como padrão: preto azulado com brilho azul, cards de vidro fosco e botões azuis."] = "New Aurora look by default: bluish black with a blue glow, frosted glass cards and blue buttons.",
         ["Menu no topo: a barra lateral deu lugar a 5 abas (Início, Otimizar, Desempenho, Jogos e Ferramentas), com as páginas de cada uma logo abaixo."] = "Top menu: the sidebar gave way to 5 tabs (Home, Optimize, Performance, Games and Tools), with each one's pages right below.",
