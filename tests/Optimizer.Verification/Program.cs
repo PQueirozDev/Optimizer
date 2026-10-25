@@ -147,6 +147,8 @@ internal static class Program
         var backupProp = typeof(GameConfigService).GetProperty("BackupRoot", flags)!;
         var realRoot = (string)rootProp.GetValue(null)!;
         var oldBackup = (string)backupProp.GetValue(null)!;
+        var runningProp = typeof(GameConfigService).GetProperty("ProcessRunning", flags)!;
+        var oldRunning = runningProp.GetValue(null)!;
         var fake = Path.Combine(root, "valorant-config");
         if (Directory.Exists(fake)) Directory.Delete(fake, true);
         var account = Path.Combine(fake, "0ee800ee-7997-595b-a5ce-fb77c3a6648e-br", "Windows");
@@ -169,6 +171,7 @@ internal static class Program
         {
             rootProp.SetValue(null, fake);
             backupProp.SetValue(null, Path.Combine(root, "valorant-backup"));
+            runningProp.SetValue(null, (Func<GamePreset, bool>)(_ => false));
             var valorant = GameConfigService.Presets.Single(p => p.Id == "valorant");
             Assert(GameConfigService.ConfigPath(valorant) == accountFile, "VALORANT: arquivo da última conta que entrou (RiotLocalMachine.ini)");
             var service = new GameConfigService(new ActivityLog(Path.Combine(root, "valorant.log")));
@@ -201,6 +204,7 @@ internal static class Program
         {
             rootProp.SetValue(null, realRoot);
             backupProp.SetValue(null, oldBackup);
+            runningProp.SetValue(null, oldRunning);
         }
     }
 
@@ -308,8 +312,11 @@ internal static class Program
                 Assert(refused, "Reaplicar recusa backup que não pertence aos administradores");
                 using (var k = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(key, true)) k!.SetValue("Existente", 11, Microsoft.Win32.RegistryValueKind.DWord);
             }
-            store.Revert("teste", (_, _, name) => name == "Existente");
-            using (var k = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(key)) Assert((int)k!.GetValue("Existente")! == 5 && k.GetValue("Novo") is not null && !store.IsApplied("teste"), "Reverter restaura o valor original e ignora itens fora da lista permitida");
+            var partial = false;
+            try { store.Revert("teste", (_, _, name) => name == "Existente"); } catch (InvalidOperationException) { partial = true; }
+            using (var k = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(key)) Assert(partial && (int)k!.GetValue("Existente")! == 5 && k.GetValue("Novo") is not null && !store.IsApplied("teste") && store.ListReset().Count == 0, "Reverter restaura o valor original e mantém no backup (com aviso) o item fora da lista permitida, sem reaplicá-lo depois");
+            Assert(store.Revert("teste", (_, _, _) => true) == 1 && !store.List("teste").Any(), "O item guardado ainda pode ser revertido depois");
+            using (var k = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(key)) Assert(k!.GetValue("Novo") is null, "Valor criado pelo ajuste removido na segunda reversão");
         }
         finally { Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(key, false); }
 
@@ -569,6 +576,7 @@ internal static class Program
             if (args.Contains("--recovery")) { RecoveryTests.Run(); return 0; }
             if (args.Contains("--safety")) { SafetyTests.Run(Path.Combine(root, "safety")); return 0; }
             if (args.Contains("--v2")) { V2Tests.Run(Path.Combine(root, "v2")); return 0; }
+            if (args.Contains("--hardening")) { HardeningTests.Run(Path.Combine(root, "hardening")); return 0; }
             // Fotos e vídeo do site (não rodam os testes)
             if (args.Contains("--shots")) return Media.Shots(root);
             if (args.Contains("--tour")) return Media.Tour(root);
@@ -578,6 +586,7 @@ internal static class Program
             RecoveryTests.Run();
             SafetyTests.Run(Path.Combine(root, "safety"));
             V2Tests.Run(Path.Combine(root, "v2"));
+            HardeningTests.Run(Path.Combine(root, "hardening"));
             var log = new ActivityLog(Path.Combine(root, "verification.log"));
             BiosAdvisorTests.Run();
             if (args.Contains("--bios-advisor-live")) return BiosAdvisorTests.Live(log);

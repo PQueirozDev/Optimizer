@@ -123,16 +123,29 @@ public class DriverService
         var total = response.Content.Headers.ContentLength ?? -1;
         long read = 0;
 
-        await using var httpStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        await using var fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true);
-
-        var buffer = new byte[81920];
-        int bytesRead;
-        while ((bytesRead = await httpStream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken)) > 0)
-        { 
-            await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
-            read += bytesRead;
-            progress?.Report((read, total));
+        // Baixa num arquivo .part e só dá o nome final no fim: um download cortado não pode aparecer como instalador pronto
+        var partial = targetPath + ".part";
+        try
+        {
+            await using (var httpStream = await response.Content.ReadAsStreamAsync(cancellationToken))
+            await using (var fileStream = new FileStream(partial, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true))
+            {
+                var buffer = new byte[81920];
+                int bytesRead;
+                while ((bytesRead = await httpStream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken)) > 0)
+                {
+                    await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
+                    read += bytesRead;
+                    progress?.Report((read, total));
+                }
+            }
+            if (total > 0 && read != total) throw new IOException($"Download incompleto ({read} de {total} bytes).");
+            File.Move(partial, targetPath, overwrite: true);
+        }
+        catch
+        {
+            try { File.Delete(partial); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+            throw;
         }
 
         return targetPath;

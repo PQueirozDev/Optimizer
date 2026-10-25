@@ -64,7 +64,7 @@ public partial class MainWindow
         var goals = new UniformGrid { Columns = 5, Margin = new Thickness(0, 4, 0, 0) };
         foreach (var g in Goals) goals.Children.Add(GoalCard(g.Goal, g.Glyph, g.Title, g.Detail));
         intro.Children.Add(goals);
-        root.Children.Add(Surface(intro));
+        root.Children.Add(Mark(Surface(intro), "smart.goals"));
 
         var results = new StackPanel();
         root.Children.Add(results);

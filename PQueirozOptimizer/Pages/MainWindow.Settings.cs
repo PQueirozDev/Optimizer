@@ -263,6 +263,9 @@ public partial class MainWindow
                 Msg("Já existe um modo pronto com esse nome. Escolha outro nome.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
+            if (_configService.Config.Profiles.Any(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                && Msg($"Já existe um modo chamado '{name}'. Substituir pelas opções marcadas agora?", "Substituir modo", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes)
+                return;
             SaveAndConfirm(() => _configService.SaveProfile(name, "Perfil personalizado do usuário", CheckedIds()), $"Novo perfil '{name}' criado e ativado com sucesso!", "Perfil Criado");
         };
 

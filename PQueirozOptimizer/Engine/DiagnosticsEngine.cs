@@ -47,6 +47,9 @@ public static class DiagnosticsEngine
 {
     public sealed record Report(IReadOnlyList<Diagnosis> Findings, IReadOnlyList<string> MissingData);
 
+    /// <summary>Testes do Laboratório mais velhos que isso não entram no diagnóstico (driver, jogo e Windows mudam).</summary>
+    public const int CaptureMaxAgeDays = 14;
+
     public static Report Run(DiagnosticInputs i)
     {
         var findings = new List<Diagnosis>();
@@ -55,7 +58,7 @@ public static class DiagnosticsEngine
 
         // ---------- Gargalos (só com um teste do Laboratório de desempenho) ----------
         if (cap is null || cap.DurationSeconds < 20 || cap.CpuAvg is null)
-            missing.Add("Sem um teste do Laboratório de desempenho de pelo menos 20 segundos: limitações de CPU e GPU não podem ser avaliadas.");
+            missing.Add($"Sem um teste recente (últimos {CaptureMaxAgeDays} dias) do Laboratório de desempenho de pelo menos 20 segundos: limitações de CPU e GPU não podem ser avaliadas.");
         else if (cap.GpuAvg is null)
             missing.Add("O Windows não informou o uso da GPU no último teste: gargalo de GPU não avaliado.");
         else
@@ -184,6 +187,13 @@ public static class DiagnosticsEngine
 /// <summary>Coleta os dados dos diagnósticos (WMI, contadores e o histórico do monitor). Leitura apenas.</summary>
 public static class DiagnosticsCollector
 {
+    private static int CountProcesses()
+    {
+        var list = Process.GetProcesses();
+        foreach (var p in list) p.Dispose();
+        return list.Length;
+    }
+
     public static async Task<DiagnosticInputs> CollectAsync(Models.SystemSnapshot snapshot, MachineSummary? machine, PerfResult? lastCapture)
     {
         return await Task.Run(() =>
@@ -195,7 +205,7 @@ public static class DiagnosticsCollector
             {
                 RamTotalGb = snapshot.MemoryGb, MonitorHistory = HardwareMonitorService.Shared.History, LastCapture = lastCapture,
                 SystemDriveFreeGb = free, SystemDriveTotalGb = total, Disks = Disks(), ProblemDevices = ProblemDevices(),
-                ProcessCount = Process.GetProcesses().Length, TopProcesses = TopProcesses(), StartupItems = StartupCount(),
+                ProcessCount = CountProcesses(), TopProcesses = TopProcesses(), StartupItems = StartupCount(),
                 PowerPlan = machine?.PowerPlan, IsLaptop = machine?.IsLaptop ?? !SystemConditions.IsDesktop, OnBattery = OnBattery(),
                 PagefileUsedPercent = Pagefile(), Uptime = snapshot.Uptime,
             };

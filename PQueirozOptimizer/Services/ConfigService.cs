@@ -59,8 +59,18 @@ public class ConfigService
 
         if (source != null)
         {
-            try { json = File.ReadAllText(source); }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { LastLoadError = ex.Message; }
+            // Outra instância (atalho de Limpeza Rápida) pode estar gravando: tenta de novo antes de desistir
+            for (var attempt = 0; attempt < 3 && json is null; attempt++)
+            {
+                try { json = File.ReadAllText(source); LastLoadError = null; }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    LastLoadError = ex.Message;
+                    Thread.Sleep(150);
+                }
+            }
+            // Arquivo existe mas não pôde ser lido: gravar agora trocaria as preferências do usuário pelos padrões
+            if (json is null && source == _primaryPath) _readOnly = true;
         }
 
         if (!string.IsNullOrWhiteSpace(json))
@@ -102,8 +112,16 @@ public class ConfigService
     /// <summary>Último erro ao ler as preferências na inicialização, se houver.</summary>
     public string? LastLoadError { get; private set; }
 
+    // Preferências não lidas (arquivo travado): nada é gravado nesta sessão para não apagar as do usuário
+    private bool _readOnly;
+
     public void Save()
     {
+        if (_readOnly)
+        {
+            LastSaveError = "As preferências não puderam ser lidas nesta sessão; as mudanças valem só até fechar o app.";
+            throw new IOException(LastSaveError);
+        }
         try
         {
             var json = JsonSerializer.Serialize(_config, JsonOpts);
@@ -118,8 +136,15 @@ public class ConfigService
 
     private void EnsureDefaults()
     {
-        if (_config.Profiles == null)
-            _config.Profiles = new();
+        // JSON editado à mão ou de outra versão pode trazer nulos: limpa antes de qualquer leitura
+        _config.Profiles ??= new();
+        _config.Profiles.RemoveAll(p => p is null || string.IsNullOrWhiteSpace(p.Name));
+        _config.CompletedTutorials ??= new();
+        _config.CompletedTutorials.RemoveAll(string.IsNullOrWhiteSpace);
+        _config.Appearance ??= new();
+        _config.IsoCatalog ??= new();
+        _config.IsoCatalog.RemoveAll(i => i is null);
+        foreach (var iso in _config.IsoCatalog) { iso.Name ??= ""; iso.LocalPath ??= ""; }
 
         var builtIns = GetDefaultProfiles();
         foreach (var def in builtIns)

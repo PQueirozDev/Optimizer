@@ -74,7 +74,7 @@ public sealed class RegistryTweakStore
             try
             {
                 var backup = JsonSerializer.Deserialize<Backup>(File.ReadAllText(file));
-                if (backup != null && backup.Id.StartsWith(idPrefix, StringComparison.Ordinal)) result.Add(new AppliedTweak(backup.Id, backup.Title, backup.Meta, backup.AppliedAtUtc));
+                if (backup != null && backup.Id.Length > 0 && backup.Id.StartsWith(idPrefix, StringComparison.Ordinal)) result.Add(new AppliedTweak(backup.Id, backup.Title, backup.Meta, backup.AppliedAtUtc));
             }
             catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException) { }
         }
@@ -211,9 +211,11 @@ public sealed class RegistryTweakStore
         var backup = JsonSerializer.Deserialize<Backup>(File.ReadAllText(path)) ?? new Backup();
         var restored = 0;
         var failures = new List<string>();
+        // Itens fora da lista permitida não são restaurados, mas também não podem sumir do backup
+        var kept = new List<Entry>();
         foreach (var e in backup.Entries)
         {
-            if (!Enum.TryParse<RegistryHive>(e.Hive, out var hive) || hive is not (RegistryHive.LocalMachine or RegistryHive.CurrentUser) || !allowed(hive, e.Key, e.Name)) continue;
+            if (!Enum.TryParse<RegistryHive>(e.Hive, out var hive) || hive is not (RegistryHive.LocalMachine or RegistryHive.CurrentUser) || !allowed(hive, e.Key, e.Name)) { kept.Add(e); continue; }
             try
             {
                 using var root = RegistryKey.OpenBaseKey(hive, RegistryView.Registry64);
@@ -237,6 +239,14 @@ public sealed class RegistryTweakStore
             catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or System.Security.SecurityException) { failures.Add($"{e.Key}\\{e.Name}: {ex.Message}"); }
         }
         if (failures.Count > 0) throw new InvalidOperationException("Alguns valores não puderam ser restaurados: " + string.Join("; ", failures));
+        if (kept.Count > 0)
+        {
+            backup.Entries = kept;
+            // "Retained": fora de IsApplied, ListReset e Reapply; continua no backup e pode ser revertido de novo
+            backup.Status = "Retained";
+            Save(path, backup);
+            throw new InvalidOperationException($"{restored} valor(es) restaurado(s); {kept.Count} ficaram guardados no backup porque estão fora da lista que o app pode restaurar.");
+        }
         File.Delete(path);
         return restored;
     }

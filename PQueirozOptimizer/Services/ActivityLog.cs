@@ -24,6 +24,31 @@ public sealed class ActivityLog
         EntryAdded?.Invoke(entry);
     }
     public string Export() => _path;
+
+    /// <summary>
+    /// Copia o log para enviar ao suporte sem dados pessoais: pasta do usuário, nome da conta e do PC, e-mails e
+    /// chaves de licença são trocados por marcadores. O arquivo original continua intacto.
+    /// </summary>
+    public void ExportRedacted(string destination)
+    {
+        string[] lines;
+        lock (_gate) lines = File.Exists(_path) ? File.ReadAllLines(_path) : Array.Empty<string>();
+        File.WriteAllLines(destination, lines.Select(Redact));
+    }
+
+    private static readonly System.Text.RegularExpressions.Regex EmailPattern = new(@"[\w.+-]+@[\w-]+(\.[\w-]+)+", System.Text.RegularExpressions.RegexOptions.Compiled);
+    private static readonly System.Text.RegularExpressions.Regex LicensePattern = new(@"PQO1-[A-Za-z0-9+/=_.-]{8,}", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    public static string Redact(string line)
+    {
+        var profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (profile.Length > 3) line = line.Replace(profile, "%USERPROFILE%", StringComparison.OrdinalIgnoreCase);
+        line = LicensePattern.Replace(line, "PQO1-<oculta>");
+        line = EmailPattern.Replace(line, "<email>");
+        foreach (var (value, marker) in new[] { (Environment.UserName, "<usuario>"), (Environment.MachineName, "<pc>") })
+            if (value.Length > 0) line = System.Text.RegularExpressions.Regex.Replace(line, $@"(?<![\w]){System.Text.RegularExpressions.Regex.Escape(value)}(?![\w])", marker, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        return line;
+    }
     public string[] Recent()
     {
         lock (_gate)

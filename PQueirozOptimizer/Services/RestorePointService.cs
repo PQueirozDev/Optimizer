@@ -51,6 +51,10 @@ public sealed class RestorePointService
     public async Task CreateAsync(string name, string description, string[] tags, string color)
     {
         var text = string.IsNullOrWhiteSpace(description) ? name.Trim() : $"{name.Trim()} — {description.Trim()}";
+        // O finally do script não roda se o PowerShell for encerrado (tempo limite ou cancelar): o app devolve o limite
+        var frequencyBefore = ReadCreationFrequency();
+        try
+        {
         await PowerShellBridge.RunScriptAsync(
             "$k = 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SystemRestore';" +
             "$old = (Get-ItemProperty -Path $k -Name SystemRestorePointCreationFrequency -ErrorAction SilentlyContinue).SystemRestorePointCreationFrequency;" +
@@ -59,6 +63,8 @@ public sealed class RestorePointService
             "try { Checkpoint-Computer -Description $env:PQO_DESC -RestorePointType MODIFY_SETTINGS }" +
             "finally { if ($null -ne $old) { Set-ItemProperty -Path $k -Name SystemRestorePointCreationFrequency -Value $old -Type DWord } else { Remove-ItemProperty -Path $k -Name SystemRestorePointCreationFrequency -ErrorAction SilentlyContinue } }",
             new Dictionary<string, string> { ["PQO_DESC"] = text.Length > 250 ? text[..250] : text }, TimeSpan.FromMinutes(5));
+        }
+        finally { if (frequencyBefore.Read) RestoreCreationFrequency(frequencyBefore.Value); }
         // O ponto recém-criado é o de maior número
         var created = (await ListAsync()).OrderByDescending(p => p.Sequence).FirstOrDefault();
         if (created != null && (tags.Length > 0 || color != "Accent"))
@@ -66,9 +72,33 @@ public sealed class RestorePointService
             var meta = LoadMeta();
             meta[created.Sequence] = new Meta { Tags = tags, Color = color };
             Directory.CreateDirectory(Path.GetDirectoryName(MetaPath)!);
-            File.WriteAllText(MetaPath, JsonSerializer.Serialize(meta));
+            SafeFile.WriteAllText(MetaPath, JsonSerializer.Serialize(meta));
         }
         _log.Write("SUCCESS", $"Ponto de restauração criado: {text}");
+    }
+
+    private const string SystemRestoreKey = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore";
+
+    /// <summary>Read = false quando a leitura falhou: aí não se sabe o original e nada é mexido depois.</summary>
+    private static (bool Read, object? Value) ReadCreationFrequency()
+    {
+        try { using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(SystemRestoreKey); return (true, key?.GetValue("SystemRestorePointCreationFrequency")); }
+        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException) { return (false, null); }
+    }
+
+    private void RestoreCreationFrequency(object? before)
+    {
+        try
+        {
+            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(SystemRestoreKey, writable: true);
+            if (key is null) return;
+            if (before is int value) key.SetValue("SystemRestorePointCreationFrequency", value, Microsoft.Win32.RegistryValueKind.DWord);
+            else key.DeleteValue("SystemRestorePointCreationFrequency", throwOnMissingValue: false);
+        }
+        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException)
+        {
+            _log.Write("WARN", "O limite de um ponto de restauração por dia não pôde ser devolvido: " + ex.Message);
+        }
     }
 
     /// <summary>Restaura o sistema para o ponto. O Windows reinicia na hora para concluir.</summary>

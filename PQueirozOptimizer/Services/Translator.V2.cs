@@ -325,7 +325,7 @@ public static partial class Translator
         ["Não avaliado por falta de dados"] = "Not evaluated for lack of data", ["Abrir o Laboratório de desempenho"] = "Open the Performance Lab",
         ["Crítico"] = "Critical", ["Informativo"] = "Informational", ["Confiança alta"] = "High confidence", ["Confiança média"] = "Medium confidence", ["Confiança baixa"] = "Low confidence",
         ["Evidências"] = "Evidence", ["Possíveis causas"] = "Possible causes", ["Recomendações"] = "Recommendations", ["Como confirmar"] = "How to confirm", ["Riscos"] = "Risks",
-        ["Sem um teste do Laboratório de desempenho de pelo menos 20 segundos: limitações de CPU e GPU não podem ser avaliadas."] = "No Performance Lab test of at least 20 seconds: CPU and GPU limits can't be evaluated.",
+        ["Sem um teste recente (últimos 14 dias) do Laboratório de desempenho de pelo menos 20 segundos: limitações de CPU e GPU não podem ser avaliadas."] = "No recent (last 14 days) Performance Lab test of at least 20 seconds: CPU and GPU limits can't be evaluated.",
         ["O Windows não informou o uso da GPU no último teste: gargalo de GPU não avaliado."] = "Windows didn't report GPU usage in the last test: GPU bottleneck not evaluated.",
         ["Poucas leituras de memória: deixe o monitor ao vivo rodando por alguns segundos."] = "Few memory readings: leave the live monitor running for a few seconds.",
         ["Limitado pela placa de vídeo no último teste"] = "Limited by the graphics card in the last test",
@@ -473,6 +473,15 @@ public static partial class Translator
         ["Esta versão não publica o hash assinado do instalador. Baixe pela página de releases."] = "This version doesn't publish the installer's signed hash. Download it from the releases page.",
         ["A assinatura do arquivo de hashes não confere com a chave do Qrztweaks. A atualização foi cancelada; baixe pela página oficial se tiver certeza da origem."] = "The hash file's signature doesn't match the Qrztweaks key. The update was cancelled; download from the official page if you're sure of its origin.",
         ["Atualização concluída"] = "Update complete", ["Atualização não concluída"] = "Update not completed",
+
+        // ---------- Reformulação 2.5: segurança e reversão ----------
+        ["Atividade exportada (sem nome de usuário, do PC, e-mails ou chaves)."] = "Activity exported (without user name, PC name, emails or keys).",
+        ["As preferências não puderam ser lidas nesta sessão; as mudanças valem só até fechar o app."] = "Your preferences couldn't be read this session; changes only last until the app closes.",
+        ["Há gravações sem FPS e sem uso de CPU medido."] = "Some recordings have neither FPS nor measured CPU usage.",
+        ["Grave de novo com o PresentMon configurado para comparar FPS."] = "Record again with PresentMon set up to compare FPS.",
+        ["Condições de uma das gravações desconhecidas (log importado ou antigo): hardware, driver e resolução não podem ser conferidos."] = "One recording's conditions are unknown (imported or old log): hardware, driver and resolution can't be checked.",
+        ["As configurações do Discord não estão no formato esperado. Nada foi alterado."] = "Discord's settings aren't in the expected format. Nothing was changed.",
+        ["Substituir modo"] = "Replace mode", ["Preferências"] = "Preferences",
     };
 
     private static readonly (Regex Regex, Func<Match, string> Build)[] V2Patterns =
@@ -589,5 +598,22 @@ public static partial class Translator
         P(@"^O app continua na versão (.+)\. Tente atualizar de novo em Configurações → Atualizações ou baixe pelo site\.$", m => $"The app is still on version {m.Groups[1].Value}. Try updating again in Settings → Updates or download it from the website."),
         P(@"^Atualizado de (.+) para (.+)$", m => $"Updated from {m.Groups[1].Value} to {m.Groups[2].Value}"),
         P(@"^A atualização para (.+) não foi concluída \(versão atual (.+)\)$", m => $"The update to {m.Groups[1].Value} didn't finish (current version {m.Groups[2].Value})"),
+
+        // ---------- Reformulação 2.5: segurança e reversão ----------
+        P(@"^O backup (das configurações NVIDIA|do DNS) \((.+)\) não pôde ser lido\. Nada foi alterado, para não perder os valores originais\.$",
+            m => $"The {(m.Groups[1].Value == "do DNS" ? "DNS" : "NVIDIA settings")} backup ({m.Groups[2].Value}) couldn't be read. Nothing was changed, so the original values aren't lost."),
+        P(@"^(\d+) valor\(es\) restaurado\(s\); (\d+) ficaram guardados no backup porque estão fora da lista que o app pode restaurar\.$",
+            m => $"{m.Groups[1].Value} value(s) restored; {m.Groups[2].Value} were kept in the backup because they're outside the list the app may restore."),
+        P(@"^Nenhum serviço de ""(.+)"" pôde ser desligado \((.*)\)\. Nada foi alterado\.$", m => $"No service in \"{T(m, 1)}\" could be turned off ({m.Groups[2].Value}). Nothing was changed."),
+        P(@"^Os serviços de ""(.+)"" foram parados, mas o tipo de início não pôde ser alterado \((.*)\)\. Desmarque para restaurar\.$",
+            m => $"The services in \"{T(m, 1)}\" were stopped, but their startup type couldn't be changed ({m.Groups[2].Value}). Uncheck to restore."),
+        P(@"^(.+)\?\n\n([\s\S]+)\n\nO estado atual dos serviços fica guardado e volta ao desligar este interruptor\.$",
+            m => $"{T(m, 1)}?\n\n{T(m, 2)}\n\nThe current state of the services is saved and comes back when you turn this switch off."),
+        P(@"^Já existe um modo chamado '(.+)'\. Substituir pelas opções marcadas agora\?$", m => $"A mode named '{m.Groups[1].Value}' already exists. Replace it with the options checked now?"),
+        P(@"^Parte da redefinição da rede falhou: (.+)\.$", m => $"Part of the network reset failed: {m.Groups[1].Value}."),
+        P(@"^O cache DNS não pôde ser limpo \(código (-?\d+)\)\.$", m => $"The DNS cache couldn't be flushed (code {m.Groups[1].Value})."),
+        P(@"^Download incompleto \((\d+) de (\d+) bytes\)\.$", m => $"Incomplete download ({m.Groups[1].Value} of {m.Groups[2].Value} bytes)."),
+        P(@"^Uso de CPU ([+-]?[\d,.]+)% \(p (.+)\), mas sem FPS medido não há como dizer se o jogo melhorou\. Configure o PresentMon e grave de novo\.$",
+            m => $"CPU usage {m.Groups[1].Value}% (p {m.Groups[2].Value}), but without measured FPS there's no way to tell whether the game improved. Set up PresentMon and record again."),
     };
 }

@@ -32,7 +32,13 @@ public sealed class BiosAdvisorStore
     public BiosAdvisorState Load()
     {
         try { return File.Exists(_path) ? JsonSerializer.Deserialize<BiosAdvisorState>(File.ReadAllText(_path), Json) ?? new() : new(); }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException) { return new(); }
+        catch (JsonException)
+        {
+            // Guarda o arquivo estragado antes de recomeçar: o próximo Save não pode apagar as confirmações e testes
+            try { File.Copy(_path, $"{_path}.corrompido-{DateTime.Now:yyyyMMddHHmmss}", true); } catch (Exception copy) when (copy is IOException or UnauthorizedAccessException) { }
+            return new();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return new(); }
     }
 
     public void Save(BiosAdvisorState state)
@@ -40,7 +46,7 @@ public sealed class BiosAdvisorStore
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-            File.WriteAllText(_path, JsonSerializer.Serialize(state, Json));
+            PQueirozOptimizer.Services.SafeFile.WriteAllText(_path, JsonSerializer.Serialize(state, Json));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }

@@ -68,8 +68,10 @@ public sealed class AppOptimizerService
         switch (t.Id)
         {
             case "discord-gpu":
+                // Lê antes do backup: um arquivo inválido não pode deixar um backup que faz o ajuste parecer aplicado
+                var json = JsonNode.Parse(File.ReadAllText(DiscordSettings)) as JsonObject
+                    ?? throw new InvalidDataException("As configurações do Discord não estão no formato esperado. Nada foi alterado.");
                 Backup(t.Id, DiscordSettings);
-                var json = JsonNode.Parse(File.ReadAllText(DiscordSettings)) as JsonObject ?? new JsonObject();
                 json["enableHardwareAcceleration"] = false;
                 File.WriteAllText(DiscordSettings, json.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
                 break;

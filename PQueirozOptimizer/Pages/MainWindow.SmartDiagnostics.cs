@@ -33,7 +33,9 @@ public partial class MainWindow
             try
             {
                 var snapshot = await ReadSnapshotAsync();
-                var inputs = await DiagnosticsCollector.CollectAsync(snapshot, _smartReading?.Machine, PerfLabStore.Default.List().FirstOrDefault());
+                // Só um teste recente e gravado neste PC: um teste antigo ou importado não descreve o PC de hoje
+                var recent = await Task.Run(() => PerfLabStore.Default.List().FirstOrDefault(r => r.Source != "CSV importado" && (DateTime.Now - r.StartedAt).TotalDays <= DiagnosticsEngine.CaptureMaxAgeDays));
+                var inputs = await DiagnosticsCollector.CollectAsync(snapshot, _smartReading?.Machine, recent);
                 _lastDiagnosis = DiagnosticsEngine.Run(inputs);
                 _log.Write("INFO", $"Diagnóstico inteligente: {_lastDiagnosis.Findings.Count} achado(s)");
                 results.Children.Clear();

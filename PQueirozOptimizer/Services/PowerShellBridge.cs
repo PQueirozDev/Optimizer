@@ -51,7 +51,8 @@ public sealed class PowerShellBridge
         try { await process.WaitForExitAsync(timeoutSource.Token); }
         catch (OperationCanceledException)
         {
-            try { process.Kill(true); } catch (InvalidOperationException) { }
+            // Falha ao encerrar não pode trocar o erro real (tempo limite ou cancelamento) por outro
+            try { process.Kill(true); } catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or AggregateException or NotSupportedException) { }
             try { await Task.WhenAll(output, error); } catch (OperationCanceledException) { }
             if (cancellationToken.IsCancellationRequested) throw new OperationCanceledException(cancellationToken);
             throw new TimeoutException("O comando do PowerShell excedeu o tempo limite.");

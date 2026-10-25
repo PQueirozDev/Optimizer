@@ -23,7 +23,10 @@ public static class OptimizationLab
     {
         var warnings = new List<string>();
         var metric = before.Concat(after).All(r => r.HasFrames) ? "FPS médio" : "Uso de CPU";
-        double Value(PerfResult r) => metric == "FPS médio" ? r.AverageFps!.Value : r.CpuAvg ?? 0;
+        double Value(PerfResult r) => metric == "FPS médio" ? r.AverageFps!.Value : r.CpuAvg!.Value;
+        // Gravação sem o valor medido não entra como zero: falta dado, não houve queda
+        if (metric != "FPS médio" && before.Concat(after).Any(r => r.CpuAvg is null))
+            return new(LabVerdict.InsufficientData, metric, 0, 0, 0, null, 0, 0, null, new[] { "Há gravações sem FPS e sem uso de CPU medido." }, "Grave de novo com o PresentMon configurado para comparar FPS.");
         if (before.Count < MinimumRuns || after.Count < MinimumRuns)
             return new(LabVerdict.InsufficientData, metric, 0, 0, 0, null, 0, 0, null, new[] { $"Faça pelo menos {MinimumRuns} gravações antes e {MinimumRuns} depois." }, "Grave mais vezes antes de decidir.");
         if (metric != "FPS médio")
@@ -37,7 +40,7 @@ public static class OptimizationLab
         var cvB = meanB > 0 ? sdB / meanB * 100 : 0;
         var delta = meanA != 0 ? (meanB - meanA) / meanA * 100 : 0;
         var p = WelchPValue(a, b);
-        double? low1 = before.All(r => r.Low1Fps.HasValue) && after.All(r => r.Low1Fps.HasValue)
+        double? low1 = before.All(r => r.Low1Fps.HasValue) && after.All(r => r.Low1Fps.HasValue) && before.Average(r => r.Low1Fps!.Value) > 0
             ? (after.Average(r => r.Low1Fps!.Value) - before.Average(r => r.Low1Fps!.Value)) / before.Average(r => r.Low1Fps!.Value) * 100 : null;
 
         if (cvA > HighVariationCv || cvB > HighVariationCv) warnings.Add($"Variação alta entre gravações (CV {cvA:0.#}% antes e {cvB:0.#}% depois): repita a mesma cena, com a mesma duração.");
@@ -56,11 +59,13 @@ public static class OptimizationLab
 
         var significant = p is < 0.05;
         var practical = Math.Abs(delta) >= PracticalPercent;
-        var verdict = !significant || !practical ? LabVerdict.NoProvenDifference : delta > 0 == (metric == "FPS médio") ? LabVerdict.LikelyGain : LabVerdict.LikelyLoss;
+        // Sem FPS real não há como dizer que o jogo ficou melhor ou pior: menos CPU não é mais FPS
+        var verdict = !significant || !practical || metric != "FPS médio" ? LabVerdict.NoProvenDifference : delta > 0 ? LabVerdict.LikelyGain : LabVerdict.LikelyLoss;
         var recommendation = verdict switch
         {
             LabVerdict.LikelyGain => warnings.Count == 0 ? "Manter o ajuste: a melhora foi consistente nas gravações." : "Provável melhora, mas confira os avisos antes de considerar comprovado.",
             LabVerdict.LikelyLoss => "Reverter o ajuste: o desempenho piorou de forma consistente.",
+            _ when metric != "FPS médio" => $"Uso de CPU {delta:+0.#;-0.#;0}% (p {(p is { } pv ? pv.ToString("0.###") : "n/d")}), mas sem FPS medido não há como dizer se o jogo melhorou. Configure o PresentMon e grave de novo.",
             _ => $"Sem diferença comprovada (mínimo prático: {PracticalPercent:0}% com p < 0,05). Se o ajuste não tem outro motivo, reverter é o mais simples.",
         };
         return new(verdict, metric, meanA, meanB, delta, p, cvA, cvB, low1, warnings, recommendation);

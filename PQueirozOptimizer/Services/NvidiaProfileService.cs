@@ -250,8 +250,7 @@ public sealed class NvidiaProfileService
     private static Dictionary<uint, uint?> LoadBackup(string? path = null)
     {
         path ??= BackupPath;
-        try { return File.Exists(path) ? JsonSerializer.Deserialize<Dictionary<uint, uint?>>(File.ReadAllText(path)) ?? new() : new(); }
-        catch (Exception ex) when (ex is IOException or JsonException) { return new(); }
+        return SafeFile.ReadBackup<Dictionary<uint, uint?>>(path, "das configurações NVIDIA");
     }
 
     private static void SaveBackup(Dictionary<uint, uint?> backup, string? path = null)
@@ -259,6 +258,6 @@ public sealed class NvidiaProfileService
         path ??= BackupPath;
         var dir = Path.GetDirectoryName(path)!;
         RegistryTweakStore.EnsureProtectedDirectory(dir);
-        File.WriteAllText(path, JsonSerializer.Serialize(backup));
+        SafeFile.WriteAllText(path, JsonSerializer.Serialize(backup));
     }
 }

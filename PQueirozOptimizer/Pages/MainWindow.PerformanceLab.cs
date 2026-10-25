@@ -50,6 +50,7 @@ public partial class MainWindow
         root.Children.Add(Tabs(new[] { (Glyphs.Play, "Captura"), (Glyphs.History, "Histórico"), (Glyphs.Speed, "Comparar"), (Glyphs.Flask, "Laboratório de otimização") },
             Math.Max(0, Array.IndexOf(tabIds, _perfTab)), i => { _perfTab = tabIds[i]; ShowPerformanceLab(); AnimatePageIn(); }));
         var body = new StackPanel();
+        Mark((FrameworkElement)root.Children[^1], "perflab.tabs");
         root.Children.Add(body);
         ContentHost.Children.Clear(); ContentHost.Children.Add(root);
         switch (_perfTab)
@@ -186,6 +187,7 @@ public partial class MainWindow
 
         start.Click += async (_, _) =>
         {
+            // Parar à mão também entrega o resultado ao experimento A/B que iniciou a captura
             if (_capture is not null) { await StopCaptureAsync(_captureLabel); start.IsEnabled = true; ShowPerformanceLab(); return; }
             var name = (process.Text ?? "").Trim();
             if (name.Length > 0 && !name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) name += ".exe";
@@ -202,6 +204,7 @@ public partial class MainWindow
     private TextBlock? _liveStatus;
     private Panel? _liveResultHost;
     private string _captureLabel = "";
+    private Action<PerfResult>? _captureFinished;
 
     private async Task StartCaptureAsync(string? process, int seconds, string label, Action<PerfResult>? finished = null)
     {
@@ -213,6 +216,7 @@ public partial class MainWindow
             _log.Write("INFO", $"Laboratório de desempenho: captura iniciada ({process ?? "só sensores"}, {seconds} s)");
             var started = DateTime.Now;
             _captureLabel = label;
+            _captureFinished = finished;
             _captureTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _captureTimer.Tick += async (_, _) =>
             {
@@ -223,8 +227,7 @@ public partial class MainWindow
                 if (_liveStatus != null && _currentPage == "perflab") _liveStatus.Text = $"Gravando {elapsed:0} de {seconds} s" + (_capture.CapturingFrames ? (sample.Fps is null ? " · aguardando quadros do processo" : "") : " · só sensores (sem PresentMon ou sem processo)");
                 if (elapsed >= seconds + 2 || _capture.PresentMonExited && elapsed > 3)
                 {
-                    var result = await StopCaptureAsync(label);
-                    if (result is not null) finished?.Invoke(result);
+                    await StopCaptureAsync(label);
                 }
             };
             _captureTimer.Start();
@@ -244,6 +247,7 @@ public partial class MainWindow
         var resultHost = _currentPage == "perflab" && _perfTab == "capture" ? _liveResultHost : null;
         var session = _capture;
         if (session is null) return null;
+        var finished = _captureFinished; _captureFinished = null;
         _captureTimer?.Stop(); _captureTimer = null;
         _capture = null;
         HardwareMonitorService.Shared.Sampled -= KeepMonitorAlive;
@@ -258,6 +262,7 @@ public partial class MainWindow
             if (status != null) status.Text = "Captura concluída e salva no histórico.";
             if (resultHost != null) { resultHost.Children.Clear(); resultHost.Children.Add(PerfResultCard(result)); }
             ShowToast("Laboratório de desempenho", result.HasFrames ? $"FPS médio {result.AverageFps:0} · 1% low {result.Low1Fps:0}" : "Captura salva (sem FPS: só sensores).", "Success");
+            finished?.Invoke(result);
             return result;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FormatException)
@@ -386,8 +391,8 @@ public partial class MainWindow
         {
             // Mesmo leitor do Assistente de BIOS: cabeçalhos com aspas ou outra caixa e só o fluxo principal (processo + swapchain)
             var (application, frames) = BiosAdvisor.Benchmark.FrametimeAnalyzer.BestStream(await File.ReadAllTextAsync(dialog.FileName));
-            var conditions = await CaptureConditionsAsync();
-            var result = PerfMetrics.Build(new PerfResult { Label = Path.GetFileNameWithoutExtension(dialog.FileName), Process = application, Source = "CSV importado", Conditions = conditions },
+            // Condições desconhecidas: o log pode ter sido gravado em outro PC, driver ou resolução
+            var result = PerfMetrics.Build(new PerfResult { Label = Path.GetFileNameWithoutExtension(dialog.FileName), Process = application, Source = "CSV importado", Conditions = null },
                 frames.Count >= 100 ? frames : null, Array.Empty<PerfSample>());
             if (!result.HasFrames) throw new FormatException("O log não tem quadros suficientes do processo principal.");
             PerfLabStore.Default.Save(result);

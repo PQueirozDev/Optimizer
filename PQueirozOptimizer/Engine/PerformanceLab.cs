@@ -129,7 +129,11 @@ public static class PerfMetrics
     {
         var list = new List<string>();
         if (!string.Equals(a.Process, b.Process, StringComparison.OrdinalIgnoreCase)) list.Add($"Processos diferentes ({a.Process ?? "nenhum"} e {b.Process ?? "nenhum"}).");
-        if (a.Conditions is not { } x || b.Conditions is not { } y) return list;
+        if (a.Conditions is not { } x || b.Conditions is not { } y)
+        {
+            list.Add("Condições de uma das gravações desconhecidas (log importado ou antigo): hardware, driver e resolução não podem ser conferidos.");
+            return list;
+        }
         if (x.Gpu != y.Gpu || x.Cpu != y.Cpu) list.Add("Hardware diferente.");
         if (x.GpuDriver != y.GpuDriver) list.Add($"Driver de vídeo diferente ({x.GpuDriver} e {y.GpuDriver}).");
         if (x.Build != y.Build) list.Add($"Versão do Windows diferente (build {x.Build} e {y.Build}).");

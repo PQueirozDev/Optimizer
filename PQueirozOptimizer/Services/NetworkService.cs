@@ -171,22 +171,27 @@ public sealed class NetworkService
                 : "Set-DnsClientServerAddress -InterfaceAlias $env:PQO_IF -ServerAddresses ($env:PQO_DNS -split ',')",
                 new Dictionary<string, string> { ["PQO_IF"] = a.Name, ["PQO_DNS"] = string.Join(",", servers.Where(s => System.Net.IPAddress.TryParse(s, out _))) });
         }
-        if (provider.Id == "auto" && File.Exists(DnsBackupPath)) File.Delete(DnsBackupPath);
+        if (provider.Id == "auto")
+        {
+            // Só esquece o DNS original dos adaptadores restaurados agora: um desconectado (Ethernet fora) volta depois
+            foreach (var a in adapters) backup.Remove(a.Name);
+            if (backup.Count == 0) { if (File.Exists(DnsBackupPath)) File.Delete(DnsBackupPath); }
+            else SaveDnsBackup(backup);
+        }
         await PowerShellBridge.RunScriptAsync("Clear-DnsClientCache");
         _log.Write("SUCCESS", $"DNS alterado para {provider.Name} em {adapters.Count} adaptador(es)");
     }
 
     private static Dictionary<string, string[]> LoadDnsBackup()
     {
-        try { return File.Exists(DnsBackupPath) ? JsonSerializer.Deserialize<Dictionary<string, string[]>>(File.ReadAllText(DnsBackupPath)) ?? new() : new(); }
-        catch (Exception ex) when (ex is IOException or JsonException) { return new(); }
+        return SafeFile.ReadBackup<Dictionary<string, string[]>>(DnsBackupPath, "do DNS");
     }
 
     private static void SaveDnsBackup(Dictionary<string, string[]> backup)
     {
         var dir = Path.GetDirectoryName(DnsBackupPath)!;
         RegistryTweakStore.EnsureProtectedDirectory(dir);
-        File.WriteAllText(DnsBackupPath, JsonSerializer.Serialize(backup));
+        SafeFile.WriteAllText(DnsBackupPath, JsonSerializer.Serialize(backup));
     }
 
     /// <summary>DNS que está em uso: o nome do provedor conhecido ou "Automático".</summary>
@@ -235,6 +240,7 @@ public sealed class NetworkService
     /// <summary>Reinicia Winsock e a pilha TCP/IP e limpa o DNS. Precisa reiniciar o PC.</summary>
     public async Task ResetNetworkAsync(IProgress<string>? progress = null)
     {
+        var failed = new List<string>();
         foreach (var (file, args, label) in new[]
         {
             ("netsh.exe", new[] { "winsock", "reset" }, "Winsock reiniciado"),
@@ -244,13 +250,20 @@ public sealed class NetworkService
         {
             var code = await Task.Run(() => GamingService.RunTool(file, args));
             progress?.Report(code == 0 ? label : $"[ERRO] {label}: código {code}");
+            if (code != 0) failed.Add($"{label} (código {code})");
+        }
+        if (failed.Count > 0)
+        {
+            _log.Write("WARN", "Rede redefinida em parte; falharam: " + string.Join(", ", failed));
+            throw new InvalidOperationException("Parte da redefinição da rede falhou: " + string.Join(", ", failed) + ".");
         }
         _log.Write("SUCCESS", "Rede redefinida (reinicie o PC para concluir)");
     }
 
     public async Task FlushDnsAsync()
     {
-        await Task.Run(() => GamingService.RunTool("ipconfig.exe", "/flushdns"));
+        var code = await Task.Run(() => GamingService.RunTool("ipconfig.exe", "/flushdns"));
+        if (code != 0) throw new InvalidOperationException($"O cache DNS não pôde ser limpo (código {code}).");
         _log.Write("SUCCESS", "Cache DNS limpo");
     }
 

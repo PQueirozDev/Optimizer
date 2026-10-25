@@ -40,7 +40,7 @@ public partial class MainWindow
         watch.Checked += (_, _) => { ProfileStore.Default.WatchGames = true; StartGameWatcher(); };
         watch.Unchecked += (_, _) => { ProfileStore.Default.WatchGames = false; StopGameWatcher(); };
         head.Children.Add(SettingRow("Ativar ao abrir um jogo", "Quando um jogo de um perfil com \"Modo Jogo automático\" abrir, o Modo Jogo temporário liga sozinho e é restaurado quando o jogo fechar. O app só lê a lista de processos: nada é injetado no jogo.", watch));
-        root.Children.Add(Surface(head));
+        root.Children.Add(Mark(Surface(head), "profiles.head"));
 
         foreach (var profile in ProfileStore.Default.Profiles)
         {
@@ -169,6 +169,8 @@ public partial class MainWindow
     /// <summary>Aplica pela Otimização inteligente: a análise lê o estado e só os ajustes do perfil que fazem sentido ficam marcados.</summary>
     private void ApplyProfile(UserProfile profile)
     {
+        // A análise não roda durante outra operação: a seleção do perfil ficaria guardada e vazaria para a próxima análise
+        if (_operationRunning) { OperationStatus.Text = "Aguarde a operação em andamento."; return; }
         _smartGoal = profile.Goal == OptimizationGoal.Custom ? OptimizationGoal.Custom : profile.Goal;
         _smartProfileSelection = profile.Tweaks;
         NavigateTo("smart");

@@ -42,7 +42,9 @@ public partial class MainWindow
     private Border BackupStepRow(string? step, JsonElement[] items)
     {
         var row = new DockPanel();
-        var reversible = items.Any(i => i.GetProperty("Tipo").GetString() != "Irreversivel");
+        // Item malformado no backup não pode derrubar o painel inteiro (e esconder o Desfazer dos outros)
+        static string? TypeOf(JsonElement i) => i.ValueKind == JsonValueKind.Object && i.TryGetProperty("Tipo", out var t) && t.ValueKind == JsonValueKind.String ? t.GetString() : null;
+        var reversible = items.Any(i => TypeOf(i) != "Irreversivel");
         if (step != null && reversible)
         {
             var undo = IconButton(Glyphs.Undo, "Desfazer");
@@ -61,7 +63,8 @@ public partial class MainWindow
         var pills = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
         foreach (var item in items)
         {
-            var type = item.GetProperty("Tipo").GetString();
+            var type = TypeOf(item);
+            if (item.ValueKind != JsonValueKind.Object) continue;
             var detail = item.TryGetProperty("Nome", out var n) ? n.ToString() : item.TryGetProperty("Descricao", out var d) ? d.ToString() : type ?? "";
             // Tarefas agendadas: mostra só o nome final (\Microsoft\Windows\...\Nome)
             if (type == "TarefaAgendada") detail = detail.Split('\\', StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? detail;
@@ -156,7 +159,7 @@ public partial class MainWindow
             }
         }
         catch (Exception ex) { backupPanel.Children.Add(Label("Não foi possível ler o backup: " + ex.Message, 13, true)); }
-        root.Children.Add(Surface(backupPanel));
+        root.Children.Add(Mark(Surface(backupPanel), "history.backup"));
 
         var activityPanel = new StackPanel();
         var activityHead = new DockPanel();
@@ -168,7 +171,7 @@ public partial class MainWindow
             var dialog = new Microsoft.Win32.SaveFileDialog { FileName = "qrztweaks-atividade.log", Filter = "Log (*.log)|*.log" };
             if (dialog.ShowDialog(this) == true)
             {
-                try { File.Copy(_log.Export(), dialog.FileName, true); OperationStatus.Text = "Atividade exportada."; }
+                try { _log.ExportRedacted(dialog.FileName); OperationStatus.Text = "Atividade exportada (sem nome de usuário, do PC, e-mails ou chaves)."; }
                 catch (Exception ex) { OperationStatus.Text = ex.Message; }
             }
         };

@@ -77,20 +77,32 @@ public sealed class ServiceGroupsService
         backup[group.Id] = original;
         SaveBackup(backup); // o "antes" vai para o disco antes de mudar qualquer serviço
         var changed = 0;
+        var stopped = 0;
+        var failed = new List<string>();
         await Task.Run(() =>
         {
             foreach (var name in services)
             {
                 if (GamingService.RunTool("sc.exe", "config", name, "start=", "disabled") == 0) changed++;
+                else failed.Add(name);
                 try
                 {
                     using var controller = new ServiceController(name);
-                    if (controller.Status != ServiceControllerStatus.Stopped) { controller.Stop(); controller.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(15)); }
+                    if (controller.Status != ServiceControllerStatus.Stopped) { controller.Stop(); controller.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(15)); stopped++; }
                 }
                 catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or System.ServiceProcess.TimeoutException) { }
             }
         });
-        _log.Write("SUCCESS", $"Serviços desligados: {group.Name} ({changed}/{services.Length})");
+        if (changed == 0 && services.Length > 0)
+        {
+            // Algum serviço foi parado: o backup fica, para "restaurar" ligar de novo o que parou
+            if (stopped > 0)
+                throw new InvalidOperationException($"Os serviços de \"{group.Name}\" foram parados, mas o tipo de início não pôde ser alterado ({string.Join(", ", failed)}). Desmarque para restaurar.");
+            // Nada mudou: o grupo não pode aparecer como desligado (o backup só fica se já existia antes)
+            if (saved is null) { backup.Remove(group.Id); SaveBackup(backup); }
+            throw new InvalidOperationException($"Nenhum serviço de \"{group.Name}\" pôde ser desligado ({string.Join(", ", failed)}). Nada foi alterado.");
+        }
+        _log.Write(failed.Count == 0 ? "SUCCESS" : "WARN", $"Serviços desligados: {group.Name} ({changed}/{services.Length})" + (failed.Count > 0 ? $"; não alterados: {string.Join(", ", failed)}" : ""));
         return changed;
     }
 

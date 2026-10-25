@@ -44,7 +44,11 @@ public partial class MainWindow
                 var row = ChoiceRow(check, group.Name, detail, disabled ? "Aplicado" : "Padrão", disabled ? "Success" : "Info");
                 BindActionToggle(check,
                     off => off
-                        ? ExecuteTrackedAsync("Desligando: " + group.Name, async _ => await service.DisableAsync(group))
+                        // Grupos com efeito colateral sério (atualizações de segurança, acesso remoto) pedem confirmação
+                        ? group.Warning != null && Msg($"{group.Name}?\n\n{group.Warning}\n\nO estado atual dos serviços fica guardado e volta ao desligar este interruptor.",
+                                group.Name, MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes
+                            ? Task.FromResult(false)
+                            : ExecuteTrackedAsync("Desligando: " + group.Name, async _ => await service.DisableAsync(group))
                         : ExecuteTrackedAsync("Restaurando: " + group.Name, async _ => await service.RestoreAsync(group)),
                     // Atualiza só a etiqueta: redesenhar a página trocava o interruptor no meio da animação e voltava a rolagem ao topo
                     () => { var now = ServiceGroupsService.IsDisabled(group); SetChoiceRowPill(check, now ? "Aplicado" : "Padrão", now ? "Success" : "Info"); });

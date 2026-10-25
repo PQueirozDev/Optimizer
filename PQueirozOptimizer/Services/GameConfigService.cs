@@ -325,7 +325,10 @@ public sealed class GameConfigService
             .FirstOrDefault();
     }
 
-    public static bool IsRunning(GamePreset preset) =>
+    public static bool IsRunning(GamePreset preset) => ProcessRunning(preset);
+
+    // Os testes trocam esta leitura para não depender de o jogo estar aberto no PC de quem roda a suíte
+    internal static Func<GamePreset, bool> ProcessRunning { get; set; } = preset =>
         preset.Processes.Any(name => { var list = Process.GetProcessesByName(name); foreach (var p in list) p.Dispose(); return list.Length > 0; });
 
     /// <summary>Pasta das cópias originais (o teste aponta para uma pasta temporária).</summary>

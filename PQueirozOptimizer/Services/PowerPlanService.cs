@@ -102,14 +102,20 @@ public sealed class PowerPlanService
             var dc = PowerWriteDCValueIndex(IntPtr.Zero, ref qrz, ref sub, ref setting, s.Dc);
             if (ac == 0 || dc == 0) applied++;
         }
-        var activate = PowerSetActiveScheme(IntPtr.Zero, ref qrz);
-        if (activate != 0) throw new InvalidOperationException($"O plano Qrz foi criado, mas não pôde ser ativado (código {activate}).");
-
-        // Guarda o plano anterior só na primeira ativação (reinstalar não troca o "antes" pelo próprio Qrz)
+        // Guarda o plano anterior só na primeira ativação (reinstalar não troca o "antes" pelo próprio Qrz), e antes
+        // de ativar: uma queda entre ativar e gravar deixaria o Qrz ativo sem saber para qual plano voltar
+        var savedNow = false;
         if (previous is { } p && p != qrz && !File.Exists(StatePath))
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(StatePath)!);
-            File.WriteAllText(StatePath, JsonSerializer.Serialize(p));
+            RegistryTweakStore.EnsureProtectedDirectory(Path.GetDirectoryName(StatePath)!);
+            SafeFile.WriteAllText(StatePath, JsonSerializer.Serialize(p));
+            savedNow = true;
+        }
+        var activate = PowerSetActiveScheme(IntPtr.Zero, ref qrz);
+        if (activate != 0)
+        {
+            if (savedNow) File.Delete(StatePath);
+            throw new InvalidOperationException($"O plano Qrz foi criado, mas não pôde ser ativado (código {activate}).");
         }
         _log.Write("SUCCESS", $"Plano de energia Qrz ativado ({applied} configurações)");
         return applied;

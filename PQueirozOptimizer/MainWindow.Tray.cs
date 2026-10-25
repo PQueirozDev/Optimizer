@@ -122,8 +122,13 @@ public partial class MainWindow
         panel.Children.Add(SectionHeader("Janela", "Como o app se comporta quando você não está usando."));
         var check = new CheckBox { IsChecked = _configService.Config.MinimizeToTray, Content = "" };
         check.SetResourceReference(StyleProperty, "SwitchCheckBox");
-        check.Checked += (_, _) => _configService.SaveMinimizeToTray(true);
-        check.Unchecked += (_, _) => _configService.SaveMinimizeToTray(false);
+        void Save(bool enabled)
+        {
+            try { _configService.SaveMinimizeToTray(enabled); }
+            catch (System.IO.IOException ex) { ShowToast("Preferências", ex.Message, "Warning"); }
+        }
+        check.Checked += (_, _) => Save(true);
+        check.Unchecked += (_, _) => Save(false);
         panel.Children.Add(SettingRow("Minimizar para a bandeja", "Ao minimizar, o app sai da barra de tarefas e fica só como ícone perto do relógio. Clique no ícone para abrir de novo.", check));
         return Surface(panel);
     }
