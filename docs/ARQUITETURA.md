@@ -73,5 +73,5 @@ Detalhes em [guias/SEGURANCA.md](guias/SEGURANCA.md).
 ## Testes
 
 - `tests/Verify-PowerShell.ps1`: o script.
-- `tests/Optimizer.Verification`: todo o resto. Opções: `--safety` (Etapa A), `--v2` (motor 2.0), `--recovery`,
+- `tests/Optimizer.Verification`: todo o resto. Opções: `--safety` (Etapa A), `--v2` (motor 2.0), `--hardening` (reformulação 2.5), `--recovery`,
   `--branding`, `--i18n`, `--render`. O padrão roda tudo menos as telas e o i18n.

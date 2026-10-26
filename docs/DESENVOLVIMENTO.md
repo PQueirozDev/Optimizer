@@ -20,6 +20,7 @@ dotnet run --project .\PQueirozOptimizer\PQueirozOptimizer.csproj
 dotnet run --project .\tests\Optimizer.Verification                 # tudo (exceto telas e i18n)
 dotnet run --project .\tests\Optimizer.Verification -- <pasta> --safety  # Etapa A (segurança e reversão)
 dotnet run --project .\tests\Optimizer.Verification -- <pasta> --v2      # motor 2.0
+dotnet run --project .\tests\Optimizer.Verification -- <pasta> --hardening  # backups, preferências, tutorial, jogos (2.5)
 dotnet run --project .\tests\Optimizer.Verification -- <pasta> --i18n    # interface em inglês (esperado: só os textos antigos)
 dotnet run --project .\tests\Optimizer.Verification -- <pasta> --branding
 dotnet build .\PQueirozOptimizer\PQueirozOptimizer.csproj -c Release

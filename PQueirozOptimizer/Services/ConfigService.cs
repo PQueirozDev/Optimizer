@@ -139,6 +139,9 @@ public class ConfigService
         // JSON editado à mão ou de outra versão pode trazer nulos: limpa antes de qualquer leitura
         _config.Profiles ??= new();
         _config.Profiles.RemoveAll(p => p is null || string.IsNullOrWhiteSpace(p.Name));
+        foreach (var p in _config.Profiles) p.EnabledOptimizations?.RemoveAll(string.IsNullOrWhiteSpace);
+        _config.Favorites ??= new();
+        _config.Favorites.RemoveAll(string.IsNullOrWhiteSpace);
         _config.CompletedTutorials ??= new();
         _config.CompletedTutorials.RemoveAll(string.IsNullOrWhiteSpace);
         _config.Appearance ??= new();
@@ -398,6 +401,26 @@ public class ConfigService
         Save();
     }
 
+    public const int MaxFavorites = 8;
+
+    public bool IsFavorite(string title) => _config.Favorites.Contains(title, StringComparer.Ordinal);
+
+    /// <summary>Marca ou desmarca uma função favorita. Devolve false se o limite já foi atingido.</summary>
+    public bool ToggleFavorite(string title)
+    {
+        if (_config.Favorites.Remove(title)) { Save(); return true; }
+        if (_config.Favorites.Count >= MaxFavorites) return false;
+        _config.Favorites.Add(title);
+        Save();
+        return true;
+    }
+
+    public void SaveOnlineGameArt(bool enabled)
+    {
+        _config.OnlineGameArt = enabled;
+        Save();
+    }
+
     public void SaveSuccessNotifications(bool enabled)
     {
         _config.SuccessNotifications = enabled;
@@ -441,10 +464,18 @@ public class ConfigService
         imported.Language = imported.Language is "pt" or "en" ? imported.Language : previous.Language;
         imported.MonitorIntervalSeconds = HardwareMonitorService.AllowedIntervals.Contains(imported.MonitorIntervalSeconds) ? imported.MonitorIntervalSeconds : 1;
         _config = imported;
-        EnsureDefaults();
-        foreach (var profile in _config.Profiles) profile.EnabledOptimizations.RemoveAll(id => !known.Contains(id));
-        try { Save(); }
-        catch { _config = previous; throw; }
+        try
+        {
+            EnsureDefaults();
+            foreach (var profile in _config.Profiles) profile.EnabledOptimizations.RemoveAll(id => !known.Contains(id));
+            Save();
+        }
+        catch (IOException) { _config = previous; throw; }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            _config = previous;
+            throw new InvalidDataException("O arquivo de preferências tem dados inválidos: " + ex.Message, ex);
+        }
     }
 
     /// <summary>Guarda o passo do tour a cada avanço: fechar o app no meio não obriga a começar de novo.</summary>

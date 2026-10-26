@@ -93,6 +93,29 @@ public static class DiagnosticsEngine
                     new[] { "Temperatura ou limite de energia da placa." },
                     new[] { "Melhore o fluxo de ar do gabinete e limpe a placa.", "Confira se os cabos de energia da GPU estão bem conectados." },
                     "Acompanhe temperatura e clock no Laboratório de desempenho durante uma partida longa.", "Undervolt e mudanças de curva de ventoinha ficam por sua conta: o app não altera a GPU."));
+            // Temperatura alta sem motivo de redução informado (placas que não são NVIDIA não informam o motivo)
+            else if (cap.GpuTempMax is >= 85 and var hot)
+                findings.Add(new("thermal.gpu", "Placa de vídeo quente no teste", DiagnosisSeverity.Info, DiagnosisConfidence.Low,
+                    new[] { $"Temperatura máxima da GPU {hot:0} °C durante {cap.DurationSeconds:0} s. O driver não informou redução de clock." },
+                    new[] { "Fluxo de ar do gabinete fraco, poeira ou curva de ventoinha conservadora." },
+                    new[] { "Limpe a placa e melhore a ventilação do gabinete.", "Grave uma partida mais longa e veja se o clock da GPU cai junto com a temperatura." },
+                    "Compare o clock da GPU no início e no fim de uma gravação longa: queda com a temperatura subindo indica limite térmico.", "Nenhum: é uma leitura."));
+
+            // ---------- Estabilidade dos quadros (só com quadros reais do PresentMon) ----------
+            if (cap.AverageFrametimeMs is > 0 and var avgFt && cap.P99FrametimeMs is { } p99 && cap.Frames is >= 1000)
+            {
+                var ratio = p99 / avgFt;
+                if (ratio >= 2)
+                    findings.Add(new("frametime.unstable", "Quadros irregulares (travadas) no último teste", ratio >= 3 ? DiagnosisSeverity.Warning : DiagnosisSeverity.Info,
+                        cap.DurationSeconds >= 60 ? DiagnosisConfidence.Medium : DiagnosisConfidence.Low,
+                        new[] { $"Frametime médio {avgFt:0.0} ms, mas 1% dos quadros passou de {p99:0.0} ms ({ratio:0.0}× o médio)."
+                                + (cap.Low1Fps is { } low && cap.AverageFps is { } avgFps ? $" 1% low {low:0} FPS contra {avgFps:0} FPS de média." : "") },
+                        new[] { "Compilação de shaders nas primeiras partidas depois de atualizar o jogo ou o driver.", "Programas em segundo plano disputando a CPU.", "Memória quase cheia ou disco lento carregando partes do mapa.", "V-Sync ou limite de FPS mal combinado com a taxa do monitor." },
+                        new[] { "Repita o teste depois de jogar alguns minutos (shaders já compilados).", "Feche programas em segundo plano (Modo Jogo).", "Use um limite de FPS um pouco abaixo da taxa do monitor em vez de V-Sync." },
+                        "Grave duas vezes a mesma cena: se as travadas sumirem na segunda, eram shaders sendo compilados.", "Nenhum: é uma leitura."));
+            }
+            else if (!cap.HasFrames)
+                missing.Add("Sem quadros reais (PresentMon) no último teste: a estabilidade do frametime não foi avaliada.");
         }
 
         // ---------- Memória ----------
@@ -221,6 +244,9 @@ public static class DiagnosticsCollector
         try { using var searcher = new ManagementObjectSearcher(scope, wql); return searcher.Get().Cast<ManagementObject>().ToList(); }
         catch (Exception ex) when (ex is ManagementException or UnauthorizedAccessException or System.Runtime.InteropServices.COMException) { return Array.Empty<ManagementObject>(); }
     }
+
+    /// <summary>"SSD" ou "HDD" do disco onde o Windows está; null se o Windows não informar (WMI do Storage).</summary>
+    public static string? SystemDiskType() => Disks().FirstOrDefault(d => d.IsSystem)?.MediaType is ("SSD" or "HDD") and var type ? type : null;
 
     private static List<DiskReading> Disks()
     {

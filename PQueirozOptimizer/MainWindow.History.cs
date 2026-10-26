@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Windows.Media;
 using PQueirozOptimizer.Services;
 using PQueirozOptimizer.Models;
+using PQueirozOptimizer.Engine;
 
 namespace PQueirozOptimizer;
 
@@ -161,6 +162,9 @@ public partial class MainWindow
         catch (Exception ex) { backupPanel.Children.Add(Label("Não foi possível ler o backup: " + ex.Message, 13, true)); }
         root.Children.Add(Mark(Surface(backupPanel), "history.backup"));
 
+        if (SmartRunsCard() is { } runs) root.Children.Add(runs);
+        if (AppChangesCard() is { } changes) root.Children.Add(changes);
+
         var activityPanel = new StackPanel();
         var activityHead = new DockPanel();
         var export = IconButton(Glyphs.Download, "Exportar");
@@ -243,5 +247,88 @@ public partial class MainWindow
         RenderLogs();
         root.Children.Add(Surface(activityPanel));
         ContentHost.Children.Clear(); ContentHost.Children.Add(root);
+    }
+
+    /// <summary>Execuções da Otimização inteligente (as 10 mais recentes): quando, objetivo e quantos ajustes o Windows confirmou.</summary>
+    private Border? SmartRunsCard()
+    {
+        IReadOnlyList<SmartHistory.Run> runs;
+        try { runs = SmartHistory.Default.Runs; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException) { return null; }
+        if (runs.Count == 0) return null;
+        var panel = new StackPanel();
+        panel.Children.Add(SectionHeader("Otimização inteligente", "Cada execução, com o objetivo e quantos ajustes o Windows confirmou depois. Os ajustes não confirmados aparecem no detalhe."));
+        foreach (var run in runs.OrderByDescending(r => r.At).Take(10))
+        {
+            var line = new DockPanel { Margin = new Thickness(0, 6, 0, 0) };
+            var allVerified = run.NotVerified.Length == 0;
+            var pill = Pill(Tr($"{run.Verified.Length} de {run.Selected.Length} confirmados"), allVerified ? "Success" : "Warning");
+            DockPanel.SetDock(pill, Dock.Right); line.Children.Add(pill);
+            var text = Label($"{run.At:dd/MM/yyyy HH:mm} · {Tr(GoalTitle(run.Goal))}", 13);
+            text.Tag = Translator.SystemDataTag;
+            if (!allVerified) text.ToolTip = Tr("Não confirmados: ") + string.Join(", ", run.NotVerified.Select(id => Tr(TweakCatalog.Find(id)?.Name ?? id)));
+            line.Children.Add(text);
+            panel.Children.Add(line);
+        }
+        return Surface(panel);
+    }
+
+    /// <summary>Uma alteração feita fora do script (pelas páginas do app): o que é, quando e onde desfazer.</summary>
+    internal sealed record AppChange(string Title, DateTime? At, string Page, string Where);
+
+    /// <summary>
+    /// Alterações que as páginas do app fazem por conta própria (registro, serviços, NVIDIA, DNS, plano de energia).
+    /// Cada uma é desfeita na página dela, que conhece a lista do que pode restaurar.
+    /// </summary>
+    internal static List<AppChange> ReadAppChanges(RegistryTweakStore store)
+    {
+        var list = new List<AppChange>();
+        try
+        {
+            foreach (var t in store.List(""))
+            {
+                var (page, where) = t.Id switch
+                {
+                    var id when id.StartsWith("app-", StringComparison.Ordinal) => ("apps", "Aplicativos"),
+                    NetworkService.LatencyTweakId => ("network", "Rede"),
+                    _ => ("gaming", "Modo Jogo"),
+                };
+                list.Add(new(t.Title, t.AppliedAtUtc == default ? null : t.AppliedAtUtc.ToLocalTime(), page, where));
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        foreach (var group in ServiceGroupsService.Groups.Where(ServiceGroupsService.IsDisabled))
+            list.Add(new(group.Name, null, "services", "Serviços"));
+        if (NvidiaProfileService.IsApplied()) list.Add(new("Perfil NVIDIA para jogos", null, "gaming", "Modo Jogo → NVIDIA"));
+        if (NetworkService.DnsChanged) list.Add(new("DNS alterado", null, "network", "Rede"));
+        if (PowerPlanService.IsQrzActive()) list.Add(new("Plano de energia Qrz ativo", null, "gaming", "Modo Jogo → Sistema"));
+        return list;
+    }
+
+    private Border? AppChangesCard()
+    {
+        var changes = ReadAppChanges(new RegistryTweakStore());
+        if (changes.Count == 0) return null;
+        var panel = new StackPanel();
+        panel.Children.Add(SectionHeader("Outras alterações feitas pelo app", "Ajustes aplicados pelas páginas do app, fora da otimização. Cada um guarda o valor anterior e é desfeito na página dele."));
+        foreach (var change in changes.OrderByDescending(c => c.At ?? DateTime.MinValue))
+        {
+            var line = new DockPanel { Margin = new Thickness(0, 6, 0, 0) };
+            var open = IconButton(Glyphs.ChevronRight, "Desfazer em " + change.Where);
+            open.Margin = new Thickness(12, 0, 0, 0);
+            var target = change.Page;
+            open.Click += (_, _) => NavigateTo(target);
+            DockPanel.SetDock(open, Dock.Right); line.Children.Add(open);
+            var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            // Títulos gravados no backup ficam em português ("Microsoft Edge: ..."): traduz a parte depois do nome do app
+            var split = change.Title.IndexOf(": ", StringComparison.Ordinal);
+            var shown = split > 0 ? change.Title[..(split + 2)] + Tr(change.Title[(split + 2)..]) : Tr(change.Title);
+            var title = Label(shown, 13); title.Margin = new Thickness(0); title.Tag = Translator.SystemDataTag;
+            text.Children.Add(title);
+            if (change.At is { } at) { var when = Label($"{at:dd/MM/yyyy HH:mm}", 11.5, true); when.Margin = new Thickness(0, 2, 0, 0); when.Tag = Translator.SystemDataTag; text.Children.Add(when); }
+            line.Children.Add(text);
+            panel.Children.Add(line);
+        }
+        return Surface(panel);
     }
 }

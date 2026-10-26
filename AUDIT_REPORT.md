@@ -65,36 +65,42 @@ A maior parte do que o pedido descreve **já existe e funciona**; a reformulaç�
 
 Testes novos: `tests/Optimizer.Verification/HardeningTests.cs` (`--hardening`), 13 verificações, e o teste de reversão de registro atualizado.
 
-### Para as próximas fases (confirmados, ainda não corrigidos)
+### Corrigidos nas fases 3 a 8
 
-| # | Sev. | Onde | Problema | Fase |
+| # | Sev. | Onde | Problema | Situação |
 |---|---|---|---|---|
-| B1 | Média | `HardwareMonitorService` + `MainWindow.Hud` | Minimizado na bandeja, o monitor continua amostrando a cada 1 s (com ping a cada 5 s) e o Início continua redesenhando gráficos e medidores sem ninguém ver. | 7 |
-| B2 | Média | `MainWindow.PerformanceLab` | `Tick()` da captura e `Finish()` (espera o PresentMon fechar, até 5 s) rodam na thread da interface. | 7 |
-| B3 | Média | `MainWindow.StressTest` | Iniciar/parar o teste de estresse faz WMI, `Join` e leitura do log de eventos na thread da interface. | 7 |
-| B4 | Baixa | `MainWindow.BiosAdvisorTools` | Leitura de sensores a cada 3 s continua com a janela escondida. | 7 |
-| B5 | Baixa | `CompactMonitorWindow` | Inicia `nvidia-smi.exe` a cada 3 s, mas a amostra já tem a temperatura pelo NVML. | 7 |
-| B6 | Baixa | `Controls/LineChart` | Canetas, geometrias e texto recriados a cada quadro. | 7 |
-| B7 | Baixa | `UpdateLicenseUi` | Cada ativação de licença adiciona outro `Closed`/`SizeChanged`/`PreviewKeyDown`. | 7 |
-| B8 | Baixa | `MainWindow.HomeAurora` | Verificação de temperatura cacheada 10 min como "sem sensor" se o Início abre antes da 1ª amostra (sem recorrer ao NVML). | 7 |
-| B9 | Baixa | Splash | Mínimo de ~3,3 s de animação mesmo com o Início pronto antes. | 7 |
-| B10 | Média | Tutorial | Não navega entre páginas; não retoma de onde parou; máscara não acompanha redimensionar; passo do monitor some se a seção estiver desligada. | 4 |
-| B11 | Média | Dashboard | Sem versão do Windows, sem espaço livre por disco, sem "perfil ativo", "última otimização" ou "otimizações aplicadas"; o modo compacto chama de "Perfil" o objetivo da última análise. | 3 |
-| B12 | Média | Navegação | Sem favoritos; ajuda contextual só na Otimização inteligente e no Assistente de BIOS. | 3 |
-| B13 | Média | Configurações | Sem frequência de monitoramento, preferências de notificação, exportar/importar as preferências; arquivo corrompido só aparece no log. | 3 |
-| B14 | Média | Otimização inteligente | Tipo de disco (SSD/HDD) não entra na análise; o histórico das execuções é gravado e nunca mostrado. | 5 |
-| B15 | Média | Central de jogos | Perfil de jogo não ativa os ajustes salvos antes de abrir o jogo; o perfil "Streaming" dispara ao abrir o OBS, não o jogo; sem histórico de sessões por jogo; Battle.net, EA app e Xbox não detectados. | 5 |
-| B16 | Baixa | Diagnóstico | Frametime, temperatura e atividade de disco não entram no diagnóstico de gargalo; confiança depende só da duração. | 5 |
-| B17 | Baixa | Laboratório | Sem gráfico de frametime nos resultados salvos. | 6 |
-| B18 | Média | Histórico | Ajustes de registro feitos em C#, grupos de serviços e Defender não aparecem no Histórico; o arquivo de sessões lista cópias acumuladas. | 2 (próximo passo) |
-| B19 | Baixa | `GameArtService` | Busca a arte dos jogos na Steam/Epic sem perguntar (envia o ID do jogo). | 3 |
+| B1 | Média | `HardwareMonitorService` + `MainWindow.Hud` | Na bandeja, o monitor continuava lendo a cada 1 s (com ping) e o Início redesenhava gráficos sem ninguém ver. | **Corrigido**: a janela só assina o monitor enquanto aparece; o monitor para se nada mais precisar dele. |
+| B2 | Média | `MainWindow.PerformanceLab` | Leitura da captura e `Finish()` (espera o PresentMon) na thread da interface. | **Corrigido**: leitura e encerramento fora da interface; a amostra pendente entra uma vez só; fechar a janela espera a leitura. |
+| B3 | Média | `MainWindow.StressTest` | WMI, `Join` e log de eventos na thread da interface. | **Corrigido**: memória pela API nativa; parar e ler o log fora da interface, sem clique duplo. |
+| B4 | Baixa | `MainWindow.BiosAdvisorTools` | Sensores lidos com a janela escondida. | **Corrigido** (continua só durante gravação). |
+| B5 | Baixa | `CompactMonitorWindow` | `nvidia-smi.exe` a cada 3 s. | **Corrigido**: temperatura do NVML; o objetivo é relido a cada 10 s e aparece como "Objetivo", não "Perfil". |
+| B6 | Baixa | `Controls/LineChart` | Canetas e lista recriadas a cada quadro. | **Corrigido**: em cache por pincel do tema. |
+| B7 | Baixa | `UpdateLicenseUi` | Eventos duplicados a cada ativação. | **Corrigido**. |
+| B8 | Baixa | `MainWindow.HomeAurora` | "Sem sensor" cacheado 10 min. | **Corrigido**: lê o NVML direto se não houver amostra. |
+| B9 | Baixa | Splash | ~3,3 s de animação mínima. | **Mantido** (escolha visual); com as animações desligadas ele sai na hora. O Início não espera mais um WMI lento (frequência base). |
+| B10 | Média | Tutorial | Não navegava, não retomava, não acompanhava redimensionar. | **Corrigido**: tour pelas páginas reais, retoma do passo salvo, refaz o destaque ao redimensionar/DPI, bloqueia clique no destaque, alvo ausente não trava. Teste `--i18n` desenha os 11 passos e confere cada alvo. |
+| B11 | Média | Início | Faltavam Windows, discos, modo ativo, última otimização. | **Corrigido**: cards Este PC e Otimizações (lidos fora da interface). |
+| B12 | Média | Navegação | Sem favoritos; ajuda contextual limitada. | **Corrigido**: estrela na busca Ctrl+K (Ctrl+D), favoritos no topo da busca e no Início; "?" com o que faz, quando usar, benefício, riscos e como desfazer em 8 áreas avançadas. |
+| B13 | Média | Configurações | Sem frequência do monitor, notificações, exportar/importar; arquivo corrompido só no log. | **Corrigido**: intervalo 1/2/5 s, avisos de sucesso, exportar/importar validado (tamanho, formato, ajustes desconhecidos e links descartados), aviso do arquivo corrompido. |
+| B14 | Média | Otimização inteligente | Sem tipo de disco; histórico de execuções invisível. | **Corrigido**: SSD/HDD na análise (aviso para Windows em HDD); execuções no Histórico com os ajustes não confirmados. |
+| B15 | Média | Central de jogos | Perfil não ligava antes do jogo; Streaming disparava pelo OBS; sem sessões; lojas faltando. | **Corrigido**: com perfil, o Modo Jogo liga antes de abrir pela Biblioteca; OBS/Discord não disparam perfis; sessões por perfil; Riot (abre o jogo direto), Battle.net, EA app e Xbox (abrem a loja: não há link estável por jogo). Os ajustes do perfil continuam exigindo revisão na Otimização inteligente: nada é aplicado sozinho. |
+| B16 | Baixa | Diagnóstico | Sem frametime nem temperatura. | **Corrigido**: quadros irregulares (P99/médio) e GPU quente, com evidência e confiança; sem quadros, aparece como não avaliado. Atividade de disco continua fora (o Windows não dá uma leitura confiável por jogo). |
+| B17 | Baixa | Laboratório | Sem gráficos no resultado salvo. | **Corrigido**: FPS, frametime, CPU e GPU por segundo. |
+| B18 | Média | Histórico | Alterações das páginas fora do Histórico. | **Corrigido** em parte: registro em C#, grupos de serviços, NVIDIA, DNS e plano Qrz aparecem com o caminho para desfazer. Exclusões do Defender continuam só na página do Defender; o arquivo de sessões do script ainda lista cópias acumuladas. |
+| B19 | Baixa | `GameArtService` | Capas buscadas na internet sem opção. | **Corrigido**: opção em Configurações → Preferências; desligada, nenhuma requisição é feita. |
+
+### Revisões do Codex
+
+- Fase 2: 6 apontamentos, todos confirmados e corrigidos (serviços parados sem backup, item retido reaplicável, salvar em modo somente leitura fingindo sucesso, plano anterior gravado com ativação falha, leitura do limite de pontos de restauração, nomes curtos no log).
+- Fases 3–7: 4 apontamentos, todos confirmados e corrigidos (importação sem reversão, leitura da captura durante o fechamento, amostra pendente perdida, leituras de arquivo do Início na interface).
 
 ### Mantidos de propósito
 
 - **Trava do relógio e revogação** (Etapa A #15) e **ID antigo da máquina** (#16): dependem de um servidor de licenças; sem mudança.
 - **Desinstaladores elevados** (Etapa A #19): exige um processo auxiliar sem elevação.
 - **Temperatura da CPU**: o Windows não expõe de forma confiável sem driver de kernel; o app mostra "indisponível" em vez de inventar.
-- **Barra lateral**: o código da barra lateral antiga está desligado desde o redesign Aurora (navegação por abas e Ctrl+K). Não foi removido nesta fase.
+- **Barra lateral**: o código da barra lateral antiga está desligado desde o redesign Aurora (navegação por abas e Ctrl+K). Não foi removido.
+- **Arquitetura MVVM**: as páginas continuam montadas em C# nas classes parciais; reescrever para MVVM seria um projeto inteiro sem ganho para o usuário. As regras novas (sessões, preferências, diagnóstico) ficaram em classes testáveis fora da interface.
 
 ## Riscos das otimizações existentes
 

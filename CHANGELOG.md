@@ -2,6 +2,30 @@
 
 As notas completas de cada versão aparecem no app (Novidades) e nas releases do GitHub.
 
+## 2.5.0 (26/10/2026): tutorial, central de reversão e segurança
+
+Relatório da auditoria em `AUDIT_REPORT.md`.
+
+### Novo
+- Tutorial da primeira abertura pelas páginas reais, com riscos e como desfazer; continua de onde parou.
+- Ajuda "?" nas funções avançadas (o que faz, quando usar, benefício, riscos, como desfazer).
+- Favoritos na busca Ctrl+K e no Início.
+- Início com Este PC (Windows, espaço por disco) e Otimizações (modo ativo, última otimização, ajustes em vigor, backup).
+- Histórico com as execuções da Otimização inteligente e as outras alterações feitas pelo app.
+- Biblioteca com Riot, Battle.net, EA app e Xbox; Modo Jogo do perfil antes do jogo abrir; sessões de jogo por perfil.
+- Laboratório com gráficos por segundo; diagnóstico de travadas, GPU quente e Windows em HDD.
+- Configurações: frequência do monitor, avisos de sucesso, capas pela internet, exportar/importar preferências.
+
+### Segurança e correções
+- Backups (NVIDIA, DNS, plano de energia, BIOS, registro) gravados por troca atômica; backup ilegível bloqueia a alteração em vez de virar "vazio".
+- Preferências não são mais apagadas com o arquivo em uso; nulos e temas desconhecidos não derrubam a abertura.
+- Grupos de serviços: sem falso sucesso; confirmação para Windows Update, acesso remoto e Xbox.
+- Log exportado sem nome de usuário, PC, e-mails ou chaves.
+- Laboratório não declara ganho sem FPS; CSV importado não herda as condições deste PC.
+
+### Desempenho
+- Monitor para com a janela minimizada ou na bandeja; Laboratório e stress test sem travar a interface; gráficos com menos alocação.
+
 ## 2.1.0 (11/10/2026): redesign visual
 
 ### Novo visual

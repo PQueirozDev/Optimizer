@@ -10,7 +10,11 @@ namespace PQueirozOptimizer.Engine;
 /// <summary>Resumo do PC que a análise mostra e usa para decidir.</summary>
 public sealed record MachineSummary(
     string Cpu, string Gpu, string GpuDriver, double RamGb, string Storage, string Board, string Windows, int Build,
-    string PowerPlan, bool IsLaptop, bool HypervisorPresent, bool WslInstalled, bool DockerInstalled, bool HyperVInstalled, bool GameModeSessionActive, bool DualCcdX3d);
+    string PowerPlan, bool IsLaptop, bool HypervisorPresent, bool WslInstalled, bool DockerInstalled, bool HyperVInstalled, bool GameModeSessionActive, bool DualCcdX3d)
+{
+    /// <summary>Tipo do disco do Windows ("SSD", "HDD"); null quando o Windows não informa.</summary>
+    public string? SystemDiskType { get; init; }
+}
 
 /// <summary>Avaliação de um ajuste: estado lido, bloqueio de plano e se entra pré-selecionado para o objetivo.</summary>
 public sealed record TweakAssessment(TweakDefinition Tweak, TweakState State, string Detail, bool Locked, PlanTier RequiredTier, string? GoalNote, bool Preselected)
@@ -73,6 +77,8 @@ public static class SmartOptimizer
             list.Add(new("Virtualização em uso" + (found.Count > 0 ? $" ({string.Join(", ", found)})" : ""),
                 "A Otimização inteligente não mexe em Hyper-V, WSL, Docker nem nos recursos de virtualização. Para desligá-los, use Serviços, de forma consciente.", Array.Empty<string>(), false));
         }
+        if (m.SystemDiskType == "HDD")
+            list.Add(new("Windows em HDD", "O Windows está num disco rígido (HDD): a inicialização e o carregamento dos jogos dependem mais do disco do que de qualquer ajuste. Passar o Windows para um SSD é a mudança com mais efeito; enquanto isso, a manutenção do disco (desfragmentação) ajuda.", Array.Empty<string>(), false));
         if (goal == OptimizationGoal.Laptop && !m.IsLaptop)
             list.Add(new("Objetivo Notebook em um desktop", "Este PC não tem bateria. O perfil Notebook prioriza consumo e temperatura; para jogos, escolha Jogos competitivos.", Array.Empty<string>(), false));
         return list;
@@ -200,7 +206,7 @@ public static class MachineReader
             hw.Cpu.Name.Length > 0 ? hw.Cpu.Name : snapshot.Processor, gpu?.Name ?? snapshot.Graphics, gpu?.DriverVersion ?? "", snapshot.MemoryGb,
             $"{snapshot.FreeSpace} livres de {snapshot.Storage}", board.Length > 0 ? board : "Não informado", snapshot.OperatingSystem, SystemConditions.WindowsBuild,
             planName, hw.IsLaptop || !SystemConditions.IsDesktop, hw.Cpu.HypervisorPresent, wsl, docker, ServiceExists("vmms"),
-            GamingService.ActiveSession() is not null, SmartOptimizer.IsDualCcdX3d(hw.Cpu.Name));
+            GamingService.ActiveSession() is not null, SmartOptimizer.IsDualCcdX3d(hw.Cpu.Name)) { SystemDiskType = DiagnosticsCollector.SystemDiskType() };
     }
 
     private static bool ServiceExists(string name)

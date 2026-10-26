@@ -47,6 +47,12 @@ public static partial class Translator
             "How often CPU, GPU, memory and network are read. Longer intervals use less CPU. The monitor already stops by itself while the window is minimized.",
         ["Avisos de sucesso"] = "Success notifications",
         ["Mostra um aviso no canto da tela quando uma ação termina bem. Erros e alertas aparecem sempre."] = "Shows a notice in the corner of the screen when an action finishes well. Errors and alerts always appear.",
+        ["Favoritos"] = "Favorites", ["Tirar dos favoritos (Ctrl+D)"] = "Remove from favorites (Ctrl+D)", ["Adicionar aos favoritos (Ctrl+D)"] = "Add to favorites (Ctrl+D)",
+        ["Até {0} favoritos. Tire um para adicionar outro."] = "Up to {0} favorites. Remove one to add another.",
+        ["Marque mais com a estrela na busca (Ctrl+K)."] = "Add more with the star in search (Ctrl+K).",
+        ["Capas dos jogos pela internet"] = "Game covers from the internet",
+        ["Baixa as capas da Biblioteca e do Modo Jogo da Steam e da Epic, o que envia a elas o número de cada jogo. Desligado, aparecem só as capas já baixadas e os ícones dos jogos."] =
+            "Downloads Library and Game Mode covers from Steam and Epic, which sends them each game's number. When off, only covers already downloaded and the games' icons appear.",
         ["Exportar preferências"] = "Export preferences", ["Importar preferências"] = "Import preferences",
         ["Preferências exportadas."] = "Preferences exported.", ["Preferências importadas."] = "Preferences imported.",
         ["Trocar as preferências atuais (aparência, modos, tutoriais e monitor) pelas do arquivo? Nenhuma otimização é aplicada."] =
@@ -54,6 +60,46 @@ public static partial class Translator
         ["O arquivo é grande demais para ser um arquivo de preferências do Qrztweaks."] = "The file is too large to be a Qrztweaks preferences file.",
         ["O arquivo não é um arquivo de preferências do Qrztweaks."] = "The file isn't a Qrztweaks preferences file.",
         ["Arquivo de preferências vazio."] = "Empty preferences file.", ["Arquivo não encontrado."] = "File not found.",
+
+        // ---------- Fase 5: análise, jogos e histórico ----------
+        ["Windows em HDD"] = "Windows on an HDD",
+        ["O Windows está num disco rígido (HDD): a inicialização e o carregamento dos jogos dependem mais do disco do que de qualquer ajuste. Passar o Windows para um SSD é a mudança com mais efeito; enquanto isso, a manutenção do disco (desfragmentação) ajuda."] =
+            "Windows is on a hard disk (HDD): startup and game loading depend more on the disk than on any tweak. Moving Windows to an SSD is the change with the biggest effect; meanwhile, disk maintenance (defragmentation) helps.",
+        ["Cada execução, com o objetivo e quantos ajustes o Windows confirmou depois. Os ajustes não confirmados aparecem no detalhe."] =
+            "Each run, with the goal and how many tweaks Windows confirmed afterwards. Unconfirmed tweaks appear in the details.",
+        ["Não confirmados:"] = "Not confirmed:",
+        ["Sessões de jogo"] = "Game sessions",
+        ["Registradas quando um jogo de um perfil com ativação automática abre e fecha. Só datas: nada do jogo é lido."] =
+            "Recorded when a game from a profile with automatic activation opens and closes. Dates only: nothing is read from the game.",
+        ["sem registro do fim"] = "no end recorded",
+        // Descrição do modelo Streaming de versões anteriores (perfis já salvos guardam o texto antigo)
+        ["Jogar e transmitir: mantém o codificador livre, sem fechar o OBS."] = "Play and stream: keeps the encoder free, without closing OBS.",
+
+        // ---------- Diagnóstico: quadros e temperatura ----------
+        ["Placa de vídeo quente no teste"] = "Graphics card ran hot in the test",
+        ["Fluxo de ar do gabinete fraco, poeira ou curva de ventoinha conservadora."] = "Weak case airflow, dust or a conservative fan curve.",
+        ["Limpe a placa e melhore a ventilação do gabinete."] = "Clean the card and improve case ventilation.",
+        ["Grave uma partida mais longa e veja se o clock da GPU cai junto com a temperatura."] = "Record a longer match and see whether the GPU clock drops as the temperature rises.",
+        ["Compare o clock da GPU no início e no fim de uma gravação longa: queda com a temperatura subindo indica limite térmico."] =
+            "Compare the GPU clock at the start and end of a long recording: a drop as the temperature rises points to a thermal limit.",
+        ["Quadros irregulares (travadas) no último teste"] = "Uneven frames (stutter) in the last test",
+        ["Compilação de shaders nas primeiras partidas depois de atualizar o jogo ou o driver."] = "Shader compilation in the first matches after updating the game or the driver.",
+        ["Programas em segundo plano disputando a CPU."] = "Background programs competing for the CPU.",
+        ["Memória quase cheia ou disco lento carregando partes do mapa."] = "Memory almost full or a slow disk loading parts of the map.",
+        ["V-Sync ou limite de FPS mal combinado com a taxa do monitor."] = "V-Sync or an FPS cap poorly matched to the monitor's refresh rate.",
+        ["Repita o teste depois de jogar alguns minutos (shaders já compilados)."] = "Repeat the test after playing a few minutes (shaders already compiled).",
+        ["Use um limite de FPS um pouco abaixo da taxa do monitor em vez de V-Sync."] = "Use an FPS cap slightly below the monitor's refresh rate instead of V-Sync.",
+        ["Grave duas vezes a mesma cena: se as travadas sumirem na segunda, eram shaders sendo compilados."] = "Record the same scene twice: if the stutter is gone the second time, it was shaders being compiled.",
+        ["Sem quadros reais (PresentMon) no último teste: a estabilidade do frametime não foi avaliada."] = "No real frames (PresentMon) in the last test: frametime stability wasn't evaluated.",
+
+        // ---------- Histórico unificado e gráficos do Laboratório ----------
+        ["Outras alterações feitas pelo app"] = "Other changes made by the app",
+        ["Ajustes aplicados pelas páginas do app, fora da otimização. Cada um guarda o valor anterior e é desfeito na página dele."] =
+            "Tweaks applied by the app's pages, outside the optimization. Each one keeps the previous value and is undone on its own page.",
+        ["Desfazer em Aplicativos"] = "Undo in Apps", ["Desfazer em Rede"] = "Undo in Network", ["Desfazer em Modo Jogo"] = "Undo in Game Mode",
+        ["Desfazer em Serviços"] = "Undo in Services", ["Desfazer em Modo Jogo → NVIDIA"] = "Undo in Game Mode → NVIDIA", ["Desfazer em Modo Jogo → Sistema"] = "Undo in Game Mode → System",
+        ["Perfil NVIDIA para jogos"] = "NVIDIA gaming profile", ["DNS alterado"] = "DNS changed", ["Plano de energia Qrz ativo"] = "Qrz power plan active",
+        ["FPS a cada segundo"] = "FPS each second", ["Frametime médio de cada segundo"] = "Average frametime of each second",
 
         // ---------- Ajuda contextual ----------
         ["Como funciona"] = "How it works",
@@ -121,11 +167,16 @@ public static partial class Translator
     private static readonly (Regex Regex, Func<Match, string> Build)[] ReformPatterns =
     {
         P(@"^Como funciona: (.+)$", m => $"How it works: {T(m, 1)}"),
+        P(@"^Temperatura máxima da GPU (\d+) °C durante (\d+) s\. O driver não informou redução de clock\.$", m => $"Max GPU temperature {m.Groups[1].Value} °C over {m.Groups[2].Value} s. The driver didn't report a clock reduction."),
+        P(@"^Frametime médio ([\d,.]+) ms, mas 1% dos quadros passou de ([\d,.]+) ms \(([\d,.]+)× o médio\)\.( 1% low (\d+) FPS contra (\d+) FPS de média\.)?$",
+            m => $"Average frametime {m.Groups[1].Value} ms, but 1% of frames went over {m.Groups[2].Value} ms ({m.Groups[3].Value}× the average)." + (m.Groups[4].Success ? $" 1% low {m.Groups[5].Value} FPS vs {m.Groups[6].Value} FPS on average." : "")),
+        P(@"^(\d+) de (\d+) confirmados$", m => $"{m.Groups[1].Value} of {m.Groups[2].Value} confirmed"),
+        P(@"^O arquivo de preferências tem dados inválidos: (.+)$", m => $"The preferences file has invalid data: {m.Groups[1].Value}"),
         P(@"^As preferências salvas não puderam ser lidas na abertura: (.+)$", m => $"The saved preferences couldn't be read at startup: {T(m, 1)}"),
         P(@"^O arquivo de preferências está corrompido: (.+)$", m => $"The preferences file is corrupted: {m.Groups[1].Value}"),
         P(@"^Preferências corrompidas; os padrões foram restaurados\. (.+)$", m => $"Corrupted preferences; the defaults were restored. {m.Groups[1].Value}"),
         P(@"^(\d\d/\d\d/\d{4} \d\d:\d\d) · (\d+) de (\d+) confirmados$", m => $"{m.Groups[1].Value} · {m.Groups[2].Value} of {m.Groups[3].Value} confirmed"),
         P(@"^(\d+) aplicados · (\d+) recomendados \(análise de (\d\d/\d\d)\)$", m => $"{m.Groups[1].Value} applied · {m.Groups[2].Value} recommended (analysis of {m.Groups[3].Value})"),
-        P(@"^(\d+) itens( · (.+))?$", m => $"{m.Groups[1].Value} items" + (m.Groups[2].Success ? " · " + m.Groups[3].Value : "")),
+        P(@"^(\d+) itens( · (\d\d/\d\d/\d{4}))?$", m => $"{m.Groups[1].Value} items" + (m.Groups[2].Success ? " · " + m.Groups[3].Value : "")),
     };
 }

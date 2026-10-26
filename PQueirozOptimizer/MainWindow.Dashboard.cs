@@ -115,6 +115,9 @@ public partial class MainWindow
             // 2. Carga de CPU e GPU (1, 5 ou 15 min) e o acesso rápido
             if (prefs.DashboardLive || prefs.DashboardQuickActions) root.Children.Add(AuroraSecondRow(score, prefs));
 
+            // Favoritos (Ctrl+K → estrela)
+            if (FavoritesRow() is { } favorites) root.Children.Add(favorites);
+
             // 3. Este PC (Windows e discos) e o estado das otimizações
             if (prefs.DashboardStatus) root.Children.Add(AuroraStatusRow(snapshot));
 

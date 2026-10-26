@@ -182,6 +182,9 @@ public sealed class NetworkService
         _log.Write("SUCCESS", $"DNS alterado para {provider.Name} em {adapters.Count} adaptador(es)");
     }
 
+    /// <summary>O app trocou o DNS de algum adaptador e ainda guarda o original.</summary>
+    public static bool DnsChanged => File.Exists(DnsBackupPath);
+
     private static Dictionary<string, string[]> LoadDnsBackup()
     {
         return SafeFile.ReadBackup<Dictionary<string, string[]>>(DnsBackupPath, "do DNS");

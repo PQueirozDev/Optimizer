@@ -50,6 +50,19 @@ public partial class MainWindow
         toasts.Unchecked += (_, _) => SaveToasts(false);
         panel.Children.Add(SettingRow("Avisos de sucesso", "Mostra um aviso no canto da tela quando uma ação termina bem. Erros e alertas aparecem sempre.", toasts));
 
+        // Capas dos jogos pela internet
+        var art = new CheckBox { IsChecked = _configService.Config.OnlineGameArt, Content = "" };
+        art.SetResourceReference(StyleProperty, "SwitchCheckBox");
+        void SaveArt(bool enabled)
+        {
+            GameArtService.OnlineAllowed = enabled;
+            try { _configService.SaveOnlineGameArt(enabled); }
+            catch (IOException ex) { ShowToast("Preferências", ex.Message, "Warning"); }
+        }
+        art.Checked += (_, _) => SaveArt(true);
+        art.Unchecked += (_, _) => SaveArt(false);
+        panel.Children.Add(SettingRow("Capas dos jogos pela internet", "Baixa as capas da Biblioteca e do Modo Jogo da Steam e da Epic, o que envia a elas o número de cada jogo. Desligado, aparecem só as capas já baixadas e os ícones dos jogos.", art));
+
         // Exportar e importar
         var actions = new WrapPanel { Margin = new Thickness(0, 14, 0, 0) };
         var export = IconButton(Glyphs.Download, "Exportar preferências");
@@ -73,6 +86,7 @@ public partial class MainWindow
             {
                 _configService.ImportFrom(dialog.FileName);
                 HardwareMonitorService.Shared.IntervalSeconds = _configService.Config.MonitorIntervalSeconds;
+                GameArtService.OnlineAllowed = _configService.Config.OnlineGameArt;
                 AppearanceService.Apply(ConfigService.EffectiveAppearance(_configService.Config));
                 _log.Write("SUCCESS", "Preferências importadas de " + Path.GetFileName(dialog.FileName));
                 ShowToast("Preferências", "Preferências importadas.", "Success");

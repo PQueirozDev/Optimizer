@@ -24,6 +24,76 @@ internal static class HardeningTests
         Lab();
         Tutorial(root);
         Preferences(root);
+        Games(root);
+    }
+
+    static void Games(string root)
+    {
+        // Sessões de jogo: abrir e fechar gravam a partida com a duração; fechar sem abrir não inventa nada
+        var path = Path.Combine(root, "sessoes.json");
+        if (File.Exists(path)) File.Delete(path);
+        var log = new GameSessionLog(path);
+        var profile = new UserProfile { Name = "CS2", Processes = new[] { "cs2.exe" } };
+        var start = new DateTime(2026, 10, 20, 20, 0, 0);
+        log.Started(profile, start);
+        log.Ended(profile.Id, start.AddMinutes(95));
+        log.Ended("outro-perfil", start.AddMinutes(99));
+        var saved = new GameSessionLog(path).Sessions;
+        Check(saved.Count == 1 && saved[0].Duration == TimeSpan.FromMinutes(95) && saved[0].ProfileName == "CS2", "Sessão de jogo gravada com início, fim e duração");
+        log.Started(profile, start.AddHours(3));
+        Check(new GameSessionLog(path).Sessions.Last().End is null, "Partida ainda aberta fica sem fim (não inventa duração)");
+
+        // Programas de transmissão não disparam perfil: o perfil de streaming liga com o jogo
+        Check(!ProfileStore.IsGameTrigger("obs64.exe") && !ProfileStore.IsGameTrigger("Discord.exe") && ProfileStore.IsGameTrigger("cs2.exe"), "OBS e Discord não disparam perfis; o jogo dispara");
+        Check(ProfileTemplates.All().First(p => p.Name == "Streaming").Processes.Length == 0, "Modelo Streaming começa sem processo de gatilho (o usuário escolhe o jogo)");
+
+        // Fechar o jogo encerra a sessão mesmo com o OBS ainda aberto
+        var running = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "cs2.exe", "obs64.exe" };
+        var streamer = new UserProfile { Name = "Stream", Processes = new[] { "cs2.exe", "obs64.exe" }, AutoGameMode = true };
+        string? exited = null;
+        var watcher = new GameWatcher(() => running, set => streamer.Processes.Where(ProfileStore.IsGameTrigger).Any(set.Contains) ? streamer : null, start: false);
+        watcher.GameExited += id => exited = id;
+        watcher.Poll();
+        running.Remove("cs2.exe");
+        watcher.Poll();
+        Check(exited == streamer.Id, "Jogo fechado com o OBS aberto: a sessão termina e o Modo Jogo é restaurado");
+
+        // O perfil do jogo é achado pelos executáveis da pasta, mesmo quando o jogo abre por um inicializador (Riot)
+        var gameDir = Path.Combine(root, "jogo-riot", "live", "ShooterGame", "Binaries", "Win64");
+        Directory.CreateDirectory(gameDir);
+        File.WriteAllText(Path.Combine(gameDir, "VALORANT-Win64-Shipping.exe"), "");
+        var riotGame = new LibraryGame("Riot", "valorant.live", "VALORANT", Path.Combine(root, "jogo-riot", "live"), @"C:\Riot Games\Riot Client\RiotClientServices.exe", null, "--launch-product=valorant");
+        Check(GameLibraryService.BelongsTo(riotGame, new[] { "VALORANT-Win64-Shipping.exe" }) && !GameLibraryService.BelongsTo(riotGame, new[] { "RiotClientServices.exe", "obs64.exe" }),
+            "Perfil achado pelo executável do jogo na pasta, não pelo inicializador");
+
+        // Disco do Windows em HDD gera aviso na análise; SSD não
+        var machine = new MachineSummary("CPU", "GPU", "1", 16, "100 GB livres de 500 GB", "Placa", "Windows 11", 26100, "Equilibrado", false, false, false, false, false, false, false);
+        Check(SmartOptimizer.Notices(machine with { SystemDiskType = "HDD" }, OptimizationGoal.CompetitiveGaming).Any(n => n.Title == "Windows em HDD")
+              && !SmartOptimizer.Notices(machine with { SystemDiskType = "SSD" }, OptimizationGoal.CompetitiveGaming).Any(n => n.Title == "Windows em HDD"), "Windows em HDD aparece como aviso na Otimização inteligente");
+
+        // Riot: o comando de desinstalação vira o de abertura; nada fora do formato esperado é aceito
+        var riot = GameLibraryService.ParseRiotUninstall("""
+            "C:\Riot Games\Riot Client\RiotClientServices.exe" --uninstall-product=valorant --uninstall-patchline=live
+            """);
+        Check(riot is { Product: "valorant", Patchline: "live" } && riot.Value.Client.EndsWith("RiotClientServices.exe")
+              && GameLibraryService.ParseRiotUninstall("""
+                 "C:\x\RiotClientServices.exe" --uninstall-product=val&calc
+                 """) is { Product: "val" }
+              && GameLibraryService.ParseRiotUninstall("cmd /c RiotClientServices.exe --uninstall-product=x") is null, "Riot: produto e patchline lidos do desinstalador, sem aceitar comandos extras");
+
+        // Gargalos: quadros irregulares viram achado com evidência; sem quadros, a análise diz que não avaliou
+        var steady = new PerfResult { Process = "jogo.exe", DurationSeconds = 90, CpuAvg = 50, GpuAvg = 80, Frames = 9000, AverageFps = 120, AverageFrametimeMs = 8.3, P99FrametimeMs = 11, Low1Fps = 95 };
+        var stutter = steady with { P99FrametimeMs = 25, Low1Fps = 40 };
+        var sensorsOnly = steady with { Frames = null, AverageFps = null, AverageFrametimeMs = null, P99FrametimeMs = null, Low1Fps = null };
+        Check(DiagnosticsEngine.Run(new DiagnosticInputs { LastCapture = stutter, RamTotalGb = 16 }).Findings.Any(f => f.Id == "frametime.unstable" && f.Evidence[0].Contains("25"))
+              && !DiagnosticsEngine.Run(new DiagnosticInputs { LastCapture = steady, RamTotalGb = 16 }).Findings.Any(f => f.Id == "frametime.unstable"),
+            "Gargalos: quadros irregulares viram achado com o frametime medido; quadros estáveis não");
+        Check(DiagnosticsEngine.Run(new DiagnosticInputs { LastCapture = sensorsOnly, RamTotalGb = 16 }).MissingData.Any(m => m.Contains("frametime")),
+            "Gargalos: sem quadros do PresentMon, a estabilidade aparece como não avaliada");
+
+        // A biblioteca lê todas as lojas sem erro, mesmo sem nenhuma instalada
+        var games = GameLibraryService.Scan();
+        Check(games.All(g => g.LaunchUri != null || g.ExePath != null), $"Biblioteca: {games.Count} jogo(s), todos com um jeito de abrir ({string.Join(", ", games.Select(g => g.Store).Distinct())})");
     }
 
     static void Preferences(string root)
@@ -65,6 +135,17 @@ internal static class HardeningTests
         var odd = other.Config.Profiles.First(p => p.Name == "Estranho");
         Check(odd.EnabledOptimizations.SequenceEqual(new[] { "padrao" }) && other.Config.MonitorIntervalSeconds == 1 && other.Config.Language is "pt" or "en" && !other.Config.IsoCatalog.Any(i => i.Name == "ISO falsa"),
             "Importar descarta ajustes desconhecidos, links de ISO, idioma e intervalo inválidos");
+
+        // Favoritos: marcar, desmarcar, limite e persistência
+        var favPath = Path.Combine(dir, "favoritos.json");
+        if (File.Exists(favPath)) File.Delete(favPath);
+        var favs = new ConfigService(favPath);
+        for (var i = 0; i < ConfigService.MaxFavorites; i++) favs.ToggleFavorite("Função " + i);
+        var overLimit = favs.ToggleFavorite("Uma a mais");
+        favs.ToggleFavorite("Função 0");
+        var reloaded = new ConfigService(favPath);
+        Check(!overLimit && !reloaded.IsFavorite("Uma a mais") && !reloaded.IsFavorite("Função 0") && reloaded.IsFavorite("Função 1") && reloaded.Config.Favorites.Count == ConfigService.MaxFavorites - 1,
+            "Favoritos: marcar e desmarcar ficam salvos, com limite");
 
         var monitor = PQueirozOptimizer.Services.HardwareMonitorService.Shared;
         var previous = monitor.IntervalSeconds;

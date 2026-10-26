@@ -41,6 +41,14 @@ public class AppConfig
     [JsonPropertyName("monitorIntervalSeconds")]
     public int MonitorIntervalSeconds { get; set; } = 1;
 
+    /// <summary>Buscar as capas dos jogos na Steam e na Epic (envia o número do jogo a essas lojas).</summary>
+    [JsonPropertyName("onlineGameArt")]
+    public bool OnlineGameArt { get; set; } = true;
+
+    /// <summary>Funções favoritas (títulos da busca Ctrl+K), na ordem em que foram marcadas.</summary>
+    [JsonPropertyName("favorites")]
+    public List<string> Favorites { get; set; } = new();
+
     /// <summary>Avisos de sucesso no canto da tela. Erros e alertas aparecem sempre.</summary>
     [JsonPropertyName("successNotifications")]
     public bool SuccessNotifications { get; set; } = true;

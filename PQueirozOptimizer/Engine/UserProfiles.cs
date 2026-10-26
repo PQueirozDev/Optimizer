@@ -131,7 +131,15 @@ public sealed class ProfileStore
 
     /// <summary>Perfil cujo processo de jogo está em execução (para a ativação automática).</summary>
     public UserProfile? MatchRunning(IReadOnlySet<string> runningExe) =>
-        Load().Profiles.FirstOrDefault(p => p.AutoGameMode && p.Processes.Any(runningExe.Contains));
+        Load().Profiles.FirstOrDefault(p => p.AutoGameMode && p.Processes.Where(IsGameTrigger).Any(runningExe.Contains));
+
+    /// <summary>Programas de gravação e chat não disparam perfil: o perfil de streaming liga com o jogo, não ao abrir o OBS.</summary>
+    public static readonly IReadOnlySet<string> StreamingTools = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "obs64.exe", "obs32.exe", "obs.exe", "Streamlabs OBS.exe", "Streamlabs Desktop.exe", "XSplit.Core.exe", "Discord.exe", "Twitch Studio.exe",
+    };
+
+    public static bool IsGameTrigger(string process) => !StreamingTools.Contains(process);
 }
 
 /// <summary>Perfis iniciais (exemplos editáveis). Os processos são os executáveis oficiais dos jogos.</summary>
@@ -144,7 +152,7 @@ public static class ProfileTemplates
         new UserProfile { Name = "Valorant", Description = "Competitivo: Modo Jogo, sem gravação em segundo plano e entrada consistente.", Goal = OptimizationGoal.CompetitiveGaming, Tweaks = Competitive, Processes = new[] { "VALORANT-Win64-Shipping.exe" } },
         new UserProfile { Name = "CS2", Description = "Competitivo: os mesmos ajustes do Valorant para o Counter-Strike 2.", Goal = OptimizationGoal.CompetitiveGaming, Tweaks = Competitive, Processes = new[] { "cs2.exe" } },
         new UserProfile { Name = "Fortnite", Description = "Competitivo, com HAGS (útil para Frame Generation).", Goal = OptimizationGoal.CompetitiveGaming, Tweaks = Competitive, Processes = new[] { "FortniteClient-Win64-Shipping.exe" } },
-        new UserProfile { Name = "Streaming", Description = "Jogar e transmitir: mantém o codificador livre, sem fechar o OBS.", Goal = OptimizationGoal.CompetitiveGaming, Tweaks = new[] { "game.mode", "game.dvr", "power.qrz", "cpu.priority" }, Processes = new[] { "obs64.exe" }, PauseServices = false },
+        new UserProfile { Name = "Streaming", Description = "Jogar e transmitir: adicione o jogo que você transmite. OBS, Discord e drivers nunca são fechados nem pausados.", Goal = OptimizationGoal.CompetitiveGaming, Tweaks = new[] { "game.mode", "game.dvr", "power.qrz", "cpu.priority" }, Processes = Array.Empty<string>(), PauseServices = false },
         new UserProfile { Name = "Programação", Description = "Preserva Docker, WSL e Hyper-V; só privacidade e estabilidade.", Goal = OptimizationGoal.Development, Tweaks = new[] { "boot.faststartup", "net.deliveryopt", "privacy.suggestions", "privacy.tailored", "privacy.websearch", "privacy.diagrequired" }, HighPerformancePlan = false, PauseServices = false },
         new UserProfile { Name = "Notebook", Description = "Temperatura e bateria: sem ajustes que aumentam o consumo.", Goal = OptimizationGoal.Laptop, Tweaks = new[] { "game.dvr", "ui.visualfx", "svc.telemetry", "privacy.suggestions", "net.deliveryopt" }, HighPerformancePlan = false },
         new UserProfile { Name = "Uso diário", Description = "Privacidade, menos anúncios e limpeza segura.", Goal = OptimizationGoal.DailyUse, Tweaks = new[] { "privacy.suggestions", "privacy.tailored", "privacy.adid", "privacy.websearch", "privacy.activity", "net.deliveryopt", "boot.faststartup", "maint.cleanmgr" }, HighPerformancePlan = false },
@@ -186,7 +194,7 @@ public sealed class GameWatcher : IDisposable
         try { running = _running(); } catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception) { return; }
         if (_activeProfile is null)
         {
-            if (_match(running) is { } profile) { _activeProfile = profile.Id; _activeProcesses = profile.Processes; GameStarted?.Invoke(profile); }
+            if (_match(running) is { } profile) { _activeProfile = profile.Id; _activeProcesses = profile.Processes.Where(ProfileStore.IsGameTrigger).ToArray(); GameStarted?.Invoke(profile); }
         }
         else if (!_activeProcesses.Any(running.Contains))
         {
@@ -195,5 +203,68 @@ public sealed class GameWatcher : IDisposable
         }
     }
 
+    /// <summary>Perfil cujo jogo está aberto agora (null = nenhum).</summary>
+    public string? ActiveProfileId => _activeProfile;
+
     public void Dispose() => _timer?.Dispose();
+}
+
+/// <summary>Uma partida de um jogo de perfil: quando abriu e quando fechou (null = ainda aberto ou o app fechou antes).</summary>
+public sealed record GameSession(string ProfileId, string ProfileName, DateTime Start, DateTime? End)
+{
+    public TimeSpan? Duration => End is { } end ? end - Start : null;
+}
+
+/// <summary>
+/// Histórico das partidas dos jogos com perfil (as 200 mais recentes). Só datas e o nome do perfil: nada do jogo é lido.
+/// </summary>
+public sealed class GameSessionLog
+{
+    public const int MaxSessions = 200;
+    private readonly string _path;
+    private readonly object _gate = new();
+    public static GameSessionLog Default { get; } = new(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PQueirozOptimizer", "game-sessions.json"));
+
+    public GameSessionLog(string path) => _path = path;
+
+    public IReadOnlyList<GameSession> Sessions { get { lock (_gate) return Load(); } }
+
+    public void Started(UserProfile profile, DateTime at)
+    {
+        lock (_gate)
+        {
+            var list = Load();
+            list.Add(new GameSession(profile.Id, profile.Name, at, null));
+            Save(list);
+        }
+    }
+
+    /// <summary>Fecha a última partida aberta do perfil.</summary>
+    public void Ended(string profileId, DateTime at)
+    {
+        lock (_gate)
+        {
+            var list = Load();
+            var index = list.FindLastIndex(s => s.ProfileId == profileId && s.End is null);
+            if (index < 0) return;
+            list[index] = list[index] with { End = at < list[index].Start ? list[index].Start : at };
+            Save(list);
+        }
+    }
+
+    private List<GameSession> Load()
+    {
+        try { return File.Exists(_path) ? JsonSerializer.Deserialize<List<GameSession>>(File.ReadAllText(_path)) ?? new() : new(); }
+        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException) { return new(); }
+    }
+
+    private void Save(List<GameSession> list)
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+            Services.SafeFile.WriteAllText(_path, JsonSerializer.Serialize(list.TakeLast(MaxSessions).ToList()));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+    }
 }

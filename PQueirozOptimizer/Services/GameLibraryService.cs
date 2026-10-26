@@ -17,8 +17,10 @@ public sealed record CustomGame(string Name, string Exe, string Args = "");
 
 /// <summary>
 /// Biblioteca única dos jogos instalados: Steam (appmanifest), Epic Games (manifestos .item), GOG Galaxy e Ubisoft
-/// Connect (registro) e os jogos adicionados à mão. Só lê arquivos e registro; abrir usa o próprio inicializador
-/// da loja, então conquistas, nuvem e anti-cheat continuam funcionando.
+/// Connect (registro), Riot, Battle.net e EA app (entradas de desinstalação), Xbox/Game Pass (pastas XboxGames) e os
+/// jogos adicionados à mão. Só lê arquivos e registro; abrir usa o próprio inicializador da loja, então conquistas,
+/// nuvem e anti-cheat continuam funcionando. Battle.net, EA app e Xbox não expõem um link estável por jogo: "Jogar"
+/// abre o aplicativo da loja, onde o jogo já está instalado.
 /// </summary>
 public static class GameLibraryService
 {
@@ -27,7 +29,7 @@ public static class GameLibraryService
     public static List<LibraryGame> Scan()
     {
         var list = new List<LibraryGame>();
-        foreach (var source in new Func<IEnumerable<LibraryGame>>[] { Steam, Epic, Gog, Ubisoft })
+        foreach (var source in new Func<IEnumerable<LibraryGame>>[] { Steam, Epic, Gog, Ubisoft, Riot, BattleNet, EaApp, Xbox })
         {
             try { list.AddRange(source()); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or System.Security.SecurityException) { }
@@ -123,6 +125,102 @@ public static class GameLibraryService
         }
     }
 
+    /// <summary>Entradas de desinstalação (do PC, 64 e 32 bits, e do usuário) que combinam: nome, pasta e o texto de desinstalação.</summary>
+    private static IEnumerable<(string Key, string Name, string Dir, string Uninstall)> UninstallEntries(Func<string, string, bool> match)
+    {
+        foreach (var (hive, path) in new[]
+        {
+            (Registry.LocalMachine, @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"), (Registry.LocalMachine, @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"),
+            (Registry.CurrentUser, @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"),
+        })
+        {
+            using var root = hive.OpenSubKey(path);
+            if (root is null) continue;
+            foreach (var id in root.GetSubKeyNames())
+            {
+                using var key = root.OpenSubKey(id);
+                if (key?.GetValue("DisplayName") is not string name || key.GetValue("InstallLocation") is not string dir) continue;
+                dir = dir.Trim().Trim('"').Replace('/', '\\').TrimEnd('\\');
+                var publisher = key.GetValue("Publisher") as string ?? "";
+                var uninstall = key.GetValue("UninstallString") as string ?? "";
+                if (dir.Length > 3 && Directory.Exists(dir) && match(publisher, uninstall)) yield return (id, name, dir, uninstall);
+            }
+        }
+    }
+
+    private static string? ExistingPath(params string[] candidates) => candidates.FirstOrDefault(File.Exists);
+
+    /// <summary>
+    /// Jogos da Riot (VALORANT, League of Legends...): o desinstalador é o Riot Client com --uninstall-product; o mesmo
+    /// cliente abre o jogo com --launch-product, como os atalhos que a própria Riot cria.
+    /// </summary>
+    private static IEnumerable<LibraryGame> Riot()
+    {
+        foreach (var (key, name, dir, uninstall) in UninstallEntries((_, uninstall) => uninstall.Contains("RiotClientServices.exe", StringComparison.OrdinalIgnoreCase)))
+        {
+            if (ParseRiotUninstall(uninstall) is not { } riot || riot.Product.Equals("Riot_Client", StringComparison.OrdinalIgnoreCase) || !File.Exists(riot.Client)) continue;
+            var args = "--launch-product=" + riot.Product + (riot.Patchline.Length > 0 ? " --launch-patchline=" + riot.Patchline : "");
+            yield return new LibraryGame("Riot", key, name.Trim(), dir, riot.Client, null, args);
+        }
+    }
+
+    /// <summary>Lê o comando de desinstalação da Riot: caminho do Riot Client, produto e patchline (só letras, números, _ . -).</summary>
+    public static (string Client, string Product, string Patchline)? ParseRiotUninstall(string uninstall)
+    {
+        var m = Regex.Match(uninstall, "^\"(?<exe>[^\"]+RiotClientServices\\.exe)\"\\s+--uninstall-product=(?<product>[A-Za-z0-9_.-]+)(\\s+--uninstall-patchline=(?<patch>[A-Za-z0-9_.-]*))?", RegexOptions.IgnoreCase);
+        return m.Success ? (m.Groups["exe"].Value, m.Groups["product"].Value, m.Groups["patch"].Value) : null;
+    }
+
+    private static IEnumerable<LibraryGame> BattleNet()
+    {
+        var x86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+        var launcher = ExistingPath(Path.Combine(x86, "Battle.net", "Battle.net Launcher.exe"), Path.Combine(x86, "Battle.net", "Battle.net.exe"));
+        if (launcher is null) yield break;
+        // Os jogos da Blizzard se desinstalam pelo "Blizzard Uninstaller" do Battle.net, com --uid do produto
+        foreach (var (key, name, dir, _) in UninstallEntries((publisher, uninstall) => uninstall.Contains("Blizzard Uninstaller", StringComparison.OrdinalIgnoreCase) && uninstall.Contains("--uid=", StringComparison.OrdinalIgnoreCase)))
+            yield return new LibraryGame("Battle.net", key, name, dir, LaunchUri: launcher);
+    }
+
+    private static IEnumerable<LibraryGame> EaApp()
+    {
+        var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+        var launcher = ExistingPath(Path.Combine(programFiles, "Electronic Arts", "EA Desktop", "EA Desktop", "EALauncher.exe"), Path.Combine(programFiles, "Electronic Arts", "EA Desktop", "EA Desktop", "EADesktop.exe"));
+        if (launcher is null) yield break;
+        // Jogos instalados pelo EA app: publicados pela EA, com o desinstalador do EAInstaller ou do EA app (o app em si fica de fora)
+        foreach (var (key, name, dir, _) in UninstallEntries((publisher, uninstall) => publisher.Contains("Electronic Arts", StringComparison.OrdinalIgnoreCase)
+                     && (uninstall.Contains("EAInstaller", StringComparison.OrdinalIgnoreCase) || uninstall.Contains("EA Desktop", StringComparison.OrdinalIgnoreCase))))
+            if (!name.StartsWith("EA app", StringComparison.OrdinalIgnoreCase)) yield return new LibraryGame("EA app", key, name, dir, LaunchUri: launcher);
+    }
+
+    /// <summary>Jogos do app Xbox/Game Pass: pastas "XboxGames" na raiz dos discos, com o MicrosoftGame.config de cada jogo.</summary>
+    private static IEnumerable<LibraryGame> Xbox()
+    {
+        foreach (var drive in DriveInfo.GetDrives())
+        {
+            string root;
+            try { if (drive.DriveType != DriveType.Fixed || !drive.IsReady) continue; root = Path.Combine(drive.RootDirectory.FullName, "XboxGames"); }
+            catch (IOException) { continue; }
+            if (!Directory.Exists(root)) continue;
+            foreach (var folder in Directory.EnumerateDirectories(root))
+            {
+                var config = Path.Combine(folder, "Content", "MicrosoftGame.config");
+                if (!File.Exists(config)) continue;
+                string? name = null;
+                try { name = Regex.Match(File.ReadAllText(config), "DefaultDisplayName=\"([^\"]+)\"") is { Success: true } m ? m.Groups[1].Value : null; }
+                catch (IOException) { }
+                // Nomes "ms-resource:" vêm do pacote: a pasta tem o nome legível
+                if (string.IsNullOrWhiteSpace(name) || name.StartsWith("ms-resource:", StringComparison.OrdinalIgnoreCase)) name = Path.GetFileName(folder);
+                yield return new LibraryGame("Xbox", folder, name, folder, LaunchUri: XboxAppUri);
+            }
+        }
+    }
+
+    /// <summary>Abre o app Xbox (o Explorer resolve o shell:AppsFolder sem elevação).</summary>
+    public const string XboxAppUri = "shell:AppsFolder\\Microsoft.GamingApp_8wekyb3d8bbwe!Microsoft.Xbox.App";
+
+    /// <summary>"Jogar" desta loja abre o aplicativo da loja, não o jogo direto.</summary>
+    public static bool OpensStoreApp(LibraryGame game) => game.Store is "Battle.net" or "EA app" or "Xbox";
+
     // ================= Jogos manuais =================
     public static List<CustomGame> LoadCustom()
     {
@@ -166,6 +264,23 @@ public static class GameLibraryService
             target = link;
         }
         Process.Start(new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe"), "\"" + target + "\"") { UseShellExecute = false });
+    }
+
+    /// <summary>
+    /// O perfil é deste jogo: algum processo do perfil existe na pasta do jogo (o .exe aberto pode ser um
+    /// inicializador, como o Riot Client, e não o processo que o perfil observa).
+    /// </summary>
+    public static bool BelongsTo(LibraryGame game, IReadOnlyCollection<string> processes)
+    {
+        var wanted = processes.Where(Engine.ProfileStore.IsGameTrigger).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (wanted.Count == 0) return false;
+        if (game.ExePath is { } exe && wanted.Contains(Path.GetFileName(exe)) && !game.Store.Equals("Riot", StringComparison.Ordinal)) return true;
+        try
+        {
+            return Directory.Exists(game.InstallDir) && Directory.EnumerateFiles(game.InstallDir, "*.exe", new EnumerationOptions { RecurseSubdirectories = true, MaxRecursionDepth = 5, IgnoreInaccessible = true })
+                .Any(f => wanted.Contains(Path.GetFileName(f)));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
     }
 
     /// <summary>Executável principal provável (o maior .exe da pasta, fora instaladores e utilitários).</summary>

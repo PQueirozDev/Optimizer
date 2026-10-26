@@ -130,7 +130,7 @@ public partial class MainWindow
                 var hardware = await Task.Run(() => new HardwareDetector().Detect());
                 status.Text = "Conferindo apps da Loja e tarefas agendadas...";
                 var state = await LiveSystemState.LoadAsync();
-                var machine = MachineReader.Read(hardware, snapshot);
+                var machine = await Task.Run(() => MachineReader.Read(hardware, snapshot));
                 _smartReading = (machine, hardware, MachineReader.Context(state, machine, hardware));
             }
             var reading = _smartReading.Value;
@@ -175,7 +175,7 @@ public partial class MainWindow
         grid.Children.Add(SystemCard("Processador", m.Cpu, Glyphs.Chip));
         grid.Children.Add(SystemCard("Placa de vídeo", m.Gpu + (m.GpuDriver.Length > 0 ? $" · driver {m.GpuDriver}" : ""), Glyphs.Video));
         grid.Children.Add(SystemCard("Memória", $"{m.RamGb:0.#} GB", Glyphs.Memory));
-        grid.Children.Add(SystemCard("Armazenamento", Translator.Tr(m.Storage), Glyphs.Drive));
+        grid.Children.Add(SystemCard("Armazenamento", Translator.Tr(m.Storage) + (m.SystemDiskType is { } disk ? " · " + disk : ""), Glyphs.Drive));
         grid.Children.Add(SystemCard("Placa-mãe", m.Board, Glyphs.Chip));
         grid.Children.Add(SystemCard("Windows", $"{m.Windows} · build {m.Build}", Glyphs.Monitor));
         grid.Children.Add(SystemCard("Plano de energia", Translator.Tr(m.PowerPlan), Glyphs.Power));

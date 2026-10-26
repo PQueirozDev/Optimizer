@@ -26,6 +26,19 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v2.5.0", "26/10/2026", new[]
+        {
+            "Tutorial da primeira abertura refeito: ele passeia pelas páginas de verdade, explica os riscos e como desfazer, e continua de onde parou se o app fechar no meio.",
+            "Ajuda \"?\" nas funções avançadas: o que faz, quando usar, o benefício esperado, os riscos e como desfazer.",
+            "Início com os cards Este PC (versão do Windows e espaço de cada disco) e Otimizações (modo ativo, última otimização, ajustes em vigor e backup para desfazer).",
+            "Histórico mostra as execuções da Otimização inteligente e todas as outras alterações feitas pelo app, com o caminho para desfazer cada uma.",
+            "Biblioteca com jogos da Riot (VALORANT, League of Legends), Battle.net, EA app e Xbox. Com um perfil, o Modo Jogo liga antes do jogo abrir, e as sessões de jogo ficam registradas.",
+            "Laboratório com gráficos de FPS, frametime, CPU e GPU em cada resultado. O diagnóstico agora aponta travadas (frametime irregular) e placa de vídeo quente, e avisa quando o Windows está num HDD.",
+            "Configurações: frequência do monitor ao vivo, avisos de sucesso e exportar/importar as preferências.",
+            "Mais leve: o monitor para com a janela minimizada ou na bandeja, e o Laboratório e o stress test não travam mais a tela.",
+            "Mais seguro: backups de NVIDIA, DNS, plano de energia e BIOS não se perdem se o app fechar no meio, bloquear o Windows Update pede confirmação e o log exportado sai sem dados pessoais.",
+            "Correções: as preferências não são mais apagadas quando o arquivo está em uso por outra janela do app, e o Laboratório não declara ganho sem FPS medido.",
+        }),
         ("v2.4.1", "21/10/2026", new[]
         {
             "O overlay de jogo agora fica por cima do jogo em tela cheia sem bordas, no monitor onde o jogo está, mesmo quando o jogo muda a resolução ao abrir.",

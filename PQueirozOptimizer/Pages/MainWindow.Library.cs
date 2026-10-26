@@ -91,19 +91,33 @@ public partial class MainWindow
         store.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         body.Children.Add(store);
         var actions = new DockPanel();
-        var play = IconButton(Glyphs.Play, L("Jogar", "Play"), primary: true);
+        var opensStore = GameLibraryService.OpensStoreApp(game);
+        var play = IconButton(Glyphs.Play, opensStore ? L("Abrir na loja", "Open in store") : L("Jogar", "Play"), primary: true);
         play.Margin = new Thickness(0);
-        play.Click += (_, _) =>
+        if (opensStore) play.ToolTip = L("Abre o " + game.Store + ", onde o jogo está instalado: esta loja não permite abrir um jogo direto por fora.", "Opens " + game.Store + ", where the game is installed: this store doesn't allow launching a game directly from outside.");
+        play.Click += async (_, _) =>
         {
+            // Jogo de um perfil com ativação automática: o Modo Jogo do perfil liga antes do jogo abrir
+            Engine.UserProfile? profile = null;
+            if (!opensStore)
+                profile = await Task.Run(() => Engine.ProfileStore.Default.Profiles.FirstOrDefault(p => p.AutoGameMode && GameLibraryService.BelongsTo(game, p.Processes)));
+            if (profile != null)
+            {
+                await OnProfileGameStarted(profile);
+                // Sem o observador ligado, ninguém desliga o Modo Jogo quando o jogo fechar: liga o observador para isso
+                if (_gameWatcher is null) StartGameWatcher();
+            }
             try
             {
                 GameLibraryService.Launch(game);
                 OperationStatus.Text = L("Abrindo ", "Launching ") + game.Name;
                 _log.Write("INFO", "Biblioteca: abrindo " + game.Name + " (" + game.Store + ")");
+                if (profile != null) _ = ReleaseIfGameNeverStartsAsync(profile);
             }
             catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or FileNotFoundException or System.Runtime.InteropServices.COMException or IOException)
             {
                 ShowToast(game.Name, ex.Message, "Danger");
+                if (profile != null) await OnProfileGameExited(profile.Id);
             }
         };
         DockPanel.SetDock(play, Dock.Left); actions.Children.Add(play);
@@ -136,6 +150,26 @@ public partial class MainWindow
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             ShowToast(L("Biblioteca", "Library"), ex.Message, "Danger");
+        }
+    }
+
+    /// <summary>
+    /// O Modo Jogo foi ligado antes do jogo abrir: se em 3 minutos o observador não vir o jogo (abertura cancelada no
+    /// inicializador, erro, jogo fechado antes da primeira verificação), os ajustes temporários são desfeitos.
+    /// </summary>
+    private async Task ReleaseIfGameNeverStartsAsync(Engine.UserProfile profile)
+    {
+        var deadline = DateTime.Now.AddMinutes(3);
+        while (DateTime.Now < deadline)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            if (_autoSessionProfile != profile.Id) return; // já restaurado ou outra sessão
+            if (_gameWatcher?.ActiveProfileId == profile.Id) return; // o observador viu o jogo e cuida da saída
+        }
+        if (_autoSessionProfile == profile.Id && _gameWatcher?.ActiveProfileId != profile.Id)
+        {
+            _log.Write("WARN", $"Perfil {profile.Name}: o jogo não abriu em 3 minutos; Modo Jogo restaurado");
+            await OnProfileGameExited(profile.Id);
         }
     }
 }

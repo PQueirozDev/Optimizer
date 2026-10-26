@@ -230,6 +230,41 @@ public partial class MainWindow
         else if (e.Key == Key.Down && _paletteResults.Count > 0) { _paletteIndex = (_paletteIndex + 1) % _paletteResults.Count; RenderPalette(keepIndex: true); e.Handled = true; }
         else if (e.Key == Key.Up && _paletteResults.Count > 0) { _paletteIndex = (_paletteIndex - 1 + _paletteResults.Count) % _paletteResults.Count; RenderPalette(keepIndex: true); e.Handled = true; }
         else if (e.Key == Key.Enter && _paletteResults.Count > 0) { RunPaletteEntry(_paletteResults[_paletteIndex]); e.Handled = true; }
+        else if (e.Key == Key.D && Keyboard.Modifiers == ModifierKeys.Control && _paletteResults.Count > 0) { ToggleFavorite(_paletteResults[_paletteIndex]); e.Handled = true; }
+    }
+
+    private void ToggleFavorite(PaletteEntry entry)
+    {
+        try
+        {
+            if (!_configService.ToggleFavorite(entry.Title))
+                ShowToast("Favoritos", string.Format(Translator.Tr("Até {0} favoritos. Tire um para adicionar outro."), ConfigService.MaxFavorites), "Warning");
+        }
+        catch (System.IO.IOException ex) { ShowToast("Favoritos", ex.Message, "Warning"); }
+        RenderPalette(keepIndex: true);
+        if (_currentPage == "dashboard") _ = ShowDashboardAsync();
+    }
+
+    /// <summary>Faixa do Início com as funções favoritas (some quando não há nenhuma).</summary>
+    private UIElement? FavoritesRow()
+    {
+        var entries = _configService.Config.Favorites.Select(t => PaletteEntries().FirstOrDefault(p => p.Title == t)).OfType<PaletteEntry>().ToList();
+        if (entries.Count == 0) return null;
+        var body = new StackPanel();
+        body.Children.Add(HomeBandTitle("Favoritos", false));
+        var wrap = new WrapPanel { Margin = new Thickness(0, 8, 0, 0) };
+        foreach (var entry in entries)
+        {
+            var button = IconButton(entry.Glyph, entry.Title);
+            button.Margin = new Thickness(0, 0, 8, 8);
+            button.Click += (_, _) => entry.Run();
+            wrap.Children.Add(button);
+        }
+        body.Children.Add(wrap);
+        var hint = Label("Marque mais com a estrela na busca (Ctrl+K).", 11.5, true);
+        hint.Margin = new Thickness(0, 2, 0, 0);
+        body.Children.Add(hint);
+        return HomeCard(body);
     }
 
     private void RunPaletteEntry(PaletteEntry entry)
@@ -244,8 +279,10 @@ public partial class MainWindow
     {
         var query = Fold(SearchBox.Text.Trim());
         var words = query.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        // Favoritos primeiro (com a busca vazia, a lista abre com eles)
         _paletteResults = PaletteEntries()
             .Where(p => words.All(w => Fold(Translator.Tr(p.Title) + " " + p.Title + " " + p.Keywords + " " + p.Section).Contains(w)))
+            .OrderByDescending(p => _configService.IsFavorite(p.Title))
             .Take(8).ToList();
         if (!keepIndex) _paletteIndex = 0;
         SearchResults.Children.Clear();
@@ -262,6 +299,12 @@ public partial class MainWindow
             var section = new TextBlock { Text = entry.Section, FontSize = 11, VerticalAlignment = VerticalAlignment.Center };
             section.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
             DockPanel.SetDock(section, Dock.Right); row.Children.Add(section);
+            var favorite = _configService.IsFavorite(entry.Title);
+            var star = new TextBlock { Text = favorite ? "\u2605" : "\u2606", FontSize = 15, Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center, Cursor = Cursors.Hand,
+                ToolTip = Translator.Tr(favorite ? "Tirar dos favoritos (Ctrl+D)" : "Adicionar aos favoritos (Ctrl+D)") };
+            star.SetResourceReference(TextBlock.ForegroundProperty, favorite ? "WarningBrush" : "MutedBrush");
+            star.MouseLeftButtonDown += (_, e) => { e.Handled = true; ToggleFavorite(entry); };
+            DockPanel.SetDock(star, Dock.Right); row.Children.Add(star);
             var chip = IconChip(entry.Glyph, i == _paletteIndex ? "Accent" : "Info", 30); DockPanel.SetDock(chip, Dock.Left); row.Children.Add(chip);
             var title = new TextBlock { Text = entry.Title, FontSize = 12.5, FontWeight = FontWeights.SemiBold, Margin = new Thickness(12, 0, 12, 0), VerticalAlignment = VerticalAlignment.Center };
             title.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");

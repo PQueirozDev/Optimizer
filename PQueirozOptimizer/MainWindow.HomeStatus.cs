@@ -22,13 +22,23 @@ public partial class MainWindow
     {
         var grid = HomeGrid(300);
         grid.MaxColumns = 2;
-        grid.Children.Add(AuroraSystemCard(snapshot));
-        grid.Children.Add(Mark(AuroraOptimizationCard(ReadOptimizationStatus(_configService.Config.ActiveProfile, SnapshotDirectory, SmartHistory.Default)), "home.status"));
+        _ = FillStatusRowAsync(grid, snapshot);
         return grid;
     }
 
+    /// <summary>Discos e arquivos do histórico são lidos fora da interface; os cards entram quando a leitura termina.</summary>
+    private async Task FillStatusRowAsync(Panel grid, SystemSnapshot snapshot)
+    {
+        var mode = _configService.Config.ActiveProfile;
+        var (drives, status) = await Task.Run(() => (FixedDrives(), ReadOptimizationStatus(mode, SnapshotDirectory, SmartHistory.Default)));
+        // O Início pode ter sido redesenhado (ou a página trocada) durante a leitura
+        if (!IsInContent(grid)) return;
+        grid.Children.Add(AuroraSystemCard(snapshot, drives));
+        grid.Children.Add(Mark(AuroraOptimizationCard(status), "home.status"));
+    }
+
     // ================= Este PC =================
-    private Border AuroraSystemCard(SystemSnapshot snapshot)
+    private Border AuroraSystemCard(SystemSnapshot snapshot, List<(string Name, double Free, double Total)> drives)
     {
         var body = new StackPanel();
         body.Children.Add(HomeBandTitle("Este PC", false));
@@ -39,7 +49,7 @@ public partial class MainWindow
         body.Children.Add(StatusLine("Memória", Gb(snapshot.MemoryGb), data: true));
 
         var disks = new StackPanel { Margin = new Thickness(0, 10, 0, 0) };
-        foreach (var drive in FixedDrives())
+        foreach (var drive in drives)
         {
             var used = drive.Total > 0 ? 100 - drive.Free * 100 / drive.Total : 0;
             var line = new DockPanel { Margin = new Thickness(0, 6, 0, 0) };

@@ -1092,9 +1092,11 @@ internal static class Program
                 Render("gaming-nvidia-tall", 1320, 1500);
                 typeof(MainWindow).GetField("_gamingTab", flags)!.SetValue(window, 0);
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "settings" });
-                Render("settings-tall", 1320, 3200);
+                Render("settings-tall", 1320, 4000);
                 // Início inteiro, com a linha Este PC / Otimizações no fim
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "dashboard" });
+                Pump((Task)typeof(MainWindow).GetMethod("RenderDashboardAsync", flags)!.Invoke(window, null)!);
+                Pump(Task.Delay(1500)); // a linha Este PC / Otimizações lê discos e histórico em segundo plano
                 Render("dashboard-tall", 1320, 1500);
                 // BIOS Advisor inteiro e o guia "Ver como configurar" (perfil fixo de teste)
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "biosadvisor" });

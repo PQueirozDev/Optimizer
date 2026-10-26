@@ -85,7 +85,16 @@ public partial class MainWindow : Window
         Action onAppearance = () => Dispatcher.BeginInvoke(OnAppearanceChanged);
         AppearanceService.Changed += onAppearance;
         Closed += (_, _) => AppearanceService.Changed -= onAppearance;
-        Closed += (_, _) => { _compact?.Close(); _capture?.Dispose(); _capture = null; };
+        Closed += (_, _) =>
+        {
+            _compact?.Close();
+            // Uma leitura pode estar rodando em outra thread: a sessão só é liberada quando ela termina
+            var session = _capture; var pending = _captureTick;
+            _capture = null; _captureTick = null;
+            if (session is null) return;
+            if (pending is { IsCompleted: false }) pending.ContinueWith(_ => session.Dispose(), TaskScheduler.Default);
+            else session.Dispose();
+        };
         Closed += (_, _) => DisposeTray();
         UpdatePageHeader(_currentPage);
         _loc.SetLanguage(_configService.Config.Language ?? "pt");
@@ -94,6 +103,7 @@ public partial class MainWindow : Window
         UpdateNavBadges();
         UpdateActiveNavButton(_currentPage);
         HardwareMonitorService.Shared.IntervalSeconds = _configService.Config.MonitorIntervalSeconds;
+        GameArtService.OnlineAllowed = _configService.Config.OnlineGameArt;
         StartHud();
     }
 

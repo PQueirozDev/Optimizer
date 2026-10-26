@@ -78,6 +78,7 @@ public partial class MainWindow
         var go = IconButton(Glyphs.Undo, "Abrir o Histórico"); go.HorizontalAlignment = HorizontalAlignment.Left; go.Click += History_Click;
         restore.Children.Add(go);
         root.Children.Add(Surface(restore));
+        if (GameSessionsCard() is { } sessions) root.Children.Add(sessions);
         ContentHost.Children.Clear(); ContentHost.Children.Add(root);
     }
 
@@ -182,8 +183,8 @@ public partial class MainWindow
     {
         if (_gameWatcher is not null || !PageAllowed("gaming")) return;
         _gameWatcher = new GameWatcher();
-        _gameWatcher.GameStarted += profile => Dispatcher.BeginInvoke(async () => await OnProfileGameStarted(profile));
-        _gameWatcher.GameExited += id => Dispatcher.BeginInvoke(async () => await OnProfileGameExited(id));
+        _gameWatcher.GameStarted += profile => { GameSessionLog.Default.Started(profile, DateTime.Now); Dispatcher.BeginInvoke(async () => await OnProfileGameStarted(profile)); };
+        _gameWatcher.GameExited += id => { GameSessionLog.Default.Ended(id, DateTime.Now); Dispatcher.BeginInvoke(async () => await OnProfileGameExited(id)); };
     }
 
     private void StopGameWatcher() { _gameWatcher?.Dispose(); _gameWatcher = null; }
@@ -236,5 +237,39 @@ public partial class MainWindow
         {
             _log.Write("WARN", "Não foi possível restaurar o Modo Jogo automaticamente: " + ex.Message);
         }
+    }
+
+    /// <summary>Partidas recentes dos jogos com perfil (abertura, duração) e o tempo total por perfil nos últimos 30 dias.</summary>
+    private Border? GameSessionsCard()
+    {
+        var sessions = GameSessionLog.Default.Sessions;
+        if (sessions.Count == 0) return null;
+        var panel = new StackPanel();
+        panel.Children.Add(SectionHeader("Sessões de jogo", "Registradas quando um jogo de um perfil com ativação automática abre e fecha. Só datas: nada do jogo é lido."));
+        var month = sessions.Where(s => s.Start >= DateTime.Now.AddDays(-30) && s.Duration is not null).GroupBy(s => s.ProfileName)
+            .Select(g => (Name: g.Key, Count: g.Count(), Total: TimeSpan.FromTicks(g.Sum(s => s.Duration!.Value.Ticks)))).OrderByDescending(g => g.Total).ToList();
+        if (month.Count > 0)
+        {
+            var totals = new WrapPanel { Margin = new Thickness(0, 0, 0, 8) };
+            foreach (var (name, count, total) in month)
+            {
+                var pill = Pill($"{name} · {count}× · {(int)total.TotalHours} h {total.Minutes:00} min", "Accent");
+                pill.Tag = Translator.SystemDataTag; pill.Margin = new Thickness(0, 0, 6, 6);
+                totals.Children.Add(pill);
+            }
+            panel.Children.Add(totals);
+        }
+        foreach (var session in sessions.OrderByDescending(s => s.Start).Take(8))
+        {
+            var line = new DockPanel { Margin = new Thickness(0, 5, 0, 0) };
+            var duration = Label(session.Duration is { } d ? $"{(int)d.TotalHours} h {d.Minutes:00} min" : Tr("sem registro do fim"), 12.5, true);
+            duration.Tag = Translator.SystemDataTag;
+            DockPanel.SetDock(duration, Dock.Right); line.Children.Add(duration);
+            var text = Label($"{session.Start:dd/MM/yyyy HH:mm} · {session.ProfileName}", 13);
+            text.Tag = Translator.SystemDataTag;
+            line.Children.Add(text);
+            panel.Children.Add(line);
+        }
+        return Surface(panel);
     }
 }

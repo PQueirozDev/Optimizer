@@ -413,7 +413,7 @@ public static partial class Translator
         ["Competitivo: Modo Jogo, sem gravação em segundo plano e entrada consistente."] = "Competitive: Game Mode, no background recording and consistent input.",
         ["Competitivo: os mesmos ajustes do Valorant para o Counter-Strike 2."] = "Competitive: the same tweaks as Valorant for Counter-Strike 2.",
         ["Competitivo, com HAGS (útil para Frame Generation)."] = "Competitive, with HAGS (useful for Frame Generation).", ["Streaming"] = "Streaming",
-        ["Jogar e transmitir: mantém o codificador livre, sem fechar o OBS."] = "Play and stream: keeps the encoder free, without closing OBS.",
+        ["Jogar e transmitir: adicione o jogo que você transmite. OBS, Discord e drivers nunca são fechados nem pausados."] = "Play and stream: add the game you stream. OBS, Discord and drivers are never closed or paused.",
         ["Preserva Docker, WSL e Hyper-V; só privacidade e estabilidade."] = "Preserves Docker, WSL and Hyper-V; only privacy and stability.",
         ["Temperatura e bateria: sem ajustes que aumentam o consumo."] = "Temperature and battery: no tweaks that increase power draw.", ["Privacidade, menos anúncios e limpeza segura."] = "Privacy, fewer ads and safe cleanup.",
 

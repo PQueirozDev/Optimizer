@@ -14,6 +14,22 @@ namespace PQueirozOptimizer.Services;
 public static class GameArtService
 {
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(8) };
+
+    /// <summary>
+    /// Configurações → Preferências: buscar capas na Steam/Epic envia o número do jogo a essas lojas. Desligado, só
+    /// as capas já baixadas e os ícones dos executáveis aparecem.
+    /// </summary>
+    public static bool OnlineAllowed
+    {
+        get => _onlineAllowed;
+        set
+        {
+            if (value && !_onlineAllowed)
+                foreach (var key in Memory.Where(kv => kv.Value is null).Select(kv => kv.Key).ToList()) Memory.Remove(key);
+            _onlineAllowed = value;
+        }
+    }
+    private static bool _onlineAllowed = true;
     private static readonly Dictionary<string, BitmapSource?> Memory = new();
     private static readonly string CacheDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PQueirozOptimizer", "GameArt");
 
@@ -82,7 +98,8 @@ public static class GameArtService
         var file = Path.Combine(CacheDirectory, $"epic_{slug}.jpg");
         BitmapSource? image = null;
         if (File.Exists(file) && DateTime.UtcNow - File.GetLastWriteTimeUtc(file) < TimeSpan.FromDays(7)) image = Load(file);
-        if (image is null)
+        if (image is null && !OnlineAllowed) image = File.Exists(file) ? Load(file) : null;
+        else if (image is null)
         {
             try
             {
@@ -190,6 +207,7 @@ public static class GameArtService
     {
         var path = Path.Combine(CacheDirectory, fileName);
         if (File.Exists(path)) return Load(path);
+        if (!OnlineAllowed) return null;
         try
         {
             var bytes = await Http.GetByteArrayAsync(url);

@@ -109,7 +109,7 @@ public partial class MainWindow
         var hw = await PerfHardwareAsync();
         var snapshot = await ReadSnapshotAsync();
         var (w, h, hz) = DisplayInfo.Current();
-        var plan = MachineReader.Read(hw, snapshot).PowerPlan;
+        var plan = (await Task.Run(() => MachineReader.Read(hw, snapshot))).PowerPlan;
         return new CaptureConditions(hw.Cpu.Name, hw.PrimaryGpu?.Name ?? snapshot.Graphics, hw.PrimaryGpu?.DriverVersion ?? "", snapshot.OperatingSystem, SystemConditions.WindowsBuild,
             plan, $"{w}x{h}", hz, AppVersion);
     }
@@ -228,8 +228,10 @@ public partial class MainWindow
                 PerfSample sample;
                 try { sample = await reading; }
                 catch (Exception ex) when (ex is InvalidOperationException or IOException or System.ComponentModel.Win32Exception) { _log.Write("WARN", "Laboratório: leitura dos sensores falhou: " + ex.Message); return; }
+                // Parada no meio da leitura: quem parou espera esta leitura e guarda a amostra
                 if (!ReferenceEquals(_capture, session)) return;
                 session.Add(sample);
+                if (ReferenceEquals(_captureTick, reading)) _captureTick = null;
                 if (_currentPage == "perflab") _liveFeed?.Invoke(sample);
                 var elapsed = (DateTime.Now - started).TotalSeconds;
                 if (_liveStatus != null && _currentPage == "perflab") _liveStatus.Text = $"Gravando {elapsed:0} de {seconds} s" + (_capture.CapturingFrames ? (sample.Fps is null ? " · aguardando quadros do processo" : "") : " · só sensores (sem PresentMon ou sem processo)");
@@ -262,8 +264,13 @@ public partial class MainWindow
         try
         {
             // Espera a leitura em andamento: ela ainda pode estar mexendo na sessão
-            if (_captureTick is { } pending) { try { await pending; } catch (Exception ex) when (ex is InvalidOperationException or IOException or System.ComponentModel.Win32Exception) { } }
-            _captureTick = null;
+            // Leitura em andamento (ou terminada e ainda não guardada): espera e guarda a amostra aqui, uma vez só
+            if (_captureTick is { } pending)
+            {
+                _captureTick = null;
+                try { session.Add(await pending); }
+                catch (Exception ex) when (ex is InvalidOperationException or IOException or System.ComponentModel.Win32Exception) { }
+            }
             var conditions = await CaptureConditionsAsync();
             var name = string.IsNullOrWhiteSpace(label) ? $"{session.Process ?? "Sensores"} · {DateTime.Now:dd/MM HH:mm}" : label.Trim();
             // Fechar o PresentMon espera até 5 s: fora da interface
@@ -306,6 +313,7 @@ public partial class MainWindow
         Metric("Clock da CPU (estimado)", r.CpuClockAvg is { } cc ? $"{cc:0} MHz" : "—", Glyphs.Chip);
         Metric("Limite de desempenho", r.LimitedSeconds is { } ls ? (ls == 0 ? "não detectado" : $"{ls} s com limite") : "—", Glyphs.Shield);
         panel.Children.Add(grid);
+        if (PerfResultCharts(r) is { } charts) panel.Children.Add(charts);
         if (!r.HasFrames) panel.Children.Add(Label("Sem FPS: a captura não teve quadros do PresentMon (ferramenta não configurada, processo errado ou menos de 100 quadros). Os números de FPS não são estimados a partir de outras métricas.", 12.5, true));
         if (r.ThrottleReasons.Count > 0) panel.Children.Add(Label("Redução de clock informada pelo driver: " + string.Join(", ", r.ThrottleReasons), 12.5, true));
         panel.Children.Add(Label("CPU sem temperatura: ler a temperatura da CPU exige um driver de kernel que o Qrztweaks não instala.", 11, true));
@@ -317,6 +325,35 @@ public partial class MainWindow
         Action(Glyphs.Speed, "Comparar", () => { _compareB = r.Id; _perfTab = "compare"; ShowPerformanceLab(); });
         panel.Children.Add(actions);
         return Surface(panel);
+    }
+
+    /// <summary>
+    /// Gráficos da gravação, um ponto por segundo: FPS e frametime quando há quadros reais; senão CPU e GPU.
+    /// O frametime de cada ponto é a média daquele segundo (picos isolados aparecem no P99, não aqui).
+    /// </summary>
+    private UIElement? PerfResultCharts(PerfResult r)
+    {
+        if (r.Samples.Count < 5) return null;
+        var grid = Responsive(new UniformGrid { Columns = 2, Margin = new Thickness(0, 12, -12, 4) }, 300, 2);
+        void Chart(string title, IEnumerable<double?> values, string unit, string strokeKey, double? maximum = null)
+        {
+            var list = values.ToList();
+            if (list.All(v => v is null)) return;
+            var box = new StackPanel { Margin = new Thickness(0, 0, 12, 8) };
+            box.Children.Add(Label(title, 12, true));
+            var chart = new LineChart { Height = 110, Capacity = list.Count, SecondsPerSample = 1, Unit = unit, StrokeKey = strokeKey, Maximum = maximum, ShowEndDot = false, Margin = new Thickness(0, 4, 0, 0) };
+            chart.SetValues(list);
+            box.Children.Add(chart);
+            grid.Children.Add(box);
+        }
+        if (r.HasFrames)
+        {
+            Chart("FPS a cada segundo", r.Samples.Select(s => s.Fps), " FPS", "ChartLineBrush");
+            Chart("Frametime médio de cada segundo", r.Samples.Select(s => s.FrametimeMs), " ms", "ChartSecondaryBrush");
+        }
+        Chart("Uso de CPU", r.Samples.Select(s => s.Cpu), "%", "ChartLineBrush", 100);
+        Chart("Uso de GPU", r.Samples.Select(s => s.Gpu), "%", "ChartSecondaryBrush", 100);
+        return grid.Children.Count > 0 ? grid : null;
     }
 
     private void ExportPerf(PerfResult r, string kind)
