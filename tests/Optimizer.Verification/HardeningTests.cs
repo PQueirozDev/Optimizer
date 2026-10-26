@@ -22,6 +22,76 @@ internal static class HardeningTests
         Backups(root);
         Redaction();
         Lab();
+        Tutorial(root);
+        Preferences(root);
+    }
+
+    static void Preferences(string root)
+    {
+        var dir = Path.Combine(root, "preferencias");
+        Directory.CreateDirectory(dir);
+        var source = Path.Combine(dir, "origem.json");
+        if (File.Exists(source)) File.Delete(source);
+        var original = new ConfigService(source);
+        original.SaveProfile("Meu modo", "teste", new List<string> { "padrao" });
+        original.SaveMonitorInterval(5);
+        var exported = Path.Combine(dir, "exportado.json");
+        original.ExportTo(exported);
+        Check(!File.ReadAllText(exported).Contains("drive.google", StringComparison.OrdinalIgnoreCase), "Preferências exportadas sem links de download do catálogo de ISOs");
+
+        var target = Path.Combine(dir, "destino.json");
+        if (File.Exists(target)) File.Delete(target);
+        var other = new ConfigService(target);
+        other.ImportFrom(exported);
+        Check(other.Config.Profiles.Any(p => p.Name == "Meu modo") && other.Config.MonitorIntervalSeconds == 5 && new ConfigService(target).Config.Profiles.Any(p => p.Name == "Meu modo"),
+            "Importar traz modos e monitor do arquivo e grava");
+
+        var foreign = Path.Combine(dir, "outro.json");
+        File.WriteAllText(foreign, """{"nome":"não é do Qrztweaks"}""");
+        var before = File.ReadAllText(target);
+        var refused = false;
+        try { other.ImportFrom(foreign); } catch (InvalidDataException) { refused = true; }
+        Check(refused && File.ReadAllText(target) == before, "Arquivo que não é de preferências é recusado sem mexer nas atuais");
+
+        var big = Path.Combine(dir, "grande.json");
+        File.WriteAllText(big, "{\"profiles\":[],\"x\":\"" + new string('a', (int)ConfigService.ImportMaxBytes) + "\"}");
+        refused = false;
+        try { other.ImportFrom(big); } catch (InvalidDataException) { refused = true; }
+        Check(refused, "Arquivo de preferências grande demais é recusado");
+
+        var tampered = Path.Combine(dir, "alterado.json");
+        File.WriteAllText(tampered, """{"language":"xx","monitorIntervalSeconds":3,"profiles":[{"name":"Estranho","enabledOptimizations":["padrao","Remove-Item C:\\"]}],"isoCatalog":[{"name":"ISO falsa","downloadUrl":"https://exemplo.invalid/x.iso"}]}""");
+        other.ImportFrom(tampered);
+        var odd = other.Config.Profiles.First(p => p.Name == "Estranho");
+        Check(odd.EnabledOptimizations.SequenceEqual(new[] { "padrao" }) && other.Config.MonitorIntervalSeconds == 1 && other.Config.Language is "pt" or "en" && !other.Config.IsoCatalog.Any(i => i.Name == "ISO falsa"),
+            "Importar descarta ajustes desconhecidos, links de ISO, idioma e intervalo inválidos");
+
+        var monitor = PQueirozOptimizer.Services.HardwareMonitorService.Shared;
+        var previous = monitor.IntervalSeconds;
+        monitor.IntervalSeconds = 3;
+        Check(monitor.IntervalSeconds == 1, "Intervalo do monitor fora da lista volta a 1 s");
+        monitor.IntervalSeconds = previous;
+    }
+
+    static void Tutorial(string root)
+    {
+        // Fechar o app no meio do tour: o passo fica salvo e o tour continua dele na próxima abertura
+        var path = Path.Combine(root, "tutorial", "config.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        if (File.Exists(path)) File.Delete(path);
+        var first = new ConfigService(path);
+        first.SetWelcomeTourStep(4);
+        Check(new ConfigService(path).WelcomeTourStep == 4 && !new ConfigService(path).IsTutorialCompleted("inicio"), "Tutorial: passo salvo ao fechar no meio e retomado na próxima abertura");
+        first.SetTutorialCompleted("inicio", true);
+        first.SetWelcomeTourStep(0);
+        var done = new ConfigService(path);
+        Check(done.IsTutorialCompleted("inicio") && done.WelcomeTourStep == 0, "Tutorial: concluído fica salvo e não aparece de novo sozinho");
+        done.ResetTutorials();
+        Check(!new ConfigService(path).IsTutorialCompleted("inicio"), "Tutorial: Rever tutoriais faz o tour aparecer de novo");
+        File.WriteAllText(path, """{"welcomeTourStep":-7}""");
+        Check(new ConfigService(path).WelcomeTourStep == 0, "Tutorial: passo inválido no arquivo começa do início");
+        // Toda ajuda contextual tem os cinco campos preenchidos
+        Check(PQueirozOptimizer.MainWindow.FeatureHelps.Values.All(h => new[] { h.What, h.When, h.Benefits, h.Risks, h.Undo }.All(t => t.Length > 20)), "Ajuda contextual: o que faz, quando usar, benefício, riscos e como desfazer em todas as funções");
     }
 
     static void Config(string root)

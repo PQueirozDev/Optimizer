@@ -93,6 +93,7 @@ public partial class MainWindow : Window
         UpdateLicenseUi();
         UpdateNavBadges();
         UpdateActiveNavButton(_currentPage);
+        HardwareMonitorService.Shared.IntervalSeconds = _configService.Config.MonitorIntervalSeconds;
         StartHud();
     }
 
@@ -110,8 +111,11 @@ public partial class MainWindow : Window
         UpdateNavLocks();
         InitSidebar();
         if (Engine.ProfileStore.Default.WatchGames) StartGameWatcher();
-        Closed += (_, _) => StopGameWatcher();
+        if (!_licenseUiHooked) Closed += (_, _) => StopGameWatcher();
+        _licenseUiHooked = true;
     }
+
+    private bool _licenseUiHooked;
 
     /// <summary>Iniciais do titular para o avatar (duas letras; "Q" sem licença).</summary>
     private static string Initials(string? name)

@@ -351,6 +351,17 @@ public sealed class PerfCaptureSession : IDisposable
     /// <summary>Uma leitura (chamar a cada segundo). Devolve a amostra com o FPS daquele segundo, se houver quadros.</summary>
     public PerfSample Tick()
     {
+        var sample = Measure();
+        Add(sample);
+        return sample;
+    }
+
+    /// <summary>
+    /// Lê sensores e quadros sem guardar a amostra. Pode rodar fora da interface (o nvidia-smi pode demorar segundos),
+    /// uma leitura por vez; a amostra entra na lista com <see cref="Add"/>, na mesma thread que lê <see cref="Samples"/>.
+    /// </summary>
+    public PerfSample Measure()
+    {
         var s = _sensors.Read();
         double? fps = null, frametime = null;
         if (_tail is not null)
@@ -364,10 +375,10 @@ public sealed class PerfCaptureSession : IDisposable
         }
         if (s.GpuThrottleReasons is { } reasons) foreach (var r in reasons) _throttle.Add(r.Pt);
         var latest = HardwareMonitorService.Shared.Latest;
-        var sample = new PerfSample(Math.Round(_clock.Elapsed.TotalSeconds), fps, frametime, s.CpuUsage, s.GpuUsage, latest?.Ram, s.GpuTemperature, s.GpuClockMhz, s.GpuPowerWatts, s.CpuClockMhz, s.CpuPerformanceLimit);
-        _samples.Add(sample);
-        return sample;
+        return new PerfSample(Math.Round(_clock.Elapsed.TotalSeconds), fps, frametime, s.CpuUsage, s.GpuUsage, latest?.Ram, s.GpuTemperature, s.GpuClockMhz, s.GpuPowerWatts, s.CpuClockMhz, s.CpuPerformanceLimit);
     }
+
+    public void Add(PerfSample sample) => _samples.Add(sample);
 
     public bool PresentMonExited => _presentMon is { HasExited: true };
 

@@ -89,7 +89,8 @@ public partial class MainWindow
                 snapshot = await read;
                 StartupProfiler.Mark("snapshot-read");
             }
-            var cpuInfo = await extras;
+            // A frequência base só serve de reserva no medidor da CPU: um WMI lento na primeira abertura não segura o Início
+            var cpuInfo = await Task.WhenAny(extras, Task.Delay(300)) == extras ? extras.Result : new CpuInfo(0, Environment.ProcessorCount, null);
             // O usuário pode ter trocado de página (ou reaberto o Início) durante a leitura
             if (_currentPage != "dashboard" || !ContentHost.Children.Contains(root)) return;
             root.Children.Clear();
@@ -113,6 +114,9 @@ public partial class MainWindow
             root.Children.Add(AuroraTopRow(snapshot, cpuInfo, score, headline, tone, prefs));
             // 2. Carga de CPU e GPU (1, 5 ou 15 min) e o acesso rápido
             if (prefs.DashboardLive || prefs.DashboardQuickActions) root.Children.Add(AuroraSecondRow(score, prefs));
+
+            // 3. Este PC (Windows e discos) e o estado das otimizações
+            if (prefs.DashboardStatus) root.Children.Add(AuroraStatusRow(snapshot));
 
             // 4. Atividade recente (só as últimas três linhas)
             if (prefs.DashboardActivity) root.Children.Add(RecentActivity());

@@ -33,6 +33,18 @@ public class AppConfig
     [JsonPropertyName("completedTutorials")]
     public List<string> CompletedTutorials { get; set; } = new();
 
+    /// <summary>Passo em que o tour de boas-vindas parou (o app fechou no meio); 0 = começo.</summary>
+    [JsonPropertyName("welcomeTourStep")]
+    public int WelcomeTourStep { get; set; }
+
+    /// <summary>Segundos entre as leituras do monitor ao vivo (1, 2 ou 5).</summary>
+    [JsonPropertyName("monitorIntervalSeconds")]
+    public int MonitorIntervalSeconds { get; set; } = 1;
+
+    /// <summary>Avisos de sucesso no canto da tela. Erros e alertas aparecem sempre.</summary>
+    [JsonPropertyName("successNotifications")]
+    public bool SuccessNotifications { get; set; } = true;
+
     /// <summary>Minimizar esconde a janela e deixa só o ícone perto do relógio.</summary>
     [JsonPropertyName("minimizeToTray")]
     public bool MinimizeToTray { get; set; }

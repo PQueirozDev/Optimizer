@@ -16,7 +16,8 @@ namespace PQueirozOptimizer;
 /// </summary>
 public partial class MainWindow
 {
-    private sealed record TutorialStep(Func<FrameworkElement?> Target, string Title, string Description);
+    /// <summary>Passo do tutorial. <paramref name="Page"/>: página aberta antes do passo (o tour passeia pela interface real).</summary>
+    private sealed record TutorialStep(Func<FrameworkElement?> Target, string Title, string Description, string? Page = null);
 
     private List<TutorialStep>? _tutorialSteps;
     private string? _tutorialId;
@@ -41,19 +42,23 @@ public partial class MainWindow
     }
 
     /// <summary>Tour da primeira abertura, pelos principais pontos da interface.</summary>
+    /// <summary>
+    /// Tour da primeira abertura. Passeia pelas páginas de verdade (Início, Otimização inteligente, Perfis,
+    /// Laboratório, Histórico) só para mostrar: nenhum passo aplica nada nem pede administrador.
+    /// </summary>
     private List<TutorialStep> WelcomeTour() => new()
     {
-        new(() => null, "Bem-vindo ao Qrztweaks!", "Em menos de um minuto você conhece o essencial. Use Próximo para avançar ou Pular para começar a usar agora."),
-        new(() => TopTabFor("dashboard"), "Início", "A saúde do PC, o monitor ao vivo, os alertas e as ações rápidas ficam aqui."),
-        new(() => Marked("home.hud"), "Monitor ao vivo", "CPU, placa de vídeo, memória e ping em tempo real, em qualquer página."),
-        new(() => TopTabFor("smart"), "Otimizar", "Otimização inteligente, ajustes revisados item por item, serviços, aplicativos, inicialização e drivers. Você revisa tudo antes de aplicar."),
-        new(() => TopTabFor("perflab"), "Desempenho", "Laboratório de FPS, stress test, overlay no jogo e rede."),
-        new(() => TopTabFor("gaming"), "Jogos", "Modo Jogo, biblioteca com todos os seus jogos e perfis por jogo."),
-        new(() => TopTabFor("resources"), "Ferramentas", "Diagnóstico, saúde do hardware, dispositivos, BIOS, correções e pontos de restauração."),
-        new(() => SubTabs, "Páginas da categoria", "Cada categoria mostra as páginas dela aqui, logo abaixo das abas."),
-        new(() => SearchHost, "Busca rápida", "Pressione Ctrl+K e digite o que procura para abrir qualquer página ou recurso."),
-        new(() => AvatarButton, "Sua conta", "Configurações, licença, atualizações, tema e o modo compacto ficam neste menu."),
-        new(() => null, "Tudo pronto!", "Você pode rever os tutoriais quando quiser em Configurações → Tutoriais. Bom jogo!"),
+        new(() => null, "Bem-vindo ao Qrztweaks!", "Seu novo centro de controle para personalização, monitoramento e otimização do Windows. Vamos conhecer as ferramentas e aprender a usá-las com segurança. Nada é alterado durante o tutorial.", "dashboard"),
+        new(() => Marked("home.hud") ?? Marked("home.primary"), "Painel inicial", "A saúde do PC, o processador, a placa de vídeo, a memória e o disco, com uso ao vivo. O que o Windows não informa aparece como indisponível, nunca estimado.", "dashboard"),
+        new(() => TopTabFor("smart"), "Menu de otimizações", "Otimização inteligente, ajustes revisados item por item, serviços, aplicativos, inicialização e drivers.", "dashboard"),
+        new(() => Marked("smart.goals"), "Otimização inteligente", "Escolha o objetivo e clique em Analisar: o app só lê o sistema e sugere ajustes. Cada um mostra o risco (Seguro, Moderado ou Arriscado), os efeitos e como desfazer. Nada é aplicado sem você revisar e confirmar.", "smart"),
+        new(() => Marked("smart.goals"), "Cuidado com os ajustes avançados", "Itens Moderados e Arriscados podem ter efeito colateral: um recurso do Windows deixa de funcionar ou é preciso reiniciar. Leia o aviso de cada um; na dúvida, deixe desmarcado.", "smart"),
+        new(() => Marked("profiles.head"), "Perfis", "Um perfil guarda um objetivo, os ajustes escolhidos e os jogos. Use para aplicar a mesma configuração de novo ou trocar entre o modo competitivo e o uso diário.", "profiles"),
+        new(() => Marked("perflab.tabs"), "Monitoramento e FPS", "Grave uma partida para medir FPS médio, 1% low e frametime, e compare antes e depois de um ajuste. Sem dados confiáveis, a comparação avisa em vez de dar um veredito.", "perflab"),
+        new(() => Marked("history.backup"), "Desfazer alterações", "Tudo o que o app altera tem backup. Aqui você desfaz um ajuste específico ou restaura tudo de uma vez. Pontos de restauração ficam em Ferramentas.", "history"),
+        new(() => SearchHost, "Busca rápida", "Pressione Ctrl+K e digite o que procura para abrir qualquer página ou recurso.", "dashboard"),
+        new(() => AvatarButton, "Sua conta e configurações", "Configurações, tema, licença e atualizações ficam neste menu. O tutorial pode ser refeito em Configurações → Tutoriais.", "dashboard"),
+        new(() => null, "Tudo pronto!", "Comece pelo painel inicial ou pela Otimização inteligente. Bom jogo!", "dashboard"),
     };
 
     /// <summary>Tutoriais das páginas: aparecem na primeira visita, depois que a página foi montada.</summary>
@@ -107,36 +112,74 @@ public partial class MainWindow
     {
         if (TutorialDone("inicio")) return;
         var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1600) }; // depois da abertura
-        timer.Tick += (_, _) => { timer.Stop(); StartTutorial("inicio", WelcomeTour()); };
+        // Fechou o app no meio do tour: continua do passo em que parou
+        timer.Tick += (_, _) => { timer.Stop(); StartTutorial("inicio", WelcomeTour(), _configService.WelcomeTourStep); };
         timer.Start();
     }
 
-    private void StartTutorial(string id, List<TutorialStep> steps)
+    private void StartTutorial(string id, List<TutorialStep> steps, int startAt = 0)
     {
         if (steps.Count == 0 || !IsVisible) return;
-        _tutorialId = id; _tutorialSteps = steps; _tutorialIndex = 0;
+        _tutorialId = id; _tutorialSteps = steps; _tutorialIndex = Math.Clamp(startAt, 0, steps.Count - 1);
         TutorialLayer.Visibility = Visibility.Visible;
         TutorialLayer.Focusable = true;
         TutorialLayer.Focus();
-        ShowTutorialStep(animate: true);
+        // Janela maximizada, redimensionada ou levada a outro monitor (DPI): o destaque é refeito no lugar certo
+        TutorialLayer.SizeChanged -= TutorialLayerResized; TutorialLayer.SizeChanged += TutorialLayerResized;
+        DpiChanged -= TutorialDpiChanged; DpiChanged += TutorialDpiChanged;
+        GoToTutorialStep(animate: true);
+    }
+
+    private bool _tutorialNavigating;
+
+    private void TutorialLayerResized(object? sender, SizeChangedEventArgs e) { if (_tutorialSteps != null && !_tutorialNavigating) ShowTutorialStep(); }
+    private void TutorialDpiChanged(object? sender, DpiChangedEventArgs e) { if (_tutorialSteps != null && !_tutorialNavigating) ShowTutorialStep(); }
+
+    /// <summary>Abre a página do passo (se for outra) e só então mede o alvo, depois que a página entrou.</summary>
+    private void GoToTutorialStep(bool animate = false)
+    {
+        if (_tutorialSteps is null) return;
+        if (_tutorialId == "inicio") SaveWelcomeProgress(_tutorialIndex);
+        var page = _tutorialSteps[_tutorialIndex].Page;
+        if (page is null || _currentPage == page) { ShowTutorialStep(animate); return; }
+        _tutorialNavigating = true;
+        try { NavigateTo(page); }
+        catch (Exception ex) { _log.Write("WARN", "Tutorial: a página não pôde ser aberta: " + ex.Message); }
+        var wait = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(AppearanceService.AnimationsEnabled ? 450 : 120) };
+        wait.Tick += (_, _) => { wait.Stop(); _tutorialNavigating = false; ShowTutorialStep(animate); };
+        wait.Start();
+    }
+
+    private void SaveWelcomeProgress(int index)
+    {
+        try { _configService.SetWelcomeTourStep(index); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { _log.Write("WARN", "Preferências não foram salvas: " + ex.Message); }
     }
 
     private void EndTutorial(bool completed)
     {
         if (_tutorialId is { } id) SaveTutorial(id, true);
         var wasWelcome = _tutorialId == "inicio";
-        _tutorialSteps = null; _tutorialId = null;
+        if (wasWelcome) SaveWelcomeProgress(0);
+        _tutorialSteps = null; _tutorialId = null; _tutorialNavigating = false;
+        TutorialLayer.SizeChanged -= TutorialLayerResized;
+        DpiChanged -= TutorialDpiChanged;
         var fade = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(200));
         fade.Completed += (_, _) => { TutorialLayer.Visibility = Visibility.Collapsed; TutorialLayer.Children.Clear(); TutorialLayer.BeginAnimation(OpacityProperty, null); };
         TutorialLayer.BeginAnimation(OpacityProperty, fade);
         if (wasWelcome && completed) ShowToast("Tutorial concluído", "Reveja quando quiser em Configurações → Tutoriais.", "Success");
+        // O tour pode terminar em outra página: volta ao Início
+        if (wasWelcome && _currentPage != "dashboard") NavigateTo("dashboard");
     }
 
     private void ShowTutorialStep(bool animate = false)
     {
         if (_tutorialSteps is null) return;
         var step = _tutorialSteps[_tutorialIndex];
-        var target = step.Target();
+        FrameworkElement? target;
+        // Um alvo que não existe (página bloqueada pelo plano, seção desligada) não pode travar o tour
+        try { target = step.Target(); }
+        catch (Exception ex) { _log.Write("WARN", "Tutorial: alvo indisponível: " + ex.Message); target = null; }
         // Garante que o alvo esteja visível na barra lateral ou no conteúdo antes de medir
         target?.BringIntoView();
         TutorialLayer.UpdateLayout();
@@ -167,6 +210,10 @@ public partial class MainWindow
             // Brilho na cor de destaque do tema (era um roxo fixo, que destoava do ciano e das cores personalizadas)
             glow.Effect = new DropShadowEffect { BlurRadius = 24, ShadowDepth = 0, Opacity = 0.9, Color = Application.Current?.TryFindResource("AccentColor") is Color accent ? accent : Color.FromRgb(0x1F, 0xC8, 0xE3) };
             TutorialLayer.Children.Add(glow);
+            // O elemento destacado é só para ver: clicar nele no meio do tour trocaria de página
+            var blocker = new Border { Width = ring.Width, Height = ring.Height, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(ring.X, ring.Y, 0, 0), Background = Brushes.Transparent };
+            blocker.MouseLeftButtonDown += (_, e) => e.Handled = true;
+            TutorialLayer.Children.Add(blocker);
             // Pulsa suavemente para chamar a atenção (parado quando o usuário desligou as animações)
             if (AppearanceService.AnimationsEnabled)
                 glow.BeginAnimation(OpacityProperty, new DoubleAnimation(1, 0.55, TimeSpan.FromMilliseconds(900)) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever });
@@ -233,7 +280,7 @@ public partial class MainWindow
         {
             var back = new Button { Content = Translator.Tr("Voltar"), Padding = new Thickness(12, 7, 12, 7), Margin = new Thickness(0, 0, 8, 0) };
             back.SetResourceReference(StyleProperty, "GhostButton");
-            back.Click += (_, _) => { _tutorialIndex--; ShowTutorialStep(); };
+            back.Click += (_, _) => { if (_tutorialNavigating) return; _tutorialIndex--; GoToTutorialStep(); };
             DockPanel.SetDock(back, Dock.Right); buttons.Children.Add(back);
         }
         if (!last)
@@ -254,10 +301,10 @@ public partial class MainWindow
 
     private void NextTutorialStep()
     {
-        if (_tutorialSteps is null) return;
+        if (_tutorialSteps is null || _tutorialNavigating) return;
         if (_tutorialIndex >= _tutorialSteps.Count - 1) { EndTutorial(completed: true); return; }
         _tutorialIndex++;
-        ShowTutorialStep();
+        GoToTutorialStep();
     }
 
     /// <summary>Teclado durante o tutorial: Enter/→ avança, ← volta, Esc pula.</summary>
@@ -267,7 +314,7 @@ public partial class MainWindow
         switch (key)
         {
             case Key.Enter: case Key.Right: NextTutorialStep(); return true;
-            case Key.Left when _tutorialIndex > 0: _tutorialIndex--; ShowTutorialStep(); return true;
+            case Key.Left when _tutorialIndex > 0 && !_tutorialNavigating: _tutorialIndex--; GoToTutorialStep(); return true;
             case Key.Escape: EndTutorial(completed: false); return true;
             default: return true; // bloqueia atalhos da janela enquanto o tutorial está aberto
         }

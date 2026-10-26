@@ -205,6 +205,7 @@ public partial class MainWindow
     private Panel? _liveResultHost;
     private string _captureLabel = "";
     private Action<PerfResult>? _captureFinished;
+    private Task<PerfSample>? _captureTick;
 
     private async Task StartCaptureAsync(string? process, int seconds, string label, Action<PerfResult>? finished = null)
     {
@@ -220,8 +221,15 @@ public partial class MainWindow
             _captureTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _captureTimer.Tick += async (_, _) =>
             {
-                if (_capture is null) return;
-                var sample = _capture.Tick();
+                // A leitura roda fora da interface (sensores e nvidia-smi podem demorar); uma por vez
+                if (_capture is not { } session || _captureTick is { IsCompleted: false }) return;
+                var reading = Task.Run(session.Measure);
+                _captureTick = reading;
+                PerfSample sample;
+                try { sample = await reading; }
+                catch (Exception ex) when (ex is InvalidOperationException or IOException or System.ComponentModel.Win32Exception) { _log.Write("WARN", "Laboratório: leitura dos sensores falhou: " + ex.Message); return; }
+                if (!ReferenceEquals(_capture, session)) return;
+                session.Add(sample);
                 if (_currentPage == "perflab") _liveFeed?.Invoke(sample);
                 var elapsed = (DateTime.Now - started).TotalSeconds;
                 if (_liveStatus != null && _currentPage == "perflab") _liveStatus.Text = $"Gravando {elapsed:0} de {seconds} s" + (_capture.CapturingFrames ? (sample.Fps is null ? " · aguardando quadros do processo" : "") : " · só sensores (sem PresentMon ou sem processo)");
@@ -253,8 +261,13 @@ public partial class MainWindow
         HardwareMonitorService.Shared.Sampled -= KeepMonitorAlive;
         try
         {
+            // Espera a leitura em andamento: ela ainda pode estar mexendo na sessão
+            if (_captureTick is { } pending) { try { await pending; } catch (Exception ex) when (ex is InvalidOperationException or IOException or System.ComponentModel.Win32Exception) { } }
+            _captureTick = null;
             var conditions = await CaptureConditionsAsync();
-            var result = session.Finish(string.IsNullOrWhiteSpace(label) ? $"{session.Process ?? "Sensores"} · {DateTime.Now:dd/MM HH:mm}" : label.Trim(), conditions);
+            var name = string.IsNullOrWhiteSpace(label) ? $"{session.Process ?? "Sensores"} · {DateTime.Now:dd/MM HH:mm}" : label.Trim();
+            // Fechar o PresentMon espera até 5 s: fora da interface
+            var result = await Task.Run(() => session.Finish(name, conditions));
             if (_lab is { } lab && session.Process == lab.Process) result = result with { LabExperiment = lab.Id, LabPhase = lab.Applied ? "after" : "before" };
             PerfLabStore.Default.Save(result);
             _lastPerfResult = result;

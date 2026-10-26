@@ -40,7 +40,26 @@ public partial class MainWindow
         }
     }
 
+    // InitSidebar roda de novo a cada ativação de licença: os eventos são ligados uma vez só
+    private bool _sidebarHooked;
+
     private void InitSidebar()
+    {
+        if (!_sidebarHooked) HookSidebarEvents();
+        _sidebarHooked = true;
+        // Categorias recolhidas na última vez
+        var collapsed = AppearanceService.Current.CollapsedNavGroups ?? new List<string>();
+        foreach (var (header, group) in NavCategories())
+        {
+            var isCollapsed = collapsed.Contains(header.Tag as string ?? "");
+            header.IsChecked = !isCollapsed;
+            group.Visibility = isCollapsed ? Visibility.Collapsed : Visibility.Visible;
+        }
+        ApplySidebarMode();
+        ApplyTopBarMode(ActualWidth > 0 ? ActualWidth : Width);
+    }
+
+    private void HookSidebarEvents()
     {
         SizeChanged += (_, e) =>
         {
@@ -59,16 +78,6 @@ public partial class MainWindow
             SaveAppearance(next);
             e.Handled = true;
         };
-        // Categorias recolhidas na última vez
-        var collapsed = AppearanceService.Current.CollapsedNavGroups ?? new List<string>();
-        foreach (var (header, group) in NavCategories())
-        {
-            var isCollapsed = collapsed.Contains(header.Tag as string ?? "");
-            header.IsChecked = !isCollapsed;
-            group.Visibility = isCollapsed ? Visibility.Collapsed : Visibility.Visible;
-        }
-        ApplySidebarMode();
-        ApplyTopBarMode(ActualWidth > 0 ? ActualWidth : Width);
     }
 
     private void NavCategory_Click(object sender, RoutedEventArgs e)

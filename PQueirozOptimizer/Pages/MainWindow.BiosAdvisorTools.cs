@@ -197,6 +197,8 @@ public partial class MainWindow
         // Fora da página (e sem gravação em andamento) o monitor para sozinho
         if (_advisorClosed || (_currentPage != "biosadvisor" && _advisorRecording is null)) { _advisorMonitorTimer?.Stop(); return; }
         if (_advisorReading || _advisorSensors is null) return;
+        // Janela na bandeja ou minimizada: sem gravação, ninguém vê a leitura (o timer continua e retoma ao voltar)
+        if (_advisorRecording is null && (!IsVisible || WindowState == WindowState.Minimized)) return;
         _advisorReading = true;
         var reader = _advisorSensors;
         // A leitura pertence à gravação em andamento quando começou; se ela acabar no meio, a amostra é descartada

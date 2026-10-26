@@ -30,6 +30,7 @@ public partial class MainWindow
         }
         var service = new ServiceGroupsService(_log);
         var host = new StackPanel();
+        root.Children.Add(SectionHeader("Grupos de serviços", "Cada grupo desliga um conjunto de serviços e guarda o estado de antes.", "services"));
         foreach (var category in ServiceGroupsService.Groups.Select(g => g.Category).Distinct())
         {
             var section = new StackPanel();

@@ -11,19 +11,36 @@ namespace PQueirozOptimizer;
 /// <summary>HUD ao vivo: medidores da barra lateral, painel em tempo real da visão geral e transição entre páginas.</summary>
 public partial class MainWindow
 {
+    private Action<HardwareSample>? _hudSample;
+    private bool _hudSubscribed;
+
     private void StartHud()
     {
-        Action<HardwareSample> onSample = sample => Dispatcher.BeginInvoke(() => UpdateHud(sample));
-        HardwareMonitorService.Shared.Sampled += onSample;
-        Closed += (_, _) => HardwareMonitorService.Shared.Sampled -= onSample;
+        _hudSample = sample => Dispatcher.BeginInvoke(() => UpdateHud(sample));
+        // A janela só ouve o monitor enquanto aparece: na bandeja ou minimizada ele para (leituras, ping a cada 5 s)
+        // se nada mais precisar dele (captura do Laboratório, overlay, modo compacto e diagnóstico assinam por conta própria)
+        IsVisibleChanged += (_, _) => UpdateHudSubscription();
+        StateChanged += (_, _) => UpdateHudSubscription();
+        Closed += (_, _) => { if (_hudSubscribed && _hudSample != null) HardwareMonitorService.Shared.Sampled -= _hudSample; _hudSubscribed = false; };
+        UpdateHudSubscription();
         UpdateGameModeBadge();
+    }
+
+    private void UpdateHudSubscription()
+    {
+        if (_hudSample is null) return;
+        var wanted = IsVisible && WindowState != WindowState.Minimized;
+        if (wanted == _hudSubscribed) return;
+        if (wanted) HardwareMonitorService.Shared.Sampled += _hudSample;
+        else HardwareMonitorService.Shared.Sampled -= _hudSample;
+        _hudSubscribed = wanted;
     }
 
     private void UpdateHud(HardwareSample s)
     {
-        // Janela minimizada ou na bandeja: os medidores da barra lateral não são vistos, então não são redesenhados.
-        // As curvas do Início continuam recebendo as leituras, para não mostrarem um minuto velho ao voltar.
-        if (IsVisible && WindowState != WindowState.Minimized) UpdateSidebarMeters(s);
+        // Leitura que chegou enquanto a janela sumia (a assinatura cai logo depois): nada a redesenhar
+        if (!IsVisible || WindowState == WindowState.Minimized) return;
+        UpdateSidebarMeters(s);
 
         // Os cards do Início (e do Meu PC) só são atualizados enquanto estão na tela
         if (_homeRoot is null || _homeLive.Count == 0 || !IsInContent(_homeRoot)) return;

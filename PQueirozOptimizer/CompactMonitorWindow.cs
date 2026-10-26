@@ -103,16 +103,13 @@ public sealed class CompactMonitorWindow : Window
         _ramBar.Value = s.Ram; _ram.Text = $"{s.Ram:0}%";
         _fps.Text = _liveFps() is { } f ? $"{f:0}" : "--";
         _fps.ToolTip = Translator.Tr("FPS só aparece durante uma captura do Laboratório de desempenho com o PresentMon.");
-        _profile.Text = Translator.Tr("Perfil: ") + _profileName();
         var session = GamingService.ActiveSession();
         _game.Text = Translator.Tr(session is null ? "Modo Jogo desligado" : session.RecoveryPending ? "Modo Jogo: restauração pendente" : "Modo Jogo ativo");
-        // Temperatura da GPU a cada 3 s (o nvidia-smi custa mais que os contadores)
-        if (_tick++ % 3 != 0) return;
-        _ = Task.Run(() =>
-        {
-            try { return NvidiaSmi.Available ? NvidiaSmi.Double(NvidiaSmi.Query("temperature.gpu").FirstOrDefault()?[0]) : null; }
-            catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or IndexOutOfRangeException) { return null; }
-        }).ContinueWith(t => Dispatcher.BeginInvoke(() => { _temp.Text = t.Result is { } c ? $"{c:0} °C" : "--"; _temp.ToolTip = t.Result is null ? Translator.Tr("Sem sensor de temperatura disponível (só GPUs NVIDIA pelo driver).") : null; }), TaskScheduler.Default);
+        // A temperatura já vem na leitura do monitor (NVML): abrir o nvidia-smi a cada 3 s era trabalho repetido
+        _temp.Text = s.GpuTempC is { } c ? $"{c:0} °C" : "--";
+        _temp.ToolTip = s.GpuTempC is null ? Translator.Tr("Sem sensor de temperatura disponível (só GPUs NVIDIA pelo driver).") : null;
+        // O objetivo vem de um arquivo: relido a cada 10 s, não a cada leitura
+        if (_tick++ % 10 == 0) _profile.Text = Translator.Tr("Objetivo: ") + _profileName();
     }
 
     private static bool OnScreen(double left, double top) =>

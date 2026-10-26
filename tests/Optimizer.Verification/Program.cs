@@ -816,16 +816,26 @@ internal static class Program
                     var visible = (System.Collections.IList)Activator.CreateInstance(steps.GetType())!;
                     foreach (var s in steps)
                         if (page is null || s!.GetType().GetProperty("Target")!.GetValue(s) is Func<FrameworkElement?> t && t() != null) visible.Add(s);
-                    typeof(MainWindow).GetMethod("StartTutorial", flags)!.Invoke(window, new object[] { id, visible });
+                    typeof(MainWindow).GetMethod("StartTutorial", flags)!.Invoke(window, new object[] { id, visible, 0 });
+                    Wait(700);
+                    var missingTargets = new List<string>();
                     for (var i = 0; i < visible.Count; i++)
                     {
                         typeof(MainWindow).GetField("_tutorialIndex", flags)!.SetValue(window, i);
+                        // O tour de boas-vindas passeia pelas páginas: abre a do passo como o app faz
+                        var stepPage = visible[i]!.GetType().GetProperty("Page")!.GetValue(visible[i]) as string;
+                        if (stepPage != null && (string?)typeof(MainWindow).GetField("_currentPage", flags)!.GetValue(window) != stepPage)
+                        { typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { stepPage }); Wait(900); }
+                        var target = ((Func<FrameworkElement?>)visible[i]!.GetType().GetProperty("Target")!.GetValue(visible[i])!)();
+                        var title = (string)visible[i]!.GetType().GetProperty("Title")!.GetValue(visible[i])!;
+                        if (target is null && i > 0 && i < visible.Count - 1) missingTargets.Add(title);
                         typeof(MainWindow).GetMethod("ShowTutorialStep", flags)!.Invoke(window, new object[] { false });
                         Wait(120); Collect(tutorialLayer);
-                        if (page is null && i == 2) Snap("en-tutorial-step");
+                        if (page is null && i == 3) Snap("en-tutorial-step");
                     }
                     typeof(MainWindow).GetField("_tutorialSteps", flags)!.SetValue(window, null);
                     tutorialLayer.Visibility = Visibility.Collapsed; tutorialLayer.Children.Clear();
+                    Assert(missingTargets.Count == 0, $"Tutorial {id}: todos os passos encontram o elemento destacado" + (missingTargets.Count > 0 ? " (faltando: " + string.Join(", ", missingTargets) + ")" : ""));
                     Console.WriteLine($"PASS Tutorial {id}: {visible.Count} passos desenhados sem erro");
                 }
                 WalkTutorial("inicio", null, (System.Collections.IList)typeof(MainWindow).GetMethod("WelcomeTour", flags)!.Invoke(window, null)!);
@@ -1083,6 +1093,9 @@ internal static class Program
                 typeof(MainWindow).GetField("_gamingTab", flags)!.SetValue(window, 0);
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "settings" });
                 Render("settings-tall", 1320, 3200);
+                // Início inteiro, com a linha Este PC / Otimizações no fim
+                typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "dashboard" });
+                Render("dashboard-tall", 1320, 1500);
                 // BIOS Advisor inteiro e o guia "Ver como configurar" (perfil fixo de teste)
                 typeof(MainWindow).GetMethod("NavigateTo", flags)!.Invoke(window, new object[] { "biosadvisor" });
                 Render("biosadvisor-tall", 1320, 4600);

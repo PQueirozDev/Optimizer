@@ -62,6 +62,7 @@ public partial class MainWindow
             else StartStress();
             KeepScroll(ShowStressTest);
         };
+        start.IsEnabled = !_stressStopping;
         setup.Children.Add(start);
         root.Children.Add(Surface(setup));
 
@@ -174,16 +175,34 @@ public partial class MainWindow
         : errors.Error != null || (_stressRamRequested && (_stressMemoryFailed || _stressMemPasses == 0)) ? ("inconclusive", "Warning")
         : ("stable", "Success");
 
-    private void FinishStress(string reason)
+    private static bool _stressStopping;
+
+    private async void FinishStress(string reason)
+    {
+        if (_stressStopping) return;
+        _stressStopping = true;
+        try { await FinishStressAsync(reason); }
+        finally
+        {
+            _stressStopping = false;
+            // A página foi desenhada enquanto parava: agora mostra o resultado
+            if (_currentPage == "stress") KeepScroll(ShowStressTest);
+        }
+    }
+
+    private async Task FinishStressAsync(string reason)
     {
         _stressRun++; // descarta leituras do log ainda em andamento
         _stressWatch?.Stop();
         _stressMemErrors = Stress.MemoryErrors;
         _stressMemPasses = Stress.MemoryPasses;
         _stressMemoryFailed = Stress.MemoryFailed;
-        Stress.Stop();
         _stressEnded = DateTime.Now;
-        var errors = HardwareHealthService.ErrorsSince(_stressStarted);
+        OperationStatus.Text = L("Encerrando o stress test…", "Stopping the stress test…");
+        // Esperar as threads e ler o log de eventos leva segundos: fora da interface
+        await Task.Run(Stress.Stop);
+        var started = _stressStarted;
+        var errors = await Task.Run(() => HardwareHealthService.ErrorsSince(started));
         _stressErrors = errors;
         _stressVerdict = reason;
         var (kind, tone) = StressOutcome(_stressMemErrors, errors);

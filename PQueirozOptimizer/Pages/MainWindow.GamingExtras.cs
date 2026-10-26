@@ -273,7 +273,7 @@ public partial class MainWindow
     private Border DefenderCard()
     {
         var panel = new StackPanel();
-        panel.Children.Add(SectionHeader("Windows Defender", "Exclua as pastas dos seus jogos da verificação em tempo real (seguro e recomendado) ou desligue a proteção temporariamente."));
+        panel.Children.Add(SectionHeader("Windows Defender", "Exclua as pastas dos seus jogos da verificação em tempo real (seguro e recomendado) ou desligue a proteção temporariamente.", "defender"));
         var body = new StackPanel();
         body.Children.Add(Label("Lendo o estado do Defender...", 12.5, true));
         panel.Children.Add(body);

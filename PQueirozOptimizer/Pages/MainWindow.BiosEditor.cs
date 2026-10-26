@@ -232,7 +232,7 @@ public partial class MainWindow
     {
         var settings = _biosSettings!;
         var host = new StackPanel { Margin = new Thickness(0, 18, 0, 0) };
-        host.Children.Add(SectionHeader("Grupos de ajustes", "Escolha o que o app vai modificar. Grupos que não existem nesta BIOS aparecem desativados."));
+        host.Children.Add(SectionHeader("Grupos de ajustes", "Escolha o que o app vai modificar. Grupos que não existem nesta BIOS aparecem desativados.", "bios-groups"));
         foreach (var group in BiosService.Groups)
         {
             var matches = BiosService.GroupMatches(settings, group);

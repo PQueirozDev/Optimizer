@@ -288,6 +288,7 @@ public partial class MainWindow
         root.Children.Insert(0, AppearanceSection());
         root.Children.Add(TutorialsSection());
         root.Children.Add(WindowBehaviorSection());
+        root.Children.Add(PreferencesSection());
 
         // 3. Language Section (App-wide language switch)
         var langSection = Surface(new StackPanel());

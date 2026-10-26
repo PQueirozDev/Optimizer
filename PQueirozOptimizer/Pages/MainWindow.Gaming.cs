@@ -233,7 +233,7 @@ public partial class MainWindow
     private Border GameProfilesCard()
     {
         var panel = new StackPanel();
-        panel.Children.Add(SectionHeader("Perfis de jogos", "Ajustes que o Windows aplica sempre que o jogo abrir. Removíveis a qualquer momento."));
+        panel.Children.Add(SectionHeader("Perfis de jogos", "Ajustes que o Windows aplica sempre que o jogo abrir. Removíveis a qualquer momento.", "game-profiles"));
         var gpu = new CheckBox { IsChecked = true, Content = "Usar a placa de vídeo dedicada", Margin = new Thickness(0, 0, 0, 6) };
         var fso = new CheckBox { IsChecked = false, Content = "Desativar otimizações de tela cheia", Margin = new Thickness(0, 0, 0, 6) };
         var priority = new CheckBox { IsChecked = true, Content = "Prioridade de CPU alta", Margin = new Thickness(0, 0, 0, 12) };
@@ -291,7 +291,7 @@ public partial class MainWindow
     private Border QuickBoostsCard()
     {
         var panel = new StackPanel();
-        panel.Children.Add(SectionHeader("Ajustes rápidos", "Ações pontuais e ajustes reversíveis com um clique."));
+        panel.Children.Add(SectionHeader("Ajustes rápidos", "Ações pontuais e ajustes reversíveis com um clique.", "quick-tweaks"));
 
         var qrzActive = PowerPlanService.IsQrzActive();
         var qrzInstalled = qrzActive || PowerPlanService.IsQrzInstalled();

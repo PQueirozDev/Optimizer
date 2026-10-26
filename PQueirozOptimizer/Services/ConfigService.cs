@@ -386,6 +386,72 @@ public class ConfigService
     public void ResetTutorials()
     {
         _config.CompletedTutorials.Clear();
+        _config.WelcomeTourStep = 0;
+        Save();
+    }
+
+    public int WelcomeTourStep => Math.Max(0, _config.WelcomeTourStep);
+
+    public void SaveMonitorInterval(int seconds)
+    {
+        _config.MonitorIntervalSeconds = HardwareMonitorService.AllowedIntervals.Contains(seconds) ? seconds : 1;
+        Save();
+    }
+
+    public void SaveSuccessNotifications(bool enabled)
+    {
+        _config.SuccessNotifications = enabled;
+        Save();
+    }
+
+    /// <summary>Limite do arquivo importado: preferências reais têm poucos KB.</summary>
+    public const long ImportMaxBytes = 1024 * 1024;
+
+    /// <summary>Exporta as preferências (aparência, modos, tutoriais, monitor). Não há licença nem dados pessoais nelas.</summary>
+    public void ExportTo(string path)
+    {
+        var copy = JsonSerializer.Deserialize<AppConfig>(JsonSerializer.Serialize(_config, JsonOpts), JsonOpts)!;
+        // O catálogo de ISOs tem links de download: não viaja entre PCs
+        copy.IsoCatalog = new();
+        File.WriteAllText(path, JsonSerializer.Serialize(copy, JsonOpts));
+    }
+
+    /// <summary>
+    /// Importa preferências de outro arquivo. Só dados: nada é executado. Arquivo grande demais, JSON inválido ou
+    /// de outro formato é recusado sem mexer nas preferências atuais; ajustes desconhecidos e links são descartados.
+    /// </summary>
+    public void ImportFrom(string path)
+    {
+        var info = new FileInfo(path);
+        if (!info.Exists) throw new FileNotFoundException("Arquivo não encontrado.", path);
+        if (info.Length > ImportMaxBytes) throw new InvalidDataException("O arquivo é grande demais para ser um arquivo de preferências do Qrztweaks.");
+        AppConfig imported;
+        try
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(path));
+            if (doc.RootElement.ValueKind != JsonValueKind.Object || !doc.RootElement.TryGetProperty("profiles", out _))
+                throw new InvalidDataException("O arquivo não é um arquivo de preferências do Qrztweaks.");
+            imported = JsonSerializer.Deserialize<AppConfig>(doc.RootElement.GetRawText(), JsonOpts) ?? throw new InvalidDataException("Arquivo de preferências vazio.");
+        }
+        catch (JsonException ex) { throw new InvalidDataException("O arquivo de preferências está corrompido: " + ex.Message, ex); }
+
+        var known = AllOptimizations.Select(o => o.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var previous = _config;
+        imported.IsoCatalog = previous.IsoCatalog;
+        imported.Language = imported.Language is "pt" or "en" ? imported.Language : previous.Language;
+        imported.MonitorIntervalSeconds = HardwareMonitorService.AllowedIntervals.Contains(imported.MonitorIntervalSeconds) ? imported.MonitorIntervalSeconds : 1;
+        _config = imported;
+        EnsureDefaults();
+        foreach (var profile in _config.Profiles) profile.EnabledOptimizations.RemoveAll(id => !known.Contains(id));
+        try { Save(); }
+        catch { _config = previous; throw; }
+    }
+
+    /// <summary>Guarda o passo do tour a cada avanço: fechar o app no meio não obriga a começar de novo.</summary>
+    public void SetWelcomeTourStep(int step)
+    {
+        if (_config.WelcomeTourStep == step) return;
+        _config.WelcomeTourStep = Math.Max(0, step);
         Save();
     }
 

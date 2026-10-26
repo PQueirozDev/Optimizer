@@ -134,14 +134,6 @@ public sealed class StressTestService : IDisposable
         finally { blocks.Clear(); }
     }
 
-    private static long FreePhysicalMemory()
-    {
-        try
-        {
-            using var searcher = new ManagementObjectSearcher("SELECT FreePhysicalMemory FROM Win32_OperatingSystem");
-            foreach (ManagementObject o in searcher.Get()) using (o) return Convert.ToInt64(o["FreePhysicalMemory"], System.Globalization.CultureInfo.InvariantCulture) * 1024;
-        }
-        catch (Exception ex) when (ex is ManagementException or UnauthorizedAccessException or System.Runtime.InteropServices.COMException) { }
-        return 1L << 30;
-    }
+    // API nativa em vez de WMI: Start roda na thread da interface e uma consulta WMI lenta travava o botão
+    private static long FreePhysicalMemory() => HardwareMonitorService.AvailablePhysicalBytes() ?? 1L << 30;
 }

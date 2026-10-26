@@ -134,7 +134,7 @@ public partial class MainWindow
             if (_currentPage == "network") ShowNetwork();
         };
         DockPanel.SetDock(bench, Dock.Right); head.Children.Add(bench);
-        head.Children.Add(SectionHeader("Servidor DNS", "Traduz nomes de sites e servidores de jogos. Um DNS rápido acelera conexões e o login nos jogos."));
+        head.Children.Add(SectionHeader("Servidor DNS", "Traduz nomes de sites e servidores de jogos. Um DNS rápido acelera conexões e o login nos jogos.", "dns"));
         panel.Children.Add(head);
         var current = NetworkService.CurrentDnsLabel();
         var fastest = _dnsTimes?.Where(t => t.Value.HasValue).OrderBy(t => t.Value).Select(t => t.Key).FirstOrDefault();
@@ -223,7 +223,7 @@ public partial class MainWindow
     private Border NetworkRepairCard()
     {
         var panel = new StackPanel();
-        panel.Children.Add(SectionHeader("Reparos de rede", "Resolvem a maioria dos problemas de conexão, DNS e login em jogos."));
+        panel.Children.Add(SectionHeader("Reparos de rede", "Resolvem a maioria dos problemas de conexão, DNS e login em jogos.", "network-repair"));
         var grid = Responsive(new UniformGrid { Columns = 3, Margin = new Thickness(0, 0, -12, 0) }, 260, 3);
 
         var flush = RepairTile(Glyphs.Broom, "Limpar cache DNS", "Resolve sites e servidores que não abrem depois de mudarem de endereço.", "Limpar", first: true);

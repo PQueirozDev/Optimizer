@@ -24,7 +24,7 @@ public partial class MainWindow
             restore.Click += (_, _) => { try { service.Restore(); ShowGaming(); } catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException) { ShowToast("Win32 Priority", ex.Message, "Danger"); } };
             DockPanel.SetDock(restore, Dock.Right); head.Children.Add(restore);
         }
-        head.Children.Add(SectionHeader("Win32 Priority", $"Quanto o Windows favorece o programa em foco (o jogo). Valor atual: 0x{current:X2}. Vale na hora, sem reiniciar."));
+        head.Children.Add(SectionHeader("Win32 Priority", $"Quanto o Windows favorece o programa em foco (o jogo). Valor atual: 0x{current:X2}. Vale na hora, sem reiniciar.", "win32priority"));
         panel.Children.Add(head);
         var grid = Responsive(new UniformGrid { Columns = 3, Margin = new Thickness(0, 0, -10, 0) }, 260, 3);
         foreach (var level in Win32PriorityService.Levels)

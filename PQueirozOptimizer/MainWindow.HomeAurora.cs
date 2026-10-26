@@ -123,7 +123,8 @@ public partial class MainWindow
     private static List<HomeCheck> ReadHomeChecks()
     {
         var list = new List<HomeCheck>();
-        var temp = HardwareMonitorService.Shared.Latest?.GpuTempC;
+        // O Início pode abrir antes da primeira leitura do monitor: lê o sensor direto em vez de guardar "sem sensor" por 10 min
+        var temp = HardwareMonitorService.Shared.Latest?.GpuTempC ?? NvmlReader.TemperatureC();
         list.Add(temp switch
         {
             null => new("Temperaturas", "Sem sensor", "Muted", "health"),
@@ -262,12 +263,13 @@ public partial class MainWindow
         void Redraw()
         {
             var history = HardwareMonitorService.Shared.LongHistory;
-            var take = _homeRangeMinutes * 60;
+            var interval = HardwareMonitorService.Shared.IntervalSeconds;
+            var take = _homeRangeMinutes * 60 / interval;
             var window = history.Skip(Math.Max(0, history.Count - take)).ToList();
             // No máximo 180 pontos: médias de blocos (15 min = blocos de 5 s), para a curva não virar um serrote
             var bucket = Math.Max(1, (int)Math.Ceiling(window.Count / 180.0));
             IEnumerable<double?> Series(Func<HardwareSample, double?> pick) => window.Chunk(bucket).Select(c => c.Select(pick).Where(v => v.HasValue).Select(v => v!.Value).DefaultIfEmpty(double.NaN).Average() is var avg && !double.IsNaN(avg) ? (double?)avg : null);
-            gpuChart.SecondsPerSample = cpuChart.SecondsPerSample = bucket;
+            gpuChart.SecondsPerSample = cpuChart.SecondsPerSample = bucket * interval;
             // A capacidade acompanha a janela escolhida (o SetValues só aumenta): 15 → 1 min ocupa o gráfico inteiro
             gpuChart.Capacity = cpuChart.Capacity = Math.Max(2, (int)Math.Ceiling(take / (double)bucket));
             gpuChart.SetValues(Series(s => s.Gpu));

@@ -73,6 +73,8 @@ public partial class MainWindow
     /// <summary>Notificação discreta no canto inferior direito que some sozinha.</summary>
     private void ShowToast(string title, string message, string tone = "Success")
     {
+        // Configurações → Notificações: os avisos de sucesso podem ser desligados; erros e alertas aparecem sempre
+        if (tone == "Success" && !_configService.Config.SuccessNotifications) return;
         var glyph = tone switch { "Success" => Glyphs.Check, "Danger" => Glyphs.Error, "Warning" => Glyphs.Warning, _ => Glyphs.Info };
         var dock = new DockPanel();
         var chip = IconChip(glyph, tone, 34); chip.VerticalAlignment = VerticalAlignment.Top; DockPanel.SetDock(chip, Dock.Left); dock.Children.Add(chip);

@@ -81,6 +81,10 @@ public sealed class LineChart : FrameworkElement
 
     private Pen? _baselinePen;
     private Brush? _baselineBrush;
+    // Canetas e pincéis derivados do tema: refeitos só quando o tema troca o pincel (o gráfico redesenha a cada segundo)
+    private Pen? _gridPen; private Brush? _gridBrush;
+    private Pen? _linePen, _dotPen; private Brush? _ringBrush, _strokeBrush;
+    private static readonly Typeface ScaleFace = new("Segoe UI Variable Text, Segoe UI");
 
     protected override void OnRender(DrawingContext dc)
     {
@@ -95,18 +99,20 @@ public sealed class LineChart : FrameworkElement
         var dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
         if (ShowGrid)
         {
-            var gridPen = new Pen(grid, 1); gridPen.Freeze();
+            if (_gridPen is null || !ReferenceEquals(_gridBrush, grid)) { _gridPen = new Pen(grid, 1); _gridPen.Freeze(); _gridBrush = grid; }
+            var gridPen = _gridPen;
             for (var i = 1; i < 4; i++) dc.DrawLine(gridPen, new Point(0, Math.Round(h * i / 4) + 0.5), new Point(w, Math.Round(h * i / 4) + 0.5));
         }
-        var present = _values.Where(v => v.HasValue).Select(v => v!.Value).ToList();
-        var max = Maximum ?? (present.Count == 0 ? 1 : Math.Max(MinimumScale, present.Max() * 1.2));
+        var presentCount = 0; var highest = double.MinValue;
+        foreach (var v in _values) if (v is { } value) { presentCount++; if (value > highest) highest = value; }
+        var max = Maximum ?? (presentCount == 0 ? 1 : Math.Max(MinimumScale, highest * 1.2));
         // Sem dados e sem teto fixo, a escala ("1") não significa nada
-        if (ShowScale && (Maximum is not null || present.Count > 0))
+        if (ShowScale && (Maximum is not null || presentCount > 0))
         {
-            var scale = new FormattedText(Describe(max), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI Variable Text, Segoe UI"), 10, muted, dpi);
+            var scale = new FormattedText(Describe(max), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, ScaleFace, 10, muted, dpi);
             dc.DrawText(scale, new Point(4, 2));
         }
-        if (present.Count == 0)
+        if (presentCount == 0)
         {
             // Ainda sem leitura: linha de base tracejada onde a curva vai aparecer, em vez de um vazio. A caneta só é
             // recriada quando o tema troca o pincel (sem sensor, o gráfico redesenha a cada amostra vazia)
@@ -123,8 +129,16 @@ public sealed class LineChart : FrameworkElement
         var step = w / Math.Max(1, Capacity - 1);
         var offset = Capacity - _values.Count;
         double Y(double v) => h - Math.Clamp(v / max, 0, 1) * (h - 8) - 4;
-        var pen = new Pen(stroke, 2) { LineJoin = PenLineJoin.Round, StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round };
-        pen.Freeze();
+        if (_linePen is null || !ReferenceEquals(_strokeBrush, stroke))
+        {
+            _linePen = new Pen(stroke, 2) { LineJoin = PenLineJoin.Round, StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round };
+            _linePen.Freeze();
+            _dotPen = new Pen(stroke, 2); _dotPen.Freeze();
+            var ringBrush = stroke.Clone(); ringBrush.Opacity = 0.28; ringBrush.Freeze();
+            _ringBrush = ringBrush;
+            _strokeBrush = stroke;
+        }
+        var pen = _linePen;
 
         // Cada trecho contínuo (sem nulos) vira uma curva com a área preenchida embaixo
         var segment = new List<Point>();
@@ -168,9 +182,8 @@ public sealed class LineChart : FrameworkElement
         // Ponto final: miolo claro com um anel azul translúcido (sem desfoque, custa o mesmo que um círculo)
         if (ShowEndDot && _hover is null && last is { } end && _values[^1] is not null)
         {
-            var ring = stroke.Clone(); ring.Opacity = 0.28; ring.Freeze();
-            dc.DrawEllipse(ring, null, end, 7, 7);
-            dc.DrawEllipse(text, new Pen(stroke, 2), end, 3.6, 3.6);
+            dc.DrawEllipse(_ringBrush, null, end, 7, 7);
+            dc.DrawEllipse(text, _dotPen, end, 3.6, 3.6);
         }
 
         // Dica do ponto sob o mouse: linha guia, ponto e o valor (com há quanto tempo foi lido)

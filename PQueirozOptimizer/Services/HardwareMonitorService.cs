@@ -28,6 +28,26 @@ public sealed class HardwareMonitorService : IDisposable
     private event Action<HardwareSample>? SampledCore;
     private CancellationTokenSource? _loop;
     private int _subscribers;
+    private int _intervalSeconds = 1;
+
+    /// <summary>Intervalos aceitos (Configurações → Monitoramento). Mais longo = menos trabalho em segundo plano.</summary>
+    public static readonly int[] AllowedIntervals = { 1, 2, 5 };
+
+    /// <summary>Segundos entre leituras. Trocar com o monitor rodando reinicia o laço no intervalo novo.</summary>
+    public int IntervalSeconds
+    {
+        get { lock (_gate) return _intervalSeconds; }
+        set
+        {
+            var interval = AllowedIntervals.Contains(value) ? value : 1;
+            lock (_gate)
+            {
+                if (interval == _intervalSeconds) return;
+                _intervalSeconds = interval;
+                if (_subscribers > 0) { Stop(); Start(); }
+            }
+        }
+    }
 
     /// <summary>Recebe uma leitura por segundo (na thread do monitor). O monitor só roda enquanto houver alguém ouvindo.</summary>
     public event Action<HardwareSample> Sampled
@@ -62,20 +82,21 @@ public sealed class HardwareMonitorService : IDisposable
         var net = new NetworkThroughput();
         double? ping = null, gpuTemp = null, vramUsed = null;
         var tick = 0;
-        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+        int interval; lock (_gate) interval = _intervalSeconds;
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(interval));
         try
         {
             do
             {
                 // A latência é medida a cada 5 s, sem segurar as outras leituras
-                if (tick++ % 5 == 0) _ = Task.Run(async () => ping = await PingAsync("1.1.1.1"), token);
+                if (tick++ % Math.Max(1, 5 / interval) == 0) _ = Task.Run(async () => ping = await PingAsync("1.1.1.1"), token);
                 var (ramPercent, used, total) = ReadMemory();
                 var (down, up) = net.Read();
                 var nominal = frequency?.Read(); var percent = performance?.Read();
                 double? mhz = nominal is > 0 && percent is > 0 ? nominal * percent / 100 : null;
                 var processCount = processes?.Read() is { } p ? (int?)Math.Round(p) : null;
                 // Temperatura e memória da placa a cada 2 s (NVML; a memória cai para os contadores do Windows nas outras placas)
-                if (tick % 2 == 1)
+                if (interval > 1 || tick % 2 == 1)
                 {
                     gpuTemp = NvmlReader.TemperatureC();
                     vramUsed = NvmlReader.MemoryGb()?.UsedGb ?? (vram?.Read() is { } bytes ? bytes / (1024d * 1024 * 1024) : null);
@@ -143,6 +164,13 @@ public sealed class HardwareMonitorService : IDisposable
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern bool GlobalMemoryStatusEx(ref MemoryStatusEx buffer);
+
+    /// <summary>Memória física disponível em bytes (API nativa, sem WMI); null se o Windows não responder.</summary>
+    internal static long? AvailablePhysicalBytes()
+    {
+        var status = new MemoryStatusEx { Length = (uint)Marshal.SizeOf<MemoryStatusEx>() };
+        return GlobalMemoryStatusEx(ref status) && status.TotalPhys > 0 ? (long)status.AvailPhys : null;
+    }
 
     private static (double Percent, double UsedGb, double TotalGb) ReadMemory()
     {
