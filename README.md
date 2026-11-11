@@ -2,7 +2,7 @@
 
 Aplicativo desktop para Windows, feito em C# + WPF (.NET 8), para otimização, manutenção e gerenciamento do Windows.
 
-**Download:** [release mais recente](https://github.com/PQueirozDev/Optimizer/releases/latest) · **Site:** [qrztwk.vercel.app](https://qrztwk.vercel.app/) · **Compra e suporte:** [servidor do Discord](https://discord.gg/pHJ4Waxft)
+**Download:** [release mais recente](https://github.com/PQueirozDev/Optimizer/releases/latest) · **Site:** [qrztwk.pqueirozdev.com.br](https://qrztwk.pqueirozdev.com.br/) · **Compra e suporte:** [servidor do Discord](https://discord.gg/pHJ4Waxft)
 
 ## Novidades da 2.0
 
