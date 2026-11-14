@@ -578,6 +578,8 @@ internal static class Program
             if (args.Contains("--v2")) { V2Tests.Run(Path.Combine(root, "v2")); return 0; }
             if (args.Contains("--hardening")) { HardeningTests.Run(Path.Combine(root, "hardening")); return 0; }
             if (args.Contains("--notebook-energy")) { NotebookEnergyTests.Run(Path.Combine(root, "notebook-energy")); return 0; }
+            if (args.Contains("--disklens")) { DiskLensTests.Run(Path.Combine(root, "disklens"), args.Contains("--render")); return 0; }
+            if (args.Contains("--disklens-recycle")) { DiskLensTests.RecycleProbe(Path.Combine(root, "disklens-recycle")); return 0; }
             // Fotos e vídeo do site (não rodam os testes)
             if (args.Contains("--shots")) return Media.Shots(root);
             if (args.Contains("--tour")) return Media.Tour(root);
@@ -589,6 +591,7 @@ internal static class Program
             V2Tests.Run(Path.Combine(root, "v2"));
             HardeningTests.Run(Path.Combine(root, "hardening"));
             NotebookEnergyTests.Run(Path.Combine(root, "notebook-energy"));
+            DiskLensTests.Run(Path.Combine(root, "disklens"));
             var log = new ActivityLog(Path.Combine(root, "verification.log"));
             BiosAdvisorTests.Run();
             if (args.Contains("--bios-advisor-live")) return BiosAdvisorTests.Live(log);

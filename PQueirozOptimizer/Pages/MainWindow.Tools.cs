@@ -21,6 +21,16 @@ public partial class MainWindow
         var root = new StackPanel();
         var featured = Responsive(new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, -14, 0) }, 360, 2);
 
+        var diskLens = new DockPanel();
+        var diskOpen = IconButton(Glyphs.Drive, "Abrir DiskLens", primary: true);
+        diskOpen.Margin = new Thickness(0, 16, 0, 0);
+        diskOpen.Click += (_, _) => OpenDiskLens();
+        DockPanel.SetDock(diskOpen, Dock.Bottom); diskLens.Children.Add(diskOpen);
+        diskLens.Children.Add(FeatureHeader(Glyphs.Drive, "Accent", "DiskLens · Analisador de armazenamento",
+            "Descubra pastas gigantes, explore o mapa visual de arquivos e encontre duplicados pelo conteúdo. Limpeza com revisão e envio à Lixeira.",
+            "Análise de espaço", "Accent"));
+        var diskCard = Surface(diskLens); diskCard.Margin = new Thickness(0, 0, 14, 14); featured.Children.Add(diskCard);
+
         // 1. Barra de tarefas All Black
         var isAbActive = IsAllBlackTaskbarActive();
         var allBlack = new DockPanel();
@@ -159,6 +169,15 @@ public partial class MainWindow
 
         ContentHost.Children.Clear();
         ContentHost.Children.Add(root);
+    }
+
+    private DiskLensWindow? _diskLensWindow;
+    private void OpenDiskLens()
+    {
+        if (_diskLensWindow is not null) { _diskLensWindow.Activate(); return; }
+        _diskLensWindow = new DiskLensWindow(_log) { Owner = this };
+        _diskLensWindow.Closed += (_, _) => _diskLensWindow = null;
+        _diskLensWindow.Show();
     }
 
     private const string AllBlackCommand = @"$p = [byte[]](0xB0,0xB2,0xB4,0xFF,0xCC,0xCE,0xD0,0xFF,0x00,0x00,0x00,0xFF,0x90,0x92,0x94,0xFF,0x00,0x00,0x00,0xFF,0x00,0x00,0x00,0xFF,0x00,0x00,0x00,0xFF,0x00,0x00,0x00,0xFF); Set-ItemProperty -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Accent' -Name 'AccentPalette' -Value $p; Set-ItemProperty -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Accent' -Name 'AccentColorMenu' -Type DWord -Value 0xFF000000; Set-ItemProperty -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Accent' -Name 'StartColorMenu' -Type DWord -Value 0xFF000000; Set-ItemProperty -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize' -Name 'ColorPrevalence' -Type DWord -Value 1; Set-ItemProperty -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize' -Name 'EnableTransparency' -Type DWord -Value 0";

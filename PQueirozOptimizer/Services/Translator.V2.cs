@@ -7,6 +7,19 @@ public static partial class Translator
 {
     private static readonly Dictionary<string, string> V2Exact = new(StringComparer.Ordinal)
     {
+        ["DiskLens · Analisador de armazenamento"] = "DiskLens · Storage analyzer",
+        ["Abrir DiskLens"] = "Open DiskLens",
+        ["Análise de espaço"] = "Storage analysis",
+        ["Descubra pastas gigantes, explore o mapa visual de arquivos e encontre duplicados pelo conteúdo. Limpeza com revisão e envio à Lixeira."] = "Find huge folders, explore a visual file map and detect duplicates by content. Review files before sending them to the Recycle Bin.",
+        ["Entenda seu armazenamento. Revise antes de limpar."] = "Understand your storage. Review before cleaning.",
+        ["Escolher pasta"] = "Choose folder", ["Buscar duplicados"] = "Find duplicates",
+        ["Mapa de espaço"] = "Storage map", ["Pastas gigantes"] = "Huge folders", ["Arquivos grandes"] = "Large files", ["Duplicados"] = "Duplicates",
+        ["Revisar e enviar à Lixeira"] = "Review and send to Recycle Bin",
+        ["Nenhum arquivo é removido durante a análise."] = "No files are removed during analysis.",
+        ["Tamanho lógico"] = "Logical size", ["Cópia preservada"] = "Preserved copy",
+        ["Pasta (duplo clique para explorar)"] = "Folder (double-click to explore)",
+        ["Revisar limpeza · DiskLens"] = "Review cleanup · DiskLens",
+        ["Confirmar envio à Lixeira"] = "Confirm sending to Recycle Bin",
         ["Modo de energia para notebooks"] = "Laptop power mode",
         ["Abrir painel completo"] = "Open full panel",
         ["Seletor rápido de planos"] = "Quick power plan picker",

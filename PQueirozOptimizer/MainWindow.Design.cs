@@ -167,6 +167,7 @@ public partial class MainWindow
         new("Drivers", "Otimização", Glyphs.Devices, "driver nvidia amd intel chipset", () => NavigateTo("drivers")),
         new("Instalação limpa de driver (DDU)", "Drivers", Glyphs.Refresh, "ddu display driver uninstaller limpa reinstalar", () => NavigateTo("drivers")),
         new("Utilitários", "Ferramentas", Glyphs.Settings, "ferramentas utilitarios atalhos all black barra", () => NavigateTo("tools")),
+        new("DiskLens · Analisador de armazenamento", "Ferramentas", Glyphs.Drive, "disklens disco espaco armazenamento arquivos pastas gigantes duplicados limpeza mapa", OpenDiskLens),
         new("Modo de energia para notebooks", "Ferramentas", Glyphs.Battery, "energia bateria notebook automatico economia desempenho brilho wallpaper transparente", OpenNotebookEnergy),
         new("Personalizar Windows", "Otimização", Glyphs.Personalize, "barra de tarefas esquerda relogio segundos extensoes ocultos menu contexto classico num lock area de trabalho icones mouse aceleracao teclas aderencia finalizar tarefa", () => NavigateTo("customize")),
         new("Histórico", "Ferramentas", Glyphs.History, "historico atividade reverter desfazer backup log", () => NavigateTo("history")),

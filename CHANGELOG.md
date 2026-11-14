@@ -2,6 +2,12 @@
 
 As notas completas de cada versão aparecem no app (Novidades) e nas releases do GitHub.
 
+## 2.7.0 (14/11/2026): DiskLens
+
+- DiskLens integrado a Ferramentas → Utilitários e à busca Ctrl+K: análise de armazenamento, mapa navegável, pastas gigantes e arquivos grandes.
+- Busca de duplicados em etapas (tamanho, amostra e SHA-256 integral), com uma cópia preservada por grupo e sem seleção automática.
+- Revisão dos caminhos antes da limpeza, revalidação de conteúdo/metadata, proteção de locais do sistema e envio à Lixeira pelo Windows.
+
 ## 2.6.1 (14/11/2026): energia para notebooks
 
 - Ferramentas → Utilitários agora inclui o painel completo de energia para notebooks, integrado ao aplicativo.

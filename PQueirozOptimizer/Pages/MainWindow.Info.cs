@@ -26,6 +26,13 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v2.7.0", "14/11/2026", new[]
+        {
+            "DiskLens integrado a Ferramentas → Utilitários e à busca Ctrl+K: descubra o que ocupa espaço no computador.",
+            "Mapa visual navegável, pastas gigantes e arquivos grandes, com análise em segundo plano, progresso e cancelamento.",
+            "Duplicados identificados pelo conteúdo com SHA-256 integral. Nenhum arquivo é marcado automaticamente e uma cópia por grupo fica preservada.",
+            "Limpeza com revisão dos caminhos e envio à Lixeira, proteção de locais do sistema e revalidação dos arquivos antes de agir. O espaço só é liberado ao esvaziar a Lixeira.",
+        }),
         ("v2.6.1", "14/11/2026", new[]
         {
             "Ferramentas → Utilitários inclui o painel completo de energia para notebooks, integrado ao aplicativo.",
