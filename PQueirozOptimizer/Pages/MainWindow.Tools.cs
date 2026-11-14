@@ -78,18 +78,18 @@ public partial class MainWindow
         var qcCard = Surface(quickClean); qcCard.Margin = new Thickness(0, 0, 14, 14);
         featured.Children.Add(qcCard);
 
-        // 3. Atalho de modo de energia (pensado para notebooks: bateria x desempenho)
+        // 3. Painel completo de notebooks, com modo automático e execução independente na bandeja.
         var powerSource = PowerModeService.GetSource();
-        var powerShortcut = PowerModeService.IsShortcutCreated();
+        var powerShortcut = NotebookEnergyService.IsShortcutCreated();
         var power = new DockPanel();
         var pmButtons = new WrapPanel { Margin = new Thickness(0, 16, 0, 0) };
-        var pmShortcut = IconButton(powerShortcut ? Glyphs.Delete : Glyphs.Check, powerShortcut ? "Remover atalho" : "Criar atalho na Área de Trabalho", primary: !powerShortcut);
+        var pmShortcut = IconButton(powerShortcut ? Glyphs.Delete : Glyphs.Check, powerShortcut ? "Remover atalho" : "Criar atalho na Área de Trabalho");
         pmShortcut.Click += (_, _) =>
         {
             try
             {
-                if (powerShortcut) { PowerModeService.RemoveShortcut(_log); OperationStatus.Text = "Atalho de modo de energia removido."; }
-                else { PowerModeService.CreateShortcut(_log); OperationStatus.Text = "Atalho 'Modo de Energia' criado na Área de Trabalho. Ele abre o seletor sem pedir permissão de administrador."; }
+                if (powerShortcut) { NotebookEnergyService.RemoveShortcut(_log); OperationStatus.Text = "Atalho de modo de energia removido."; }
+                else { NotebookEnergyService.CreateShortcut(_log); OperationStatus.Text = "Atalho de energia para notebooks criado. Ele abre o painel completo sem pedir permissão de administrador."; }
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or System.Runtime.InteropServices.COMException)
             {
@@ -98,9 +98,11 @@ public partial class MainWindow
             }
             ShowTools();
         };
-        var pmOpen = IconButton(Glyphs.Battery, "Abrir seletor", primary: powerShortcut);
-        pmOpen.Click += (_, _) => new PowerModeWindow(_log, closeAfterChoice: false) { Owner = this }.ShowDialog();
-        pmButtons.Children.Add(pmShortcut); pmButtons.Children.Add(pmOpen);
+        var pmOpen = IconButton(Glyphs.Battery, "Abrir painel completo", primary: true);
+        pmOpen.Click += (_, _) => OpenNotebookEnergy();
+        var pmPlans = IconButton(Glyphs.Power, "Seletor rápido de planos");
+        pmPlans.Click += (_, _) => new PowerModeWindow(_log, closeAfterChoice: false) { Owner = this }.ShowDialog();
+        pmButtons.Children.Add(pmOpen); pmButtons.Children.Add(pmShortcut); pmButtons.Children.Add(pmPlans);
         // Modo de energia é dos planos completos: no Base e no Intermediário o cartão vira o pedido de upgrade
         if (!PageAllowed(PlanAccess.PowerMode))
         {
@@ -111,14 +113,14 @@ public partial class MainWindow
         }
         DockPanel.SetDock(pmButtons, Dock.Bottom); power.Children.Add(pmButtons);
         var (pmStatus, pmTone) = powerShortcut ? ("Atalho criado", "Success") : powerSource.HasBattery ? ("Recomendado para este PC", "Accent") : ("Recomendado para notebooks", "Info");
-        power.Children.Add(FeatureHeader(Glyphs.Battery, "Success", "Atalho de modo de energia",
-            "Cria um atalho na Área de Trabalho que abre um seletor rápido: economia de energia, equilibrado, melhor desempenho ou outro plano de energia. Abre sem pedir permissão de administrador.",
+        power.Children.Add(FeatureHeader(Glyphs.Battery, "Success", "Modo de energia para notebooks",
+            "Modo automático na tomada e na bateria, desempenho e economia fixos, limite de brilho, Wallpaper Engine, barra transparente, notificações e início com o Windows. Continua na bandeja ao fechar o painel.",
             pmStatus, pmTone));
         var pmCard = Surface(power); pmCard.Margin = new Thickness(0, 0, 14, 14);
-        featured.Children.Add(pmCard);
+        featured.Children.Insert(0, pmCard);
         root.Children.Add(featured);
 
-        // 3. Utilitários nativos do Windows
+        // 4. Utilitários nativos do Windows
         root.Children.Add(SectionHeader("Utilitários do Windows", "Atalhos para as ferramentas administrativas mais usadas."));
         var tools = new[]
         {
@@ -160,6 +162,21 @@ public partial class MainWindow
     }
 
     private const string AllBlackCommand = @"$p = [byte[]](0xB0,0xB2,0xB4,0xFF,0xCC,0xCE,0xD0,0xFF,0x00,0x00,0x00,0xFF,0x90,0x92,0x94,0xFF,0x00,0x00,0x00,0xFF,0x00,0x00,0x00,0xFF,0x00,0x00,0x00,0xFF,0x00,0x00,0x00,0xFF); Set-ItemProperty -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Accent' -Name 'AccentPalette' -Value $p; Set-ItemProperty -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Accent' -Name 'AccentColorMenu' -Type DWord -Value 0xFF000000; Set-ItemProperty -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Accent' -Name 'StartColorMenu' -Type DWord -Value 0xFF000000; Set-ItemProperty -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize' -Name 'ColorPrevalence' -Type DWord -Value 1; Set-ItemProperty -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize' -Name 'EnableTransparency' -Type DWord -Value 0";
+
+    private void OpenNotebookEnergy()
+    {
+        if (!PageAllowed(PlanAccess.PowerMode)) { RequestUpgrade(LicensePlans.Advanced); return; }
+        try
+        {
+            NotebookEnergyService.Open();
+            OperationStatus.Text = "Painel completo de energia aberto. O controle continua na bandeja.";
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or System.ComponentModel.Win32Exception or System.Runtime.InteropServices.COMException or Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
+        {
+            _log.Write("ERROR", "Modo de energia para notebooks: " + ex.Message);
+            ShowToast("Modo de energia", ex.Message, "Danger");
+        }
+    }
 
     /// <summary>Cabeçalho dos cartões de destaque: ícone, título, status e descrição.</summary>
     private StackPanel FeatureHeader(string glyph, string tone, string title, string description, string status, string statusTone)

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>Qrztweaks.NotebookEnergy</AssemblyName>
+    <RootNamespace>PQueirozOptimizer.NotebookEnergy</RootNamespace>
+    <Authors>Pedro Queiroz</Authors>
+    <Company>Pedro Queiroz</Company>
+    <Product>Qrztweaks</Product>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Management" Version="8.0.0" />
+  </ItemGroup>
+</Project>

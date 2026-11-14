@@ -101,6 +101,7 @@ Type: files; Name: "{userdesktop}\Limpeza R*pida.lnk"
 Type: files; Name: "{userprograms}\Limpeza R*pida.lnk"
 ; Atalho do seletor de modo de energia (Ferramentas)
 Type: files; Name: "{userdesktop}\Modo de Energia.lnk"
+Type: files; Name: "{userdesktop}\Energia para notebooks - Qrztweaks.lnk"
 ; Instaladores de atualizacao baixados pelo aplicativo
 Type: filesandordirs; Name: "{commonappdata}\PQueirozOptimizer\Updates"
 
@@ -120,6 +121,7 @@ var
   DataDir: String;
 begin
   if CurUninstallStep <> usPostUninstall then Exit;
+  RegDeleteValue(HKEY_CURRENT_USER, 'Software\Microsoft\Windows\CurrentVersion\Run', 'Qrztweaks.NotebookEnergy');
   DataDir := ExpandConstant('{commonappdata}\OtimizadorPC');
   if UninstallSilent or not DirExists(DataDir) then Exit;
   if MsgBox(CustomMessage('RemoveData'), mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES then

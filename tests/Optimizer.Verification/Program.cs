@@ -577,6 +577,7 @@ internal static class Program
             if (args.Contains("--safety")) { SafetyTests.Run(Path.Combine(root, "safety")); return 0; }
             if (args.Contains("--v2")) { V2Tests.Run(Path.Combine(root, "v2")); return 0; }
             if (args.Contains("--hardening")) { HardeningTests.Run(Path.Combine(root, "hardening")); return 0; }
+            if (args.Contains("--notebook-energy")) { NotebookEnergyTests.Run(Path.Combine(root, "notebook-energy")); return 0; }
             // Fotos e vídeo do site (não rodam os testes)
             if (args.Contains("--shots")) return Media.Shots(root);
             if (args.Contains("--tour")) return Media.Tour(root);
@@ -587,6 +588,7 @@ internal static class Program
             SafetyTests.Run(Path.Combine(root, "safety"));
             V2Tests.Run(Path.Combine(root, "v2"));
             HardeningTests.Run(Path.Combine(root, "hardening"));
+            NotebookEnergyTests.Run(Path.Combine(root, "notebook-energy"));
             var log = new ActivityLog(Path.Combine(root, "verification.log"));
             BiosAdvisorTests.Run();
             if (args.Contains("--bios-advisor-live")) return BiosAdvisorTests.Live(log);

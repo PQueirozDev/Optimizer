@@ -26,6 +26,13 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v2.6.1", "14/11/2026", new[]
+        {
+            "Ferramentas → Utilitários inclui o painel completo de energia para notebooks, integrado ao aplicativo.",
+            "Modos automático, desempenho e economia: troca entre tomada e bateria, limite de brilho a 70% com restauração e pausa/retomada do Wallpaper Engine.",
+            "Barra transparente com TranslucentTB, notificações, inicialização com o Windows, atalho próprio e menu ao lado do relógio.",
+            "O seletor rápido de planos continua disponível. As preferências da ferramenta anterior podem ser importadas e ficam salvas separadamente no Qrztweaks.",
+        }),
         ("v2.6.0", "14/11/2026", new[]
         {
             "Visual renovado: superfícies grafite, azul suave, menos brilho e cantos mais discretos em todas as páginas.",

@@ -105,7 +105,8 @@ public partial class App : Application
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
         RegisterErrorHandlers();
         var quickClean = e.Args.Contains("--quick-clean", StringComparer.OrdinalIgnoreCase);
-        var powerMode = e.Args.Contains("--power-mode", StringComparer.OrdinalIgnoreCase);
+        var notebookEnergy = e.Args.Contains("--notebook-energy", StringComparer.OrdinalIgnoreCase);
+        var powerMode = notebookEnergy || e.Args.Contains("--power-mode", StringComparer.OrdinalIgnoreCase);
         // O app pede administrador no manifesto, mas um atalho com modo de compatibilidade (ou outro programa)
         // pode abri-lo sem: aí o Windows bloqueia otimizações, serviços e a atualização. Reabre pedindo o UAC.
         if (!powerMode && !Services.StartupProfiler.Enabled && !IsElevated() && RelaunchElevated(e.Args))
@@ -188,6 +189,23 @@ public partial class App : Application
             powerMode = false;
             MessageBox.Show(Services.Translator.Tr("O Modo de energia está disponível a partir do plano Avançado. Em Configurações → Minha licença você pede o upgrade."),
                 "Qrztweaks", MessageBoxButton.OK, MessageBoxImage.Information);
+            Shutdown();
+            return;
+        }
+        if (notebookEnergy)
+        {
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            try
+            {
+                NotebookEnergy.NotebookEnergyHost.Run(
+                    e.Args.Contains("--tray", StringComparer.OrdinalIgnoreCase),
+                    Services.NotebookEnergyService.StartupCommand());
+            }
+            catch (Exception ex)
+            {
+                Log.Write("ERROR", "Modo de energia para notebooks: " + ex.Message);
+                MessageBox.Show(ex.Message, "Modo de energia", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
             Shutdown();
             return;
         }

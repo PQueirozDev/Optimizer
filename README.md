@@ -30,6 +30,7 @@ Documentação: [manual](docs/MANUAL.md) · [Otimização inteligente](docs/guia
 - Personalizar Windows: barra de tarefas, Explorador, área de trabalho, teclado e mouse com liga/desliga aplicados na hora.
 - Inicialização no estilo do Autoruns: itens de logon, tarefas agendadas e serviços automáticos, com editor verificado, filtro dos itens do Windows e liga/desliga reversível.
 - Atalho de modo de energia na Área de Trabalho (recomendado para notebooks): troca entre eficiência, equilibrado, desempenho e os planos instalados sem pedir permissão de administrador.
+- Painel completo de energia para notebooks em **Ferramentas → Utilitários**: alternância automática entre tomada e bateria, modos fixos de desempenho/economia, limite de brilho a 70% com restauração, controle do Wallpaper Engine, barra transparente com TranslucentTB, notificações, inicialização com o Windows e ícone ao lado do relógio. O módulo acompanha o aplicativo e mantém o seletor rápido de planos disponível.
 - Modo Jogo temporário: fecha programas em segundo plano, pausa serviços e ativa o plano de desempenho enquanto você joga, restaurando tudo ao desativar. Inclui perfis por jogo (GPU dedicada, tela cheia, prioridade), limpeza da memória em espera, runtimes via winget e avisos para Ryzen X3D.
 - Plano de energia Qrz, de baixa latência, com volta ao plano anterior em um clique.
 - Rede: teste de velocidade (ping, jitter, perda), troca de DNS com medição, ajustes de latência reversíveis e reparos.

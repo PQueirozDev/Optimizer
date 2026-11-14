@@ -7,6 +7,12 @@ public static partial class Translator
 {
     private static readonly Dictionary<string, string> V2Exact = new(StringComparer.Ordinal)
     {
+        ["Modo de energia para notebooks"] = "Laptop power mode",
+        ["Abrir painel completo"] = "Open full panel",
+        ["Seletor rápido de planos"] = "Quick power plan picker",
+        ["Modo automático na tomada e na bateria, desempenho e economia fixos, limite de brilho, Wallpaper Engine, barra transparente, notificações e início com o Windows. Continua na bandeja ao fechar o painel."] = "Automatic mode on AC power and battery, fixed performance and efficiency, brightness limit, Wallpaper Engine, taskbar transparency, notifications and startup with Windows. Stays in the tray after the panel closes.",
+        ["Atalho de energia para notebooks criado. Ele abre o painel completo sem pedir permissão de administrador."] = "Laptop power shortcut created. It opens the full panel without asking for administrator permission.",
+        ["Painel completo de energia aberto. O controle continua na bandeja."] = "Full power panel opened. The controller stays in the tray.",
         // ---------- Novidades da 2.6 ----------
         ["Visual renovado: superfícies grafite, azul suave, menos brilho e cantos mais discretos em todas as páginas."] = "Refreshed look: graphite surfaces, softer blue, less glow and subtler corners throughout the app.",
         ["Início com números maiores de CPU, GPU e memória, barras compactas de uso e indicadores de saúde mais fáceis de consultar."] = "Home now has larger CPU, GPU and memory readings, compact usage bars and clearer health indicators.",
