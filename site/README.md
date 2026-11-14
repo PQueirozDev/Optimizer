@@ -1,19 +1,22 @@
 # Qrztweaks site
 
-Landing page estática para o Qrztweaks e o Windows personalizado. Não exige build: publique a pasta `site/` em Vercel, Netlify ou GitHub Pages.
+Site estático do Qrztweaks, com tema escuro e página inicial compacta. Não exige build: publique a pasta `site/` em Vercel, Netlify ou GitHub Pages.
 
 Publicado em [qrztwk.pqueirozdev.com.br](https://qrztwk.pqueirozdev.com.br/). Os links de download apontam para a release mais recente do repositório `PQueirozDev/Optimizer` (`releases/latest`), então não precisam mudar a cada versão.
 
 ## Conteúdo dinâmico
 
-`script.js` consulta a API pública de releases do GitHub ao abrir a página e preenche:
+`landing.js` consulta a release mais recente do GitHub e preenche a versão e os links diretos do instalador oficial. O resultado fica em cache na sessão por até dez minutos. Sem resposta, os botões levam à página de download oficial.
 
-- a versão (`[data-version]`) no topo e no botão de download;
-- o link direto do instalador `Qrztweaks-Setup-v*.exe` na seção Baixar;
-- as patch notes (`#release-list`), a partir dos itens de lista da descrição de cada release.
+Em `recursos.html`, `script.js` também preenche as notas das versões a partir das releases. O texto é inserido como texto, nunca como HTML.
 
-Sem conexão ou com o limite da API atingido, fica o conteúdo estático, que não afirma uma versão específica.
-O texto das releases é inserido como texto (nunca como HTML).
+## Organização
+
+- `index.html`: apresentação, três benefícios, download, quatro planos e dúvidas frequentes.
+- `recursos.html`: recursos completos, galeria, comparações e novidades.
+- `termos.html`: orientações de compra, reembolso e garantia, preservados da versão anterior.
+- `theme.css`: tema escuro compartilhado. As páginas de apoio também usam `styles.css` e `showcase.css`.
+- A compra e a emissão da chave continuam pelo Discord. Nenhum checkout Stripe está ativo nesta versão.
 
 ## Regras de conteúdo
 

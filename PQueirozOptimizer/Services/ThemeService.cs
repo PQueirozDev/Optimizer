@@ -22,17 +22,16 @@ public static class ThemeService
     private sealed record Palette(string Background, string Sidebar, string Panel, string PanelHover, string Card, string Border, string BorderSubtle,
         string Text, string TextSecondary, string Muted, string Success, string Warning, string Danger, string Shadow);
 
-    // Aurora (padrão): preto azulado no fundo com um brilho azul no alto, cards de "vidro" em azul-ardósia bem escuro,
-    // texto quase branco e o azul como destaque (ciano na segunda série dos gráficos e no fim dos degradês).
-    private static readonly Palette Dark = new("#03060C", "#F2070B14", "#0E1420", "#162033", "#FF0A0F19", "#1F2A3C", "#162031",
-        "#E6EDF7", "#B4C2D6", "#8090AA", "#34D399", "#FBBF24", "#F87171", "#000000");
+    // Superfícies opacas e neutras: o destaque fica nas ações e nos dados, sem brilho atrás do conteúdo.
+    private static readonly Palette Dark = new("#0C1017", "#FF10151E", "#151C27", "#202A39", "#FF131A24", "#2C3747", "#253040",
+        "#F3F6FC", "#C0CAD9", "#96A5BA", "#5BD5AA", "#F5C76B", "#FC8A91", "#000000");
 
     // OLED: preto puro no fundo; superfícies quase pretas para continuar havendo separação entre os blocos
     private static readonly Palette Oled = new("#000000", "#FF000000", "#0A0A0E", "#14141B", "#FF050507", "#22222C", "#131319",
         "#F2F4FA", "#BFC5D4", "#8A91A6", "#34D399", "#FBBF24", "#F87171", "#000000");
 
     // Claro: branco, texto quase preto e o mesmo azul
-    private static readonly Palette Light = new("#F3F5F9", "#F7FFFFFF", "#F4F6FA", "#EAEDF3", "#FFFFFFFF", "#D9DEE7", "#E6E9F0",
+    private static readonly Palette Light = new("#F3F5F8", "#FFFFFFFF", "#EEF2F7", "#E5EBF4", "#FFFFFFFF", "#CFD8E5", "#DFE5ED",
         "#0A0D14", "#353C4A", "#5C6576", "#059669", "#C26A05", "#DC2626", "#5B6488");
 
     // Grafite: cinza neutro, sem o tom azulado do Escuro
@@ -146,9 +145,9 @@ public static class ThemeService
     /// <summary>Destaque do Aurora: azul (Padrão), azul mais vivo (Vibrante) ou acinzentado (Suave); a segunda série é ciano.</summary>
     private static (Color Accent, Color AccentHover, Color Info, byte SoftAlpha, double Glow) AuroraAccent(AccentIntensity intensity) => intensity switch
     {
-        AccentIntensity.Soft => (C("#5B8BD9"), C("#7BA3E3"), C("#5FC9DA"), 0x24, 0.3),
-        AccentIntensity.Vibrant => (C("#2F7BFF"), C("#5C9BFF"), C("#06D6F5"), 0x38, 0.6),
-        _ => (C("#3B82F6"), C("#60A5FA"), C("#22D3EE"), 0x2E, 0.5),
+        AccentIntensity.Soft => (C("#8BA7DD"), C("#A6BCE7"), C("#83BDB7"), 0x18, 0.08),
+        AccentIntensity.Vibrant => (C("#6B94FF"), C("#94B2FF"), C("#64D9C3"), 0x28, 0.12),
+        _ => (C("#7C9DFF"), C("#A2BAFF"), C("#70CDBE"), 0x20, 0.08),
     };
 
     public static bool IsDark { get; private set; } = true;
@@ -256,10 +255,8 @@ public static class ThemeService
             ? new LinearGradientBrush(PrimaryPair(accent).Fill, info, new Point(0, 0), new Point(1, 1))
             : new LinearGradientBrush(accent, Blend(accent, info, 0.6), new Point(0, 0), new Point(1, 1)));
 
-        // Borda dos cards: um fio mais claro no alto que some para baixo (a luz "de cima" dos apps de hardware),
-        // em vez de uma caixa com contorno igual nos quatro lados
-        var edge = C(palette.BorderSubtle);
-        resources["CardBorderBrush"] = Frozen(new LinearGradientBrush(dark ? Blend(edge, Colors.White, 0.07) : edge, dark ? WithAlpha(edge, 0x90) : edge, new Point(0, 0), new Point(0, 1)));
+        // Borda neutra e uniforme para separar as superfícies.
+        Brush("CardBorderBrush", C(palette.BorderSubtle));
         resources["CardHoverBorderBrush"] = resources["BorderBrush"];
 
         // Navegação: item ativo com um véu da cor de destaque, ícone e barrinha no destaque
@@ -280,11 +277,11 @@ public static class ThemeService
         // Azul para números e textos de destaque (mais claro no escuro, mais fechado no claro)
         Brush("AccentTextBrush", dark ? Blend(accent, Colors.White, 0.2) : Blend(accent, Colors.Black, 0.1));
 
-        // Superfícies dos cards: leve gradiente (mais claro no alto), caixa interna mais escura e card elevado
+        // Superfícies uniformes, caixa interna mais escura e card elevado.
         var baseColor = C(palette.Card) with { A = 255 };
         Color Surf(Color c) => translucent ? WithAlpha(c, 0xA8) : c;
-        // Vidro do Aurora: mais claro no alto (ardósia) e fechando para baixo
-        resources["CardBgBrush"] = Frozen(new LinearGradientBrush(Surf(aurora ? Blend(baseColor, C("#94A3B8"), 0.07) : dark ? Blend(baseColor, Colors.White, 0.028) : baseColor), Surf(baseColor), new Point(0, 0), new Point(0.2, 1)));
+        // Mantém o tipo de pincel usado pelos componentes, com a mesma cor nas duas pontas.
+        resources["CardBgBrush"] = Frozen(new LinearGradientBrush(Surf(baseColor), Surf(baseColor), new Point(0, 0), new Point(0, 1)));
         Brush("CardInsetBrush", Surf(dark ? Blend(baseColor, Colors.Black, 0.32) : Blend(baseColor, C("#EEF1F6"), 0.7)));
         Brush("CardElevatedBrush", Surf(dark ? Blend(baseColor, Colors.White, 0.045) : Colors.White));
 
@@ -300,22 +297,16 @@ public static class ThemeService
         hero.GradientStops.Add(new GradientStop(Surf(Blend(baseColor, accent, aurora ? 0.14 : dark ? 0.10 : 0.05)), 0));
         hero.GradientStops.Add(new GradientStop(Surf(baseColor), 0.6));
         resources["HeroBrush"] = Frozen(hero);
-        // Brilho azul bem discreto no alto da área de conteúdo (pincel estático: não custa nada parado)
-        // Aurora: o brilho fica centralizado no alto, maior e mais forte (o "céu" azul da referência)
-        var glowBrush = aurora
-            ? new RadialGradientBrush { Center = new Point(0.5, -0.08), GradientOrigin = new Point(0.5, -0.08), RadiusX = 0.75, RadiusY = 0.62 }
-            : new RadialGradientBrush { Center = new Point(0.78, 0), GradientOrigin = new Point(0.78, 0), RadiusX = 0.7, RadiusY = 0.85 };
-        glowBrush.GradientStops.Add(new GradientStop(WithAlpha(aurora ? PrimaryPair(accent).Fill : accent, (byte)(aurora ? 0x3A : dark ? 0x16 : 0x0A)), 0));
-        glowBrush.GradientStops.Add(new GradientStop(WithAlpha(accent, 0), 1));
-        resources["GlowBrush"] = Frozen(glowBrush);
+        // O fundo permanece neutro para não competir com os gráficos e os estados das operações.
+        resources["GlowBrush"] = Frozen(new SolidColorBrush(Colors.Transparent));
 
         // Forma e espaço
         var density = settings.Density switch { Density.Compact => 0.78, Density.Comfortable => 1.22, _ => 1.0 };
-        // Raios em degraus, bem arredondados: card 20 · caixa interna 12 · controle 10 · selo 8
-        resources["CardRadius"] = new CornerRadius(20);
-        resources["InsetRadius"] = new CornerRadius(12);
-        resources["ControlRadius"] = new CornerRadius(10);
-        resources["BadgeRadius"] = new CornerRadius(8);
+        // Raios em degraus: card 14 · caixa interna 9 · controle 8 · selo 6.
+        resources["CardRadius"] = new CornerRadius(14);
+        resources["InsetRadius"] = new CornerRadius(9);
+        resources["ControlRadius"] = new CornerRadius(8);
+        resources["BadgeRadius"] = new CornerRadius(6);
         resources["CardPadding"] = new Thickness(Math.Round(20 * density));
         resources["ContentGap"] = Math.Round(16 * density);
         resources["FastDuration"] = new Duration(TimeSpan.FromMilliseconds(settings.Animations ? 140 : 0));

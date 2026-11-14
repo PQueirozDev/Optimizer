@@ -1,19 +1,19 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-motion="calm">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Qrztweaks: Modo Jogo, perfil NVIDIA, plano de energia de baixa latência, editor de BIOS e otimizações do Windows com backup e reversão. Planos Base, Intermediário, Avançado e Vitalício, e, em breve, edições personalizadas do Windows 11.">
-  <meta name="theme-color" content="#060709">
+  <meta name="theme-color" content="#0b1017">
   <meta property="og:title" content="Qrztweaks · Mais FPS com controle total">
   <meta property="og:description" content="Otimização do Windows com backup e reversão. Planos a partir de R$ 15 por mês, ou o app completo para sempre por R$ 59,99.">
-  <meta property="og:image" content="https://qrztwk.vercel.app/assets/shots/visao-geral.jpg">
-  <meta property="og:url" content="https://qrztwk.vercel.app/">
+  <meta property="og:image" content="https://qrztwk.pqueirozdev.com.br/assets/shots/visao-geral.jpg">
+  <meta property="og:url" content="https://qrztwk.pqueirozdev.com.br/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="pt_BR">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="canonical" href="https://qrztwk.vercel.app/">
-  <title>Qrztweaks · Otimizador de PC com Smart Optimize e Performance Lab</title>
+  <link rel="canonical" href="https://qrztwk.pqueirozdev.com.br/">
+  <title>Qrztweaks · Seu PC. Mais leve. Mais seu.</title>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -21,7 +21,7 @@
     "name": "Qrztweaks",
     "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "Windows 10, Windows 11 (x64)",
-    "url": "https://qrztwk.vercel.app/",
+    "url": "https://qrztwk.pqueirozdev.com.br/",
     "downloadUrl": "https://github.com/PQueirozDev/Optimizer/releases/latest",
     "description": "Otimização do Windows com análise do PC, recomendações por objetivo, backup, reversão e medição real de FPS e frametime.",
     "offers": [
@@ -35,17 +35,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="showcase.css">
+  <link rel="stylesheet" href="theme.css">
   <!-- Mesmo ícone do Qrztweaks (PQueirozOptimizer/Assets/app.ico e app.png) -->
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <script>document.documentElement.classList.add("js");</script>
 </head>
-<body>
-  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<body class="compact"><a class="skip-link" href="#conteudo">Pular para o conteúdo</a>  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
       <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></symbol>
       <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
@@ -70,380 +67,73 @@
     </defs>
   </svg>
 
-  <div class="scroll-progress" aria-hidden="true"></div>
-
-  <header class="topbar">
-    <div class="container topbar-inner">
-      <a class="brand" href="#inicio" aria-label="Qrztweaks, início">
-        <span class="brand-mark has-logo" aria-hidden="true"><img src="assets/logo.png" width="30" height="30" alt=""></span>
-        <span>Qrztweaks</span>
-      </a>
-      <nav class="nav" id="nav" aria-label="Navegação principal">
-        <a href="#optimizer">Qrztweaks</a>
-        <a href="#smart-optimize">Smart Optimize</a>
-        <a href="#performance-lab">Performance Lab</a>
-        <a href="#hardware">Hardware</a>
-        <a href="#seguranca">Segurança</a>
-        <a href="#recursos">Recursos</a>
-        <a href="#galeria">Galeria</a>
-        <a href="#comprar">Planos</a>
-        <a href="#comparativo">Comparativo</a>
-        <a href="#windows">Windows</a>
-        <a href="#faq">FAQ</a>
-        <a href="#suporte">Suporte</a>
-      </nav>
-      <div class="topbar-actions">
-        <a class="btn btn-outline btn-sm" href="#baixar"><svg class="icon"><use href="#i-download"/></svg>Baixar</a>
-        <a class="btn btn-primary btn-sm btn-shine" href="#comprar">Ver planos</a>
-        <button class="menu-toggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="nav"><svg class="icon"><use href="#i-menu"/></svg></button>
-      </div>
-    </div>
-  </header>
-
-  <main id="inicio">
-    <span id="conteudo" tabindex="-1"></span>
-    <!-- Hero -->
-    <section class="hero">
-      <canvas class="particles" aria-hidden="true"></canvas>
-      <div class="hero-grid" aria-hidden="true"></div>
-      <div class="container hero-inner hero-split">
-        <div class="hero-copy">
-          <p class="kicker reveal"><span class="live-dot" aria-hidden="true"></span>Versão <span data-version>mais recente</span> · Smart Optimize, Performance Lab e Command Center</p>
-          <h1 class="reveal" style="--d: 60ms">Extraia mais FPS<br>com <span class="accent rotator" data-words="controle total|menos input lag|backup em tudo|um clique por vez">controle total</span>.</h1>
-          <p class="lead reveal" style="--d: 120ms">Modo Jogo, perfil NVIDIA, plano de energia de baixa latência, editor de BIOS e otimizações revisadas item por item — em um painel bonito, com monitor ao vivo e reversão em um clique.</p>
-          <div class="hero-actions reveal" style="--d: 180ms">
-            <a class="btn btn-primary btn-lg btn-shine" href="#comprar">Ver planos · a partir de R$ 15</a>
-            <a class="btn btn-outline btn-lg" href="#baixar"><svg class="icon"><use href="#i-download"/></svg>Baixar o app</a>
-          </div>
-          <ul class="trust reveal" style="--d: 240ms" aria-label="Garantias">
-            <li><svg class="icon"><use href="#i-shield"/></svg>Ponto de restauração antes de otimizar</li>
-            <li><svg class="icon"><use href="#i-undo"/></svg>Backup e reversão</li>
-            <li><svg class="icon"><use href="#i-check"/></svg>7 dias para desistir</li>
-          </ul>
-        </div>
-        <div class="hero-visual reveal" style="--d: 160ms" aria-hidden="true">
-          <div class="hero-stage">
-            <img class="hero-shot" src="assets/shots/visao-geral.jpg" width="2160" height="1350" alt="" fetchpriority="high">
-            <div class="float-chip chip-a"><span class="chip-dot ok"></span>Monitor ao vivo · 33 ms</div>
-            <div class="float-chip chip-b"><svg class="icon"><use href="#i-zap"/></svg>Perfil NVIDIA aplicado</div>
-            <div class="float-chip chip-c"><svg class="icon"><use href="#i-cpu"/></svg>Plano Qrz ativo</div>
-          </div>
-        </div>
-      </div>
-      <div class="hero-glow" aria-hidden="true"></div>
-    </section>
-
-    <!-- Faixa de recursos -->
-    <div class="marquee" aria-label="Recursos do Qrztweaks">
-      <div class="marquee-track">
-        <span>Modo Jogo</span><span>Perfil NVIDIA no driver</span><span>Plano de energia Qrz</span><span>Saúde do hardware</span><span>Stress test de CPU e memória</span><span>Overlay com FPS real</span><span>Biblioteca de jogos</span><span>Editor de BIOS (SCEWIN)</span><span>Instalação limpa com DDU</span><span>Presets de Fortnite, Apex, CS2 e Rocket League</span><span>Monitor ao vivo</span><span>Teste de velocidade e DNS</span><span>Backup e reversão</span><span>Busca rápida (Ctrl+K)</span>
-        <span aria-hidden="true">Modo Jogo</span><span aria-hidden="true">Perfil NVIDIA no driver</span><span aria-hidden="true">Plano de energia Qrz</span><span aria-hidden="true">Saúde do hardware</span><span aria-hidden="true">Stress test de CPU e memória</span><span aria-hidden="true">Overlay com FPS real</span><span aria-hidden="true">Biblioteca de jogos</span><span aria-hidden="true">Editor de BIOS (SCEWIN)</span><span aria-hidden="true">Instalação limpa com DDU</span><span aria-hidden="true">Presets de Fortnite, Apex, CS2 e Rocket League</span><span aria-hidden="true">Monitor ao vivo</span><span aria-hidden="true">Teste de velocidade e DNS</span><span aria-hidden="true">Backup e reversão</span><span aria-hidden="true">Busca rápida (Ctrl+K)</span>
-      </div>
-    </div>
-
-    <!-- Números -->
-    <section class="container stats" aria-label="Destaques">
-      <div class="stat spotlight reveal"><svg class="icon"><use href="#i-layers"/></svg><strong><span data-count="43">43</span></strong><span>Ajustes revisáveis nos três níveis de otimização</span></div>
-      <div class="stat spotlight reveal" style="--d: 60ms"><svg class="icon"><use href="#i-zap"/></svg><strong><span data-count="3">3</span></strong><span>Níveis: Padrão, Avançado e Debloat</span></div>
-      <div class="stat spotlight reveal" style="--d: 120ms"><svg class="icon"><use href="#i-check"/></svg><strong><span data-count="7">7</span> dias</strong><span>Para desistir com reembolso integral</span></div>
-      <div class="stat spotlight reveal" style="--d: 180ms"><svg class="icon"><use href="#i-shield"/></svg><strong><span data-count="90">90</span> dias</strong><span>De garantia legal em todos os produtos</span></div>
-    </section>
-
-    <!-- Qrztweaks -->
-    <section id="optimizer" class="section">
-      <div class="container narrow center">
-        <p class="kicker reveal">Por dentro do Qrztweaks</p>
-        <h2 class="reveal">Otimização sem caixa-preta</h2>
-        <p class="section-lead reveal">O Qrztweaks reúne diagnóstico, manutenção e ajustes avançados em um painel direto. Você escolhe o que aplicar e acompanha cada etapa.</p>
-      </div>
-
-      <figure class="demo reveal">
-        <div class="demo-frame">
-          <video class="demo-video" autoplay muted loop playsinline preload="none" width="1920" height="1080" data-poster="assets/tour.jpg" aria-label="Vídeo sem som apresentando as telas do Qrztweaks: visão geral, Modo Jogo, configurações dos jogos, perfil NVIDIA, plano Qrz, rede, drivers, BIOS e otimizações">
-            <source data-src="assets/tour.mp4" type="video/mp4">
-          </video>
-          <noscript><img class="demo-video" src="assets/tour.jpg" width="1920" height="1080" alt="Visão geral do Qrztweaks"></noscript>
-          <button class="demo-toggle" type="button" aria-label="Pausar demonstração" hidden>
-            <svg class="i-pause" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg>
-            <svg class="i-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.6v10.8c0 .8.9 1.3 1.6.8l8.2-5.4c.6-.4.6-1.2 0-1.6L5.6 1.8C4.9 1.3 4 1.8 4 2.6z"/></svg>
-          </button>
-        </div>
-        <figcaption class="fine">Apresentação feita com telas reais do Qrztweaks; o movimento de câmera e as transições foram adicionados na edição.</figcaption>
-      </figure>
-
-      <div class="container cards-4">
-        <article class="card spotlight reveal"><span class="card-icon"><svg class="icon"><use href="#i-zap"/></svg></span><h3>Versão Avançada</h3><p>Desempenho, latência, privacidade e políticas do Editor de Política de Grupo em um único fluxo revisável.</p><a class="card-link" href="https://github.com/PQueirozDev/Optimizer/releases/latest">Ver release ↗</a></article>
-        <article class="card spotlight reveal" style="--d: 60ms"><span class="card-icon"><svg class="icon"><use href="#i-broom"/></svg></span><h3>Limpeza inteligente</h3><p>Analise antes de excluir. Arquivos recentes e itens protegidos ficam preservados.</p></article>
-        <article class="card spotlight reveal" style="--d: 120ms"><span class="card-icon"><svg class="icon"><use href="#i-undo"/></svg></span><h3>Backup e reversão</h3><p>Snapshots, histórico e tentativa de reversão dos itens que falharem.</p></article>
-        <article class="card spotlight reveal" style="--d: 180ms"><span class="card-icon"><svg class="icon"><use href="#i-chart"/></svg></span><h3>Diagnóstico real</h3><p>Hardware, latência DPC, temperatura e benchmark com comparação antes → depois.</p></article>
-      </div>
-    </section>
-
-
-    <!-- Smart Optimize -->
-    <section id="smart-optimize" class="section">
-      <div class="container narrow center">
-        <p class="kicker reveal">Novo na 2.0</p>
-        <h2 class="reveal">Smart Optimize: só o que faz sentido no seu PC</h2>
-        <p class="section-lead reveal">Escolha o objetivo e o Qrztweaks lê o hardware e o estado de cada ajuste antes de recomendar. O que já está aplicado, não se aplica ao seu PC ou conflita com outro ajuste aparece separado, com o motivo.</p>
-        <div class="pills reveal">
-          <span class="pill"><i class="pill-dot"></i>Gaming competitivo</span>
-          <span class="pill"><i class="pill-dot alt"></i>Notebook</span>
-          <span class="pill"><i class="pill-dot dev"></i>Programação</span>
-          <span class="pill"><i class="pill-dot"></i>Uso diário</span>
-          <span class="pill"><i class="pill-dot alt"></i>Personalizado</span>
-        </div>
-      </div>
-      <div class="container cards-3">
-        <article class="card step spotlight reveal"><span class="step-num">01</span><h3>Analisa</h3><p>Processador, placa de vídeo, memória, disco, Windows, plano de energia e virtualização. Cada ajuste é lido no registro, nos serviços e nos apps: <b>recomendado</b>, <b>já aplicado</b>, <b>não aplicável</b>, <b>incompatível</b>, <b>requer revisão</b> ou <b>falha na leitura</b>.</p></article>
-        <article class="card step spotlight reveal" style="--d: 60ms"><span class="step-num">02</span><h3>Você revisa</h3><p>Cada item mostra o risco (Seguro, Moderado ou Avançado), se precisa reiniciar, os efeitos colaterais, como reverter e a evidência do benefício. Conflitos bloqueiam a aplicação até você escolher.</p></article>
-        <article class="card step spotlight reveal" style="--d: 120ms"><span class="step-num">03</span><h3>Aplica e confere</h3><p>Ponto de restauração e backup de cada item antes de mudar. Depois, o estado é lido de novo no Windows: um ajuste só aparece como concluído se a mudança for confirmada.</p></article>
-      </div>
-      <p class="container narrow center fine reveal">No objetivo Programação, Docker, WSL e Hyper-V são preservados. Alterações de BIOS e desativação de proteções do Windows nunca entram no Smart Optimize.</p>
-    </section>
-
-    <!-- Performance Lab -->
-    <section id="performance-lab" class="section">
-      <div class="container narrow center">
-        <p class="kicker reveal">Novo na 2.0</p>
-        <h2 class="reveal">Performance Lab: meça em vez de adivinhar</h2>
-        <p class="section-lead reveal">FPS médio, mínimo, 1% low, 0,1% low e frametime P95/P99 calculados a partir da apresentação real dos quadros, com o <a href="https://github.com/GameTechDev/PresentMon" target="_blank" rel="noreferrer">PresentMon</a>. Uso de CPU e GPU, memória, clocks, potência e indícios de limitação gravados a cada segundo. Nada é estimado: sem dados reais, o campo fica vazio.</p>
-      </div>
-      <div class="container cards-4">
-        <article class="card spotlight reveal"><span class="card-icon"><svg class="icon"><use href="#i-chart"/></svg></span><h3>Ao vivo</h3><p>Gráficos de FPS, CPU, GPU e temperatura enquanto você joga, com a captura rodando em segundo plano.</p></article>
-        <article class="card spotlight reveal" style="--d: 60ms"><span class="card-icon"><svg class="icon"><use href="#i-layers"/></svg></span><h3>Antes e depois</h3><p>Diferença absoluta e percentual, com aviso quando driver, resolução, Windows ou plano de energia mudaram entre os testes.</p></article>
-        <article class="card spotlight reveal" style="--d: 120ms"><span class="card-icon"><svg class="icon"><use href="#i-zap"/></svg></span><h3>Optimization Lab</h3><p>Testa um ajuste por vez com várias gravações. Diferenças pequenas ou inconsistentes aparecem como <b>sem diferença comprovada</b>.</p></article>
-        <article class="card spotlight reveal" style="--d: 180ms"><span class="card-icon"><svg class="icon"><use href="#i-download"/></svg></span><h3>Relatórios</h3><p>Exportação em CSV, JSON e PDF, com hardware, drivers e versão do Windows de cada teste.</p></article>
-      </div>
-      <div class="container narrow">
-        <h3 class="reveal">Resultados publicados</h3>
-        <p class="muted reveal">Só publicamos resultados verificáveis, cada um com hardware, jogo, configurações, resolução, metodologia, FPS médio, 1% low e variação entre as gravações. Ainda não há resultados publicados; quando houver, eles aparecem aqui.</p>
-        <div class="compare bench reveal" role="table" aria-label="Resultados de desempenho publicados">
-          <div class="compare-head" role="row"><span role="columnheader">Hardware e jogo</span><span role="columnheader">Antes</span><span class="hl" role="columnheader">Depois</span></div>
-          <div class="compare-row" role="row"><span role="cell">Nenhum resultado publicado ainda.</span><span class="cell" role="cell">—</span><span class="cell hl" role="cell">—</span></div>
-        </div>
-        <p class="fine reveal">Metodologia: mesma cena do jogo, mesmas configurações e resolução, pelo menos 3 gravações de 60 s antes e depois, PC aquecido e sem outros programas abertos. O ganho só conta se for consistente (teste t de Welch, p &lt; 0,05) e maior que 3%.</p>
-      </div>
-    </section>
-
-    <!-- Novo na 2.4 -->
-    <section id="hardware" class="section">
-      <div class="container narrow center">
-        <p class="kicker reveal">Novo na 2.4</p>
-        <h2 class="reveal">Visual Aurora e ferramentas de hardware</h2>
-        <p class="section-lead reveal">O app ganhou um visual novo — preto azulado com destaque em azul, menu no topo e ícones de traço fino — e cinco páginas que vão além da otimização: diagnóstico, teste de estabilidade e tudo o que você joga num só lugar.</p>
-      </div>
-      <figure class="demo reveal">
-        <div class="demo-frame"><img src="assets/shots/saude.jpg" width="2160" height="1350" loading="lazy" alt="Página Saúde do hardware do Qrztweaks com discos, bateria e erros de hardware lidos do Windows"></div>
-        <figcaption class="fine">Página Saúde do hardware: discos (S.M.A.R.T.), bateria e erros de hardware lidos do Windows, com relatório do PC em HTML.</figcaption>
-      </figure>
-      <div class="container cards-3">
-        <article class="card spotlight reveal"><span class="card-icon"><svg class="icon"><use href="#i-chart"/></svg></span><h3>Saúde do hardware</h3><p>Vida útil e temperatura dos discos (S.M.A.R.T.), desgaste da bateria e erros de hardware dos últimos dias (WHEA e reinícios do driver de vídeo). Exporta um relatório do PC em HTML.</p></article>
-        <article class="card spotlight reveal" style="--d: 60ms"><span class="card-icon"><svg class="icon"><use href="#i-cpu"/></svg></span><h3>Stress test</h3><p>Testa processador e memória conferindo cada passada e os erros durante o teste. No fim, diz se o PC está estável, instável ou se o resultado é inconclusivo — útil para validar XMP/EXPO e overclock.</p></article>
-        <article class="card spotlight reveal" style="--d: 120ms"><span class="card-icon"><svg class="icon"><use href="#i-zap"/></svg></span><h3>Overlay no jogo</h3><p>FPS medido de verdade, tempo de quadro, 1% low e uso de CPU, GPU e RAM por cima do jogo, sem injetar nada. Funciona em jogos DirectX 9 a 12, em janela ou tela cheia sem bordas.</p></article>
-        <article class="card spotlight reveal" style="--d: 180ms"><span class="card-icon"><svg class="icon"><use href="#i-layers"/></svg></span><h3>Biblioteca de jogos</h3><p>Reúne os jogos da Steam, Epic, GOG e Ubisoft, mais os que você adicionar à mão. Cada jogo abre pela própria loja.</p></article>
-        <article class="card spotlight reveal" style="--d: 240ms"><span class="card-icon"><svg class="icon"><use href="#i-broom"/></svg></span><h3>Dispositivos</h3><p>Remove dispositivos "fantasmas" (lembrados pelo Windows, mas desconectados) e libera portas COM reservadas sem uso, com backup e opção de desfazer.</p></article>
-        <article class="card spotlight reveal" style="--d: 300ms"><span class="card-icon"><svg class="icon"><use href="#i-undo"/></svg></span><h3>Mesma transparência</h3><p>As ferramentas novas seguem as regras do app: só leem e medem, guardam o original antes de mexer e pedem confirmação no que não dá para desfazer sozinho.</p></article>
-      </div>
-      <p class="container narrow center fine reveal">A temperatura do processador não é lida: ela exige um driver que o Windows Defender bloqueia por ser vulnerável.</p>
-    </section>
-
-    <!-- Segurança -->
-    <section id="seguranca" class="section">
-      <div class="container narrow center">
-        <p class="kicker reveal">Segurança</p>
-        <h2 class="reveal">Controle, transparência e reversão</h2>
-        <p class="section-lead reveal">Um otimizador roda como administrador. Por isso cada mudança é revisável, tem backup e pode ser desfeita, e o próprio app é protegido contra adulteração.</p>
-      </div>
-      <ol class="container narrow rules reveal">
-        <li><b>Nada sem revisão.</b> Ajustes arriscados ou que a reversão não desfaz pedem uma confirmação própria, com a lista exata do que vai acontecer.</li>
-        <li><b>Backup antes de cada mudança.</b> Registro, serviços, plano de energia e tarefas têm o valor original guardado numa pasta só de administradores. Se o app fechar no meio, a próxima abertura avisa.</li>
-        <li><b>Atualizações assinadas.</b> O instalador é conferido por SHA256 e o arquivo de hashes é assinado com a chave do Qrztweaks; sem assinatura válida, nada é instalado automaticamente.</li>
-        <li><b>BIOS nunca é alterada sozinha.</b> O BIOS Advisor só recomenda. O editor grava apenas o que você escolher, com cópia original, validação dos valores e bloqueio se a versão da BIOS mudou.</li>
-        <li><b>Proteções do Windows preservadas.</b> O Smart Optimize não desliga o Defender. Exclusões amplas (unidade inteira, pasta do Windows, Downloads) são recusadas.</li>
-        <li><b>Sem acesso remoto e sem injeção em jogos.</b> O modo compacto e a ativação por jogo só leem a lista de processos: nada é injetado no jogo, então não há conflito com anti-cheat.</li>
-      </ol>
-    </section>
-
-    <!-- Recursos: telas reais em linhas alternadas -->
-    <section id="recursos" class="section">
-      <div class="container narrow center">
-        <p class="kicker reveal">Recursos</p>
-        <h2 class="reveal">Tudo o que você precisa<br>para jogar melhor</h2>
-        <p class="section-lead reveal">Cada tela abaixo é o Qrztweaks de verdade. Os recursos novos se somam às otimizações revisáveis, à limpeza e à inicialização que você já conhece.</p>
-      </div>
-
-      <div class="container showcase">
-        <article class="show-row reveal">
-          <figure class="show-media"><img src="assets/shots/modo-jogo.jpg" width="2160" height="1350" loading="lazy" alt="Página Modo Jogo do Qrztweaks com programas para fechar e serviços para pausar"></figure>
-          <div class="show-text">
-            <span class="show-tag"><svg class="icon"><use href="#i-zap"/></svg>Modo Jogo</span>
-            <h3>Feche o que pesa. Jogue. Volte tudo ao normal.</h3>
-            <p>Fecha programas em segundo plano, pausa Windows Update, indexação e telemetria e ativa o plano de desempenho enquanto você joga. Ao desativar, serviços e plano voltam como estavam — mesmo que o PC reinicie no meio.</p>
-            <ul class="checks"><li><svg class="icon"><use href="#i-check"/></svg>Liberação da memória em espera (como o ISLC)</li><li><svg class="icon"><use href="#i-check"/></svg>Aviso inteligente para Ryzen X3D de dois CCDs</li></ul>
-          </div>
-        </article>
-        <article class="show-row flip reveal">
-          <figure class="show-media"><img src="assets/shots/jogos.jpg" width="2160" height="1350" loading="lazy" alt="Presets competitivos para Fortnite, Apex Legends, Counter-Strike 2 e Rocket League"></figure>
-          <div class="show-text">
-            <span class="show-tag"><svg class="icon"><use href="#i-layers"/></svg>Jogos</span>
-            <h3>Presets competitivos direto no arquivo do jogo</h3>
-            <p>Fortnite, Apex Legends, Counter-Strike 2 e Rocket League com sombras e efeitos pesados no mínimo, sem V-Sync e sem desfoque. O arquivo original é guardado e volta com um clique.</p>
-            <ul class="checks"><li><svg class="icon"><use href="#i-check"/></svg>Perfis por jogo: GPU dedicada, prioridade alta e tela cheia</li><li><svg class="icon"><use href="#i-check"/></svg>Runtimes (Visual C++, DirectX, .NET) em um clique</li></ul>
-          </div>
-        </article>
-        <article class="show-row reveal">
-          <figure class="show-media"><img src="assets/shots/nvidia.jpg" width="2160" height="1350" loading="lazy" alt="Perfil NVIDIA para jogos com baixa latência e desempenho máximo"></figure>
-          <div class="show-text">
-            <span class="show-tag"><svg class="icon"><use href="#i-cpu"/></svg>NVIDIA e energia</span>
-            <h3>Perfil NVIDIA e plano de energia Qrz</h3>
-            <p>Gerenciamento de energia no máximo, modo de baixa latência, filtragem de textura de desempenho e cache de sombreador ilimitado, gravados direto no driver. Mais o plano Qrz: processador sem estacionamento de núcleos e PCIe, disco e Wi-Fi sem economia de energia.</p>
-            <ul class="checks"><li><svg class="icon"><use href="#i-check"/></svg>Cada valor anterior é guardado para restaurar</li><li><svg class="icon"><use href="#i-check"/></svg>Sem baixar ferramentas de terceiros</li></ul>
-          </div>
-        </article>
-        <article class="show-row flip reveal">
-          <figure class="show-media"><img src="assets/shots/rede.jpg" width="2160" height="1350" loading="lazy" alt="Página Rede com teste de velocidade, DNS e ajustes de latência"></figure>
-          <div class="show-text">
-            <span class="show-tag"><svg class="icon"><use href="#i-chart"/></svg>Rede</span>
-            <h3>Ping, jitter e DNS sob controle</h3>
-            <p>Teste de velocidade com perda de pacotes, troca de DNS (Cloudflare, Google, Quad9) com medição de qual responde mais rápido, ajuste de latência para jogos reversível e reparos de conexão.</p>
-          </div>
-        </article>
-        <article class="show-row reveal">
-          <figure class="show-media"><img src="assets/shots/bios.jpg" width="2160" height="1350" loading="lazy" alt="Editor de BIOS pelo SCEWIN"></figure>
-          <div class="show-text">
-            <span class="show-tag"><svg class="icon"><use href="#i-key"/></svg>BIOS e drivers</span>
-            <h3>Editor de BIOS e instalação limpa de driver</h3>
-            <p>Leia e ajuste a BIOS pelo Windows com o SCEWIN (placas com BIOS AMI), com recomendações seguras e cópia original. E reinstale o driver de vídeo do zero com o DDU: o novo instalador abre sozinho depois do reinício.</p>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- Galeria -->
-    <section id="galeria" class="section">
-      <div class="container narrow center">
-        <p class="kicker reveal">Galeria</p>
-        <h2 class="reveal">Veja cada tela</h2>
-        <p class="section-lead reveal">Clique para ampliar. Use as setas do teclado para navegar.</p>
-      </div>
-      <div class="container gallery reveal">
-        <button class="shot wide" type="button" data-full="assets/shots/visao-geral.jpg" data-caption="Visão geral com monitor ao vivo"><img src="assets/shots/visao-geral.jpg" loading="lazy" width="2160" height="1350" alt="Visão geral"><span>Visão geral</span></button>
-        <button class="shot" type="button" data-full="assets/shots/modo-jogo.jpg" data-caption="Modo Jogo"><img src="assets/shots/modo-jogo.jpg" loading="lazy" width="2160" height="1350" alt="Modo Jogo"><span>Modo Jogo</span></button>
-        <button class="shot" type="button" data-full="assets/shots/jogos.jpg" data-caption="Configurações dos jogos"><img src="assets/shots/jogos.jpg" loading="lazy" width="2160" height="1350" alt="Configurações dos jogos"><span>Jogos</span></button>
-        <button class="shot" type="button" data-full="assets/shots/nvidia.jpg" data-caption="Perfil NVIDIA"><img src="assets/shots/nvidia.jpg" loading="lazy" width="2160" height="1350" alt="Perfil NVIDIA"><span>NVIDIA</span></button>
-        <button class="shot" type="button" data-full="assets/shots/sistema.jpg" data-caption="Plano Qrz e Windows Defender"><img src="assets/shots/sistema.jpg" loading="lazy" width="2160" height="1350" alt="Ajustes de sistema"><span>Sistema</span></button>
-        <button class="shot wide" type="button" data-full="assets/shots/visao-geral-claro.jpg" data-caption="Tema claro"><img src="assets/shots/visao-geral-claro.jpg" loading="lazy" width="2160" height="1350" alt="Tema claro"><span>Tema claro</span></button>
-        <button class="shot" type="button" data-full="assets/shots/rede.jpg" data-caption="Rede"><img src="assets/shots/rede.jpg" loading="lazy" width="2160" height="1350" alt="Rede"><span>Rede</span></button>
-        <button class="shot" type="button" data-full="assets/shots/drivers.jpg" data-caption="Drivers e instalação limpa com DDU"><img src="assets/shots/drivers.jpg" loading="lazy" width="2160" height="1350" alt="Drivers"><span>Drivers</span></button>
-        <button class="shot" type="button" data-full="assets/shots/bios.jpg" data-caption="Editor de BIOS"><img src="assets/shots/bios.jpg" loading="lazy" width="2160" height="1350" alt="BIOS"><span>BIOS</span></button>
-        <button class="shot" type="button" data-full="assets/shots/otimizacoes.jpg" data-caption="Otimizações revisáveis"><img src="assets/shots/otimizacoes.jpg" loading="lazy" width="2160" height="1350" alt="Otimizações"><span>Otimizações</span></button>
-        <button class="shot" type="button" data-full="assets/shots/saude.jpg" data-caption="Saúde do hardware"><img src="assets/shots/saude.jpg" loading="lazy" width="2160" height="1350" alt="Saúde do hardware"><span>Saúde do hardware</span></button>
-        <button class="shot" type="button" data-full="assets/shots/stress.jpg" data-caption="Stress test de CPU e memória"><img src="assets/shots/stress.jpg" loading="lazy" width="2160" height="1350" alt="Stress test"><span>Stress test</span></button>
-        <button class="shot" type="button" data-full="assets/shots/dispositivos.jpg" data-caption="Dispositivos fantasmas e portas COM"><img src="assets/shots/dispositivos.jpg" loading="lazy" width="2160" height="1350" alt="Dispositivos"><span>Dispositivos</span></button>
-      </div>
-    </section>
-
-    <div class="lightbox" role="dialog" aria-modal="true" aria-label="Imagem ampliada" hidden>
-      <button class="lb-close" type="button" aria-label="Fechar"><svg class="icon"><use href="#i-x"/></svg></button>
-      <button class="lb-prev" type="button" aria-label="Anterior"><svg class="icon"><use href="#i-arrow"/></svg></button>
-      <figure><img alt=""><figcaption></figcaption></figure>
-      <button class="lb-next" type="button" aria-label="Próxima"><svg class="icon"><use href="#i-arrow"/></svg></button>
-    </div>
-
-    <!-- Download -->
-    <section id="baixar" class="section">
-      <div class="container download reveal">
-        <div class="download-copy">
-          <p class="kicker">Download</p>
-          <h2>Baixe agora, ative com a sua chave</h2>
-          <p class="section-lead">O instalador é gratuito e sempre a versão mais recente. Na primeira abertura, o app mostra o ID do seu computador e copia o pedido de ativação para você mandar no Discord.</p>
-          <div class="download-actions">
-            <a class="btn btn-primary btn-lg btn-shine" href="https://github.com/PQueirozDev/Optimizer/releases/latest" data-download-link rel="noreferrer">
-              <svg class="icon"><use href="#i-download"/></svg>Baixar instalador <span class="download-version" data-version></span>
-            </a>
-            <a class="btn btn-outline btn-lg" href="#comprar">Escolher um plano</a>
-          </div>
-          <p class="download-meta"><span data-download-file>Qrztweaks-Setup.exe</span> · Windows 10 e 11 (64 bits) · <a href="https://github.com/PQueirozDev/Optimizer/releases" target="_blank" rel="noreferrer">todas as versões ↗</a></p>
-        </div>
-        <ol class="download-steps">
-          <li><span class="step-dot">1</span><div><h3>Instale</h3><p>Execute o instalador; ele cria os atalhos e se atualiza sozinho depois.</p></div></li>
-          <li><span class="step-dot">2</span><div><h3>Copie o pedido</h3><p>A tela de ativação mostra o ID do PC. Clique em <b>Copiar pedido</b>.</p></div></li>
-          <li><span class="step-dot">3</span><div><h3>Ative a chave</h3><p>Envie o pedido no ticket do Discord, pague via Pix e cole a chave recebida.</p></div></li>
-        </ol>
-      </div>
-    </section>
-
-    <!-- Planos -->
-    <section id="comprar" class="section">
-      <div class="container narrow center">
-        <p class="kicker reveal">Planos e preços</p>
-        <h2 class="reveal">Escolha seu próximo nível</h2>
-        <p class="section-lead reveal">Pague só pelo que vai usar: do essencial no Base ao app completo no Avançado, ou pague uma vez e use para sempre. A compra é feita no nosso servidor do Discord, onde você recebe sua chave.</p>
-      </div>
-
-      <div class="tabs reveal" role="tablist" aria-label="Produtos">
-        <button class="tab is-active" type="button" role="tab" id="tab-optimizer" aria-selected="true" aria-controls="panel-optimizer">Qrztweaks</button>
-        <button class="tab" type="button" role="tab" id="tab-windows" aria-selected="false" aria-controls="panel-windows" tabindex="-1">Windows personalizado <span class="soon-tag">Em breve</span></button>
-        <span class="tab-indicator" aria-hidden="true"></span>
-      </div>
-
-      <div class="tab-panel is-active" id="panel-optimizer" role="tabpanel" aria-labelledby="tab-optimizer">
-        <div class="container plans plans-4">
-          <article class="plan tilt reveal">
+<header class="topbar"><div class="container topbar-inner"><a class="brand" href="index.html" aria-label="Qrztweaks, início"><span class="brand-mark"><img src="assets/logo.png" width="26" height="26" alt=""></span><span>Qrztweaks</span></a><nav class="nav" id="nav" aria-label="Principal"><a href="index.html#recursos">O aplicativo</a><a href="index.html#comprar">Planos</a><a href="recursos.html">Todos os recursos <span aria-hidden="true">↗</span></a></nav><div class="topbar-actions"><a class="btn btn-primary btn-sm" href="https://github.com/PQueirozDev/Optimizer/releases/latest" data-download-link><svg class="icon"><use href="#i-download"/></svg>Baixar</a><button class="menu-toggle" aria-label="Abrir menu" aria-expanded="false" aria-controls="nav"><svg class="icon"><use href="#i-menu"/></svg></button></div></div></header>
+<main id="conteudo">
+  <section class="hero" id="inicio"><div class="container hero-inner">
+    <div class="hero-copy"><p class="eyebrow"><span class="status-dot"></span>WINDOWS, DO SEU JEITO.</p><h1>Seu PC.<br>Mais <span>leve.</span><br>Mais <span>seu.</span></h1><p class="lead">Entenda seu computador, ajuste o que importa e acompanhe o resultado. Tudo em um só lugar, com você no controle.</p><div class="hero-actions"><a class="btn btn-primary" href="https://github.com/PQueirozDev/Optimizer/releases/latest" data-download-link><svg class="icon"><use href="#i-download"/></svg>Baixar para Windows</a><a class="btn btn-quiet" href="#comprar">Ver planos <span aria-hidden="true">→</span></a></div><p class="download-hint">Windows 10 e 11 · 64 bits · Ativação com chave</p><div class="hero-trust"><span><svg class="icon"><use href="#i-shield"/></svg>Ajustes revisáveis</span><span><svg class="icon"><use href="#i-undo"/></svg>Backup e reversão</span></div></div>
+    <figure class="product-view"><div class="product-caption"><span>SEU COMPUTADOR, EM PERSPECTIVA.</span><span class="version" data-version></span></div><img src="assets/shots/visao-geral-atual.png" width="1366" height="850" alt="Interface real do Qrztweaks com dados de CPU, GPU, memória e saúde do sistema" fetchpriority="high"><figcaption><span><i class="status-dot"></i>Painel real do aplicativo</span><a href="recursos.html#galeria">Explorar as telas ↗</a></figcaption></figure>
+  </div></section>
+  <section id="recursos" class="feature-section"><div class="container"><div class="section-head"><div><p class="eyebrow">MENOS COMPLICAÇÃO. MAIS CONTROLE.</p><h2>O essencial, bem feito.</h2></div><a class="text-link" href="recursos.html">Conhecer todos os recursos ↗</a></div><div class="feature-grid">
+    <article class="feature"><span class="feature-number">01</span><svg class="icon feature-icon"><use href="#i-zap"/></svg><h3>Ajuste com critério.</h3><p>Recomendações para seu hardware, com risco e efeito de cada ajuste antes de aplicar.</p></article>
+    <article class="feature"><span class="feature-number">02</span><svg class="icon feature-icon"><use href="#i-chart"/></svg><h3>Veja o que mudou.</h3><p>Monitoramento ao vivo e comparação de desempenho com dados reais do seu PC.</p></article>
+    <article class="feature"><span class="feature-number">03</span><svg class="icon feature-icon"><use href="#i-undo"/></svg><h3>Tenha como voltar.</h3><p>Backups e histórico para revisar alterações e restaurar os ajustes reversíveis.</p></article>
+  </div></div></section>
+  <section class="download-section" id="baixar"><div class="container download-strip"><div class="download-intro"><span class="download-symbol"><svg class="icon"><use href="#i-download"/></svg></span><div><h2>Seu próximo ajuste começa aqui.</h2><p>Baixe o instalador. Escolha seu plano quando estiver pronto.</p></div></div><a class="btn btn-primary" href="https://github.com/PQueirozDev/Optimizer/releases/latest" data-download-link>Baixar Qrztweaks <svg class="icon"><use href="#i-arrow"/></svg></a></div></section>
+  <section class="pricing-section" id="comprar"><div class="container"><div class="section-head"><div><p class="eyebrow">UM PLANO PARA CADA PC.</p><h2>Escolha o seu.</h2></div><p class="section-note">Mesmos cuidados. Diferentes possibilidades.<br>Os planos de 30 dias não renovam automaticamente.</p></div><div class="container plans plans-4">
+          <article class="plan">
             <span class="plan-icon"><svg class="icon"><use href="#i-broom"/></svg></span>
-            <p class="plan-tag">Mensal</p>
+            <p class="plan-tag">30 dias de acesso</p>
             <h3>Base</h3>
             <p class="price"><small>R$</small>15<span>/mês</span></p>
             <p class="price-note">O essencial para deixar o PC leve</p>
-            <div class="plan-meter" style="--fill: 40%" role="img" aria-label="Libera cerca de 40% do app"><span></span></div>
+
             <ul class="checks">
               <li><svg class="icon"><use href="#i-check"/></svg>Otimizações revisadas item por item (Versão Padrão)</li>
               <li><svg class="icon"><use href="#i-check"/></svg>Inicialização, Correções e Ferramentas</li>
               <li><svg class="icon"><use href="#i-check"/></svg>Limpeza rápida e monitor ao vivo</li>
               <li><svg class="icon"><use href="#i-check"/></svg>Backup, pontos de restauração e reversão</li>
             </ul>
-            <a class="btn btn-outline btn-block" href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Assinar o Base</a>
+            <a class="btn btn-outline btn-block" href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Comprar Base</a>
           </article>
-          <article class="plan tilt reveal" style="--d: 60ms">
+          <article class="plan">
             <span class="plan-icon"><svg class="icon"><use href="#i-layers"/></svg></span>
-            <p class="plan-tag">Mensal</p>
+            <p class="plan-tag">30 dias de acesso</p>
             <h3>Intermediário</h3>
             <p class="price"><small>R$</small>25<span>/mês</span></p>
             <p class="price-note">Tudo do Base, mais o segundo plano</p>
-            <div class="plan-meter" style="--fill: 70%" role="img" aria-label="Libera cerca de 70% do app"><span></span></div>
+
             <ul class="checks">
               <li><svg class="icon"><use href="#i-check"/></svg>Tudo do Base</li>
               <li><svg class="icon"><use href="#i-check"/></svg>Serviços, Apps e Debloat e privacidade</li>
               <li><svg class="icon"><use href="#i-check"/></svg>Drivers com instalação limpa (DDU)</li>
               <li><svg class="icon"><use href="#i-check"/></svg>Rede, Recursos e Central de diagnóstico</li>
             </ul>
-            <a class="btn btn-outline btn-block" href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Assinar o Intermediário</a>
+            <a class="btn btn-outline btn-block" href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Comprar Intermediário</a>
           </article>
-          <article class="plan tilt reveal" style="--d: 120ms">
+          <article class="plan">
             <span class="plan-badge plan-badge-alt">App completo</span>
             <span class="plan-icon"><svg class="icon"><use href="#i-zap"/></svg></span>
-            <p class="plan-tag">Mensal</p>
+            <p class="plan-tag">30 dias de acesso</p>
             <h3>Avançado</h3>
             <p class="price"><small>R$</small>29,99<span>/mês</span></p>
             <p class="price-note">Todo o app de otimização</p>
-            <div class="plan-meter" style="--fill: 100%" role="img" aria-label="Libera o app inteiro"><span></span></div>
+
             <ul class="checks">
               <li><svg class="icon"><use href="#i-check"/></svg>Tudo do Intermediário</li>
               <li><svg class="icon"><use href="#i-check"/></svg><span><b>Modo Jogo</b>, perfil NVIDIA e presets dos jogos</span></li>
               <li><svg class="icon"><use href="#i-check"/></svg>Editor de BIOS / UEFI e Personalizar Windows</li>
               <li><svg class="icon"><use href="#i-check"/></svg>Versão Avançada (jogos) e Modo de energia</li>
             </ul>
-            <a class="btn btn-outline btn-block" href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Assinar o Avançado</a>
+            <a class="btn btn-outline btn-block" href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Comprar Avançado</a>
           </article>
-          <article class="plan featured tilt reveal" style="--d: 180ms">
+          <article class="plan featured tilt reveal">
             <span class="plan-badge">Pague uma vez</span>
             <span class="plan-icon"><svg class="icon"><use href="#i-infinity"/></svg></span>
             <p class="plan-tag">Para sempre</p>
             <h3>Vitalício</h3>
             <p class="price"><small>R$</small>59,99<span>único</span></p>
             <p class="price-note">App completo, sem vencimento · o preço de 2 meses do Avançado</p>
-            <div class="plan-meter" style="--fill: 100%" role="img" aria-label="Libera o app inteiro"><span></span></div>
+
             <ul class="checks">
               <li><svg class="icon"><use href="#i-check"/></svg>Tudo do Avançado, sem data de vencimento</li>
               <li><svg class="icon"><use href="#i-check"/></svg>Todas as atualizações futuras</li>
@@ -452,335 +142,6 @@
             </ul>
             <a class="btn btn-primary btn-block btn-shine" href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Quero o Vitalício</a>
           </article>
-        </div>
-
-        <div class="container compare-plans reveal">
-          <table>
-            <caption class="sr-only">Comparação entre os planos Base, Intermediário, Avançado e Vitalício</caption>
-            <thead><tr><th scope="col">Recurso</th><th scope="col">Base</th><th scope="col">Interm.</th><th scope="col">Avançado</th><th scope="col" class="hl">Vitalício</th></tr></thead>
-            <tbody>
-              <tr><th scope="row">Otimizações (Versão Padrão), Inicialização, Correções e Ferramentas</th><td><svg class="icon yes"><use href="#i-check"/></svg></td><td><svg class="icon yes"><use href="#i-check"/></svg></td><td><svg class="icon yes"><use href="#i-check"/></svg></td><td class="hl"><svg class="icon yes"><use href="#i-check"/></svg></td></tr>
-              <tr><th scope="row">Backup, pontos de restauração e reversão</th><td><svg class="icon yes"><use href="#i-check"/></svg></td><td><svg class="icon yes"><use href="#i-check"/></svg></td><td><svg class="icon yes"><use href="#i-check"/></svg></td><td class="hl"><svg class="icon yes"><use href="#i-check"/></svg></td></tr>
-              <tr><th scope="row">Serviços, Apps e Debloat</th><td><svg class="icon no"><use href="#i-x"/></svg></td><td><svg class="icon yes"><use href="#i-check"/></svg></td><td><svg class="icon yes"><use href="#i-check"/></svg></td><td class="hl"><svg class="icon yes"><use href="#i-check"/></svg></td></tr>
-              <tr><th scope="row">Drivers, Rede, Recursos e diagnóstico</th><td><svg class="icon no"><use href="#i-x"/></svg></td><td><svg class="icon yes"><use href="#i-check"/></svg></td><td><svg class="icon yes"><use href="#i-check"/></svg></td><td class="hl"><svg class="icon yes"><use href="#i-check"/></svg></td></tr>
-              <tr><th scope="row">Modo Jogo, perfil NVIDIA e Versão Avançada</th><td><svg class="icon no"><use href="#i-x"/></svg></td><td><svg class="icon no"><use href="#i-x"/></svg></td><td><svg class="icon yes"><use href="#i-check"/></svg></td><td class="hl"><svg class="icon yes"><use href="#i-check"/></svg></td></tr>
-              <tr><th scope="row">BIOS / UEFI, Personalizar Windows e Modo de energia</th><td><svg class="icon no"><use href="#i-x"/></svg></td><td><svg class="icon no"><use href="#i-x"/></svg></td><td><svg class="icon yes"><use href="#i-check"/></svg></td><td class="hl"><svg class="icon yes"><use href="#i-check"/></svg></td></tr>
-              <tr><th scope="row">Reemissão após formatar e suporte prioritário</th><td><svg class="icon no"><use href="#i-x"/></svg></td><td><svg class="icon no"><use href="#i-x"/></svg></td><td><svg class="icon no"><use href="#i-x"/></svg></td><td class="hl"><svg class="icon yes"><use href="#i-check"/></svg></td></tr>
-              <tr><th scope="row">Validade</th><td>30 dias</td><td>30 dias</td><td>30 dias</td><td class="hl">Não vence</td></tr>
-              <tr><th scope="row">Pagamento (Pix)</th><td>R$ 15/mês</td><td>R$ 25/mês</td><td>R$ 29,99/mês</td><td class="hl">R$ 59,99 único</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p class="container narrow center plan-footnote reveal">Comece pelo plano que precisa e suba quando quiser: no app, em <b>Configurações → Minha licença</b>, o botão de upgrade copia o pedido para o ticket.</p>
-      </div>
-
-      <div class="tab-panel" id="panel-windows" role="tabpanel" aria-labelledby="tab-windows" hidden>
-        <p class="container narrow center soon-note"><span class="soon-tag">Em breve</span> As edições personalizadas do Windows 11 estão em preparação e ainda não estão à venda. <a href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Entre no Discord</a> para ser avisado no lançamento.</p>
-        <div class="container plans plans-3">
-          <article class="plan tilt is-soon">
-            <span class="plan-icon"><svg class="icon"><use href="#i-broom"/></svg></span>
-            <p class="plan-tag">Uso geral</p>
-            <h3>Windows 11 Optimized</h3>
-            <p class="price price-soon">Em breve</p>
-            <p class="price-note">Leve e limpo, sem mexer pesado em serviços</p>
-            <ul class="checks">
-              <li><svg class="icon"><use href="#i-check"/></svg>Sem bloatware: Teams, Clipchamp, Bing, Widgets, Outlook novo e outros</li>
-              <li><svg class="icon"><use href="#i-check"/></svg>Sem anúncios, sugestões nem Copilot/Recall</li>
-              <li><svg class="icon"><use href="#i-check"/></svg>Telemetria no mínimo e mais privacidade</li>
-              <li><svg class="icon"><use href="#i-check"/></svg>Store, Xbox, Windows Update e drivers preservados</li>
-            </ul>
-            <span class="btn btn-outline btn-block is-disabled" aria-disabled="true">Em breve</span>
-          </article>
-          <article class="plan featured tilt is-soon">
-            <span class="plan-badge">Mais desempenho</span>
-            <span class="plan-icon"><svg class="icon"><use href="#i-zap"/></svg></span>
-            <p class="plan-tag">Jogos e desempenho</p>
-            <h3>Windows 11 Advanced</h3>
-            <p class="price price-soon">Em breve</p>
-            <p class="price-note">Tudo do Optimized, com perfil forte</p>
-            <ul class="checks">
-              <li><svg class="icon"><use href="#i-check"/></svg>Menos serviços, tarefas e atividade em segundo plano</li>
-              <li><svg class="icon"><use href="#i-check"/></svg>SysMain, indexação, diagnóstico e relatórios de erro desligados</li>
-              <li><svg class="icon"><use href="#i-check"/></svg>Boot, rede, áudio, Bluetooth, Store e Update preservados</li>
-              <li><svg class="icon"><use href="#i-check"/></svg>Tema escuro Qrztweaks e barra de tarefas limpa</li>
-            </ul>
-            <span class="btn btn-outline btn-block is-disabled" aria-disabled="true">Em breve</span>
-          </article>
-          <article class="plan tilt is-soon">
-            <span class="plan-badge plan-badge-alt">Para devs</span>
-            <span class="plan-icon"><svg class="icon"><use href="#i-cpu"/></svg></span>
-            <p class="plan-tag">Programação</p>
-            <h3>Windows 11 Developer</h3>
-            <p class="price price-soon">Em breve</p>
-            <p class="price-note">Perfil forte da Advanced + ambiente de desenvolvimento</p>
-            <ul class="checks">
-              <li><svg class="icon"><use href="#i-check"/></svg>WSL 2, Hyper-V e virtualização prontos</li>
-              <li><svg class="icon"><use href="#i-check"/></svg>Git, GitHub CLI, VS Code, Node.js LTS e Python 3</li>
-              <li><svg class="icon"><use href="#i-check"/></svg>.NET SDK 10, PowerShell 7, Windows Terminal e 7-Zip</li>
-              <li><svg class="icon"><use href="#i-check"/></svg>Ferramentas instaladas no 1º login via winget (fontes oficiais)</li>
-            </ul>
-            <span class="btn btn-outline btn-block is-disabled" aria-disabled="true">Em breve</span>
-          </article>
-        </div>
-      </div>
-
-      <div id="discord" class="container buy-box reveal">
-        <div class="buy-main">
-          <p class="kicker">Onde comprar</p>
-          <h3>Servidor oficial no Discord</h3>
-          <p class="muted">Todas as vendas acontecem no nosso servidor. Entre, fale com a equipe, escolha o produto e combine o pagamento. A chave é entregue por lá.</p>
-          <a class="btn btn-primary btn-lg discord-btn btn-shine" href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer"><svg class="icon"><use href="#i-chat"/></svg>Entrar no servidor</a>
-        </div>
-        <ul class="buy-rules">
-          <li>Compre somente pelo servidor oficial do Discord.</li>
-          <li>Tire suas dúvidas com a equipe antes de pagar.</li>
-          <li>Não compartilhe sua chave: ela é vinculada ao seu computador.</li>
-          <li>7 dias para desistir com reembolso integral e 90 dias de garantia. <a href="#reembolso">Ver política</a>.</li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- Renovação -->
-    <section id="renovar" class="section">
-      <div class="container narrow center">
-        <p class="kicker reveal">Planos mensais</p>
-        <h2 class="reveal">Como renovar</h2>
-        <p class="section-lead reveal">A renovação não é automática: você só paga se quiser continuar. Quando o plano estiver acabando, é assim:</p>
-      </div>
-      <ol class="container timeline">
-        <li class="reveal"><span class="timeline-dot"><svg class="icon"><use href="#i-clock"/></svg></span><div><h3>O Qrztweaks avisa</h3><p>Nos últimos 7 dias, o painel mostra quantos dias faltam e o botão <b>Renovar pelo Discord</b>.</p></div></li>
-        <li class="reveal" style="--d: 80ms"><span class="timeline-dot"><svg class="icon"><use href="#i-chat"/></svg></span><div><h3>Abra um ticket de renovação</h3><p>O botão copia o seu pedido de renovação e abre o Discord. Abra um ticket de renovação e cole o pedido.</p></div></li>
-        <li class="reveal" style="--d: 160ms"><span class="timeline-dot"><svg class="icon"><use href="#i-pix"/></svg></span><div><h3>Pague via Pix</h3><p>O valor do seu plano (R$ 15, R$ 25 ou R$ 29,99) no Pix, direto no ticket. Se preferir, faça o upgrade para o Vitalício e nunca mais renove.</p></div></li>
-        <li class="reveal" style="--d: 240ms"><span class="timeline-dot"><svg class="icon"><use href="#i-key"/></svg></span><div><h3>Receba a chave nova</h3><p>Renovando antes de vencer, os 30 dias são somados à validade atual: você não perde nenhum dia.</p></div></li>
-      </ol>
-    </section>
-
-    <!-- Comparativo -->
-    <section id="comparativo" class="section">
-      <div class="container narrow center">
-        <p class="kicker reveal">Comparativo</p>
-        <h2 class="reveal">Por que um app, e não um serviço remoto?</h2>
-        <p class="section-lead reveal">Otimização por acesso remoto ou scripts copiados da internet deixam você sem controle do que mudou. No Qrztweaks, é você quem decide.</p>
-      </div>
-      <div class="container narrow compare reveal">
-        <div class="compare-head"><span>Recurso</span><span>Remoto / scripts</span><span class="hl">Qrztweaks</span></div>
-        <div class="compare-row"><span>Use quando quiser, sem agendar horário</span><span class="cell"><svg class="icon no"><use href="#i-x"/></svg></span><span class="cell hl"><svg class="icon yes"><use href="#i-check"/></svg></span></div>
-        <div class="compare-row"><span>Ninguém acessa o seu PC remotamente</span><span class="cell"><svg class="icon no"><use href="#i-x"/></svg></span><span class="cell hl"><svg class="icon yes"><use href="#i-check"/></svg></span></div>
-        <div class="compare-row"><span>Você vê e escolhe cada etapa antes de aplicar</span><span class="cell"><svg class="icon no"><use href="#i-x"/></svg></span><span class="cell hl"><svg class="icon yes"><use href="#i-check"/></svg></span></div>
-        <div class="compare-row"><span>Ponto de restauração, backup e reversão</span><span class="cell"><svg class="icon no"><use href="#i-x"/></svg></span><span class="cell hl"><svg class="icon yes"><use href="#i-check"/></svg></span></div>
-        <div class="compare-row"><span>Nada de colar comandos de terceiros no CMD</span><span class="cell"><svg class="icon no"><use href="#i-x"/></svg></span><span class="cell hl"><svg class="icon yes"><use href="#i-check"/></svg></span></div>
-        <div class="compare-row"><span>Atualizações automáticas verificadas por SHA256 e assinatura</span><span class="cell"><svg class="icon no"><use href="#i-x"/></svg></span><span class="cell hl"><svg class="icon yes"><use href="#i-check"/></svg></span></div>
-      </div>
-    </section>
-
-    <!-- Windows -->
-    <section id="windows" class="section">
-      <div class="container narrow center">
-        <p class="kicker reveal"><span class="soon-tag">Em breve</span> Imagem personalizada · 25H2 · build 26200</p>
-        <h2 class="reveal">Um Windows mais silencioso</h2>
-        <p class="section-lead reveal">Três edições do Windows 11 Pro já limpas e configuradas, para começar do zero com uma base consistente: dia a dia, desempenho ou programação. Ainda estão em preparação; entre no Discord para ser avisado no lançamento.</p>
-        <div class="pills reveal">
-          <span class="pill"><i class="pill-dot"></i>Optimized · em breve</span>
-          <span class="pill"><i class="pill-dot alt"></i>Advanced · em breve</span>
-          <span class="pill"><i class="pill-dot dev"></i>Developer · em breve</span>
-        </div>
-      </div>
-
-      <div class="container windows-grid">
-        <div class="iso-card spotlight reveal">
-          <div class="iso-top"><span class="iso-badge">ISO</span><span class="mono muted">25H2 · x64</span></div>
-          <h3>Em todas as edições</h3>
-          <p>Windows 11 Pro (build 26200) sem apps patrocinados, anúncios, Widgets, Copilot e Recall, com tema escuro Qrztweaks, barra de tarefas limpa e Windows Terminal como padrão.</p>
-          <dl>
-            <div><dt>Requisitos</dt><dd>4 GB+ RAM · 64 GB · SSD recomendado</dd></div>
-            <div><dt>Tamanho</dt><dd>~7,2 GB, em 4 partes</dd></div>
-            <div><dt>Entrega</dt><dd>Script que junta as partes e confere o SHA256</dd></div>
-            <div><dt>Idioma</dt><dd>Inglês (Reino Unido); português pode ser adicionado</dd></div>
-          </dl>
-          <p class="warning">A ativação usa só meios oficiais: a licença digital do seu PC, a chave gravada na placa-mãe ou uma chave sua. Não há crack nem KMS.</p>
-        </div>
-        <div class="benefits reveal" style="--d: 80ms">
-          <article><b>01</b><div><h3>Instalação limpa</h3><p>A instalação apaga o disco principal quando ele está vazio e entra direto numa conta local. Faça backup antes e desconecte outros discos.</p></div></article>
-          <article><b>02</b><div><h3>Segurança por sua conta</h3><p>O Microsoft Defender e o SmartScreen vêm desativados. Se quiser, reative em Segurança do Windows ou use outro antivírus.</p></div></article>
-          <article><b>03</b><div><h3>Pendrive maior que 4 GB</h3><p>O arquivo de instalação passa de 4 GB: grave o pendrive com Rufus ou Ventoy (NTFS), não com FAT32.</p></div></article>
-          <article><b>04</b><div><h3>Primeiro login</h3><p>Uma janela aplica os ajustes finais e gera um relatório de verificação. Na Developer, as ferramentas são baixadas nessa hora (precisa de internet).</p></div></article>
-        </div>
-      </div>
-    </section>
-
-    <!-- Passos -->
-    <section class="section">
-      <div class="container narrow center">
-        <p class="kicker reveal">Como comprar</p>
-        <h2 class="reveal">Três passos,<br>nenhuma complicação</h2>
-      </div>
-      <div class="container cards-3">
-        <article class="card step spotlight reveal"><span class="step-num">01</span><h3>Entre no Discord</h3><p>Acesse o servidor oficial do Qrztweaks. Toda venda é feita por lá.</p></article>
-        <article class="card step spotlight reveal" style="--d: 60ms"><span class="step-num">02</span><h3>Escolha e pague</h3><p>Escolha o Base, o Intermediário, o Avançado ou o Vitalício e combine o pagamento com a equipe.</p></article>
-        <article class="card step spotlight reveal" style="--d: 120ms"><span class="step-num">03</span><h3>Receba e ative</h3><p>No Qrztweaks, clique em <b>Copiar pedido</b> e envie. A chave chega pelo Discord e é colada sozinha na tela de ativação.</p></article>
-      </div>
-    </section>
-
-    <!-- Perdeu a chave -->
-    <section id="recuperar" class="section">
-      <div class="container recover reveal">
-        <div class="recover-icon" aria-hidden="true"><svg class="icon"><use href="#i-key"/></svg></div>
-        <div class="recover-body">
-          <p class="kicker">Perdeu sua chave?</p>
-          <h2>Formatou ou trocou de PC?</h2>
-          <p class="muted">A chave é vinculada ao computador. Se você formatou o PC, abra o Qrztweaks, clique em <b>Copiar pedido</b> e envie em um ticket no Discord junto com o comprovante da compra. No plano <b>Vitalício</b>, a reemissão da chave está incluída; nos planos mensais, fale com o suporte no mesmo ticket.</p>
-        </div>
-        <a class="btn btn-primary btn-lg btn-shine" href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer"><svg class="icon"><use href="#i-chat"/></svg>Abrir ticket</a>
-      </div>
-    </section>
-
-    <!-- Patch notes -->
-    <section id="patch-notes" class="section">
-      <div class="container narrow center">
-        <p class="kicker reveal">Histórico de versões</p>
-        <h2 class="reveal">Patch notes</h2>
-        <p class="section-lead reveal">O Qrztweaks se atualiza sozinho: cada versão nova é conferida por SHA256 e pela assinatura do Qrztweaks antes de instalar. A lista abaixo vem das releases oficiais no GitHub.</p>
-      </div>
-      <div class="container narrow releases" id="release-list" aria-live="polite">
-        <article class="release current reveal">
-          <div class="release-head"><b>v1.9.2</b><span class="tag muted-tag">Anterior</span></div>
-          <ul>
-            <li>Site oficial: qrztwk.vercel.app, também nos links de compra do aplicativo.</li>
-            <li>Novo nome e logo nova: o PQueiroz Optimizer agora é o Qrztweaks. Licenças, configurações e backups continuam valendo.</li>
-          </ul>
-        </article>
-        <article class="release reveal" style="--d: 10ms">
-          <div class="release-head"><b>v1.9.0</b><span class="tag muted-tag">Anterior</span></div>
-          <ul>
-            <li>Planos Base, Intermediário, Avançado e Vitalício: páginas fora do plano mostram o botão de upgrade, e a reversão fica liberada em todos.</li>
-            <li>Personalizar Windows → Efeitos visuais: as Opções de desempenho do Windows dentro do app, com um interruptor por efeito.</li>
-            <li>Abertura sem a janela aparecendo por trás e modo translúcido aplicado ao abrir.</li>
-          </ul>
-        </article>
-        <article class="release reveal" style="--d: 20ms">
-          <div class="release-head"><b>v1.8.0</b><span class="tag muted-tag">Anterior</span></div>
-          <ul>
-            <li>Modo Jogo: fecha programas, pausa serviços e ativa o plano de desempenho enquanto você joga; tudo volta ao desativar.</li>
-            <li>Perfil NVIDIA gravado no driver, plano de energia Qrz e presets para Fortnite, Apex, CS2 e Rocket League.</li>
-            <li>Editor de BIOS (SCEWIN), instalação limpa de driver com DDU, página Rede e controle do Windows Defender.</li>
-            <li>Visual novo: fundo aurora, monitor ao vivo, busca rápida (Ctrl+K), notificações e animações.</li>
-          </ul>
-        </article>
-        <article class="release reveal" style="--d: 40ms">
-          <div class="release-head"><b>v1.7.2</b><span class="tag muted-tag">Anterior</span></div>
-          <ul>
-            <li>Animação de abertura com o logo do Qrztweaks, também em PCs com efeitos visuais reduzidos.</li>
-            <li>Configurações → Atualizações: verifique novas versões na hora e instale em um clique.</li>
-          </ul>
-        </article>
-        <article class="release reveal" style="--d: 60ms">
-          <div class="release-head"><b>v1.7.0</b><span class="tag muted-tag">Anterior</span></div>
-          <ul>
-            <li>Planos Mensal e Vitalício, com o plano exibido em Configurações → Minha licença.</li>
-            <li>Renovar pelo Discord: o app copia o pedido; é só abrir um ticket e pagar via Pix.</li>
-            <li>"Quero o Vitalício" gera o pedido de upgrade em um clique.</li>
-          </ul>
-        </article>
-        <article class="release reveal" style="--d: 120ms">
-          <div class="release-head"><b>v1.6.0</b><span class="tag muted-tag">Anterior</span></div>
-          <ul>
-            <li>Aviso nos 7 dias antes de a licença vencer, com renovação pelo Discord.</li>
-            <li>Licença vencida ou recusada: a tela de ativação explica o motivo e gera o pedido de renovação.</li>
-            <li>Chaves revogadas pelo suporte deixam de funcionar; atrasar o relógio não estende licenças.</li>
-          </ul>
-        </article>
-        <a class="releases-all reveal" href="https://github.com/PQueirozDev/Optimizer/releases" target="_blank" rel="noreferrer">Ver todas as versões no GitHub ↗</a>
-      </div>
-    </section>
-
-    <!-- Diretrizes -->
-    <section id="diretrizes" class="section">
-      <div class="container narrow center">
-        <p class="kicker reveal">Diretrizes</p>
-        <h2 class="reveal">Compra transparente</h2>
-        <p class="section-lead reveal">Leia estas orientações antes de comprar. Toda a venda é feita no nosso servidor do Discord.</p>
-      </div>
-      <ol class="container narrow rules reveal">
-        <li>Confira o produto e o valor escolhido: Qrztweaks Base R$ 15, Intermediário R$ 25 ou Avançado R$ 29,99 (30 dias cada) ou Vitalício R$ 59,99. As edições personalizadas do Windows 11 ainda não estão à venda (em breve).</li>
-        <li>Entre no servidor oficial do Discord: <a href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">discord.gg/pHJ4Waxft</a>. A compra é feita lá.</li>
-        <li>Fale com a equipe no servidor para escolher o produto e combinar o pagamento. Guarde o comprovante.</li>
-        <li>Após a confirmação do pagamento, seu acesso é entregue pelo Discord. Os planos mensais não são renovados automaticamente: para renovar, abra um ticket de renovação e pague via Pix.</li>
-        <li>Você pode desistir da compra em até 7 dias com reembolso integral e conta com 90 dias de garantia legal, conforme a <a href="#reembolso">Política de reembolso e garantia</a>. Recomendamos conferir os requisitos antes da compra.</li>
-      </ol>
-    </section>
-
-    <!-- Reembolso e garantia -->
-    <section id="reembolso" class="section">
-      <div class="container narrow center">
-        <p class="kicker reveal">Termos de compra</p>
-        <h2 class="reveal">Política de reembolso e garantia</h2>
-        <p class="section-lead reveal">Seus direitos como consumidor, conforme o Código de Defesa do Consumidor (Lei nº 8.078/1990).</p>
-      </div>
-      <ol class="container narrow policy reveal">
-        <li><h3>Direito de arrependimento</h3><p>Nas compras realizadas fora de estabelecimento comercial, como pela internet, o consumidor pode desistir da compra no prazo de 7 (sete) dias corridos, contados da data da compra ou do recebimento do acesso ao produto, o que ocorrer por último, nos termos do art. 49 do CDC. Nesse caso, o valor pago é devolvido integralmente, sem necessidade de justificativa.</p></li>
-        <li><h3>Garantia legal</h3><p>Todos os produtos contam com a garantia legal de 90 (noventa) dias prevista no art. 26, inciso II, do CDC, contados da entrega do acesso. Constatado defeito que impeça o uso adequado do produto, o problema será corrigido em até 30 (trinta) dias. Não sendo corrigido nesse prazo, o consumidor poderá escolher entre a substituição do produto, a restituição do valor pago ou o abatimento proporcional do preço, nos termos dos arts. 18 e 20 do CDC.</p></li>
-        <li><h3>Como solicitar</h3><p>Pedidos de desistência, reembolso ou acionamento da garantia devem ser feitos pelo <a href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">servidor oficial do Discord</a> ou pelo e-mail <a href="mailto:pqueirozdev@gmail.com">pqueirozdev@gmail.com</a>, informando nome, produto adquirido, data da compra e comprovante de pagamento.</p></li>
-        <li><h3>Forma e prazo do reembolso</h3><p>O reembolso é feito pelo mesmo meio de pagamento utilizado na compra, em até 7 (sete) dias corridos após a confirmação da solicitação, com o valor integral pago.</p></li>
-        <li><h3>Desativação do acesso</h3><p>Com a devolução do valor, a chave de acesso ou o acesso ao produto adquirido é desativado.</p></li>
-        <li><h3>Disposições gerais</h3><p>Os requisitos de cada produto estão descritos nesta página, e recomendamos conferi-los antes da compra. Nenhuma disposição deste site limita ou exclui direitos garantidos ao consumidor pelo Código de Defesa do Consumidor.</p></li>
-      </ol>
-    </section>
-
-    <!-- FAQ -->
-    <section id="faq" class="section">
-      <div class="container narrow center">
-        <p class="kicker reveal">Perguntas frequentes</p>
-        <h2 class="reveal">Antes de comprar</h2>
-      </div>
-      <div class="container narrow faq reveal">
-        <details><summary>Qual a diferença entre os planos?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>O <b>Base</b> (R$ 15/mês) libera as otimizações revisadas, Inicialização, Correções, Ferramentas e a Limpeza rápida. O <b>Intermediário</b> (R$ 25/mês) soma Serviços, Apps e Debloat, Drivers, Rede, Recursos e a Central de diagnóstico. O <b>Avançado</b> (R$ 29,99/mês) libera o app inteiro, com Modo Jogo, perfil NVIDIA, BIOS / UEFI e Personalizar Windows. O <b>Vitalício</b> (R$ 59,99 uma vez) é o app completo sem vencimento, com reemissão da chave se você formatar o PC e suporte prioritário. Em todos, a reversão do que foi aplicado fica sempre disponível. Veja a <a href="#comprar">tabela</a>.</p></div></details>
-        <details><summary>Posso mudar de plano depois?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Pode. No app, em <b>Configurações → Minha licença</b>, cada plano acima do seu tem um botão de upgrade que copia o pedido; cole no ticket do Discord, pague a diferença via Pix e ative a chave nova. As páginas fora do seu plano também mostram o botão de upgrade.</p></div></details>
-        <details><summary>Preciso de chave para usar o app?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Para aplicar ajustes, sim. Você pode <a href="#baixar">baixar o instalador</a> antes de comprar e usar o <b>modo demonstração</b>: veja o hardware, o monitor ao vivo, o diagnóstico, o Performance Lab e as recomendações do Smart Optimize, sem aplicar nada. Para ativar, o app mostra o ID do computador e um botão para copiar o pedido; envie no ticket do Discord e a chave chega vinculada ao seu PC.</p></div></details>
-        <details><summary>O Smart Optimize aplica tudo sozinho?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Não. Ele analisa e marca o que é recomendado para o seu objetivo, mas você revisa item por item antes de aplicar. Depois, o app lê o estado do Windows de novo e mostra o que foi confirmado.</p></div></details>
-        <details><summary>O que preciso para medir FPS?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>O Performance Lab usa o <a href="https://github.com/GameTechDev/PresentMon/releases" target="_blank" rel="noreferrer">PresentMon</a>, ferramenta aberta e gratuita da Intel: baixe no GitHub oficial e escolha o arquivo no app. Sem ele, o Performance Lab grava os sensores (CPU, GPU, memória), mas não mostra FPS, porque FPS não é estimado.</p></div></details>
-        <details><summary>O modo compacto funciona com anti-cheat?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Sim. É uma janela separada, para um segundo monitor, e não um overlay dentro do jogo: nada é injetado no processo do jogo.</p></div></details>
-        <details><summary>Como renovo um plano mensal?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Quando estiver acabando, o app avisa. Clique em <b>Renovar pelo Discord</b>, abra um ticket de renovação, cole o pedido e pague via Pix. Os 30 dias novos são somados à validade atual. Veja <a href="#renovar">Como renovar</a>.</p></div></details>
-        <details><summary>Os planos mensais são cobrados automaticamente?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Não. Não existe cobrança recorrente: se você não renovar, a licença simplesmente expira ao fim dos 30 dias.</p></div></details>
-        <details><summary>Formatei o PC. Perco a licença?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>A chave é vinculada ao computador, então depois de formatar é preciso uma chave nova. Na tela de ativação, clique em <b>Troquei de PC / reinstalei o Windows</b>: o app copia um pedido de transferência com o novo ID; envie em um ticket no Discord. No Vitalício, a reemissão está incluída.</p></div></details>
-        <details><summary>Posso usar em mais de um computador?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Cada chave vale para um computador. Para outro PC, é preciso outra licença.</p></div></details>
-        <details><summary>O Qrztweaks altera o Windows automaticamente?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Não. Os fluxos avançados mostram as etapas e permitem selecionar exatamente o que será aplicado.</p></div></details>
-        <details><summary>Posso desfazer as alterações?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Configurações de registro, energia e serviços têm backup. Remoções de arquivos e aplicativos exigem reinstalação ou backup próprio, e o app avisa antes quais etapas não são reversíveis.</p></div></details>
-        <details><summary>Quando sai o Windows personalizado?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>As edições ainda estão em preparação e não estão à venda; entre no <a href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Discord</a> para ser avisado no lançamento. Serão três: <b>Optimized</b> para o dia a dia: limpo, sem desligar serviços de forma agressiva. <b>Advanced</b> para jogos e desempenho: menos serviços e atividade em segundo plano. <b>Developer</b> para programar: o perfil da Advanced com WSL 2, Hyper-V e as ferramentas de desenvolvimento já instaladas. Todas desativam o Defender e fazem instalação limpa; veja <a href="#windows">os detalhes</a>.</p></div></details>
-        <details><summary>Qual versão do Windows é compatível?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Windows 10 (versão 1809 ou mais nova) e Windows 11 em computadores x64. O editor de BIOS funciona em placas com BIOS AMI, e o perfil NVIDIA exige uma placa NVIDIA com driver instalado.</p></div></details>
-        <details><summary>Posso pedir reembolso?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Sim. Você pode desistir da compra em até 7 dias corridos e receber o valor pago integralmente. Além disso, há garantia legal de 90 dias contra defeitos. Veja os detalhes na <a href="#reembolso">Política de reembolso e garantia</a>.</p></div></details>
-        <details><summary>O que preciso enviar no suporte?<svg class="icon"><use href="#i-plus"/></svg></summary><div class="faq-body"><p>Informe seu nome, o produto comprado, o comprovante e uma descrição do problema. Nunca envie sua chave publicamente.</p></div></details>
-      </div>
-    </section>
-
-    <!-- Suporte -->
-    <section id="suporte" class="support">
-      <div class="support-glow" aria-hidden="true"></div>
-      <div class="container narrow center">
-        <p class="kicker reveal">Suporte</p>
-        <h2 class="reveal">Precisa de ajuda?</h2>
-        <p class="section-lead reveal">Dúvidas sobre compra, instalação, ativação ou renovação? Fale com a gente no Discord ou pelos outros canais.</p>
-        <div class="hero-actions reveal">
-          <a class="btn btn-primary btn-lg btn-shine" href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Entrar no Discord</a>
-          <a class="btn btn-outline btn-lg" href="https://wa.me/5511947762153" target="_blank" rel="noreferrer">Falar no WhatsApp</a>
-          <a class="btn btn-outline btn-lg" href="mailto:pqueirozdev@gmail.com">Enviar e-mail</a>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <div class="container footer-inner">
-      <a class="brand" href="#inicio"><span class="brand-mark sm has-logo" aria-hidden="true"><img src="assets/logo.png" width="24" height="24" alt=""></span><span>Qrztweaks</span><small>PC Optimizer</small></a>
-      <span class="muted">© <span id="year">2026</span> Qrztweaks · Construído para Windows</span>
-      <div class="footer-links"><a class="footer-link" href="#comprar">Planos</a><a class="footer-link" href="#recuperar">Perdeu a chave?</a><a class="footer-link" href="#reembolso">Reembolso e garantia</a><a class="footer-link" href="https://github.com/PQueirozDev/Optimizer">GitHub ↗</a></div>
-    </div>
-  </footer>
-
-  <button class="to-top" type="button" aria-label="Voltar ao topo"><svg class="icon"><use href="#i-up"/></svg></button>
-  <a class="whatsapp-float" href="https://wa.me/5511947762153" target="_blank" rel="noreferrer" aria-label="Falar no WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0 0 12.1 0C5.6 0 .3 5.3.3 11.8c0 2.1.6 4.1 1.6 5.8L.2 24l6.5-1.7a11.8 11.8 0 0 0 5.4 1.3h.1c6.5 0 11.8-5.3 11.8-11.8 0-3.1-1.3-6.1-3.5-8.3ZM12.2 21.6h-.1a9.8 9.8 0 0 1-5-1.4l-.4-.2-3.8 1 1-3.7-.2-.4a9.8 9.8 0 0 1-1.5-5.2C2.2 6.3 6.7 1.9 12.1 1.9c2.6 0 5.1 1 6.9 2.9a9.7 9.7 0 0 1 2.9 6.9c0 5.5-4.4 9.9-9.7 9.9Zm5.4-7.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.6-.8-2.7-1.5-3.8-3.3-.3-.5.3-.5.8-1.6.1-.2 0-.4 0-.6s-.7-1.7-.9-2.3c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.1 1.1-1.1 2.7s1.1 3.1 1.3 3.3c.2.2 2.2 3.4 5.4 4.8.8.4 1.4.6 1.9.7.8.3 1.5.2 2 .1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.1-1.4-.1-.2-.3-.3-.6-.4Z"/></svg></a>
-
-  <script src="script.js"></script>
-  <script src="effects.js"></script>
-  <script src="showcase.js"></script>
-</body>
-</html>
+        </div><p class="payment-note">Pagamento e ativação pelo Discord. <a href="termos.html#diretrizes">Veja como funciona ↗</a></p></div></section>
+  <section class="faq-section" id="faq"><div class="container faq-layout"><div><p class="eyebrow">ANTES DE COMEÇAR.</p><h2>Alguma dúvida?</h2><a class="text-link" href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Fale com a gente ↗</a></div><div class="faq"><details><summary>O download é gratuito?<span aria-hidden="true">+</span></summary><p>Sim. Você pode baixar o instalador sem pagar. Para aplicar os recursos do seu plano, é necessária uma chave de acesso vinculada ao computador.</p></details><details><summary>Funciona no meu Windows?<span aria-hidden="true">+</span></summary><p>O Qrztweaks é compatível com Windows 10 e 11, de 64 bits. Não é preciso instalar o .NET separadamente. Alguns ajustes exigem permissão de administrador.</p></details><details><summary>Como recebo a minha chave?<span aria-hidden="true">+</span></summary><p>Abra o app e clique em Copiar pedido na ativação. Envie esse pedido à equipe no Discord. Após a confirmação do pagamento, você recebe a chave vinculada ao seu PC.</p></details><details><summary>E se eu quiser desfazer um ajuste?<span aria-hidden="true">+</span></summary><p>O histórico reúne os ajustes e backups disponíveis. As operações reversíveis podem ser restauradas. Riscos e limitações são mostrados antes de aplicar.</p></details></div></div></section>
+</main><footer class="footer"><div class="container footer-inner"><a class="brand" href="index.html" aria-label="Qrztweaks, início"><span class="brand-mark"><img src="assets/logo.png" width="26" height="26" alt=""></span><span>Qrztweaks</span></a><span class="footer-note">Feito para o seu Windows.</span><div class="footer-links"><a href="recursos.html">Recursos</a><a href="termos.html#reembolso">Reembolso e garantia</a><a href="https://discord.gg/pHJ4Waxft" target="_blank" rel="noreferrer">Suporte ↗</a><a href="https://github.com/PQueirozDev/Optimizer" target="_blank" rel="noreferrer">GitHub ↗</a></div></div></footer><script src="landing.js"></script></body></html>

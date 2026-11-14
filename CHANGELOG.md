@@ -2,6 +2,14 @@
 
 As notas completas de cada versão aparecem no app (Novidades) e nas releases do GitHub.
 
+## 2.6.0 (14/11/2026): visual renovado no app e no site
+
+- Tema padrão com superfícies grafite, azul suave, menos brilho e cantos mais discretos.
+- Início com leituras maiores de CPU, GPU e memória, barras compactas e indicadores de saúde mais claros.
+- Navegação sem brilho nas abas, com títulos e espaçamentos consistentes.
+- Site escuro com cinco seções na página inicial, download em destaque e páginas separadas para recursos e políticas.
+- Os preços e o fluxo de compra pelo Discord são preservados; a integração de pagamentos Stripe ainda não está ativa.
+
 ## 2.5.0 (26/10/2026): tutorial, central de reversão e segurança
 
 Relatório da auditoria em `AUDIT_REPORT.md`.

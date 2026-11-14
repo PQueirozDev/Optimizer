@@ -2,7 +2,7 @@
 // palavra rotativa, brilho nos cards, inclinação dos planos, FAQ suave, versão atual e rastro do mouse.
 // Tudo respeita prefers-reduced-motion e a página continua completa sem JavaScript.
 (() => {
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduce = document.documentElement.dataset.motion === "calm" || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const finePointer = window.matchMedia("(pointer: fine)").matches;
 
   // --- Rolagem: barra de progresso, topo compacto, voltar ao topo e link ativo ---------

@@ -7,6 +7,11 @@ public static partial class Translator
 {
     private static readonly Dictionary<string, string> V2Exact = new(StringComparer.Ordinal)
     {
+        // ---------- Novidades da 2.6 ----------
+        ["Visual renovado: superfícies grafite, azul suave, menos brilho e cantos mais discretos em todas as páginas."] = "Refreshed look: graphite surfaces, softer blue, less glow and subtler corners throughout the app.",
+        ["Início com números maiores de CPU, GPU e memória, barras compactas de uso e indicadores de saúde mais fáceis de consultar."] = "Home now has larger CPU, GPU and memory readings, compact usage bars and clearer health indicators.",
+        ["Navegação mais limpa, sem brilho nas abas, com títulos e espaçamentos consistentes."] = "Cleaner navigation without glowing tabs, with consistent headings and spacing.",
+        ["Site escuro e mais curto, com download em destaque e páginas próprias para recursos e políticas de compra."] = "A shorter, dark website with a prominent download and dedicated pages for features and purchase policies.",
         // ---------- Navegação e páginas ----------
         ["Perfis"] = "Profiles", ["Perfil"] = "Profile", ["Início"] = "Command Center",
         ["Análise do PC e ajustes recomendados pelo objetivo, com risco e reversão."] = "PC analysis and tweaks recommended by goal, with risk and rollback.",

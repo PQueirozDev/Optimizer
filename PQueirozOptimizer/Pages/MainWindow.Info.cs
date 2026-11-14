@@ -26,6 +26,13 @@ public partial class MainWindow
 
     private static readonly (string Version, string Date, string[] Notes)[] PatchNotes =
     {
+        ("v2.6.0", "14/11/2026", new[]
+        {
+            "Visual renovado: superfícies grafite, azul suave, menos brilho e cantos mais discretos em todas as páginas.",
+            "Início com números maiores de CPU, GPU e memória, barras compactas de uso e indicadores de saúde mais fáceis de consultar.",
+            "Navegação mais limpa, sem brilho nas abas, com títulos e espaçamentos consistentes.",
+            "Site escuro e mais curto, com download em destaque e páginas próprias para recursos e políticas de compra.",
+        }),
         ("v2.5.0", "26/10/2026", new[]
         {
             "Tutorial da primeira abertura refeito: ele passeia pelas páginas de verdade, explica os riscos e como desfazer, e continua de onde parou se o app fechar no meio.",

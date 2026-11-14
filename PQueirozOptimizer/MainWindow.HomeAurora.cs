@@ -49,15 +49,21 @@ public partial class MainWindow
         var greeting = new TextBlock { Text = Tr(Greeting()) + (name is null ? "" : ", " + name), FontSize = 13, FontWeight = FontWeights.SemiBold, Tag = Translator.SystemDataTag };
         greeting.SetResourceReference(TextBlock.ForegroundProperty, "AccentTextBrush");
         body.Children.Add(greeting);
-        var title = new TextBlock { Text = Tr(headline), FontSize = 22, FontWeight = FontWeights.Bold, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 16), Tag = Translator.SystemDataTag };
+        var title = new TextBlock { Text = Tr(headline), FontSize = 22, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 18), Tag = Translator.SystemDataTag };
         title.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
         title.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
         body.Children.Add(title);
 
-        var row = new DockPanel();
-        var ring = ScoreRing(score, Tr("SAÚDE"), 108);
-        ring.Margin = new Thickness(0, 0, 18, 0);
-        DockPanel.SetDock(ring, Dock.Left); row.Children.Add(ring);
+        var healthLabel = new DockPanel();
+        var healthValue = new TextBlock { Text = $"{score} / 100", FontSize = 12, FontWeight = FontWeights.SemiBold, Tag = Translator.SystemDataTag };
+        healthValue.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+        DockPanel.SetDock(healthValue, Dock.Right); healthLabel.Children.Add(healthValue);
+        var healthName = new TextBlock { Text = Tr("SAÚDE"), FontSize = 10.5, FontWeight = FontWeights.SemiBold, Tag = Translator.SystemDataTag };
+        healthName.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+        healthLabel.Children.Add(healthName); body.Children.Add(healthLabel);
+        var healthBar = new ProgressBar { Value = score, Maximum = 100, Height = 5, Margin = new Thickness(0, 8, 0, 16) };
+        healthBar.SetResourceReference(Control.ForegroundProperty, tone + "Brush");
+        body.Children.Add(healthBar);
         var checks = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         if (showChecks)
         {
@@ -78,13 +84,12 @@ public partial class MainWindow
                 }, TaskScheduler.FromCurrentSynchronizationContext());
             }
         }
-        row.Children.Add(checks);
-        body.Children.Add(row);
+        body.Children.Add(checks);
 
         var analysis = SmartHistory.Default.LastAnalysis;
         var primary = IconButton(Glyphs.Lightning, analysis is { Recommended: > 0 } a ? string.Format(Tr("Revisar {0} ajustes"), a.Recommended) : Tr("Analisar o PC"), primary: true);
         primary.HorizontalAlignment = HorizontalAlignment.Stretch; primary.HorizontalContentAlignment = HorizontalAlignment.Center;
-        primary.Height = 44; primary.Margin = new Thickness(0, 20, 0, 0);
+        primary.Height = 42; primary.Margin = new Thickness(0, 18, 0, 0);
         primary.Click += (_, _) => NavigateTo("smart");
         body.Children.Add(Mark(primary, "home.primary"));
         var secondary = new Button { Height = 40, Margin = new Thickness(0, 10, 0, 0), HorizontalContentAlignment = HorizontalAlignment.Center };
@@ -98,14 +103,14 @@ public partial class MainWindow
         secondary.SetResourceReference(ForegroundProperty, "TextSecondaryBrush");
         secondary.Click += (_, _) => NavigateTo("mypc");
         body.Children.Add(secondary);
-        var card = HomeCard(body, "HeroBrush");
+        var card = HomeCard(body);
         card.Padding = new Thickness(AppearanceService.Space(24));
         return card;
     }
 
     private Border HomeCheckRow(HomeCheck check)
     {
-        var dock = new DockPanel { Margin = new Thickness(0, 4, 0, 4) };
+        var dock = new DockPanel { Margin = new Thickness(0, 5, 0, 5) };
         var dot = StatusDot(check.Tone, 7); dot.Margin = new Thickness(0, 0, 10, 0);
         DockPanel.SetDock(dot, Dock.Left); dock.Children.Add(dot);
         var status = new TextBlock { Text = Tr(check.Status), FontSize = 12, Margin = new Thickness(10, 0, 0, 0), Tag = Translator.SystemDataTag, VerticalAlignment = VerticalAlignment.Center };
@@ -166,61 +171,68 @@ public partial class MainWindow
         head.Margin = new Thickness(0, 0, 0, 6);
         DockPanel.SetDock(head, Dock.Top); body.Children.Add(head);
 
-        var row = new System.Windows.Controls.Primitives.UniformGrid { Columns = 4, Rows = 1 };
-        (ArcGauge Gauge, TextBlock Value, TextBlock Sub) Gauge(string label)
+        var row = new System.Windows.Controls.Primitives.UniformGrid { Columns = 3, Rows = 1, Margin = new Thickness(0, 26, 0, 20) };
+        (ProgressBar Bar, TextBlock Value, TextBlock Sub) Metric(string label, string glyph, int index)
         {
-            var host = new Grid { Width = 156, Height = 156, HorizontalAlignment = HorizontalAlignment.Center };
-            var gauge = new ArcGauge { Value = double.NaN, Thickness = 10 };
-            host.Children.Add(gauge);
-            var center = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 6) };
-            var value = new TextBlock { Text = "—", FontSize = 32, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Center, Tag = Translator.SystemDataTag };
+            var stack = new StackPanel();
+            var caption = new StackPanel { Orientation = Orientation.Horizontal };
+            var icon = GlyphIcon(glyph, 13, "AccentTextBrush"); icon.Margin = new Thickness(0, 0, 8, 0);
+            caption.Children.Add(icon);
+            var l = new TextBlock { Text = label, FontSize = 11.5, FontWeight = FontWeights.SemiBold, Tag = Translator.SystemDataTag };
+            l.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondaryBrush");
+            caption.Children.Add(l); stack.Children.Add(caption);
+            var value = new TextBlock { Text = "—", FontSize = 42, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 12, 0, 6), Tag = Translator.SystemDataTag };
             value.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
             value.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
-            var l = new TextBlock { Text = label, FontSize = 10.5, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Center, Tag = Translator.SystemDataTag };
-            l.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
-            center.Children.Add(value); center.Children.Add(l);
-            host.Children.Add(center);
-            var sub = new TextBlock { Text = "—", FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, -14, 0, 0), Tag = Translator.SystemDataTag };
+            stack.Children.Add(value);
+            var sub = new TextBlock { Text = "—", FontSize = 11.5, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 0, 0, 16), Tag = Translator.SystemDataTag };
             sub.SetResourceReference(TextBlock.FontFamilyProperty, "MonoFont");
-            sub.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondaryBrush");
-            var stack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            stack.Children.Add(host); stack.Children.Add(sub);
-            row.Children.Add(stack);
-            return (gauge, value, sub);
+            sub.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+            stack.Children.Add(sub);
+            var bar = new ProgressBar { Maximum = 100, Height = 4 };
+            bar.SetResourceReference(Control.ForegroundProperty, index == 1 ? "ChartSecondaryBrush" : "AccentBrush");
+            stack.Children.Add(bar);
+            var cell = new Border { Child = stack, Padding = new Thickness(index == 0 ? 0 : 24, 0, index == 2 ? 0 : 24, 0), BorderThickness = new Thickness(index == 0 ? 0 : 1, 0, 0, 0) };
+            cell.SetResourceReference(Border.BorderBrushProperty, "BorderSubtleBrush");
+            row.Children.Add(cell);
+            return (bar, value, sub);
         }
-        var cpu = Gauge("CPU");
-        var gpu = Gauge("GPU");
-        var ram = Gauge("RAM");
+        var cpu = Metric("CPU", Glyphs.Chip, 0);
+        var gpu = Metric("GPU", Glyphs.Monitor, 1);
+        var ram = Metric("RAM", Glyphs.Memory, 2);
 
-        var stats = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
+        var stats = new System.Windows.Controls.Primitives.UniformGrid { Columns = 3, Margin = new Thickness(0, 16, 0, 0) };
         TextBlock Stat(string label, string unit)
         {
             var l = new TextBlock { Text = label, FontSize = 10.5, FontWeight = FontWeights.Bold, Tag = Translator.SystemDataTag };
             l.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
-            var line = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 14) };
-            var v = new TextBlock { Text = "—", FontSize = 26, FontWeight = FontWeights.Bold, Tag = Translator.SystemDataTag };
+            var cell = new StackPanel();
+            var line = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 5, 0, 0) };
+            var v = new TextBlock { Text = "—", FontSize = 21, FontWeight = FontWeights.SemiBold, Tag = Translator.SystemDataTag };
             v.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont");
             v.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
             var u = new TextBlock { Text = unit, FontSize = 13, Margin = new Thickness(4, 0, 0, 4), VerticalAlignment = VerticalAlignment.Bottom, Tag = Translator.SystemDataTag };
             u.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
             line.Children.Add(v); line.Children.Add(u);
-            stats.Children.Add(l); stats.Children.Add(line);
+            cell.Children.Add(l); cell.Children.Add(line); stats.Children.Add(cell);
             return v;
         }
         var ping = Stat("PING", "ms");
         var down = Stat("DOWNLOAD", "Mbps");
         var disk = Stat(Tr("DISCO DO SISTEMA"), Tr("% livre"));
         disk.Text = snapshot.StorageGb > 0 ? snapshot.FreePercent.ToString("0", CultureInfo.CurrentCulture) : "—";
-        row.Children.Add(stats);
+        var footer = new Border { Child = stats, BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(0, 0, 0, 3) };
+        footer.SetResourceReference(Border.BorderBrushProperty, "BorderSubtleBrush");
+        DockPanel.SetDock(footer, Dock.Bottom); body.Children.Add(footer);
         body.Children.Add(row);
 
         _homeLive.Add(s =>
         {
-            cpu.Gauge.Value = s.Cpu; cpu.Value.Text = $"{s.Cpu:0}%";
+            cpu.Bar.Value = s.Cpu; cpu.Value.Text = $"{s.Cpu:0}%";
             cpu.Sub.Text = s.CpuMhz is { } mhz ? (mhz / 1000).ToString("0.00", CultureInfo.CurrentCulture) + " GHz" : cpuInfo.BaseMhz is { } b ? (b / 1000).ToString("0.00", CultureInfo.CurrentCulture) + " GHz" : "—";
-            gpu.Gauge.Value = s.Gpu ?? double.NaN; gpu.Value.Text = s.Gpu is { } g ? $"{g:0}%" : "—";
+            gpu.Bar.Value = s.Gpu ?? 0; gpu.Value.Text = s.Gpu is { } g ? $"{g:0}%" : "—";
             gpu.Sub.Text = s.GpuTempC is { } t ? $"{t:0} °C" : s.VramUsedGb is { } vu && s.VramTotalGb is { } vt ? $"{vu:0.0} / {vt:0} GB" : "—";
-            ram.Gauge.Value = s.Ram; ram.Value.Text = $"{s.Ram:0}%";
+            ram.Bar.Value = s.Ram; ram.Value.Text = $"{s.Ram:0}%";
             ram.Sub.Text = $"{s.RamUsedGb:0.0} / {s.RamTotalGb:0} GB";
             ping.Text = s.PingMs is { } p ? p.ToString("0", CultureInfo.CurrentCulture) : "—";
             down.Text = (s.DownBytesPerSec * 8 / 1_000_000).ToString(s.DownBytesPerSec * 8 / 1_000_000 >= 10 ? "0" : "0.0", CultureInfo.CurrentCulture);

@@ -2,7 +2,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
-using System.Windows.Media.Effects;
 using PQueirozOptimizer.Services;
 
 namespace PQueirozOptimizer;
@@ -70,8 +69,9 @@ public partial class MainWindow
                 System.Windows.Automation.AutomationProperties.SetName(pill, Translator.Tr(NavName(nav)));
                 SubTabs.Children.Add(pill);
             }
-        // No Início o cartão de boas-vindas faz o papel do título
-        PageHeading.Visibility = page == "dashboard" ? Visibility.Collapsed : Visibility.Visible;
+        // Títulos consistentes em todas as páginas; no Início não repete o nome no rótulo menor.
+        PageHeading.Visibility = Visibility.Visible;
+        PageEyebrow.Visibility = page == "dashboard" ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private string FirstPage(string category) =>
@@ -82,8 +82,8 @@ public partial class MainWindow
         nav.Content is Panel panel ? panel.Children.OfType<TextBlock>().FirstOrDefault(t => t.Style == (Style)Application.Current.FindResource("NavIcon"))?.Text ?? Glyphs.Info : Glyphs.Info;
 
     /// <summary>
-    /// Pílula da navegação. Aba de categoria ativa: preenchida no destaque com brilho; sub-aba ativa: véu do destaque
-    /// com contorno. As inativas ficam neutras, com o texto apagado.
+    /// Pílula da navegação. Abas ativas recebem um fundo suave e contorno no destaque.
+    /// As inativas ficam neutras, com o texto secundário.
     /// </summary>
     private static Button NavPill(string glyph, string title, bool active, bool primary)
     {
@@ -93,11 +93,13 @@ public partial class MainWindow
         var text = new TextBlock { Text = title, FontSize = primary ? 13.5 : 12.5, FontWeight = active ? FontWeights.SemiBold : FontWeights.Medium, VerticalAlignment = VerticalAlignment.Center };
         content.Children.Add(icon); content.Children.Add(text);
         var button = new Button { Content = content, Height = primary ? 36 : 32, Padding = new Thickness(primary ? 16 : 13, 0, primary ? 16 : 13, 0), Margin = new Thickness(primary ? 2 : 0, 0, 0, 0), BorderThickness = new Thickness(1) };
-        QrzUi.SetCornerRadius(button, new CornerRadius(primary ? 10 : 10));
+        QrzUi.SetCornerRadius(button, new CornerRadius(7));
         if (active && primary)
         {
-            button.SetResourceReference(StyleProperty, "PrimaryButton");
-            button.Effect = new DropShadowEffect { BlurRadius = 18, ShadowDepth = 3, Direction = 270, Opacity = 0.5, Color = Color.FromRgb(0x25, 0x63, 0xEB) };
+            button.SetResourceReference(StyleProperty, "GhostButton");
+            button.SetResourceReference(BackgroundProperty, "AccentSoftBrush");
+            button.SetResourceReference(BorderBrushProperty, "SecondaryBorderBrush");
+            button.SetResourceReference(ForegroundProperty, "AccentTextBrush");
         }
         else
         {

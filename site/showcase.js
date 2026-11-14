@@ -1,6 +1,6 @@
 // v1.8: fundo animado, brilho e rastro que seguem o mouse, app do topo em 3D e galeria com lightbox.
 (() => {
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduce = document.documentElement.dataset.motion === "calm" || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const finePointer = window.matchMedia("(pointer: fine)").matches;
 
   // ---------- Camadas de fundo (aurora, grade e brilho do cursor) ----------
